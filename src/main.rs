@@ -1,9 +1,13 @@
 use std::fs;
+use std::io::Read;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
+use codetracer_trace_writer::TraceEventsFileFormat;
 use eyre::{bail, WrapErr};
-use serde_json::json;
+
+use codetracer_move_recorder::converter;
+use codetracer_move_recorder::source_map::SourceMapResolver;
 
 #[derive(Parser)]
 #[command(name = "codetracer-move-recorder")]
@@ -26,7 +30,11 @@ enum Commands {
         #[arg(short, long, default_value = "binary")]
         format: String,
 
-        /// Path to the trace file (e.g. trace.json.zst)
+        /// Path to the Move source file (used for source mapping)
+        #[arg(short, long)]
+        source: Option<PathBuf>,
+
+        /// Path to the trace file (e.g. trace.json or trace.json.zst)
         trace_file: PathBuf,
     },
 
@@ -40,7 +48,8 @@ fn main() -> eyre::Result<()> {
     match cli.command {
         Commands::Record {
             out_dir,
-            format: _,
+            format,
+            source,
             trace_file,
         } => {
             if !trace_file.exists() {
@@ -50,31 +59,58 @@ fn main() -> eyre::Result<()> {
                 );
             }
 
-            eprintln!("Trace conversion not yet implemented");
+            // Read and optionally decompress the trace file.
+            let raw_bytes = fs::read(&trace_file)
+                .wrap_err_with(|| {
+                    format!("Failed to read trace file: {}", trace_file.display())
+                })?;
+
+            let trace_data = if trace_file.extension().is_some_and(|ext| ext == "zst") {
+                // Decompress zstd
+                let mut decoder = zstd::Decoder::new(raw_bytes.as_slice())
+                    .wrap_err("Failed to create zstd decoder")?;
+                let mut decompressed = Vec::new();
+                decoder
+                    .read_to_end(&mut decompressed)
+                    .wrap_err("Failed to decompress zstd trace file")?;
+                decompressed
+            } else {
+                raw_bytes
+            };
+
+            // Determine source path (use provided --source or derive from trace file).
+            let source_path = source.unwrap_or_else(|| {
+                trace_file
+                    .with_extension("")
+                    .with_extension("move")
+            });
+
+            // For now, use an empty source map. Real source maps will come in a
+            // later milestone when we parse .mvsm files.
+            let source_map = SourceMapResolver::empty();
+
+            let fmt = match format.as_str() {
+                "json" => TraceEventsFileFormat::Json,
+                _ => TraceEventsFileFormat::Binary,
+            };
 
             fs::create_dir_all(&out_dir)
-                .wrap_err_with(|| format!("Failed to create output directory: {}", out_dir.display()))?;
+                .wrap_err_with(|| {
+                    format!(
+                        "Failed to create output directory: {}",
+                        out_dir.display()
+                    )
+                })?;
 
-            let metadata = json!({
-                "recorder": "codetracer-move-recorder",
-                "version": env!("CARGO_PKG_VERSION"),
-                "status": "placeholder"
-            });
-            fs::write(
-                out_dir.join("trace_metadata.json"),
-                serde_json::to_string_pretty(&metadata)?,
+            converter::convert_trace(
+                &trace_data,
+                &source_map,
+                &source_path,
+                &out_dir,
+                fmt,
             )?;
 
-            let paths = json!({
-                "trace_metadata": "trace_metadata.json",
-                "status": "placeholder"
-            });
-            fs::write(
-                out_dir.join("trace_paths.json"),
-                serde_json::to_string_pretty(&paths)?,
-            )?;
-
-            eprintln!("Placeholder trace files written to {}", out_dir.display());
+            eprintln!("Trace files written to {}", out_dir.display());
         }
         Commands::Version => {
             println!(

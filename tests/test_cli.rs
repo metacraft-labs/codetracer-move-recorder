@@ -41,8 +41,11 @@ fn record_nonexistent_file_fails() {
 #[test]
 fn record_creates_output_files() {
     let tmp = tempfile::TempDir::new().expect("failed to create temp dir");
-    let trace_file = tmp.path().join("dummy_trace.json.zst");
-    std::fs::write(&trace_file, b"dummy data").expect("failed to write dummy trace");
+
+    // Write a minimal valid NDJSON trace file (not compressed, .json extension).
+    let trace_file = tmp.path().join("dummy_trace.json");
+    let trace_data = "{\"version\":3}\n{\"type\":\"OpenFrame\",\"frame\":{\"frame_id\":1,\"function_name\":\"main\",\"module\":{\"address\":\"0x0\",\"name\":\"test\"},\"type_instantiation\":[],\"parameters\":[],\"return_types\":[],\"locals_types\":[],\"is_native\":false},\"gas_left\":1000}\n{\"type\":\"CloseFrame\",\"frame_id\":1,\"gas_left\":900}\n";
+    std::fs::write(&trace_file, trace_data).expect("failed to write dummy trace");
 
     let out_dir = tmp.path().join("ct-traces");
 
