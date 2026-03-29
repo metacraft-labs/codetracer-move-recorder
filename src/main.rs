@@ -7,6 +7,7 @@ use codetracer_trace_writer::TraceEventsFileFormat;
 use eyre::{bail, WrapErr};
 
 use codetracer_move_recorder::converter;
+use codetracer_move_recorder::replay::{self, ReplayConfig};
 use codetracer_move_recorder::source_map::SourceMapResolver;
 
 #[derive(Parser)]
@@ -36,6 +37,29 @@ enum Commands {
 
         /// Path to the trace file (e.g. trace.json or trace.json.zst)
         trace_file: PathBuf,
+    },
+
+    /// Replay an on-chain Sui transaction and produce a CodeTracer trace
+    Replay {
+        /// Transaction digest to replay
+        #[arg(long)]
+        digest: String,
+
+        /// Sui RPC endpoint URL
+        #[arg(long, default_value = "http://localhost:9000")]
+        rpc_url: String,
+
+        /// Directory containing Move source files
+        #[arg(long)]
+        source_dir: Option<PathBuf>,
+
+        /// Output directory for trace files
+        #[arg(short, long, default_value = "./ct-traces/")]
+        out_dir: PathBuf,
+
+        /// Output format (binary or json)
+        #[arg(short, long, default_value = "binary")]
+        format: String,
     },
 
     /// Print version information
@@ -111,6 +135,28 @@ fn main() -> eyre::Result<()> {
             )?;
 
             eprintln!("Trace files written to {}", out_dir.display());
+        }
+        Commands::Replay {
+            digest,
+            rpc_url,
+            source_dir,
+            out_dir,
+            format,
+        } => {
+            let fmt = match format.as_str() {
+                "json" => TraceEventsFileFormat::Json,
+                _ => TraceEventsFileFormat::Binary,
+            };
+
+            let config = ReplayConfig {
+                rpc_url,
+                digest,
+                source_dir,
+                out_dir,
+                format: fmt,
+            };
+
+            replay::replay_transaction(&config)?;
         }
         Commands::Version => {
             println!(
