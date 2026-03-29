@@ -1,3 +1,5 @@
+pub mod aptos_adapter;
+pub mod aptos_replay;
 pub mod converter;
 pub mod move_types;
 pub mod replay;

@@ -6,6 +6,8 @@ use clap::{Parser, Subcommand};
 use codetracer_trace_writer::TraceEventsFileFormat;
 use eyre::{bail, WrapErr};
 
+use codetracer_move_recorder::aptos_adapter;
+use codetracer_move_recorder::aptos_replay::{self, AptosReplayConfig};
 use codetracer_move_recorder::converter;
 use codetracer_move_recorder::replay::{self, ReplayConfig};
 use codetracer_move_recorder::source_map::SourceMapResolver;
@@ -61,6 +63,36 @@ enum Commands {
         #[arg(short, long, default_value = "binary")]
         format: String,
     },
+
+    /// Replay an on-chain Aptos transaction and produce a CodeTracer trace
+    AptosReplay {
+        /// Transaction version (ledger version) to replay
+        #[arg(long)]
+        txn_version: u64,
+
+        /// Aptos REST API node URL
+        #[arg(long, default_value = "https://fullnode.mainnet.aptoslabs.com/v1")]
+        node_url: String,
+
+        /// Directory containing Move source files
+        #[arg(long)]
+        source_dir: Option<PathBuf>,
+
+        /// Output directory for trace files
+        #[arg(short, long, default_value = "./ct-traces/")]
+        out_dir: PathBuf,
+
+        /// Output format (binary or json)
+        #[arg(short, long, default_value = "binary")]
+        format: String,
+
+        /// Also run --profile-gas for additional gas data
+        #[arg(long, default_value = "true")]
+        profile_gas: bool,
+    },
+
+    /// Show Aptos-specific limitations compared to Sui support
+    AptosLimitations,
 
     /// Print version information
     Version,
@@ -157,6 +189,33 @@ fn main() -> eyre::Result<()> {
             };
 
             replay::replay_transaction(&config)?;
+        }
+        Commands::AptosReplay {
+            txn_version,
+            node_url,
+            source_dir,
+            out_dir,
+            format,
+            profile_gas,
+        } => {
+            let fmt = match format.as_str() {
+                "json" => TraceEventsFileFormat::Json,
+                _ => TraceEventsFileFormat::Binary,
+            };
+
+            let config = AptosReplayConfig {
+                node_url,
+                txn_version,
+                source_dir,
+                out_dir,
+                format: fmt,
+                profile_gas,
+            };
+
+            aptos_replay::aptos_replay_transaction(&config)?;
+        }
+        Commands::AptosLimitations => {
+            println!("{}", aptos_adapter::aptos_limitations_summary());
         }
         Commands::Version => {
             println!(
