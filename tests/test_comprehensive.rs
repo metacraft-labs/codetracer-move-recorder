@@ -58,6 +58,35 @@ fn run_converter_simple(ndjson: &str) -> String {
     trace
 }
 
+/// Parse trace.bin JSON content into a Vec of TraceLowLevelEvent.
+fn parse_trace_events(trace_content: &str) -> Vec<TraceLowLevelEvent> {
+    serde_json::from_str(trace_content).expect("trace.bin should be valid JSON array of events")
+}
+
+/// Count Call and Return events in parsed trace events.
+fn count_call_return(events: &[TraceLowLevelEvent]) -> (usize, usize) {
+    let calls = events
+        .iter()
+        .filter(|e| matches!(e, TraceLowLevelEvent::Call(_)))
+        .count();
+    let returns = events
+        .iter()
+        .filter(|e| matches!(e, TraceLowLevelEvent::Return(_)))
+        .count();
+    (calls, returns)
+}
+
+/// Extract step line numbers from parsed trace events.
+fn extract_step_lines(events: &[TraceLowLevelEvent]) -> Vec<i64> {
+    events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Step(step) => Some(step.line.0),
+            _ => None,
+        })
+        .collect()
+}
+
 /// Parse NDJSON events (skip version header) and count event types.
 fn count_events(ndjson: &str) -> (usize, usize, usize, usize) {
     let mut lines = ndjson.lines();
@@ -325,6 +354,18 @@ fn test_all_value_types_through_converter() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty(), "trace.bin should not be empty");
+
+    // Parse and verify Value events were generated for all the write effects.
+    // We have 7 Write effects (u8, u16, u32, u64, u256, bool, address).
+    let events = parse_trace_events(&result);
+    let value_count = events
+        .iter()
+        .filter(|e| matches!(e, TraceLowLevelEvent::Value(_)))
+        .count();
+    assert!(
+        value_count >= 7,
+        "expected at least 7 Value events from Write effects for all value types, got {value_count}"
+    );
 }
 
 // ============================================================================
@@ -350,6 +391,13 @@ fn test_simple_function_call() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
+
+    // Parse and verify basic event structure for a simple single-function call.
+    let events = parse_trace_events(&result);
+    let (calls, returns) = count_call_return(&events);
+    // Toplevel call + simple_fn = 2 Calls, simple_fn close = 1 Return
+    assert_eq!(calls, 2, "expected 2 Call events (toplevel + simple_fn), got {calls}");
+    assert_eq!(returns, 1, "expected 1 Return event, got {returns}");
 }
 
 #[test]
@@ -381,6 +429,14 @@ fn test_nested_calls_a_calls_b_calls_c() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
+
+    // Parse trace.bin and verify Call/Return balance for 3-level nesting.
+    // Expect 4 Call events: 1 toplevel + func_a + func_b + func_c
+    // Expect 3 Return events: func_c + func_b + func_a
+    let events = parse_trace_events(&result);
+    let (calls, returns) = count_call_return(&events);
+    assert_eq!(calls, 4, "expected 4 Call events (toplevel + A + B + C)");
+    assert_eq!(returns, 3, "expected 3 Return events (C + B + A)");
 }
 
 #[test]
@@ -407,6 +463,12 @@ fn test_generic_function_instantiation() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
+
+    // Parse and verify the converter produced Call/Return events for the generic function.
+    let events = parse_trace_events(&result);
+    let (calls, returns) = count_call_return(&events);
+    assert!(calls >= 2, "expected at least 2 Call events (toplevel + transfer), got {calls}");
+    assert!(returns >= 1, "expected at least 1 Return event, got {returns}");
 }
 
 #[test]
@@ -437,6 +499,12 @@ fn test_entry_function_with_parameters() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
+
+    // Parse and verify Call events exist for the entry function with parameters.
+    let events = parse_trace_events(&result);
+    let (calls, returns) = count_call_return(&events);
+    assert!(calls >= 2, "expected at least 2 Call events (toplevel + entry_transfer), got {calls}");
+    assert!(returns >= 1, "expected at least 1 Return event, got {returns}");
 }
 
 #[test]
@@ -465,6 +533,14 @@ fn test_module_crossing_calls() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
+
+    // Parse and verify Call/Return for cross-module calls:
+    // toplevel + coin::transfer + balance::withdraw + transfer::transfer_internal = 4 Calls
+    // coin::transfer + balance::withdraw + transfer::transfer_internal = 3 Returns
+    let events = parse_trace_events(&result);
+    let (calls, returns) = count_call_return(&events);
+    assert_eq!(calls, 4, "expected 4 Call events (toplevel + 3 functions), got {calls}");
+    assert_eq!(returns, 3, "expected 3 Return events, got {returns}");
 }
 
 #[test]
@@ -503,6 +579,28 @@ fn test_recursive_function_calls() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
+
+    // Parse and verify Call/Return balance for recursive factorial(3) -> factorial(2) -> factorial(1).
+    // Expect 4 Call events: 1 toplevel + 3 recursive factorial calls
+    // Expect 3 Return events: one per CloseFrame
+    let events = parse_trace_events(&result);
+    let (calls, returns) = count_call_return(&events);
+    assert_eq!(calls, 4, "expected 4 Call events (toplevel + 3 recursive), got {calls}");
+    assert_eq!(returns, 3, "expected 3 Return events (one per recursive call), got {returns}");
+
+    // Verify that Function events were emitted for "factorial"
+    let function_names: Vec<&str> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Function(f) => Some(f.name.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        function_names.iter().any(|n| n.contains("factorial")),
+        "expected a Function event for 'factorial', got: {:?}",
+        function_names
+    );
 }
 
 // ============================================================================
@@ -531,6 +629,15 @@ fn test_effect_push_pop() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
+
+    // Parse and verify the converter produced events. The push/pop effects
+    // should result in Step events and at least one Call/Return pair.
+    let events = parse_trace_events(&result);
+    let (calls, returns) = count_call_return(&events);
+    assert!(calls >= 1, "expected at least 1 Call event, got {calls}");
+    assert!(returns >= 1, "expected at least 1 Return event, got {returns}");
+    let steps = extract_step_lines(&events);
+    assert!(!steps.is_empty(), "expected at least one Step event from instructions");
 }
 
 #[test]
@@ -556,6 +663,24 @@ fn test_effect_read_write_locals() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
+
+    // Parse and verify the read/write effects generated Value events.
+    // The trace writes 42 to local_0, reads it, writes to local_1, reads it.
+    let events = parse_trace_events(&result);
+
+    // Should have Value events for the write effects
+    let value_count = events
+        .iter()
+        .filter(|e| matches!(e, TraceLowLevelEvent::Value(_)))
+        .count();
+    assert!(
+        value_count >= 2,
+        "expected at least 2 Value events from Write effects, got {value_count}"
+    );
+
+    // Verify Step events exist for the 4 instruction PCs
+    let steps = extract_step_lines(&events);
+    assert!(!steps.is_empty(), "expected Step events from instructions");
 }
 
 #[test]
@@ -685,6 +810,26 @@ fn test_linear_execution_with_source_map() {
     let (trace_content, metadata, _) = run_converter(&trace, &source_map, "linear.move");
     assert!(!trace_content.is_empty());
     assert!(metadata.get("program").is_some());
+
+    // Parse and verify Step events map to the expected source lines 5-9
+    // (pc 0->line 5, pc 1->line 6, ..., pc 4->line 9).
+    let events = parse_trace_events(&trace_content);
+    let step_lines = extract_step_lines(&events);
+
+    let instruction_step_lines: Vec<i64> = step_lines
+        .iter()
+        .copied()
+        .filter(|&line| (5..=9).contains(&line))
+        .collect();
+
+    let mut unique_lines = instruction_step_lines.clone();
+    unique_lines.sort();
+    unique_lines.dedup();
+    assert_eq!(
+        unique_lines,
+        vec![5, 6, 7, 8, 9],
+        "expected steps for lines 5 through 9 from linear execution"
+    );
 }
 
 #[test]
@@ -721,6 +866,31 @@ fn test_branch_pattern() {
 
     let (trace_content, _, _) = run_converter(&trace, &source_map, "branch.move");
     assert!(!trace_content.is_empty());
+
+    // Parse and verify that the branch produced steps on the else path.
+    // Source map: pc 0->line 3, pc 1->line 4, pc 2->line 5, pc 5->line 8, pc 6->line 9
+    // Since BrTrue was false, we should see steps for lines 3, 4, 5 (condition), 8, 9 (else branch)
+    // but NOT line 6 or 7 (the if-true branch, which was skipped).
+    let events = parse_trace_events(&trace_content);
+    let step_lines = extract_step_lines(&events);
+
+    let instruction_step_lines: Vec<i64> = step_lines
+        .iter()
+        .copied()
+        .filter(|&line| line != 1) // exclude toplevel initial step
+        .collect();
+
+    // Should have steps on line 8 (else branch) and line 9 (return)
+    assert!(
+        instruction_step_lines.contains(&8),
+        "expected step on line 8 (else branch), got steps: {:?}",
+        instruction_step_lines
+    );
+    assert!(
+        instruction_step_lines.contains(&9),
+        "expected step on line 9 (return in else), got steps: {:?}",
+        instruction_step_lines
+    );
 }
 
 #[test]
@@ -782,6 +952,51 @@ fn test_loop_pattern() {
     // Verify event counts: should have repeated pc=2 four times (3 true + 1 false)
     let (_, _, instr, _) = count_events(&trace);
     assert!(instr >= 10, "loop should produce many instruction events, got {instr}");
+
+    // Parse and verify Step events show the loop body lines repeating.
+    // Source map: pc 2->line 5 (condition), pc 3->line 6 (body), pc 4->line 7 (increment)
+    // The loop runs 3 iterations, so line 5 should appear multiple times (transitions
+    // from other lines back to line 5).
+    let events = parse_trace_events(&trace_content);
+    let step_lines = extract_step_lines(&events);
+
+    let instruction_step_lines: Vec<i64> = step_lines
+        .iter()
+        .copied()
+        .filter(|&line| line != 1)
+        .collect();
+
+    // Lines from the loop body (5, 6, 7) should all appear
+    assert!(
+        instruction_step_lines.contains(&5),
+        "expected step on line 5 (loop condition), got steps: {:?}",
+        instruction_step_lines
+    );
+    assert!(
+        instruction_step_lines.contains(&6),
+        "expected step on line 6 (loop body), got steps: {:?}",
+        instruction_step_lines
+    );
+    assert!(
+        instruction_step_lines.contains(&7),
+        "expected step on line 7 (increment), got steps: {:?}",
+        instruction_step_lines
+    );
+
+    // Line 9 (after loop) should appear once at the end
+    assert!(
+        instruction_step_lines.contains(&9),
+        "expected step on line 9 (after loop), got steps: {:?}",
+        instruction_step_lines
+    );
+
+    // The loop body lines should repeat: total step count should be > unique line count
+    // due to 3 loop iterations
+    assert!(
+        instruction_step_lines.len() > 4,
+        "expected more than 4 instruction steps due to loop iterations, got {}",
+        instruction_step_lines.len()
+    );
 }
 
 #[test]
@@ -849,6 +1064,26 @@ fn test_scenario_token_transfer() {
     let (open, close, _, _) = count_events(&trace);
     assert_eq!(open, 2, "outer transfer + inner split");
     assert_eq!(close, 2);
+
+    // Parse and verify Call/Return events for the token transfer scenario.
+    // Expect 3 Calls: toplevel + coin::transfer + balance::split
+    // Expect 2 Returns: balance::split + coin::transfer
+    let events = parse_trace_events(&trace_content);
+    let (calls, returns) = count_call_return(&events);
+    assert_eq!(calls, 3, "expected 3 Call events (toplevel + transfer + split), got {calls}");
+    assert_eq!(returns, 2, "expected 2 Return events, got {returns}");
+
+    // Verify Step events reference lines from the source map
+    let step_lines = extract_step_lines(&events);
+    let coin_lines: Vec<i64> = step_lines
+        .iter()
+        .copied()
+        .filter(|&line| (10..=13).contains(&line))
+        .collect();
+    assert!(
+        !coin_lines.is_empty(),
+        "expected steps on coin.move source lines (10-13)"
+    );
 }
 
 #[test]
@@ -914,6 +1149,23 @@ fn test_scenario_vector_manipulation() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
+
+    // Parse and verify the vector operations generated Value events.
+    // The trace has multiple Write effects (empty vec, [10], [10,20], [10,20,30], [10,20], popped=30).
+    let events = parse_trace_events(&result);
+
+    let value_count = events
+        .iter()
+        .filter(|e| matches!(e, TraceLowLevelEvent::Value(_)))
+        .count();
+    assert!(
+        value_count >= 4,
+        "expected at least 4 Value events from vector Write effects, got {value_count}"
+    );
+
+    // Should have Step events for the 6 instruction PCs
+    let steps = extract_step_lines(&events);
+    assert!(!steps.is_empty(), "expected Step events from vector instruction PCs");
 }
 
 #[test]
@@ -1115,6 +1367,12 @@ fn test_deeply_nested_struct_through_converter() {
 
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
+
+    // Parse and verify the deeply nested struct produced events.
+    let events = parse_trace_events(&result);
+    let (calls, returns) = count_call_return(&events);
+    assert!(calls >= 1, "expected at least 1 Call event (toplevel), got {calls}");
+    assert!(returns >= 1, "expected at least 1 Return event, got {returns}");
 }
 
 #[test]
@@ -1319,4 +1577,65 @@ fn test_full_defi_swap_scenario() {
     assert_eq!(close, 2);
     assert!(instr >= 8, "many instructions in swap scenario");
     assert!(effect >= 8, "many effects in swap scenario");
+
+    // Parse trace.bin and verify the full DeFi scenario produces correct event structure.
+    let events = parse_trace_events(&trace_content);
+
+    // Verify Call/Return balance: toplevel + swap_exact_input + calculate_output = 3 Calls,
+    // calculate_output + swap_exact_input = 2 Returns
+    let (calls, returns) = count_call_return(&events);
+    assert_eq!(calls, 3, "expected 3 Call events (toplevel + swap + calculate), got {calls}");
+    assert_eq!(returns, 2, "expected 2 Return events, got {returns}");
+
+    // Verify Step events include lines from both dex.move (10-15) and pool.move (20-22)
+    let step_lines = extract_step_lines(&events);
+    let dex_lines: Vec<i64> = step_lines
+        .iter()
+        .copied()
+        .filter(|&line| (10..=15).contains(&line))
+        .collect();
+    let pool_lines: Vec<i64> = step_lines
+        .iter()
+        .copied()
+        .filter(|&line| (20..=22).contains(&line))
+        .collect();
+    assert!(
+        !dex_lines.is_empty(),
+        "expected steps on dex.move source lines (10-15), got: {:?}",
+        step_lines
+    );
+    assert!(
+        !pool_lines.is_empty(),
+        "expected steps on pool.move source lines (20-22), got: {:?}",
+        step_lines
+    );
+
+    // Verify Value events were produced for the write effects
+    let value_count = events
+        .iter()
+        .filter(|e| matches!(e, TraceLowLevelEvent::Value(_)))
+        .count();
+    assert!(
+        value_count >= 3,
+        "expected at least 3 Value events from DeFi scenario write effects, got {value_count}"
+    );
+
+    // Verify Function events were emitted for named functions
+    let function_names: Vec<&str> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Function(f) => Some(f.name.as_str()),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        function_names.iter().any(|n| n.contains("swap_exact_input")),
+        "expected Function event for 'swap_exact_input', got: {:?}",
+        function_names
+    );
+    assert!(
+        function_names.iter().any(|n| n.contains("calculate_output")),
+        "expected Function event for 'calculate_output', got: {:?}",
+        function_names
+    );
 }
