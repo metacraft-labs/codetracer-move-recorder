@@ -4,6 +4,7 @@ use std::path::Path;
 
 use codetracer_trace_types::TraceLowLevelEvent;
 use codetracer_trace_writer::TraceEventsFileFormat;
+use std::collections::HashMap;
 
 use codetracer_move_recorder::converter;
 use codetracer_move_recorder::move_types::{SerializableMoveValue, TraceEvent, VersionHeader};
@@ -159,11 +160,46 @@ fn test_move_to_ct_step_mapping() {
         "should have steps for lines 3 through 7"
     );
 
-    // Also verify metadata is valid
+    // Verify the instruction-derived steps appear in order (lines 3, 4, 5, 6, 7).
+    assert_eq!(
+        instruction_step_lines,
+        vec![3, 4, 5, 6, 7],
+        "instruction steps should appear in sequential order"
+    );
+
+    // Verify the toplevel step (line 1) appears first, before the instruction steps.
+    assert_eq!(
+        step_lines[0], 1,
+        "first step should be line 1 from the toplevel start()"
+    );
+
+    // Verify we have exactly 6 Step events: 1 toplevel + 5 instruction steps.
+    assert_eq!(
+        step_lines.len(),
+        6,
+        "expected 6 total Step events (1 toplevel + 5 instructions)"
+    );
+
+    // Verify the trace also contains variable assignments from Write effects.
+    let value_count = events
+        .iter()
+        .filter(|e| matches!(e, TraceLowLevelEvent::Value(_)))
+        .count();
+    assert!(
+        value_count > 0,
+        "trace should contain Value events from Write effects"
+    );
+
+    // Also verify metadata is valid and references the correct program name.
     let metadata_content = std::fs::read_to_string(out_dir.join("trace_metadata.json"))
         .expect("failed to read trace_metadata.json");
-    let _metadata: serde_json::Value =
+    let metadata: serde_json::Value =
         serde_json::from_str(&metadata_content).expect("trace_metadata.json should be valid JSON");
+    assert_eq!(
+        metadata["program"].as_str().unwrap(),
+        "flow_test",
+        "metadata program should be 'flow_test' (from source path stem)"
+    );
 }
 
 // ---- Test 3: Verify OpenFrame/CloseFrame produce Call/Return events ----
@@ -232,6 +268,58 @@ fn test_move_to_ct_call_trace() {
     assert_eq!(call_count, 3, "expected 3 Call events (toplevel + outer + inner)");
     // We have 2 CloseFrame events, so expect 2 Return events
     assert_eq!(return_count, 2, "expected 2 Return events (outer + inner)");
+
+    // Build a function name lookup from Function events (keyed by index).
+    let mut function_names: HashMap<usize, String> = HashMap::new();
+    let mut next_fn_id = 0usize;
+    for event in &events {
+        if let TraceLowLevelEvent::Function(func) = event {
+            function_names.insert(next_fn_id, func.name.clone());
+            next_fn_id += 1;
+        }
+    }
+
+    // Extract function names referenced by Call events in order.
+    let call_fn_names: Vec<String> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Call(call) => {
+                function_names.get(&call.function_id.0).cloned()
+            }
+            _ => None,
+        })
+        .collect();
+
+    // The first Call is the toplevel entry, then "outer", then "inner".
+    assert_eq!(call_fn_names.len(), 3);
+    assert_eq!(call_fn_names[0], "<toplevel>", "first call should be toplevel");
+    assert_eq!(call_fn_names[1], "outer", "second call should be 'outer'");
+    assert_eq!(call_fn_names[2], "inner", "third call should be 'inner'");
+
+    // Verify Return events have correct return values.
+    let return_values: Vec<&codetracer_trace_types::ValueRecord> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Return(ret) => Some(&ret.return_value),
+            _ => None,
+        })
+        .collect();
+
+    // The inner function returns U64(1), so first return should have value 1.
+    assert_eq!(return_values.len(), 2);
+    match &return_values[0] {
+        codetracer_trace_types::ValueRecord::Int { i, .. } => {
+            assert_eq!(*i, 1, "inner function should return 1");
+        }
+        _ => panic!("expected Int return value from inner function, got {:?}", return_values[0]),
+    }
+
+    // The outer function has no return_ specified, so second return should be None.
+    assert!(
+        matches!(return_values[1], codetracer_trace_types::ValueRecord::None { .. }),
+        "outer function with no return_ should produce None value, got {:?}",
+        return_values[1]
+    );
 }
 
 // ---- Test 4: Verify Move values convert to correct ValueRecord ----

@@ -159,19 +159,33 @@ fn test_value_u64() {
 
 #[test]
 fn test_value_u128() {
-    // serde_json does not support u128 deserialization without the
-    // "arbitrary_precision" feature. This test documents that limitation:
-    // U128 values in real traces would need a custom deserializer or
-    // string-encoded representation (similar to U256).
-    let result: Result<SerializableMoveValue, _> =
-        serde_json::from_str(r#"{"type":"U128","value":42}"#);
-    // This is expected to fail with standard serde_json.
-    // When arbitrary_precision is enabled or a custom deser is added,
-    // this test should be updated to assert success.
-    assert!(
-        result.is_err(),
-        "U128 deserialization is not yet supported by serde_json without arbitrary_precision"
-    );
+    // U128 deserialization now works via a custom deserializer that handles
+    // the serde_json limitation with u128 in internally tagged enums.
+    let v: SerializableMoveValue =
+        serde_json::from_str(r#"{"type":"U128","value":42}"#)
+            .expect("U128 deserialization should succeed");
+    match v {
+        SerializableMoveValue::U128 { value } => assert_eq!(value, 42),
+        _ => panic!("expected U128 variant"),
+    }
+
+    // Test with a large value that exceeds u64 range.
+    let v_large: SerializableMoveValue =
+        serde_json::from_str(r#"{"type":"U128","value":340282366920938463463374607431768211455}"#)
+            .expect("U128 max value deserialization should succeed");
+    match v_large {
+        SerializableMoveValue::U128 { value } => assert_eq!(value, u128::MAX),
+        _ => panic!("expected U128 variant"),
+    }
+
+    // Test with string-encoded u128 (some Move VMs may encode this way).
+    let v_str: SerializableMoveValue =
+        serde_json::from_str(r#"{"type":"U128","value":"12345678901234567890"}"#)
+            .expect("U128 from string should succeed");
+    match v_str {
+        SerializableMoveValue::U128 { value } => assert_eq!(value, 12345678901234567890u128),
+        _ => panic!("expected U128 variant"),
+    }
 }
 
 #[test]
@@ -1083,6 +1097,80 @@ fn test_scenario_token_transfer() {
     assert!(
         !coin_lines.is_empty(),
         "expected steps on coin.move source lines (10-13)"
+    );
+
+    // Verify the call tree structure by checking function names in order.
+    let mut function_names: std::collections::HashMap<usize, String> =
+        std::collections::HashMap::new();
+    let mut next_fn_id = 0usize;
+    for event in &events {
+        if let TraceLowLevelEvent::Function(func) = event {
+            function_names.insert(next_fn_id, func.name.clone());
+            next_fn_id += 1;
+        }
+    }
+
+    let call_fn_names: Vec<String> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Call(call) => function_names.get(&call.function_id.0).cloned(),
+            _ => None,
+        })
+        .collect();
+
+    assert_eq!(call_fn_names.len(), 3);
+    assert_eq!(call_fn_names[0], "<toplevel>", "first call is toplevel");
+    assert_eq!(call_fn_names[1], "transfer", "second call is coin::transfer");
+    assert_eq!(call_fn_names[2], "split", "third call is balance::split");
+
+    // Verify variable tracking: the converter should record Write effects as
+    // variables. Check that local_0 (the coin struct) was recorded.
+    let variable_events: Vec<&codetracer_trace_types::FullValueRecord> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Value(val) => Some(val),
+            _ => None,
+        })
+        .collect();
+    assert!(
+        !variable_events.is_empty(),
+        "should have variable value events from Write/Read effects"
+    );
+
+    // Verify that the split function's return value (Balance with 500) is captured.
+    let return_values: Vec<&codetracer_trace_types::ReturnRecord> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Return(ret) => Some(ret),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(return_values.len(), 2, "expected 2 returns (split + transfer)");
+    // The first return is from balance::split which returns a Balance struct.
+    // It should be serialized as a String (struct rendering).
+    match &return_values[0].return_value {
+        codetracer_trace_types::ValueRecord::String { text, .. } => {
+            assert!(
+                text.contains("500"),
+                "split return value should contain 500, got: {text}"
+            );
+        }
+        other => panic!(
+            "expected String value for struct return from split, got: {:?}",
+            other
+        ),
+    }
+
+    // Verify that source map produces steps on both coin.move and balance.move lines.
+    // balance module maps pc 0->line 20, pc 1->line 21.
+    let balance_lines: Vec<i64> = step_lines
+        .iter()
+        .copied()
+        .filter(|&line| (20..=21).contains(&line))
+        .collect();
+    assert!(
+        !balance_lines.is_empty(),
+        "expected steps on balance.move source lines (20-21)"
     );
 }
 
