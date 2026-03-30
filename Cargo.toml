@@ -13,7 +13,7 @@ codetracer_trace_writer = "0.17"
 
 # Serialization
 serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde_json = { version = "1", features = ["arbitrary_precision"] }
 
 # Compression (trace files are zstd-compressed)
 zstd = "0.13"
