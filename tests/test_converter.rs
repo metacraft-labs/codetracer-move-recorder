@@ -2,6 +2,7 @@
 
 use std::path::Path;
 
+use codetracer_trace_types::TraceLowLevelEvent;
 use codetracer_trace_writer::TraceEventsFileFormat;
 
 use codetracer_move_recorder::converter;
@@ -121,9 +122,44 @@ fn test_move_to_ct_step_mapping() {
     // and contains step-related data.
     assert!(!trace_content.is_empty(), "trace.bin should not be empty");
 
-    // Source map maps pc 0-4 to lines 3-7. Verify the converter ran successfully.
-    // The detailed content verification is done by checking that the metadata
-    // and paths files are also valid.
+    // Parse trace.bin as a JSON array of TraceLowLevelEvent and verify Step events
+    // have the correct line numbers (source map maps pc 0-4 to lines 3-7).
+    let events: Vec<TraceLowLevelEvent> =
+        serde_json::from_str(&trace_content).expect("trace.bin should be valid JSON array");
+
+    let step_lines: Vec<i64> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Step(step) => Some(step.line.0),
+            _ => None,
+        })
+        .collect();
+
+    assert!(
+        !step_lines.is_empty(),
+        "trace.bin should contain at least one Step event"
+    );
+
+    // The first step (line 1) comes from register_call for the OpenFrame function entry.
+    // The remaining steps come from instruction events mapped via the source map to lines 3-7.
+    // Filter to only instruction-derived steps (lines 3-7).
+    let instruction_step_lines: Vec<i64> = step_lines
+        .iter()
+        .copied()
+        .filter(|&line| (3..=7).contains(&line))
+        .collect();
+
+    // We expect 5 distinct lines (3, 4, 5, 6, 7) since each pc maps to a different line
+    let mut unique_lines = instruction_step_lines.clone();
+    unique_lines.sort();
+    unique_lines.dedup();
+    assert_eq!(
+        unique_lines,
+        vec![3, 4, 5, 6, 7],
+        "should have steps for lines 3 through 7"
+    );
+
+    // Also verify metadata is valid
     let metadata_content = std::fs::read_to_string(out_dir.join("trace_metadata.json"))
         .expect("failed to read trace_metadata.json");
     let _metadata: serde_json::Value =
@@ -176,6 +212,26 @@ fn test_move_to_ct_call_trace() {
         !trace_content.is_empty(),
         "trace.bin should contain call/return data"
     );
+
+    // Parse trace.bin and verify it contains Call and Return events
+    // (from the OpenFrame/CloseFrame input events).
+    let events: Vec<TraceLowLevelEvent> =
+        serde_json::from_str(&trace_content).expect("trace.bin should be valid JSON array");
+
+    let call_count = events
+        .iter()
+        .filter(|e| matches!(e, TraceLowLevelEvent::Call(_)))
+        .count();
+    let return_count = events
+        .iter()
+        .filter(|e| matches!(e, TraceLowLevelEvent::Return(_)))
+        .count();
+
+    // We have 2 OpenFrame events (outer + inner) + 1 toplevel Call from start(),
+    // so expect 3 Call events total.
+    assert_eq!(call_count, 3, "expected 3 Call events (toplevel + outer + inner)");
+    // We have 2 CloseFrame events, so expect 2 Return events
+    assert_eq!(return_count, 2, "expected 2 Return events (outer + inner)");
 }
 
 // ---- Test 4: Verify Move values convert to correct ValueRecord ----

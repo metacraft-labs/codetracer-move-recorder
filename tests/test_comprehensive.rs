@@ -6,6 +6,7 @@
 
 use std::path::Path;
 
+use codetracer_trace_types::TraceLowLevelEvent;
 use codetracer_trace_writer::TraceEventsFileFormat;
 
 use codetracer_move_recorder::converter;
@@ -1201,6 +1202,40 @@ fn test_source_map_dedup_same_line_no_duplicate_steps() {
     // This should succeed - the converter deduplicates steps on the same line
     let (trace_content, _, _) = run_converter(&trace, &source_map, "dedup.move");
     assert!(!trace_content.is_empty());
+
+    // Parse trace.bin and verify deduplication: consecutive instructions on the
+    // same line should produce only one Step event per line transition.
+    // The converter emits an initial Step(line 1) from start(), then:
+    // pc 0,1,2 all map to line 5 => one Step(line 5)
+    // pc 3 maps to line 6 => one Step(line 6)
+    // Total: 3 Step events (initial + 2 from instructions), NOT 5 (initial + 4 per-instruction)
+    let events: Vec<TraceLowLevelEvent> =
+        serde_json::from_str(&trace_content).expect("trace.bin should be valid JSON array");
+
+    let step_lines: Vec<i64> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Step(step) => Some(step.line.0),
+            _ => None,
+        })
+        .collect();
+
+    // Filter out the initial step (line 1 from start()) to check only instruction-derived steps
+    let instruction_step_lines: Vec<i64> = step_lines
+        .iter()
+        .copied()
+        .filter(|&line| line != 1)
+        .collect();
+
+    assert_eq!(
+        instruction_step_lines.len(),
+        2,
+        "expected exactly 2 instruction-derived Step events (dedup same-line instructions), got {}: {:?}",
+        instruction_step_lines.len(),
+        instruction_step_lines,
+    );
+    assert_eq!(instruction_step_lines[0], 5, "first instruction step should be on line 5");
+    assert_eq!(instruction_step_lines[1], 6, "second instruction step should be on line 6");
 }
 
 #[test]
