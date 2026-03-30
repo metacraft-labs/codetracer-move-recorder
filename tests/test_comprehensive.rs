@@ -1727,3 +1727,431 @@ fn test_full_defi_swap_scenario() {
         function_names
     );
 }
+
+// ============================================================================
+// M3 deliverable: Struct field conversion verification
+// ============================================================================
+
+#[test]
+fn test_struct_fields_correctly_converted_point_rectangle() {
+    // Verify that struct fields (Point.x, Point.y, Rectangle dimensions) are
+    // correctly converted through the converter into ValueRecord::String with
+    // the expected field_0/field_1/... display format.
+    let trace = vec![
+        r#"{"version":3}"#,
+        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"create_shapes","module":{"address":"0x1","name":"geometry"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["Point","Rectangle"],"is_native":false},"gas_left":10000}"#,
+        // Create Point { x: 42, y: 99 }
+        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"Pack(Point)"}"#,
+        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"U64","value":42},{"type":"U64","value":99}],"type_":"0x1::geometry::Point"}}}}"#,
+        // Create Rectangle { origin: Point { x: 10, y: 20 }, width: 100, height: 200 }
+        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":9998,"instruction":"Pack(Rectangle)"}"#,
+        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"U64","value":10},{"type":"U64","value":20}],"type_":"0x1::geometry::Point"},{"type":"U64","value":100},{"type":"U64","value":200}],"type_":"0x1::geometry::Rectangle"}}}}"#,
+        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"U64","value":10},{"type":"U64","value":20}],"type_":"0x1::geometry::Point"},{"type":"U64","value":100},{"type":"U64","value":200}],"type_":"0x1::geometry::Rectangle"}],"gas_left":9990}"#,
+    ]
+    .join("\n");
+
+    let result = run_converter_simple(&trace);
+    let events = parse_trace_events(&result);
+
+    // Extract all Value events (from Write effects).
+    let value_events: Vec<&codetracer_trace_types::FullValueRecord> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Value(val) => Some(val),
+            _ => None,
+        })
+        .collect();
+
+    assert!(
+        value_events.len() >= 2,
+        "expected at least 2 Value events (Point + Rectangle), got {}",
+        value_events.len()
+    );
+
+    // Find the Point value: should contain "0x1::geometry::Point { field_0: 42, field_1: 99 }"
+    let point_value = value_events
+        .iter()
+        .find(|v| match &v.value {
+            codetracer_trace_types::ValueRecord::String { text, .. } => {
+                text.contains("Point") && text.contains("42") && text.contains("99")
+            }
+            _ => false,
+        })
+        .expect("should have a Value event for Point struct");
+
+    match &point_value.value {
+        codetracer_trace_types::ValueRecord::String { text, .. } => {
+            assert!(
+                text.contains("0x1::geometry::Point"),
+                "Point value should include type name, got: {text}"
+            );
+            assert!(
+                text.contains("field_0: 42"),
+                "Point.x (field_0) should be 42, got: {text}"
+            );
+            assert!(
+                text.contains("field_1: 99"),
+                "Point.y (field_1) should be 99, got: {text}"
+            );
+        }
+        other => panic!("expected String ValueRecord for Point, got: {:?}", other),
+    }
+
+    // Find the Rectangle value: should contain nested Point and dimensions.
+    let rect_value = value_events
+        .iter()
+        .find(|v| match &v.value {
+            codetracer_trace_types::ValueRecord::String { text, .. } => {
+                text.contains("Rectangle") && text.contains("100") && text.contains("200")
+            }
+            _ => false,
+        })
+        .expect("should have a Value event for Rectangle struct");
+
+    match &rect_value.value {
+        codetracer_trace_types::ValueRecord::String { text, .. } => {
+            assert!(
+                text.contains("0x1::geometry::Rectangle"),
+                "Rectangle value should include type name, got: {text}"
+            );
+            // field_0 is the nested Point struct, rendered inline
+            assert!(
+                text.contains("field_0: 0x1::geometry::Point"),
+                "Rectangle.origin (field_0) should be a nested Point, got: {text}"
+            );
+            // field_1 is width=100, field_2 is height=200
+            assert!(
+                text.contains("field_1: 100"),
+                "Rectangle.width (field_1) should be 100, got: {text}"
+            );
+            assert!(
+                text.contains("field_2: 200"),
+                "Rectangle.height (field_2) should be 200, got: {text}"
+            );
+        }
+        other => panic!(
+            "expected String ValueRecord for Rectangle, got: {:?}",
+            other
+        ),
+    }
+
+    // Also verify the return value from CloseFrame carries the Rectangle struct.
+    let return_values: Vec<&codetracer_trace_types::ReturnRecord> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Return(ret) => Some(ret),
+            _ => None,
+        })
+        .collect();
+
+    // Last return is from the main frame, should be the Rectangle.
+    let main_return = return_values
+        .iter()
+        .find(|r| match &r.return_value {
+            codetracer_trace_types::ValueRecord::String { text, .. } => {
+                text.contains("Rectangle")
+            }
+            _ => false,
+        })
+        .expect("should have a return value containing Rectangle");
+
+    match &main_return.return_value {
+        codetracer_trace_types::ValueRecord::String { text, .. } => {
+            assert!(
+                text.contains("100") && text.contains("200"),
+                "Rectangle return should contain width=100 and height=200, got: {text}"
+            );
+        }
+        other => panic!(
+            "expected String return value for Rectangle, got: {:?}",
+            other
+        ),
+    }
+}
+
+// ============================================================================
+// M3 deliverable: Vector operations produce correct element values
+// ============================================================================
+
+#[test]
+fn test_vector_operations_produce_correct_element_values() {
+    // Verify that vector operations (create, push_back, pop_back) produce
+    // Value events with the correct element content in the converted trace.
+    let trace = vec![
+        r#"{"version":3}"#,
+        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"vec_values","module":{"address":"0x0","name":"vec_test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["vector<u64>"],"is_native":false},"gas_left":10000}"#,
+        // Create empty vector
+        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"VecPack(0)"}"#,
+        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[]}}}}"#,
+        // push_back(100)
+        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":9998,"instruction":"VecPushBack"}"#,
+        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":100}]}}}}"#,
+        // push_back(200)
+        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":9997,"instruction":"VecPushBack"}"#,
+        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}}}}"#,
+        // push_back(300)
+        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":9996,"instruction":"VecPushBack"}"#,
+        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200},{"type":"U64","value":300}]}}}}"#,
+        // pop_back => removes 300, vector becomes [100, 200]
+        r#"{"type":"Instruction","type_parameters":[],"pc":4,"gas_left":9995,"instruction":"VecPopBack"}"#,
+        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}}}}"#,
+        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}],"gas_left":9990}"#,
+    ]
+    .join("\n");
+
+    let result = run_converter_simple(&trace);
+    let events = parse_trace_events(&result);
+
+    // Extract all Value events and their string representations.
+    let value_texts: Vec<String> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Value(val) => match &val.value {
+                codetracer_trace_types::ValueRecord::String { text, .. } => Some(text.clone()),
+                _ => None,
+            },
+            _ => None,
+        })
+        .collect();
+
+    assert!(
+        value_texts.len() >= 5,
+        "expected at least 5 Value events (empty + 3 pushes + 1 pop), got {}",
+        value_texts.len()
+    );
+
+    // Verify the empty vector: "[]"
+    assert!(
+        value_texts.iter().any(|t| t == "[]"),
+        "should have an empty vector '[]', got values: {:?}",
+        value_texts
+    );
+
+    // Verify vector after first push: "[100]"
+    assert!(
+        value_texts.iter().any(|t| t == "[100]"),
+        "should have '[100]' after first push_back, got values: {:?}",
+        value_texts
+    );
+
+    // Verify vector after second push: "[100, 200]"
+    assert!(
+        value_texts.iter().any(|t| t == "[100, 200]"),
+        "should have '[100, 200]' after second push_back, got values: {:?}",
+        value_texts
+    );
+
+    // Verify vector after third push: "[100, 200, 300]"
+    assert!(
+        value_texts.iter().any(|t| t == "[100, 200, 300]"),
+        "should have '[100, 200, 300]' after third push_back, got values: {:?}",
+        value_texts
+    );
+
+    // Verify vector after pop: back to "[100, 200]"
+    // Count how many times "[100, 200]" appears — should be at least 2
+    // (once after second push, once after pop).
+    let count_100_200 = value_texts.iter().filter(|t| t.as_str() == "[100, 200]").count();
+    assert!(
+        count_100_200 >= 2,
+        "expected '[100, 200]' at least twice (after push and after pop), found {} times in: {:?}",
+        count_100_200,
+        value_texts
+    );
+
+    // Verify the return value is also the final vector state.
+    let return_records: Vec<&codetracer_trace_types::ReturnRecord> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Return(ret) => Some(ret),
+            _ => None,
+        })
+        .collect();
+
+    let vec_return = return_records
+        .iter()
+        .find(|r| match &r.return_value {
+            codetracer_trace_types::ValueRecord::String { text, .. } => text.contains("100"),
+            _ => false,
+        })
+        .expect("should have a return value for the vector");
+
+    match &vec_return.return_value {
+        codetracer_trace_types::ValueRecord::String { text, .. } => {
+            assert_eq!(
+                text, "[100, 200]",
+                "return value should be the final vector [100, 200], got: {text}"
+            );
+        }
+        other => panic!(
+            "expected String return value for vector, got: {:?}",
+            other
+        ),
+    }
+}
+
+// ============================================================================
+// M3 deliverable: Generic function instantiation produces correct type-specific values
+// ============================================================================
+
+#[test]
+fn test_generic_function_instantiation_type_specific_values() {
+    // Verify that a generic function instantiated with a specific type
+    // (e.g., transfer<Coin<SUI>>) correctly passes type-specific values
+    // through the converter, and that the function name and return values
+    // reflect the concrete types.
+    let trace = vec![
+        r#"{"version":3}"#,
+        // Generic function: identity<u64> — takes a u64 and returns it
+        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"test_generics","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64","bool"],"is_native":false},"gas_left":20000}"#,
+        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":19999,"instruction":"LdU64(42)"}"#,
+        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
+        // Call identity<u64>(42)
+        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":19998,"instruction":"Call"}"#,
+        r#"{"type":"OpenFrame","frame":{"frame_id":2,"function_name":"identity","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["u64"],"parameters":[{"type":"RuntimeValue","value":{"type":"U64","value":42}}],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":19997}"#,
+        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":19996,"instruction":"MoveLoc(0)"}"#,
+        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":2,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
+        r#"{"type":"CloseFrame","frame_id":2,"return_":[{"type":"U64","value":42}],"gas_left":19995}"#,
+        // Call identity<bool>(true)
+        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":19994,"instruction":"Call"}"#,
+        r#"{"type":"OpenFrame","frame":{"frame_id":3,"function_name":"identity","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["bool"],"parameters":[{"type":"RuntimeValue","value":{"type":"Bool","value":true}}],"return_types":[],"locals_types":["bool"],"is_native":false},"gas_left":19993}"#,
+        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":19992,"instruction":"MoveLoc(0)"}"#,
+        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":3,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Bool","value":true}}}}"#,
+        r#"{"type":"CloseFrame","frame_id":3,"return_":[{"type":"Bool","value":true}],"gas_left":19991}"#,
+        // Call wrap<Coin<SUI>> with a struct value
+        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":19990,"instruction":"Call"}"#,
+        r#"{"type":"OpenFrame","frame":{"frame_id":4,"function_name":"wrap","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["0x2::coin::Coin<0x2::sui::SUI>"],"parameters":[{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"U64","value":1000}],"type_":"0x2::coin::Coin"}}],"return_types":[],"locals_types":["0x2::coin::Coin"],"is_native":false},"gas_left":19989}"#,
+        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":19988,"instruction":"MoveLoc(0)"}"#,
+        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":4,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"U64","value":1000}],"type_":"0x2::coin::Coin"}}}}"#,
+        r#"{"type":"CloseFrame","frame_id":4,"return_":[{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"U64","value":1000}],"type_":"0x2::coin::Coin"}],"type_":"0x1::generic_mod::Wrapper"}],"gas_left":19987}"#,
+        r#"{"type":"CloseFrame","frame_id":1,"gas_left":19980}"#,
+    ]
+    .join("\n");
+
+    let result = run_converter_simple(&trace);
+    let events = parse_trace_events(&result);
+
+    // Verify we got Call events for all functions.
+    let mut function_names_map: std::collections::HashMap<usize, String> =
+        std::collections::HashMap::new();
+    let mut next_fn_id = 0usize;
+    for event in &events {
+        if let TraceLowLevelEvent::Function(func) = event {
+            function_names_map.insert(next_fn_id, func.name.clone());
+            next_fn_id += 1;
+        }
+    }
+
+    let call_fn_names: Vec<String> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Call(call) => {
+                function_names_map.get(&call.function_id.0).cloned()
+            }
+            _ => None,
+        })
+        .collect();
+
+    // Expect: toplevel, test_generics, identity (u64), identity (bool), wrap (Coin<SUI>)
+    assert_eq!(
+        call_fn_names.len(),
+        5,
+        "expected 5 Call events, got: {:?}",
+        call_fn_names
+    );
+    assert_eq!(call_fn_names[0], "<toplevel>");
+    assert_eq!(call_fn_names[1], "test_generics");
+    assert_eq!(call_fn_names[2], "identity", "first generic call should be identity");
+    assert_eq!(call_fn_names[3], "identity", "second generic call should also be identity");
+    assert_eq!(call_fn_names[4], "wrap", "third generic call should be wrap");
+
+    // Verify return values carry the correct type-specific data.
+    let return_values: Vec<&codetracer_trace_types::ReturnRecord> = events
+        .iter()
+        .filter_map(|e| match e {
+            TraceLowLevelEvent::Return(ret) => Some(ret),
+            _ => None,
+        })
+        .collect();
+
+    // We have 4 CloseFrame events => 4 Return events.
+    assert_eq!(
+        return_values.len(),
+        4,
+        "expected 4 Return events, got {}",
+        return_values.len()
+    );
+
+    // Return from identity<u64>: should be Int(42)
+    match &return_values[0].return_value {
+        codetracer_trace_types::ValueRecord::Int { i, .. } => {
+            assert_eq!(*i, 42, "identity<u64> should return 42, got {i}");
+        }
+        other => panic!(
+            "expected Int return from identity<u64>, got: {:?}",
+            other
+        ),
+    }
+
+    // Return from identity<bool>: should be Bool(true)
+    match &return_values[1].return_value {
+        codetracer_trace_types::ValueRecord::Bool { b, .. } => {
+            assert!(*b, "identity<bool> should return true");
+        }
+        other => panic!(
+            "expected Bool return from identity<bool>, got: {:?}",
+            other
+        ),
+    }
+
+    // Return from wrap<Coin<SUI>>: should be a Wrapper struct containing a Coin struct.
+    match &return_values[2].return_value {
+        codetracer_trace_types::ValueRecord::String { text, .. } => {
+            assert!(
+                text.contains("Wrapper"),
+                "wrap return should contain 'Wrapper', got: {text}"
+            );
+            assert!(
+                text.contains("Coin"),
+                "wrap return should contain nested 'Coin', got: {text}"
+            );
+            assert!(
+                text.contains("1000"),
+                "wrap return should contain coin value 1000, got: {text}"
+            );
+        }
+        other => panic!(
+            "expected String return from wrap<Coin<SUI>>, got: {:?}",
+            other
+        ),
+    }
+
+    // Verify type_instantiation was correctly parsed for all generic frames.
+    // Parse the raw NDJSON to confirm type parameters.
+    let mut lines = trace.lines();
+    lines.next(); // version
+    let mut type_instantiations: Vec<Vec<String>> = Vec::new();
+    for line in lines {
+        if let Ok(event) = serde_json::from_str::<TraceEvent>(line) {
+            if let TraceEvent::OpenFrame { frame, .. } = event {
+                if !frame.type_instantiation.is_empty() {
+                    type_instantiations.push(frame.type_instantiation.clone());
+                }
+            }
+        }
+    }
+
+    assert_eq!(
+        type_instantiations.len(),
+        3,
+        "expected 3 frames with type_instantiation, got {}",
+        type_instantiations.len()
+    );
+    assert_eq!(type_instantiations[0], vec!["u64"], "identity<u64>");
+    assert_eq!(type_instantiations[1], vec!["bool"], "identity<bool>");
+    assert_eq!(
+        type_instantiations[2],
+        vec!["0x2::coin::Coin<0x2::sui::SUI>"],
+        "wrap<Coin<SUI>>"
+    );
+}
