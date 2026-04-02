@@ -181,7 +181,7 @@ module flow_test::flow_test {
 
     #[test]
     fun test_vectors() {
-        let v = vector::empty<u64>();
+        let mut v = vector::empty<u64>();
         vector::push_back(&mut v, 10);
         vector::push_back(&mut v, 20);
         vector::push_back(&mut v, 30);
@@ -217,8 +217,8 @@ module flow_test::flow_test {
     #[test]
     fun test_loops() {
         // While loop: sum 1..10
-        let counter: u64 = 0;
-        let accumulator: u64 = 0;
+        let mut counter: u64 = 0;
+        let mut accumulator: u64 = 0;
         while (counter < 10) {
             counter = counter + 1;
             accumulator = accumulator + counter;
@@ -228,8 +228,8 @@ module flow_test::flow_test {
         assert!(accumulator == 55, E_INVALID_VALUE);
 
         // loop with break: find first power of 2 >= 100
-        let power: u64 = 1;
-        let iterations: u64 = 0;
+        let mut power: u64 = 1;
+        let mut iterations: u64 = 0;
         loop {
             if (power >= 100) {
                 break
