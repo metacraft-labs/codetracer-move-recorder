@@ -207,7 +207,7 @@ fn test_aptos_trace_to_codetracer() {
     .expect("convert_aptos_trace should succeed");
 
     // Verify 3-file output.
-    assert!(out_dir.join("trace.bin").exists(), "trace.bin should exist");
+    assert!(out_dir.join("trace.json").exists(), "trace.json should exist");
     assert!(
         out_dir.join("trace_metadata.json").exists(),
         "trace_metadata.json should exist"
@@ -217,11 +217,11 @@ fn test_aptos_trace_to_codetracer() {
         "trace_paths.json should exist"
     );
 
-    // Verify trace.bin is non-empty.
-    let trace_size = std::fs::metadata(out_dir.join("trace.bin"))
-        .expect("trace.bin metadata")
+    // Verify trace.json is non-empty.
+    let trace_size = std::fs::metadata(out_dir.join("trace.json"))
+        .expect("trace.json metadata")
         .len();
-    assert!(trace_size > 0, "trace.bin should be non-empty");
+    assert!(trace_size > 0, "trace.json should be non-empty");
 
     // Verify metadata is valid JSON with program field.
     let metadata_str =
@@ -601,14 +601,14 @@ fn test_aptos_replay_from_existing_data() {
     .expect("aptos_replay_from_existing_data should succeed");
 
     // Verify 3-file output.
-    assert!(out_dir.join("trace.bin").exists());
+    assert!(out_dir.join("trace.json").exists());
     assert!(out_dir.join("trace_metadata.json").exists());
     assert!(out_dir.join("trace_paths.json").exists());
 
-    let trace_size = std::fs::metadata(out_dir.join("trace.bin"))
+    let trace_size = std::fs::metadata(out_dir.join("trace.json"))
         .unwrap()
         .len();
-    assert!(trace_size > 0, "trace.bin should be non-empty");
+    assert!(trace_size > 0, "trace.json should be non-empty");
 }
 
 #[test]
@@ -629,7 +629,7 @@ fn test_aptos_replay_from_existing_data_no_gas() {
     )
     .expect("should succeed without gas data");
 
-    assert!(out_dir.join("trace.bin").exists());
+    assert!(out_dir.join("trace.json").exists());
     assert!(out_dir.join("trace_metadata.json").exists());
     assert!(out_dir.join("trace_paths.json").exists());
 }

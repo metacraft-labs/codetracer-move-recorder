@@ -145,8 +145,8 @@ fn test_replay_end_to_end_with_existing_trace() {
 
     // Verify the 3-file output.
     assert!(
-        out_dir.join("trace.bin").exists(),
-        "trace.bin should be created"
+        out_dir.join("trace.json").exists(),
+        "trace.json should be created"
     );
     assert!(
         out_dir.join("trace_metadata.json").exists(),
@@ -167,7 +167,7 @@ fn test_replay_end_to_end_with_existing_trace() {
         "trace_metadata.json should have a 'program' field"
     );
 
-    // Verify trace.bin is non-empty.
-    let trace_size = fs::metadata(out_dir.join("trace.bin")).unwrap().len();
-    assert!(trace_size > 0, "trace.bin should be non-empty");
+    // Verify trace.json is non-empty.
+    let trace_size = fs::metadata(out_dir.join("trace.json")).unwrap().len();
+    assert!(trace_size > 0, "trace.json should be non-empty");
 }
