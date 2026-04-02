@@ -74,9 +74,9 @@ module flow_test::flow_test {
         if (n == 1) {
             return 1
         };
-        let a: u64 = 0;
-        let b: u64 = 1;
-        let i: u64 = 2;
+        let mut a: u64 = 0;
+        let mut b: u64 = 1;
+        let mut i: u64 = 2;
         while (i <= n) {
             let temp: u64 = b;
             b = a + b;
@@ -98,8 +98,8 @@ module flow_test::flow_test {
 
     /// Compute the sum of a vector of u64 values.
     fun vector_sum(v: &vector<u64>): u64 {
-        let sum: u64 = 0;
-        let i: u64 = 0;
+        let mut sum: u64 = 0;
+        let mut i: u64 = 0;
         let len: u64 = vector::length(v);
         while (i < len) {
             sum = sum + *vector::borrow(v, i);
