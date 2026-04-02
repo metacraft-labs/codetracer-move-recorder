@@ -105,10 +105,10 @@ fn find_sui_trace_files(package_dir: &Path) -> Vec<PathBuf> {
     trace_files
 }
 
-/// Parse a CodeTracer trace.bin (JSON format) and return the events.
+/// Parse a CodeTracer trace.json (JSON format) and return the events.
 fn parse_trace_events(trace_bin_path: &Path) -> Vec<TraceLowLevelEvent> {
-    let content = std::fs::read_to_string(trace_bin_path).expect("failed to read trace.bin");
-    serde_json::from_str(&content).expect("trace.bin should be valid JSON array")
+    let content = std::fs::read_to_string(trace_bin_path).expect("failed to read trace.json");
+    serde_json::from_str(&content).expect("trace.json should be valid JSON array")
 }
 
 /// Extract function names from the trace events, keyed by function ID index.
@@ -235,8 +235,8 @@ fn test_sui_move_trace_integration() {
 
         // ---- Step 4: Verify the output files exist --------------------------
         assert!(
-            out_dir.join("trace.bin").exists(),
-            "trace.bin should exist after conversion"
+            out_dir.join("trace.json").exists(),
+            "trace.json should exist after conversion"
         );
         assert!(
             out_dir.join("trace_metadata.json").exists(),
@@ -248,10 +248,10 @@ fn test_sui_move_trace_integration() {
         );
 
         // ---- Step 5: Parse and verify the CodeTracer trace ------------------
-        let events = parse_trace_events(&out_dir.join("trace.bin"));
+        let events = parse_trace_events(&out_dir.join("trace.json"));
         assert!(
             !events.is_empty(),
-            "trace.bin should contain events"
+            "trace.json should contain events"
         );
 
         // Count event types.

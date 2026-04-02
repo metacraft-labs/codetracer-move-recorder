@@ -65,7 +65,11 @@ pub fn convert_trace(
     std::fs::create_dir_all(out_dir)
         .map_err(|e| eyre!("cannot create output dir: {e}"))?;
 
-    let events_path = out_dir.join("trace.bin");
+    let events_filename = match format {
+        TraceEventsFileFormat::Json => "trace.json",
+        TraceEventsFileFormat::Binary | TraceEventsFileFormat::BinaryV0 => "trace.bin",
+    };
+    let events_path = out_dir.join(events_filename);
     let metadata_path = out_dir.join("trace_metadata.json");
     let paths_path = out_dir.join("trace_paths.json");
 

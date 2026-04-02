@@ -112,21 +112,21 @@ fn test_move_to_ct_step_mapping() {
     )
     .expect("convert_trace should succeed");
 
-    // The trace.bin (JSON format) should exist and contain step data.
-    let trace_bin = out_dir.join("trace.bin");
-    assert!(trace_bin.exists(), "trace.bin should exist");
+    // The trace.json (JSON format) should exist and contain step data.
+    let trace_bin = out_dir.join("trace.json");
+    assert!(trace_bin.exists(), "trace.json should exist");
 
     let trace_content =
-        std::fs::read_to_string(&trace_bin).expect("failed to read trace.bin");
+        std::fs::read_to_string(&trace_bin).expect("failed to read trace.json");
 
     // In JSON mode, trace events are serialized. Verify the file is non-empty
     // and contains step-related data.
-    assert!(!trace_content.is_empty(), "trace.bin should not be empty");
+    assert!(!trace_content.is_empty(), "trace.json should not be empty");
 
-    // Parse trace.bin as a JSON array of TraceLowLevelEvent and verify Step events
+    // Parse trace.json as a JSON array of TraceLowLevelEvent and verify Step events
     // have the correct line numbers (source map maps pc 0-4 to lines 3-7).
     let events: Vec<TraceLowLevelEvent> =
-        serde_json::from_str(&trace_content).expect("trace.bin should be valid JSON array");
+        serde_json::from_str(&trace_content).expect("trace.json should be valid JSON array");
 
     let step_lines: Vec<i64> = events
         .iter()
@@ -138,7 +138,7 @@ fn test_move_to_ct_step_mapping() {
 
     assert!(
         !step_lines.is_empty(),
-        "trace.bin should contain at least one Step event"
+        "trace.json should contain at least one Step event"
     );
 
     // The first step (line 1) comes from register_call for the OpenFrame function entry.
@@ -237,22 +237,22 @@ fn test_move_to_ct_call_trace() {
     .expect("convert_trace should succeed with nested calls");
 
     // Verify output files exist.
-    assert!(out_dir.join("trace.bin").exists());
+    assert!(out_dir.join("trace.json").exists());
     assert!(out_dir.join("trace_metadata.json").exists());
     assert!(out_dir.join("trace_paths.json").exists());
 
-    // The trace.bin should be non-empty (it contains call/return events).
+    // The trace.json should be non-empty (it contains call/return events).
     let trace_content =
-        std::fs::read_to_string(out_dir.join("trace.bin")).expect("failed to read trace.bin");
+        std::fs::read_to_string(out_dir.join("trace.json")).expect("failed to read trace.json");
     assert!(
         !trace_content.is_empty(),
-        "trace.bin should contain call/return data"
+        "trace.json should contain call/return data"
     );
 
-    // Parse trace.bin and verify it contains Call and Return events
+    // Parse trace.json and verify it contains Call and Return events
     // (from the OpenFrame/CloseFrame input events).
     let events: Vec<TraceLowLevelEvent> =
-        serde_json::from_str(&trace_content).expect("trace.bin should be valid JSON array");
+        serde_json::from_str(&trace_content).expect("trace.json should be valid JSON array");
 
     let call_count = events
         .iter()
@@ -357,12 +357,12 @@ fn test_move_to_ct_value_conversion() {
     .expect("convert_trace should succeed with various value types");
 
     // Verify the trace was written successfully.
-    assert!(out_dir.join("trace.bin").exists());
+    assert!(out_dir.join("trace.json").exists());
     let trace_content =
-        std::fs::read_to_string(out_dir.join("trace.bin")).expect("failed to read trace.bin");
+        std::fs::read_to_string(out_dir.join("trace.json")).expect("failed to read trace.json");
     assert!(
         !trace_content.is_empty(),
-        "trace.bin should contain variable records"
+        "trace.json should contain variable records"
     );
 
     // Also test direct value parsing roundtrip.
@@ -393,7 +393,7 @@ fn test_move_to_ct_value_conversion() {
     }
 }
 
-// ---- Test 5: Verify trace.bin, trace_metadata.json, trace_paths.json exist and are valid ----
+// ---- Test 5: Verify trace.json, trace_metadata.json, trace_paths.json exist and are valid ----
 
 #[test]
 fn test_move_trace_3file_output() {
@@ -412,13 +412,13 @@ fn test_move_trace_3file_output() {
     )
     .expect("convert_trace should succeed");
 
-    // 1. trace.bin exists and is non-empty
-    let trace_bin = out_dir.join("trace.bin");
-    assert!(trace_bin.exists(), "trace.bin must exist");
+    // 1. trace.json exists and is non-empty
+    let trace_bin = out_dir.join("trace.json");
+    assert!(trace_bin.exists(), "trace.json must exist");
     let trace_size = std::fs::metadata(&trace_bin)
-        .expect("trace.bin metadata")
+        .expect("trace.json metadata")
         .len();
-    assert!(trace_size > 0, "trace.bin must be non-empty");
+    assert!(trace_size > 0, "trace.json must be non-empty");
 
     // 2. trace_metadata.json exists and is valid JSON
     let metadata_path = out_dir.join("trace_metadata.json");

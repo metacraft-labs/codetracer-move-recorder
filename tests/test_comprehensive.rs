@@ -18,7 +18,7 @@ use codetracer_move_recorder::source_map::SourceMapResolver;
 // ============================================================================
 
 /// Run convert_trace on the given NDJSON string with the given source map,
-/// returning the parsed trace.bin content, metadata, and paths as JSON values.
+/// returning the parsed trace.json content, metadata, and paths as JSON values.
 fn run_converter(
     ndjson: &str,
     source_map: &SourceMapResolver,
@@ -38,7 +38,7 @@ fn run_converter(
     .expect("convert_trace should succeed");
 
     let trace_content =
-        std::fs::read_to_string(out_dir.join("trace.bin")).expect("read trace.bin");
+        std::fs::read_to_string(out_dir.join("trace.json")).expect("read trace.json");
     let metadata_str =
         std::fs::read_to_string(out_dir.join("trace_metadata.json")).expect("read metadata");
     let paths_str =
@@ -52,15 +52,15 @@ fn run_converter(
     (trace_content, metadata, paths)
 }
 
-/// Run convert_trace and verify it succeeds, returning trace.bin content string.
+/// Run convert_trace and verify it succeeds, returning trace.json content string.
 fn run_converter_simple(ndjson: &str) -> String {
     let (trace, _, _) = run_converter(ndjson, &SourceMapResolver::empty(), "test.move");
     trace
 }
 
-/// Parse trace.bin JSON content into a Vec of TraceLowLevelEvent.
+/// Parse trace.json JSON content into a Vec of TraceLowLevelEvent.
 fn parse_trace_events(trace_content: &str) -> Vec<TraceLowLevelEvent> {
-    serde_json::from_str(trace_content).expect("trace.bin should be valid JSON array of events")
+    serde_json::from_str(trace_content).expect("trace.json should be valid JSON array of events")
 }
 
 /// Count Call and Return events in parsed trace events.
@@ -367,7 +367,7 @@ fn test_all_value_types_through_converter() {
     .join("\n");
 
     let result = run_converter_simple(&trace);
-    assert!(!result.is_empty(), "trace.bin should not be empty");
+    assert!(!result.is_empty(), "trace.json should not be empty");
 
     // Parse and verify Value events were generated for all the write effects.
     // We have 7 Write effects (u8, u16, u32, u64, u256, bool, address).
@@ -444,7 +444,7 @@ fn test_nested_calls_a_calls_b_calls_c() {
     let result = run_converter_simple(&trace);
     assert!(!result.is_empty());
 
-    // Parse trace.bin and verify Call/Return balance for 3-level nesting.
+    // Parse trace.json and verify Call/Return balance for 3-level nesting.
     // Expect 4 Call events: 1 toplevel + func_a + func_b + func_c
     // Expect 3 Return events: func_c + func_b + func_a
     let events = parse_trace_events(&result);
@@ -1549,14 +1549,14 @@ fn test_source_map_dedup_same_line_no_duplicate_steps() {
     let (trace_content, _, _) = run_converter(&trace, &source_map, "dedup.move");
     assert!(!trace_content.is_empty());
 
-    // Parse trace.bin and verify deduplication: consecutive instructions on the
+    // Parse trace.json and verify deduplication: consecutive instructions on the
     // same line should produce only one Step event per line transition.
     // The converter emits an initial Step(line 1) from start(), then:
     // pc 0,1,2 all map to line 5 => one Step(line 5)
     // pc 3 maps to line 6 => one Step(line 6)
     // Total: 3 Step events (initial + 2 from instructions), NOT 5 (initial + 4 per-instruction)
     let events: Vec<TraceLowLevelEvent> =
-        serde_json::from_str(&trace_content).expect("trace.bin should be valid JSON array");
+        serde_json::from_str(&trace_content).expect("trace.json should be valid JSON array");
 
     let step_lines: Vec<i64> = events
         .iter()
@@ -1655,7 +1655,7 @@ fn test_full_defi_swap_scenario() {
     .join("\n");
 
     let (trace_content, metadata, paths) = run_converter(&trace, &source_map, "dex.move");
-    assert!(!trace_content.is_empty(), "trace.bin should have content");
+    assert!(!trace_content.is_empty(), "trace.json should have content");
     assert!(metadata.get("program").is_some(), "metadata should have program");
     // Paths should be valid JSON
     assert!(paths.is_object() || paths.is_array(), "paths should be structured JSON");
@@ -1666,7 +1666,7 @@ fn test_full_defi_swap_scenario() {
     assert!(instr >= 8, "many instructions in swap scenario");
     assert!(effect >= 8, "many effects in swap scenario");
 
-    // Parse trace.bin and verify the full DeFi scenario produces correct event structure.
+    // Parse trace.json and verify the full DeFi scenario produces correct event structure.
     let events = parse_trace_events(&trace_content);
 
     // Verify Call/Return balance: toplevel + swap_exact_input + calculate_output = 3 Calls,
