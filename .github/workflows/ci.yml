@@ -9,6 +9,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: dtolnay/rust-toolchain@stable
+      - name: Install capnproto
+        run: sudo apt-get update && sudo apt-get install -y capnproto
       - run: cargo check
       - run: cargo test
   clippy:
@@ -18,4 +20,6 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
+      - name: Install capnproto
+        run: sudo apt-get update && sudo apt-get install -y capnproto
       - run: cargo clippy -- -D warnings
