@@ -35,18 +35,18 @@ impl SourceLookup {
                 .filter_map(|e| e.ok())
             {
                 let path = entry.path();
-                if path.extension().is_some_and(|ext| ext == "move") {
-                    if let Some(stem) = path.file_stem() {
-                        let module_name = stem.to_string_lossy().to_lowercase();
-                        // Prefer files in `sources/` subdirectories over others.
-                        let in_sources_dir = path
-                            .parent()
-                            .and_then(|p| p.file_name())
-                            .is_some_and(|name| name == "sources");
+                if path.extension().is_some_and(|ext| ext == "move")
+                    && let Some(stem) = path.file_stem()
+                {
+                    let module_name = stem.to_string_lossy().to_lowercase();
+                    // Prefer files in `sources/` subdirectories over others.
+                    let in_sources_dir = path
+                        .parent()
+                        .and_then(|p| p.file_name())
+                        .is_some_and(|name| name == "sources");
 
-                        if !index.contains_key(&module_name) || in_sources_dir {
-                            index.insert(module_name, path.to_path_buf());
-                        }
+                    if !index.contains_key(&module_name) || in_sources_dir {
+                        index.insert(module_name, path.to_path_buf());
                     }
                 }
             }

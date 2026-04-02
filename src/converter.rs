@@ -122,15 +122,15 @@ pub fn convert_trace(
 
             TraceEvent::Instruction { pc, .. } => {
                 let module_name = current_module.as_deref().unwrap_or("");
-                if let Some((_, line)) = source_map.lookup(module_name, *pc) {
-                    if prev_line != Some(line) {
-                        TraceWriter::register_step(
-                            &mut *writer,
-                            source_path,
-                            Line(line as i64),
-                        );
-                        prev_line = Some(line);
-                    }
+                if let Some((_, line)) = source_map.lookup(module_name, *pc)
+                    && prev_line != Some(line)
+                {
+                    TraceWriter::register_step(
+                        &mut *writer,
+                        source_path,
+                        Line(line as i64),
+                    );
+                    prev_line = Some(line);
                 }
             }
 
