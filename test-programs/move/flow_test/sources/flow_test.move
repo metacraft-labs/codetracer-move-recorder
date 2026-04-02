@@ -14,6 +14,7 @@ module flow_test::flow_test {
     const E_INVALID_VALUE: u64 = 1;
     const E_EMPTY_VECTOR: u64 = 2;
     const E_OVERFLOW: u64 = 3;
+    const E_TEST_ABORT: u64 = 42;
     const SCALE_FACTOR: u64 = 100;
 
     // -----------------------------------------------------------------------
@@ -327,7 +328,7 @@ module flow_test::flow_test {
 
     #[test]
     fun test_references() {
-        let mut_point = Point { x: 2, y: 3 };
+        let mut mut_point = Point { x: 2, y: 3 };
 
         // Mutate via reference
         scale_point(&mut mut_point, 5);
@@ -393,13 +394,13 @@ module flow_test::flow_test {
     // -----------------------------------------------------------------------
 
     #[test]
-    #[expected_failure(abort_code = 42)]
+    #[expected_failure(abort_code = E_TEST_ABORT)]
     fun test_abort() {
         let x: u64 = 10;
         let y: u64 = 0;
         // This will abort
         if (y == 0) {
-            abort 42
+            abort E_TEST_ABORT
         };
         // Unreachable
         let _z = x / y;
