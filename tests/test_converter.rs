@@ -266,8 +266,8 @@ fn test_move_to_ct_call_trace() {
     // We have 2 OpenFrame events (outer + inner) + 1 toplevel Call from start(),
     // so expect 3 Call events total.
     assert_eq!(call_count, 3, "expected 3 Call events (toplevel + outer + inner)");
-    // We have 2 CloseFrame events, so expect 2 Return events
-    assert_eq!(return_count, 2, "expected 2 Return events (outer + inner)");
+    // We have 2 CloseFrame events + 1 toplevel close, so expect 3 Return events
+    assert_eq!(return_count, 3, "expected 3 Return events (outer + inner + toplevel)");
 
     // Build a function name lookup from Function events (keyed by index).
     let mut function_names: HashMap<usize, String> = HashMap::new();
@@ -306,7 +306,8 @@ fn test_move_to_ct_call_trace() {
         .collect();
 
     // The inner function returns U64(1), so first return should have value 1.
-    assert_eq!(return_values.len(), 2);
+    // 2 CloseFrame returns + 1 toplevel return = 3 total.
+    assert_eq!(return_values.len(), 3);
     match &return_values[0] {
         codetracer_trace_types::ValueRecord::Int { i, .. } => {
             assert_eq!(*i, 1, "inner function should return 1");

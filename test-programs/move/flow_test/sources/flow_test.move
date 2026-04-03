@@ -22,26 +22,26 @@ module flow_test::flow_test {
     // -----------------------------------------------------------------------
 
     /// A simple 2-D point with `copy` and `drop` abilities.
-    struct Point has copy, drop {
+    public struct Point has copy, drop {
         x: u64,
         y: u64,
     }
 
     /// A rectangle defined by its origin and dimensions.
-    struct Rectangle has copy, drop {
+    public struct Rectangle has copy, drop {
         origin: Point,
         width: u64,
         height: u64,
     }
 
     /// A wrapper demonstrating `store` ability alongside `copy` and `drop`.
-    struct Wallet has copy, drop, store {
+    public struct Wallet has copy, drop, store {
         balance: u64,
         id: u64,
     }
 
     /// A generic container holding a single value.
-    struct Container<T: copy + drop> has copy, drop {
+    public struct Container<T: copy + drop> has copy, drop {
         value: T,
         label: u64,
     }

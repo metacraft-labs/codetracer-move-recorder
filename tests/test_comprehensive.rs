@@ -409,9 +409,9 @@ fn test_simple_function_call() {
     // Parse and verify basic event structure for a simple single-function call.
     let events = parse_trace_events(&result);
     let (calls, returns) = count_call_return(&events);
-    // Toplevel call + simple_fn = 2 Calls, simple_fn close = 1 Return
+    // Toplevel call + simple_fn = 2 Calls, simple_fn close + toplevel close = 2 Returns
     assert_eq!(calls, 2, "expected 2 Call events (toplevel + simple_fn), got {calls}");
-    assert_eq!(returns, 1, "expected 1 Return event, got {returns}");
+    assert_eq!(returns, 2, "expected 2 Return events (simple_fn + toplevel), got {returns}");
 }
 
 #[test]
@@ -450,7 +450,7 @@ fn test_nested_calls_a_calls_b_calls_c() {
     let events = parse_trace_events(&result);
     let (calls, returns) = count_call_return(&events);
     assert_eq!(calls, 4, "expected 4 Call events (toplevel + A + B + C)");
-    assert_eq!(returns, 3, "expected 3 Return events (C + B + A)");
+    assert_eq!(returns, 4, "expected 4 Return events (C + B + A + toplevel)");
 }
 
 #[test]
@@ -554,7 +554,7 @@ fn test_module_crossing_calls() {
     let events = parse_trace_events(&result);
     let (calls, returns) = count_call_return(&events);
     assert_eq!(calls, 4, "expected 4 Call events (toplevel + 3 functions), got {calls}");
-    assert_eq!(returns, 3, "expected 3 Return events, got {returns}");
+    assert_eq!(returns, 4, "expected 4 Return events (3 functions + toplevel), got {returns}");
 }
 
 #[test]
@@ -600,7 +600,7 @@ fn test_recursive_function_calls() {
     let events = parse_trace_events(&result);
     let (calls, returns) = count_call_return(&events);
     assert_eq!(calls, 4, "expected 4 Call events (toplevel + 3 recursive), got {calls}");
-    assert_eq!(returns, 3, "expected 3 Return events (one per recursive call), got {returns}");
+    assert_eq!(returns, 4, "expected 4 Return events (3 recursive + toplevel), got {returns}");
 
     // Verify that Function events were emitted for "factorial"
     let function_names: Vec<&str> = events
@@ -1085,7 +1085,7 @@ fn test_scenario_token_transfer() {
     let events = parse_trace_events(&trace_content);
     let (calls, returns) = count_call_return(&events);
     assert_eq!(calls, 3, "expected 3 Call events (toplevel + transfer + split), got {calls}");
-    assert_eq!(returns, 2, "expected 2 Return events, got {returns}");
+    assert_eq!(returns, 3, "expected 3 Return events (transfer + split + toplevel), got {returns}");
 
     // Verify Step events reference lines from the source map
     let step_lines = extract_step_lines(&events);
@@ -1145,7 +1145,7 @@ fn test_scenario_token_transfer() {
             _ => None,
         })
         .collect();
-    assert_eq!(return_values.len(), 2, "expected 2 returns (split + transfer)");
+    assert_eq!(return_values.len(), 3, "expected 3 returns (split + transfer + toplevel)");
     // The first return is from balance::split which returns a Balance struct.
     // It should be serialized as a String (struct rendering).
     match &return_values[0].return_value {
@@ -1670,10 +1670,10 @@ fn test_full_defi_swap_scenario() {
     let events = parse_trace_events(&trace_content);
 
     // Verify Call/Return balance: toplevel + swap_exact_input + calculate_output = 3 Calls,
-    // calculate_output + swap_exact_input = 2 Returns
+    // calculate_output + swap_exact_input + toplevel = 3 Returns
     let (calls, returns) = count_call_return(&events);
     assert_eq!(calls, 3, "expected 3 Call events (toplevel + swap + calculate), got {calls}");
-    assert_eq!(returns, 2, "expected 2 Return events, got {returns}");
+    assert_eq!(returns, 3, "expected 3 Return events (swap + calculate + toplevel), got {returns}");
 
     // Verify Step events include lines from both dex.move (10-15) and pool.move (20-22)
     let step_lines = extract_step_lines(&events);
@@ -2074,11 +2074,11 @@ fn test_generic_function_instantiation_type_specific_values() {
         })
         .collect();
 
-    // We have 4 CloseFrame events => 4 Return events.
+    // We have 4 CloseFrame events + 1 toplevel close => 5 Return events.
     assert_eq!(
         return_values.len(),
-        4,
-        "expected 4 Return events, got {}",
+        5,
+        "expected 5 Return events, got {}",
         return_values.len()
     );
 
