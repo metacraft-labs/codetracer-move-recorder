@@ -192,6 +192,9 @@ pub fn convert_trace(
     }
 
     // -- 6. Finish writing -----------------------------------------------------
+    // Close the implicit toplevel frame opened by `TraceWriter::start`.
+    TraceWriter::register_return(&mut *writer, NONE_VALUE);
+
     TraceWriter::finish_writing_trace_events(&mut *writer)
         .map_err(|e| eyre!("{e}"))?;
     TraceWriter::finish_writing_trace_metadata(&mut *writer)
