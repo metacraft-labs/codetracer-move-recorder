@@ -117,7 +117,7 @@ pub fn convert_trace(
             } => {
                 let ret_val = return_values
                     .first()
-                    .map(|v| convert_move_value(v, &type_ids))
+                    .map(|v| convert_move_value(v.inner_value(), &type_ids))
                     .unwrap_or(NONE_VALUE);
 
                 TraceWriter::register_return(&mut *writer, ret_val);
@@ -185,7 +185,7 @@ pub fn convert_trace(
                         val,
                     );
                 }
-                Effect::ExecutionError { error } => {
+                Effect::ExecutionError(error) => {
                     eprintln!("Move execution error: {error}");
                 }
                 Effect::DataLoad { .. } => {

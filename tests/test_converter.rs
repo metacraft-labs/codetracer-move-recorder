@@ -37,7 +37,7 @@ fn create_synthetic_trace() -> String {
         r#"{"Instruction":{"type_parameters":[],"pc":4,"gas_left":999950,"instruction":"Add"}}"#,
         r#"{"Effect":{"Write":{"location":{"Local":[1,4]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":94}}}}}}"#,
         // CloseFrame
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":94}],"gas_left":999940}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":94}}}],"gas_left":999940}}"#,
     ];
     lines.join("\n")
 }
@@ -216,7 +216,7 @@ fn test_move_to_ct_call_trace() {
         r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"inner","module":{"address":"0x0","name":"mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":998}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":997,"instruction":"LdU64(1)"}}"#,
         // Close inner function
-        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":1}],"gas_left":996}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":1}}}],"gas_left":996}}"#,
         // Close outer function
         r#"{"CloseFrame":{"frame_id":1,"gas_left":995}}"#,
     ]
