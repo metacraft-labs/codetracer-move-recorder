@@ -106,8 +106,8 @@ fn count_events(ndjson: &str) -> (usize, usize, usize, usize) {
             TraceEvent::OpenFrame { .. } => open += 1,
             TraceEvent::CloseFrame { .. } => close += 1,
             TraceEvent::Instruction { .. } => instr += 1,
-            TraceEvent::Effect { .. } => effect += 1,
-            TraceEvent::External { .. } => {}
+            TraceEvent::Effect(..) => effect += 1,
+            TraceEvent::External(..) => {}
         }
     }
     (open, close, instr, effect)
@@ -236,22 +236,22 @@ fn test_value_address() {
 #[test]
 fn test_value_struct_with_named_fields() {
     let v: SerializableMoveValue = serde_json::from_str(
-        r#"{"type":"Struct","fields":[{"type":"U64","value":100},{"type":"Bool","value":true},{"type":"Address","value":"0xCAFE"}],"type_":"0x2::coin::Coin"}"#,
+        r#"{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"U64","value":100}],["field_1",{"type":"Bool","value":true}],["field_2",{"type":"Address","value":"0xCAFE"}]]}}"#,
     )
     .unwrap();
     match v {
-        SerializableMoveValue::Struct { fields, type_ } => {
-            assert_eq!(type_, "0x2::coin::Coin");
-            assert_eq!(fields.len(), 3);
-            match &fields[0] {
+        SerializableMoveValue::Struct { value: content } => {
+            assert_eq!(content.type_.get("name").and_then(|v| v.as_str()), Some("0x2::coin::Coin"));
+            assert_eq!(content.fields.len(), 3);
+            match &content.fields[0].1 {
                 SerializableMoveValue::U64 { value } => assert_eq!(*value, 100),
                 _ => panic!("expected U64 in field 0"),
             }
-            match &fields[1] {
+            match &content.fields[1].1 {
                 SerializableMoveValue::Bool { value } => assert!(*value),
                 _ => panic!("expected Bool in field 1"),
             }
-            match &fields[2] {
+            match &content.fields[2].1 {
                 SerializableMoveValue::Address { value } => assert_eq!(value, "0xCAFE"),
                 _ => panic!("expected Address in field 2"),
             }
@@ -285,7 +285,7 @@ fn test_value_vector() {
 #[test]
 fn test_value_nested_vector_of_structs() {
     let v: SerializableMoveValue = serde_json::from_str(
-        r#"{"type":"Vector","elements":[{"type":"Struct","fields":[{"type":"U64","value":10}],"type_":"Item"},{"type":"Struct","fields":[{"type":"U64","value":20}],"type_":"Item"}]}"#,
+        r#"{"type":"Vector","elements":[{"type":"Struct","value":{"type_":{"name":"Item"},"fields":[["field_0",{"type":"U64","value":10}]]}},{"type":"Struct","value":{"type_":{"name":"Item"},"fields":[["field_0",{"type":"U64","value":20}]]}}]}"#,
     )
     .unwrap();
     match v {
@@ -293,8 +293,8 @@ fn test_value_nested_vector_of_structs() {
             assert_eq!(elements.len(), 2);
             for elem in &elements {
                 match elem {
-                    SerializableMoveValue::Struct { type_, .. } => {
-                        assert_eq!(type_, "Item");
+                    SerializableMoveValue::Struct { value: content } => {
+                        assert_eq!(content.type_.get("name").and_then(|v| v.as_str()), Some("Item"));
                     }
                     _ => panic!("expected Struct inside Vector"),
                 }
@@ -340,29 +340,29 @@ fn test_value_variant_no_fields() {
 fn test_all_value_types_through_converter() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"all_types","module":{"address":"0x0","name":"types_test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u8","u16","u32","u64","u128","u256","bool","address"],"is_native":false},"gas_left":1000000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"all_types","module":{"address":"0x0","name":"types_test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u8"},{"type_":"u16"},{"type_":"u32"},{"type_":"u64"},{"type_":"u128"},{"type_":"u256"},{"type_":"bool"},{"type_":"address"}],"is_native":false},"gas_left":1000000}}"#,
         // U8
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U8","value":42}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U8","value":42}}}}}}"#,
         // U16
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U16","value":1000}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U16","value":1000}}}}}}"#,
         // U32
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":2},"value":{"type":"RuntimeValue","value":{"type":"U32","value":100000}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,2]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U32","value":100000}}}}}}"#,
         // U64
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":3},"value":{"type":"RuntimeValue","value":{"type":"U64","value":9999999}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,3]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":9999999}}}}}}"#,
         // Note: U128 skipped here because serde_json does not support u128 deserialization.
         // U256
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":5},"value":{"type":"RuntimeValue","value":{"type":"U256","value":"115792089237316195423570985008687907853269984665640564039457584007913129639935"}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,5]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U256","value":"115792089237316195423570985008687907853269984665640564039457584007913129639935"}}}}}}"#,
         // Bool
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":6},"value":{"type":"RuntimeValue","value":{"type":"Bool","value":true}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,6]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Bool","value":true}}}}}}"#,
         // Address
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":7},"value":{"type":"RuntimeValue","value":{"type":"Address","value":"0xDEADBEEF"}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,7]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Address","value":"0xDEADBEEF"}}}}}}"#,
         // Struct via Push
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"U64","value":100},{"type":"Bool","value":false}],"type_":"MyStruct"}}}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"MyStruct"},"fields":[["field_0",{"type":"U64","value":100}],["field_1",{"type":"Bool","value":false}]]}}}}}}"#,
         // Vector via Push
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U8","value":1},{"type":"U8","value":2}]}}}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U8","value":1},{"type":"U8","value":2}]}}}}}"#,
         // Variant via Push
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Variant","tag":1,"fields":[{"type":"U64","value":99}],"type_":"Option"}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":999000}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Variant","tag":1,"fields":[{"type":"U64","value":99}],"type_":"Option"}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":999000}}"#,
     ]
     .join("\n");
 
@@ -390,10 +390,10 @@ fn test_all_value_types_through_converter() {
 fn test_simple_function_call() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"simple_fn","module":{"address":"0x1","name":"my_module"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(5)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":5}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":5}],"gas_left":998}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"simple_fn","module":{"address":"0x1","name":"my_module"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":1000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(5)"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":5}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":5}],"gas_left":998}}"#,
     ]
     .join("\n");
 
@@ -419,21 +419,21 @@ fn test_nested_calls_a_calls_b_calls_c() {
     let trace = vec![
         r#"{"version":3}"#,
         // A opens
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"func_a","module":{"address":"0x1","name":"mod_a"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":10000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"Call"}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"func_a","module":{"address":"0x1","name":"mod_a"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":10000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"Call"}}"#,
         // B opens
-        r#"{"type":"OpenFrame","frame":{"frame_id":2,"function_name":"func_b","module":{"address":"0x1","name":"mod_b"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":9998}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9997,"instruction":"Call"}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"func_b","module":{"address":"0x1","name":"mod_b"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":9998}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9997,"instruction":"Call"}}"#,
         // C opens
-        r#"{"type":"OpenFrame","frame":{"frame_id":3,"function_name":"func_c","module":{"address":"0x1","name":"mod_c"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":9996}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9995,"instruction":"LdU64(99)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":99}}}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":3,"function_name":"func_c","module":{"address":"0x1","name":"mod_c"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":9996}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9995,"instruction":"LdU64(99)"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":99}}}}}"#,
         // C closes
-        r#"{"type":"CloseFrame","frame_id":3,"return_":[{"type":"U64","value":99}],"gas_left":9994}"#,
+        r#"{"CloseFrame":{"frame_id":3,"return_":[{"type":"U64","value":99}],"gas_left":9994}}"#,
         // B closes
-        r#"{"type":"CloseFrame","frame_id":2,"return_":[{"type":"U64","value":99}],"gas_left":9993}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":99}],"gas_left":9993}}"#,
         // A closes
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":99}],"gas_left":9992}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":99}],"gas_left":9992}}"#,
     ]
     .join("\n");
 
@@ -457,9 +457,9 @@ fn test_nested_calls_a_calls_b_calls_c() {
 fn test_generic_function_instantiation() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"transfer","module":{"address":"0x2","name":"transfer"},"type_instantiation":["0x2::coin::Coin<0x2::sui::SUI>"],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":5000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":4999,"instruction":"MoveLoc(0)"}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":4998}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"transfer","module":{"address":"0x2","name":"transfer"},"type_instantiation":["0x2::coin::Coin<0x2::sui::SUI>"],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":5000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":4999,"instruction":"MoveLoc(0)"}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":4998}}"#,
     ]
     .join("\n");
 
@@ -489,10 +489,10 @@ fn test_generic_function_instantiation() {
 fn test_entry_function_with_parameters() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"entry_transfer","module":{"address":"0x2","name":"pay"},"type_instantiation":[],"parameters":[{"type":"RuntimeValue","value":{"type":"Address","value":"0xABCD"}},{"type":"RuntimeValue","value":{"type":"U64","value":1000}}],"return_types":[],"locals_types":["address","u64"],"is_native":false},"gas_left":10000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"CopyLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Address","value":"0xABCD"}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":9990}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"entry_transfer","module":{"address":"0x2","name":"pay"},"type_instantiation":[],"parameters":[{"RuntimeValue":{"value":{"type":"Address","value":"0xABCD"}}},{"RuntimeValue":{"value":{"type":"U64","value":1000}}}],"return_types":[],"locals_types":[{"type_":"address"},{"type_":"u64"}],"is_native":false},"gas_left":10000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"CopyLoc(0)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[1,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"Address","value":"0xABCD"}}},"moved":false}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":9990}}"#,
     ]
     .join("\n");
 
@@ -526,18 +526,18 @@ fn test_module_crossing_calls() {
     let trace = vec![
         r#"{"version":3}"#,
         // coin::transfer calls balance::withdraw
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"transfer","module":{"address":"0x2","name":"coin"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":10000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"Call"}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"transfer","module":{"address":"0x2","name":"coin"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":10000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"Call"}}"#,
         // Cross-module call into balance
-        r#"{"type":"OpenFrame","frame":{"frame_id":2,"function_name":"withdraw","module":{"address":"0x2","name":"balance"},"type_instantiation":["0x2::sui::SUI"],"parameters":[],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":9998}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9997,"instruction":"LdU64(500)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":500}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":2,"return_":[{"type":"U64","value":500}],"gas_left":9996}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"withdraw","module":{"address":"0x2","name":"balance"},"type_instantiation":["0x2::sui::SUI"],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":9998}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9997,"instruction":"LdU64(500)"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":500}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":500}],"gas_left":9996}}"#,
         // Back in coin module, call transfer::transfer_internal
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":9995,"instruction":"Call"}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":3,"function_name":"transfer_internal","module":{"address":"0x2","name":"transfer"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":9994}"#,
-        r#"{"type":"CloseFrame","frame_id":3,"gas_left":9993}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":9992}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":9995,"instruction":"Call"}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":3,"function_name":"transfer_internal","module":{"address":"0x2","name":"transfer"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":9994}}"#,
+        r#"{"CloseFrame":{"frame_id":3,"gas_left":9993}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":9992}}"#,
     ]
     .join("\n");
 
@@ -562,28 +562,28 @@ fn test_recursive_function_calls() {
     let trace = vec![
         r#"{"version":3}"#,
         // factorial(3)
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"factorial","module":{"address":"0x1","name":"math"},"type_instantiation":[],"parameters":[{"type":"RuntimeValue","value":{"type":"U64","value":3}}],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":10000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"CopyLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":3}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":9998,"instruction":"Call"}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"factorial","module":{"address":"0x1","name":"math"},"type_instantiation":[],"parameters":[{"RuntimeValue":{"value":{"type":"U64","value":3}}}],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":10000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"CopyLoc(0)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[1,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":3}}},"moved":false}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":9998,"instruction":"Call"}}"#,
         // factorial(2) - recursive call
-        r#"{"type":"OpenFrame","frame":{"frame_id":2,"function_name":"factorial","module":{"address":"0x1","name":"math"},"type_instantiation":[],"parameters":[{"type":"RuntimeValue","value":{"type":"U64","value":2}}],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":9997}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9996,"instruction":"CopyLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":2,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":2}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":9995,"instruction":"Call"}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"factorial","module":{"address":"0x1","name":"math"},"type_instantiation":[],"parameters":[{"RuntimeValue":{"value":{"type":"U64","value":2}}}],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":9997}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9996,"instruction":"CopyLoc(0)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[2,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":2}}},"moved":false}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":9995,"instruction":"Call"}}"#,
         // factorial(1) - base case
-        r#"{"type":"OpenFrame","frame":{"frame_id":3,"function_name":"factorial","module":{"address":"0x1","name":"math"},"type_instantiation":[],"parameters":[{"type":"RuntimeValue","value":{"type":"U64","value":1}}],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":9994}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9993,"instruction":"LdU64(1)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":1}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":3,"return_":[{"type":"U64","value":1}],"gas_left":9992}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":3,"function_name":"factorial","module":{"address":"0x1","name":"math"},"type_instantiation":[],"parameters":[{"RuntimeValue":{"value":{"type":"U64","value":1}}}],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":9994}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9993,"instruction":"LdU64(1)"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":1}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":3,"return_":[{"type":"U64","value":1}],"gas_left":9992}}"#,
         // factorial(2) multiplies: 2 * 1 = 2
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":9991,"instruction":"Mul"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":2}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":2,"return_":[{"type":"U64","value":2}],"gas_left":9990}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9991,"instruction":"Mul"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":2}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":2}],"gas_left":9990}}"#,
         // factorial(3) multiplies: 3 * 2 = 6
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":9989,"instruction":"Mul"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":6}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":6}],"gas_left":9988}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9989,"instruction":"Mul"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":6}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":6}],"gas_left":9988}}"#,
     ]
     .join("\n");
 
@@ -625,16 +625,16 @@ fn test_recursive_function_calls() {
 fn test_effect_push_pop() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"push_pop_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(10)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":10}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":998,"instruction":"LdU64(20)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":20}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":997,"instruction":"Add"}"#,
-        r#"{"type":"Effect","effect":{"type":"Pop","value":{"type":"RuntimeValue","value":{"type":"U64","value":20}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Pop","value":{"type":"RuntimeValue","value":{"type":"U64","value":10}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":30}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":30}],"gas_left":996}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"push_pop_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(10)"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":10}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":998,"instruction":"LdU64(20)"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":20}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":997,"instruction":"Add"}}"#,
+        r#"{"Effect":{"Pop":{"RuntimeValue":{"value":{"type":"U64","value":20}}}}}"#,
+        r#"{"Effect":{"Pop":{"RuntimeValue":{"value":{"type":"U64","value":10}}}}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":30}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":30}],"gas_left":996}}"#,
     ]
     .join("\n");
 
@@ -658,20 +658,20 @@ fn test_effect_push_pop() {
 fn test_effect_read_write_locals() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"rw_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64","u64"],"is_native":false},"gas_left":1000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"rw_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"},{"type_":"u64"}],"is_native":false},"gas_left":1000}}"#,
         // Write to local_0
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(42)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(42)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":42}}}}}}"#,
         // Read local_0
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":998,"instruction":"CopyLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":998,"instruction":"CopyLoc(0)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[1,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":42}}},"moved":false}}}"#,
         // Write to local_1
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":997,"instruction":"StLoc(1)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":997,"instruction":"StLoc(1)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":42}}}}}}"#,
         // Read local_1
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":996,"instruction":"MoveLoc(1)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":42}],"gas_left":995}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":996,"instruction":"MoveLoc(1)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[1,1]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":42}}},"moved":false}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":42}],"gas_left":995}}"#,
     ]
     .join("\n");
 
@@ -701,15 +701,15 @@ fn test_effect_read_write_locals() {
 fn test_effect_mut_ref_tracking() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"mutref_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":1000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"mutref_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":1000}}"#,
         // Write initial value
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":10}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":10}}}}}}"#,
         // MutRef borrow
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999,"instruction":"MutBorrowLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"MutRef","location":{"frame_id":1,"local_index":0},"snapshot":{"type":"U64","value":10}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"MutBorrowLoc(0)"}}"#,
+        r#"{"Effect":{"Push":{"MutRef":{"location":{"Local":[1,0]},"snapshot":{"type":"U64","value":10}}}}}"#,
         // Write through ref (value changes)
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":20}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":998}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":20}}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":998}}"#,
     ]
     .join("\n");
 
@@ -722,11 +722,11 @@ fn test_effect_mut_ref_tracking() {
     let push_line = lines.next().unwrap();
     let event: TraceEvent = serde_json::from_str(push_line).unwrap();
     match event {
-        TraceEvent::Effect { effect } => match effect {
-            codetracer_move_recorder::move_types::Effect::Push { value } => {
+        TraceEvent::Effect(effect) => match effect {
+            codetracer_move_recorder::move_types::Effect::Push(value) => {
                 match &value {
                     TraceValue::MutRef { location, snapshot } => {
-                        assert_eq!(location.local_index, 0);
+                        assert_eq!(location.local_index(), 0);
                         match snapshot {
                             SerializableMoveValue::U64 { value } => assert_eq!(*value, 10),
                             _ => panic!("expected U64 snapshot"),
@@ -748,14 +748,14 @@ fn test_effect_mut_ref_tracking() {
 fn test_effect_imm_ref_tracking() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"immref_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":77}}}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"immref_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":1000}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":77}}}}}}"#,
         // ImmRef borrow
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999,"instruction":"ImmBorrowLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"ImmRef","location":{"frame_id":1,"local_index":0},"snapshot":{"type":"U64","value":77}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"ImmBorrowLoc(0)"}}"#,
+        r#"{"Effect":{"Push":{"ImmRef":{"location":{"Local":[1,0]},"snapshot":{"type":"U64","value":77}}}}}"#,
         // Read through ref
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":1,"local_index":0},"value":{"type":"ImmRef","location":{"frame_id":1,"local_index":0},"snapshot":{"type":"U64","value":77}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":998}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[1,0]},"root_value_read":{"ImmRef":{"location":{"Local":[1,0]},"snapshot":{"type":"U64","value":77}}},"moved":false}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":998}}"#,
     ]
     .join("\n");
 
@@ -768,11 +768,11 @@ fn test_effect_imm_ref_tracking() {
     let push_line = lines.next().unwrap();
     let event: TraceEvent = serde_json::from_str(push_line).unwrap();
     match event {
-        TraceEvent::Effect { effect } => match effect {
-            codetracer_move_recorder::move_types::Effect::Push { value } => {
+        TraceEvent::Effect(effect) => match effect {
+            codetracer_move_recorder::move_types::Effect::Push(value) => {
                 match &value {
                     TraceValue::ImmRef { location, snapshot } => {
-                        assert_eq!(location.local_index, 0);
+                        assert_eq!(location.local_index(), 0);
                         match snapshot {
                             SerializableMoveValue::U64 { value } => assert_eq!(*value, 77),
                             _ => panic!("expected U64 snapshot"),
@@ -806,18 +806,18 @@ fn test_linear_execution_with_source_map() {
 
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"linear_fn","module":{"address":"0x0","name":"linear"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64","u64","u64","u64","u64"],"is_native":false},"gas_left":10000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"LdU64(1)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":1}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":9998,"instruction":"LdU64(2)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":2}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":9997,"instruction":"LdU64(3)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":2},"value":{"type":"RuntimeValue","value":{"type":"U64","value":3}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":9996,"instruction":"LdU64(4)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":3},"value":{"type":"RuntimeValue","value":{"type":"U64","value":4}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":4,"gas_left":9995,"instruction":"LdU64(5)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":4},"value":{"type":"RuntimeValue","value":{"type":"U64","value":5}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":9990}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"linear_fn","module":{"address":"0x0","name":"linear"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"},{"type_":"u64"},{"type_":"u64"},{"type_":"u64"},{"type_":"u64"}],"is_native":false},"gas_left":10000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"LdU64(1)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":1}}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":9998,"instruction":"LdU64(2)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":2}}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9997,"instruction":"LdU64(3)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,2]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":3}}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":9996,"instruction":"LdU64(4)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,3]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":4}}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":4,"gas_left":9995,"instruction":"LdU64(5)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,4]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":5}}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":9990}}"#,
     ]
     .join("\n");
 
@@ -860,21 +860,21 @@ fn test_branch_pattern() {
 
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"branch_fn","module":{"address":"0x0","name":"branch"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64","u64"],"is_native":false},"gas_left":1000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"branch_fn","module":{"address":"0x0","name":"branch"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"},{"type_":"u64"}],"is_native":false},"gas_left":1000}}"#,
         // Load x = 3
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(3)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":3}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(3)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":3}}}}}}"#,
         // Compare: x > 5 => false
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":998,"instruction":"Gt"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Bool","value":false}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":998,"instruction":"Gt"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Bool","value":false}}}}}"#,
         // BrTrue (false, so fall through to else)
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":997,"instruction":"BrTrue(4)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Pop","value":{"type":"RuntimeValue","value":{"type":"Bool","value":false}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":997,"instruction":"BrTrue(4)"}}"#,
+        r#"{"Effect":{"Pop":{"RuntimeValue":{"value":{"type":"Bool","value":false}}}}}"#,
         // Else branch: a = 20 (jumps to pc=5)
-        r#"{"type":"Instruction","type_parameters":[],"pc":5,"gas_left":996,"instruction":"LdU64(20)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":20}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":6,"gas_left":995,"instruction":"Ret"}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":20}],"gas_left":994}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":5,"gas_left":996,"instruction":"LdU64(20)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":20}}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":6,"gas_left":995,"instruction":"Ret"}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":20}],"gas_left":994}}"#,
     ]
     .join("\n");
 
@@ -923,40 +923,40 @@ fn test_loop_pattern() {
 
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"loop_fn","module":{"address":"0x0","name":"loop_mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64","u64"],"is_native":false},"gas_left":10000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"loop_fn","module":{"address":"0x0","name":"loop_mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"},{"type_":"u64"}],"is_native":false},"gas_left":10000}}"#,
         // i = 0
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"LdU64(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":0}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"LdU64(0)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":0}}}}}}"#,
         // sum = 0
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":9998,"instruction":"LdU64(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":0}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":9998,"instruction":"LdU64(0)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":0}}}}}}"#,
         // Iteration 1: i=0, check i<3
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":9997,"instruction":"Lt"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Bool","value":true}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":9996,"instruction":"Add"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":0}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":4,"gas_left":9995,"instruction":"Add"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":1}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9997,"instruction":"Lt"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Bool","value":true}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":9996,"instruction":"Add"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":0}}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":4,"gas_left":9995,"instruction":"Add"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":1}}}}}}"#,
         // Iteration 2: i=1, check i<3
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":9994,"instruction":"Lt"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Bool","value":true}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":9993,"instruction":"Add"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":1}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":4,"gas_left":9992,"instruction":"Add"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":2}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9994,"instruction":"Lt"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Bool","value":true}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":9993,"instruction":"Add"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":1}}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":4,"gas_left":9992,"instruction":"Add"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":2}}}}}}"#,
         // Iteration 3: i=2, check i<3
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":9991,"instruction":"Lt"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Bool","value":true}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":9990,"instruction":"Add"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":3}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":4,"gas_left":9989,"instruction":"Add"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":3}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9991,"instruction":"Lt"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Bool","value":true}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":9990,"instruction":"Add"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":3}}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":4,"gas_left":9989,"instruction":"Add"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":3}}}}}}"#,
         // Exit: i=3, check i<3 => false
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":9988,"instruction":"Lt"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Bool","value":false}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9988,"instruction":"Lt"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Bool","value":false}}}}}"#,
         // After loop
-        r#"{"type":"Instruction","type_parameters":[],"pc":6,"gas_left":9987,"instruction":"Ret"}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":3}],"gas_left":9986}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":6,"gas_left":9987,"instruction":"Ret"}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":3}],"gas_left":9986}}"#,
     ]
     .join("\n");
 
@@ -1017,13 +1017,13 @@ fn test_loop_pattern() {
 fn test_execution_error_abort() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"will_abort","module":{"address":"0x0","name":"abort_mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":0}}}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"will_abort","module":{"address":"0x0","name":"abort_mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":1000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(0)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":0}}}}}}"#,
         // Abort instruction triggers ExecutionError
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":998,"instruction":"Abort"}"#,
-        r#"{"type":"Effect","effect":{"type":"ExecutionError","error":"ABORT with code 42"}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":997}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":998,"instruction":"Abort"}}"#,
+        r#"{"Effect":{"ExecutionError":{"error":"ABORT with code 42"}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":997}}"#,
     ]
     .join("\n");
 
@@ -1051,23 +1051,23 @@ fn test_scenario_token_transfer() {
     let trace = vec![
         r#"{"version":3}"#,
         // coin::transfer entry point
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"transfer","module":{"address":"0x2","name":"coin"},"type_instantiation":["0x2::sui::SUI"],"parameters":[{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Address","value":"0xOBJ1"}],"type_":"0x2::object::UID"},{"type":"Struct","fields":[{"type":"U64","value":1000}],"type_":"0x2::balance::Balance"}],"type_":"0x2::coin::Coin"}},{"type":"RuntimeValue","value":{"type":"Address","value":"0xRECIPIENT"}},{"type":"RuntimeValue","value":{"type":"U64","value":500}}],"return_types":[],"locals_types":["0x2::coin::Coin","address","u64","0x2::balance::Balance"],"is_native":false},"gas_left":100000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"transfer","module":{"address":"0x2","name":"coin"},"type_instantiation":["0x2::sui::SUI"],"parameters":[{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x2::object::UID"},"fields":[["field_0",{"type":"Address","value":"0xOBJ1"}]]}}],["field_1",{"type":"Struct","value":{"type_":{"name":"0x2::balance::Balance"},"fields":[["field_0",{"type":"U64","value":1000}]]}}]]}}}},{"RuntimeValue":{"value":{"type":"Address","value":"0xRECIPIENT"}}},{"RuntimeValue":{"value":{"type":"U64","value":500}}}],"return_types":[],"locals_types":[{"type_":"0x2::coin::Coin"},{"type_":"address"},{"type_":"u64"},{"type_":"0x2::balance::Balance"}],"is_native":false},"gas_left":100000}}"#,
         // Read the coin struct
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":99999,"instruction":"CopyLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Address","value":"0xOBJ1"}],"type_":"0x2::object::UID"},{"type":"Struct","fields":[{"type":"U64","value":1000}],"type_":"0x2::balance::Balance"}],"type_":"0x2::coin::Coin"}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":99999,"instruction":"CopyLoc(0)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[1,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x2::object::UID"},"fields":[["field_0",{"type":"Address","value":"0xOBJ1"}]]}}],["field_1",{"type":"Struct","value":{"type_":{"name":"0x2::balance::Balance"},"fields":[["field_0",{"type":"U64","value":1000}]]}}]]}}}},"moved":false}}}"#,
         // Call balance::split to extract amount
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":99998,"instruction":"Call"}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":2,"function_name":"split","module":{"address":"0x2","name":"balance"},"type_instantiation":["0x2::sui::SUI"],"parameters":[],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":99997}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":99996,"instruction":"LdU64(500)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":2,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":500}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":99995,"instruction":"Ret"}"#,
-        r#"{"type":"CloseFrame","frame_id":2,"return_":[{"type":"Struct","fields":[{"type":"U64","value":500}],"type_":"0x2::balance::Balance"}],"gas_left":99994}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":99998,"instruction":"Call"}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"split","module":{"address":"0x2","name":"balance"},"type_instantiation":["0x2::sui::SUI"],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":99997}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":99996,"instruction":"LdU64(500)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[2,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":500}}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":99995,"instruction":"Ret"}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"Struct","value":{"type_":{"name":"0x2::balance::Balance"},"fields":[["field_0",{"type":"U64","value":500}]]}}],"gas_left":99994}}"#,
         // Store split balance
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":99993,"instruction":"StLoc(3)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":3},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"U64","value":500}],"type_":"0x2::balance::Balance"}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":99993,"instruction":"StLoc(3)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,3]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::balance::Balance"},"fields":[["field_0",{"type":"U64","value":500}]]}}}}}}}"#,
         // Transfer to recipient
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":99992,"instruction":"Call"}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":99991}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":99992,"instruction":"Call"}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":99991}}"#,
     ]
     .join("\n");
 
@@ -1179,21 +1179,21 @@ fn test_scenario_object_creation() {
     // Simulates creating an object with a UID
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"create","module":{"address":"0x1","name":"nft"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["0x2::object::UID","0x1::nft::NFT"],"is_native":false},"gas_left":50000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"create","module":{"address":"0x1","name":"nft"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"0x2::object::UID"},{"type_":"0x1::nft::NFT"}],"is_native":false},"gas_left":50000}}"#,
         // Create UID via object::new
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":49999,"instruction":"Call"}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":2,"function_name":"new","module":{"address":"0x2","name":"object"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":49998}"#,
-        r#"{"type":"CloseFrame","frame_id":2,"return_":[{"type":"Struct","fields":[{"type":"Address","value":"0xUID_ADDR_123"}],"type_":"0x2::object::UID"}],"gas_left":49997}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":49999,"instruction":"Call"}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"new","module":{"address":"0x2","name":"object"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":49998}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"Struct","value":{"type_":{"name":"0x2::object::UID"},"fields":[["field_0",{"type":"Address","value":"0xUID_ADDR_123"}]]}}],"gas_left":49997}}"#,
         // Store UID
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"Address","value":"0xUID_ADDR_123"}],"type_":"0x2::object::UID"}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::object::UID"},"fields":[["field_0",{"type":"Address","value":"0xUID_ADDR_123"}]]}}}}}}}"#,
         // Pack NFT struct: NFT { id: uid, name_length: 5, value: 100 }
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":49996,"instruction":"Pack(NFT)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Address","value":"0xUID_ADDR_123"}],"type_":"0x2::object::UID"},{"type":"U64","value":5},{"type":"U64","value":100}],"type_":"0x1::nft::NFT"}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":49996,"instruction":"Pack(NFT)"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x1::nft::NFT"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x2::object::UID"},"fields":[["field_0",{"type":"Address","value":"0xUID_ADDR_123"}]]}}],["field_1",{"type":"U64","value":5}],["field_2",{"type":"U64","value":100}]]}}}}}}"#,
         // Store NFT
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Address","value":"0xUID_ADDR_123"}],"type_":"0x2::object::UID"},{"type":"U64","value":5},{"type":"U64","value":100}],"type_":"0x1::nft::NFT"}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x1::nft::NFT"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x2::object::UID"},"fields":[["field_0",{"type":"Address","value":"0xUID_ADDR_123"}]]}}],["field_1",{"type":"U64","value":5}],["field_2",{"type":"U64","value":100}]]}}}}}}}"#,
         // Transfer the NFT
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":49995,"instruction":"Call"}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":49990}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":49995,"instruction":"Call"}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":49990}}"#,
     ]
     .join("\n");
 
@@ -1206,32 +1206,32 @@ fn test_scenario_vector_manipulation() {
     // Simulates: vector::push_back, vector::pop_back, vector::length
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"vec_ops","module":{"address":"0x0","name":"vec_test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["vector<u64>","u64"],"is_native":false},"gas_left":10000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"vec_ops","module":{"address":"0x0","name":"vec_test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"vector<u64>"},{"type_":"u64"}],"is_native":false},"gas_left":10000}}"#,
         // Create empty vector
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"VecPack(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[]}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[]}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"VecPack(0)"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Vector","elements":[]}}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[]}}}}}}"#,
         // push_back(10)
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":9998,"instruction":"VecPushBack"}"#,
-        r#"{"type":"Effect","effect":{"type":"Pop","value":{"type":"RuntimeValue","value":{"type":"U64","value":10}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":10}]}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":9998,"instruction":"VecPushBack"}}"#,
+        r#"{"Effect":{"Pop":{"RuntimeValue":{"value":{"type":"U64","value":10}}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U64","value":10}]}}}}}}"#,
         // push_back(20)
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":9997,"instruction":"VecPushBack"}"#,
-        r#"{"type":"Effect","effect":{"type":"Pop","value":{"type":"RuntimeValue","value":{"type":"U64","value":20}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":10},{"type":"U64","value":20}]}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9997,"instruction":"VecPushBack"}}"#,
+        r#"{"Effect":{"Pop":{"RuntimeValue":{"value":{"type":"U64","value":20}}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U64","value":10},{"type":"U64","value":20}]}}}}}}"#,
         // push_back(30)
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":9996,"instruction":"VecPushBack"}"#,
-        r#"{"type":"Effect","effect":{"type":"Pop","value":{"type":"RuntimeValue","value":{"type":"U64","value":30}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":10},{"type":"U64","value":20},{"type":"U64","value":30}]}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":9996,"instruction":"VecPushBack"}}"#,
+        r#"{"Effect":{"Pop":{"RuntimeValue":{"value":{"type":"U64","value":30}}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U64","value":10},{"type":"U64","value":20},{"type":"U64","value":30}]}}}}}}"#,
         // pop_back => 30
-        r#"{"type":"Instruction","type_parameters":[],"pc":4,"gas_left":9995,"instruction":"VecPopBack"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":30}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":10},{"type":"U64","value":20}]}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":30}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":4,"gas_left":9995,"instruction":"VecPopBack"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":30}}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U64","value":10},{"type":"U64","value":20}]}}}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":30}}}}}}"#,
         // vector::length => 2
-        r#"{"type":"Instruction","type_parameters":[],"pc":5,"gas_left":9994,"instruction":"VecLen"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":2}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":2}],"gas_left":9993}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":5,"gas_left":9994,"instruction":"VecLen"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":2}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":2}],"gas_left":9993}}"#,
     ]
     .join("\n");
 
@@ -1267,17 +1267,17 @@ fn test_scenario_error_abort_with_code() {
 
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"pay","module":{"address":"0x2","name":"pay"},"type_instantiation":[],"parameters":[{"type":"RuntimeValue","value":{"type":"U64","value":100}},{"type":"RuntimeValue","value":{"type":"U64","value":500}}],"return_types":[],"locals_types":["u64","u64"],"is_native":false},"gas_left":5000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"pay","module":{"address":"0x2","name":"pay"},"type_instantiation":[],"parameters":[{"RuntimeValue":{"value":{"type":"U64","value":100}}},{"RuntimeValue":{"value":{"type":"U64","value":500}}}],"return_types":[],"locals_types":[{"type_":"u64"},{"type_":"u64"}],"is_native":false},"gas_left":5000}}"#,
         // Load balance = 100
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":4999,"instruction":"CopyLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":100}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":4999,"instruction":"CopyLoc(0)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[1,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":100}}},"moved":false}}}"#,
         // Load amount = 500
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":4998,"instruction":"CopyLoc(1)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":500}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":4998,"instruction":"CopyLoc(1)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[1,1]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":500}}},"moved":false}}}"#,
         // Check balance >= amount => false, abort
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":4997,"instruction":"Abort"}"#,
-        r#"{"type":"Effect","effect":{"type":"ExecutionError","error":"ABORT with code 1 (EInsufficientBalance)"}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":4996}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":4997,"instruction":"Abort"}}"#,
+        r#"{"Effect":{"ExecutionError":{"error":"ABORT with code 1 (EInsufficientBalance)"}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":4996}}"#,
     ]
     .join("\n");
 
@@ -1293,9 +1293,9 @@ fn test_scenario_error_abort_with_code() {
 fn test_empty_return_values() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"void_fn","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"void_fn","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
         // No return values (void function)
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":999}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":999}}"#,
     ]
     .join("\n");
 
@@ -1308,8 +1308,8 @@ fn test_close_frame_with_null_return() {
     // return_ field is explicitly null or absent
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"no_ret","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":null,"gas_left":999}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"no_ret","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[],"gas_left":999}}"#,
     ]
     .join("\n");
 
@@ -1322,8 +1322,8 @@ fn test_multiple_return_values() {
     // Move functions can return tuples
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"multi_ret","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":1},{"type":"Bool","value":true},{"type":"Address","value":"0xABC"}],"gas_left":999}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"multi_ret","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":1},{"type":"Bool","value":true},{"type":"Address","value":"0xABC"}],"gas_left":999}}"#,
     ]
     .join("\n");
 
@@ -1336,12 +1336,12 @@ fn test_multiple_return_values() {
 fn test_native_function_frame() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"main","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":10000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"Call"}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"main","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":10000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"Call"}}"#,
         // Native function call
-        r#"{"type":"OpenFrame","frame":{"frame_id":2,"function_name":"native_hash","module":{"address":"0x1","name":"hash"},"type_instantiation":[],"parameters":[{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U8","value":1},{"type":"U8","value":2}]}}],"return_types":[],"locals_types":[],"is_native":true},"gas_left":9998}"#,
-        r#"{"type":"CloseFrame","frame_id":2,"return_":[{"type":"Vector","elements":[{"type":"U8","value":100},{"type":"U8","value":200}]}],"gas_left":9997}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":9996}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"native_hash","module":{"address":"0x1","name":"hash"},"type_instantiation":[],"parameters":[{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U8","value":1},{"type":"U8","value":2}]}}}],"return_types":[],"locals_types":[],"is_native":true},"gas_left":9998}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"Vector","elements":[{"type":"U8","value":100},{"type":"U8","value":200}]}],"gas_left":9997}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":9996}}"#,
     ]
     .join("\n");
 
@@ -1353,9 +1353,9 @@ fn test_native_function_frame() {
 fn test_data_load_effect() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"load_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"Effect","effect":{"type":"DataLoad","address":"0xSOME_OBJ_ADDR"}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":999}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"load_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
+        r#"{"Effect":{"DataLoad":{"address":"0xSOME_OBJ_ADDR"}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":999}}"#,
     ]
     .join("\n");
 
@@ -1368,9 +1368,9 @@ fn test_data_load_effect() {
 fn test_external_effect() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"ext_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"External","effect":{"kind":"transfer_object"}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":999}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"ext_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
+        r#"{"External":{"kind":"transfer_object"}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":999}}"#,
     ]
     .join("\n");
 
@@ -1416,19 +1416,19 @@ fn test_empty_trace_data_rejected() {
 fn test_deeply_nested_struct() {
     // Struct containing struct containing struct
     let v: SerializableMoveValue = serde_json::from_str(
-        r#"{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"U64","value":42}],"type_":"Inner"}],"type_":"Middle"}],"type_":"Outer"}"#,
+        r#"{"type":"Struct","value":{"type_":{"name":"Outer"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Middle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Inner"},"fields":[["field_0",{"type":"U64","value":42}]]}}]]}}]]}}"#,
     )
     .unwrap();
     match v {
-        SerializableMoveValue::Struct { fields, type_ } => {
-            assert_eq!(type_, "Outer");
-            match &fields[0] {
-                SerializableMoveValue::Struct { fields, type_ } => {
-                    assert_eq!(type_, "Middle");
-                    match &fields[0] {
-                        SerializableMoveValue::Struct { fields, type_ } => {
-                            assert_eq!(type_, "Inner");
-                            match &fields[0] {
+        SerializableMoveValue::Struct { value: outer } => {
+            assert_eq!(outer.type_.get("name").and_then(|v| v.as_str()), Some("Outer"));
+            match &outer.fields[0].1 {
+                SerializableMoveValue::Struct { value: middle } => {
+                    assert_eq!(middle.type_.get("name").and_then(|v| v.as_str()), Some("Middle"));
+                    match &middle.fields[0].1 {
+                        SerializableMoveValue::Struct { value: inner } => {
+                            assert_eq!(inner.type_.get("name").and_then(|v| v.as_str()), Some("Inner"));
+                            match &inner.fields[0].1 {
                                 SerializableMoveValue::U64 { value } => assert_eq!(*value, 42),
                                 _ => panic!("expected U64 at innermost level"),
                             }
@@ -1447,9 +1447,9 @@ fn test_deeply_nested_struct() {
 fn test_deeply_nested_struct_through_converter() {
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"deep_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"U64","value":42}],"type_":"Inner"}],"type_":"Middle"}],"type_":"Outer"}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"U64","value":42}],"type_":"Inner"}],"type_":"Middle"}],"type_":"Outer"}],"gas_left":999}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"deep_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"Outer"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Middle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Inner"},"fields":[["field_0",{"type":"U64","value":42}]]}}]]}}]]}}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"Struct","value":{"type_":{"name":"Outer"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Middle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Inner"},"fields":[["field_0",{"type":"U64","value":42}]]}}]]}}]]}}],"gas_left":999}}"#,
     ]
     .join("\n");
 
@@ -1497,12 +1497,16 @@ fn test_empty_vector() {
 #[test]
 fn test_struct_with_no_type_name() {
     let v: SerializableMoveValue = serde_json::from_str(
-        r#"{"type":"Struct","fields":[{"type":"U64","value":1}]}"#,
+        r#"{"type":"Struct","value":{"type_":{},"fields":[["field_0",{"type":"U64","value":1}]]}}"#,
     )
     .unwrap();
     match v {
-        SerializableMoveValue::Struct { type_, .. } => {
-            assert!(type_.is_empty(), "type_ should default to empty string");
+        SerializableMoveValue::Struct { value: content } => {
+            // type_ is an empty JSON object when no type name is provided
+            assert!(
+                content.type_.get("name").is_none(),
+                "type_ should have no name field when empty"
+            );
         }
         _ => panic!("expected Struct"),
     }
@@ -1536,12 +1540,12 @@ fn test_source_map_dedup_same_line_no_duplicate_steps() {
 
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"dedup_fn","module":{"address":"0x0","name":"dedup"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(1)"}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":998,"instruction":"LdU64(2)"}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":997,"instruction":"Add"}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":996,"instruction":"Ret"}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":995}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"dedup_fn","module":{"address":"0x0","name":"dedup"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(1)"}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":998,"instruction":"LdU64(2)"}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":997,"instruction":"Add"}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":996,"instruction":"Ret"}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":995}}"#,
     ]
     .join("\n");
 
@@ -1589,10 +1593,10 @@ fn test_no_source_map_entries_still_works() {
     // With an empty source map, no steps are emitted but the trace still converts
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"no_map","module":{"address":"0x0","name":"unknown"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(1)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":1}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":1}],"gas_left":998}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"no_map","module":{"address":"0x0","name":"unknown"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":1000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(1)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":1}}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":1}],"gas_left":998}}"#,
     ]
     .join("\n");
 
@@ -1623,34 +1627,34 @@ fn test_full_defi_swap_scenario() {
     let trace = vec![
         r#"{"version":3}"#,
         // Entry: dex::swap_exact_input
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"swap_exact_input","module":{"address":"0x3","name":"dex"},"type_instantiation":["0x2::sui::SUI","0x3::usdc::USDC"],"parameters":[{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Address","value":"0xPOOL_ID"}],"type_":"UID"},{"type":"U64","value":1000000},{"type":"U64","value":2000000}],"type_":"0x3::dex::Pool"}},{"type":"RuntimeValue","value":{"type":"U64","value":100}},{"type":"RuntimeValue","value":{"type":"U64","value":50}}],"return_types":[],"locals_types":["0x3::dex::Pool","u64","u64","u64","bool"],"is_native":false},"gas_left":500000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"swap_exact_input","module":{"address":"0x3","name":"dex"},"type_instantiation":["0x2::sui::SUI","0x3::usdc::USDC"],"parameters":[{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x3::dex::Pool"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"UID"},"fields":[["field_0",{"type":"Address","value":"0xPOOL_ID"}]]}}],["field_1",{"type":"U64","value":1000000}],["field_2",{"type":"U64","value":2000000}]]}}}},{"RuntimeValue":{"value":{"type":"U64","value":100}}},{"RuntimeValue":{"value":{"type":"U64","value":50}}}],"return_types":[],"locals_types":[{"type_":"0x3::dex::Pool"},{"type_":"u64"},{"type_":"u64"},{"type_":"u64"},{"type_":"bool"}],"is_native":false},"gas_left":500000}}"#,
         // Read input amount
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":499999,"instruction":"CopyLoc(1)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":100}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":499999,"instruction":"CopyLoc(1)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[1,1]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":100}}},"moved":false}}}"#,
         // Call pool::calculate_output
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":499998,"instruction":"Call"}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":2,"function_name":"calculate_output","module":{"address":"0x3","name":"pool"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":499997}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":499996,"instruction":"Mul"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":198}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":499995,"instruction":"Div"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":2,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":198}}}}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":499994,"instruction":"Ret"}"#,
-        r#"{"type":"CloseFrame","frame_id":2,"return_":[{"type":"U64","value":198}],"gas_left":499993}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":499998,"instruction":"Call"}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"calculate_output","module":{"address":"0x3","name":"pool"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":499997}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":499996,"instruction":"Mul"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":198}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":499995,"instruction":"Div"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[2,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":198}}}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":499994,"instruction":"Ret"}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":198}],"gas_left":499993}}"#,
         // Store output amount
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":499992,"instruction":"StLoc(3)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":3},"value":{"type":"RuntimeValue","value":{"type":"U64","value":198}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":499992,"instruction":"StLoc(3)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,3]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":198}}}}}}"#,
         // Check output >= min_out (198 >= 50 => true)
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":499991,"instruction":"Ge"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Bool","value":true}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":4},"value":{"type":"RuntimeValue","value":{"type":"Bool","value":true}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":499991,"instruction":"Ge"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Bool","value":true}}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,4]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Bool","value":true}}}}}}"#,
         // Update pool reserves (mutable ref)
-        r#"{"type":"Instruction","type_parameters":[],"pc":4,"gas_left":499990,"instruction":"MutBorrowLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"MutRef","location":{"frame_id":1,"local_index":0},"snapshot":{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Address","value":"0xPOOL_ID"}],"type_":"UID"},{"type":"U64","value":1000000},{"type":"U64","value":2000000}],"type_":"0x3::dex::Pool"}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":4,"gas_left":499990,"instruction":"MutBorrowLoc(0)"}}"#,
+        r#"{"Effect":{"Push":{"MutRef":{"location":{"Local":[1,0]},"snapshot":{"type":"Struct","value":{"type_":{"name":"0x3::dex::Pool"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"UID"},"fields":[["field_0",{"type":"Address","value":"0xPOOL_ID"}]]}}],["field_1",{"type":"U64","value":1000000}],["field_2",{"type":"U64","value":2000000}]]}}}}}}"#,
         // Write updated pool reserves
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Address","value":"0xPOOL_ID"}],"type_":"UID"},{"type":"U64","value":1000100},{"type":"U64","value":1999802}],"type_":"0x3::dex::Pool"}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x3::dex::Pool"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"UID"},"fields":[["field_0",{"type":"Address","value":"0xPOOL_ID"}]]}}],["field_1",{"type":"U64","value":1000100}],["field_2",{"type":"U64","value":1999802}]]}}}}}}}"#,
         // Return output coin
-        r#"{"type":"Instruction","type_parameters":[],"pc":5,"gas_left":499989,"instruction":"Ret"}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"Address","value":"0xCOIN_OUT"}],"type_":"UID"},{"type":"Struct","fields":[{"type":"U64","value":198}],"type_":"Balance"}],"type_":"0x2::coin::Coin"}],"gas_left":499988}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":5,"gas_left":499989,"instruction":"Ret"}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"UID"},"fields":[["field_0",{"type":"Address","value":"0xCOIN_OUT"}]]}}],["field_1",{"type":"Struct","value":{"type_":{"name":"Balance"},"fields":[["field_0",{"type":"U64","value":198}]]}}]]}}],"gas_left":499988}}"#,
     ]
     .join("\n");
 
@@ -1739,14 +1743,14 @@ fn test_struct_fields_correctly_converted_point_rectangle() {
     // the expected field_0/field_1/... display format.
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"create_shapes","module":{"address":"0x1","name":"geometry"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["Point","Rectangle"],"is_native":false},"gas_left":10000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"create_shapes","module":{"address":"0x1","name":"geometry"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"Point"},{"type_":"Rectangle"}],"is_native":false},"gas_left":10000}}"#,
         // Create Point { x: 42, y: 99 }
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"Pack(Point)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"U64","value":42},{"type":"U64","value":99}],"type_":"0x1::geometry::Point"}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"Pack(Point)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Point"},"fields":[["field_0",{"type":"U64","value":42}],["field_1",{"type":"U64","value":99}]]}}}}}}}"#,
         // Create Rectangle { origin: Point { x: 10, y: 20 }, width: 100, height: 200 }
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":9998,"instruction":"Pack(Rectangle)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"U64","value":10},{"type":"U64","value":20}],"type_":"0x1::geometry::Point"},{"type":"U64","value":100},{"type":"U64","value":200}],"type_":"0x1::geometry::Rectangle"}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"U64","value":10},{"type":"U64","value":20}],"type_":"0x1::geometry::Point"},{"type":"U64","value":100},{"type":"U64","value":200}],"type_":"0x1::geometry::Rectangle"}],"gas_left":9990}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":9998,"instruction":"Pack(Rectangle)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Rectangle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Point"},"fields":[["field_0",{"type":"U64","value":10}],["field_1",{"type":"U64","value":20}]]}}],["field_1",{"type":"U64","value":100}],["field_2",{"type":"U64","value":200}]]}}}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Rectangle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Point"},"fields":[["field_0",{"type":"U64","value":10}],["field_1",{"type":"U64","value":20}]]}}],["field_1",{"type":"U64","value":100}],["field_2",{"type":"U64","value":200}]]}}],"gas_left":9990}}"#,
     ]
     .join("\n");
 
@@ -1879,23 +1883,23 @@ fn test_vector_operations_produce_correct_element_values() {
     // Value events with the correct element content in the converted trace.
     let trace = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"vec_values","module":{"address":"0x0","name":"vec_test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["vector<u64>"],"is_native":false},"gas_left":10000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"vec_values","module":{"address":"0x0","name":"vec_test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"vector<u64>"}],"is_native":false},"gas_left":10000}}"#,
         // Create empty vector
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":9999,"instruction":"VecPack(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[]}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"VecPack(0)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[]}}}}}}"#,
         // push_back(100)
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":9998,"instruction":"VecPushBack"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":100}]}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":9998,"instruction":"VecPushBack"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U64","value":100}]}}}}}}"#,
         // push_back(200)
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":9997,"instruction":"VecPushBack"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9997,"instruction":"VecPushBack"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}}}}}}"#,
         // push_back(300)
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":9996,"instruction":"VecPushBack"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200},{"type":"U64","value":300}]}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":9996,"instruction":"VecPushBack"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200},{"type":"U64","value":300}]}}}}}}"#,
         // pop_back => removes 300, vector becomes [100, 200]
-        r#"{"type":"Instruction","type_parameters":[],"pc":4,"gas_left":9995,"instruction":"VecPopBack"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}],"gas_left":9990}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":4,"gas_left":9995,"instruction":"VecPopBack"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}],"gas_left":9990}}"#,
     ]
     .join("\n");
 
@@ -2003,28 +2007,28 @@ fn test_generic_function_instantiation_type_specific_values() {
     let trace = vec![
         r#"{"version":3}"#,
         // Generic function: identity<u64> — takes a u64 and returns it
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"test_generics","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64","bool"],"is_native":false},"gas_left":20000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":19999,"instruction":"LdU64(42)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"test_generics","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"},{"type_":"bool"}],"is_native":false},"gas_left":20000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":19999,"instruction":"LdU64(42)"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":42}}}}}}"#,
         // Call identity<u64>(42)
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":19998,"instruction":"Call"}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":2,"function_name":"identity","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["u64"],"parameters":[{"type":"RuntimeValue","value":{"type":"U64","value":42}}],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":19997}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":19996,"instruction":"MoveLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":2,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":2,"return_":[{"type":"U64","value":42}],"gas_left":19995}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":19998,"instruction":"Call"}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"identity","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["u64"],"parameters":[{"RuntimeValue":{"value":{"type":"U64","value":42}}}],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":19997}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":19996,"instruction":"MoveLoc(0)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[2,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":42}}},"moved":false}}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":42}],"gas_left":19995}}"#,
         // Call identity<bool>(true)
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":19994,"instruction":"Call"}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":3,"function_name":"identity","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["bool"],"parameters":[{"type":"RuntimeValue","value":{"type":"Bool","value":true}}],"return_types":[],"locals_types":["bool"],"is_native":false},"gas_left":19993}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":19992,"instruction":"MoveLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":3,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Bool","value":true}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":3,"return_":[{"type":"Bool","value":true}],"gas_left":19991}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":19994,"instruction":"Call"}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":3,"function_name":"identity","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["bool"],"parameters":[{"RuntimeValue":{"value":{"type":"Bool","value":true}}}],"return_types":[],"locals_types":[{"type_":"bool"}],"is_native":false},"gas_left":19993}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":19992,"instruction":"MoveLoc(0)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[3,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"Bool","value":true}}},"moved":false}}}"#,
+        r#"{"CloseFrame":{"frame_id":3,"return_":[{"type":"Bool","value":true}],"gas_left":19991}}"#,
         // Call wrap<Coin<SUI>> with a struct value
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":19990,"instruction":"Call"}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":4,"function_name":"wrap","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["0x2::coin::Coin<0x2::sui::SUI>"],"parameters":[{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"U64","value":1000}],"type_":"0x2::coin::Coin"}}],"return_types":[],"locals_types":["0x2::coin::Coin"],"is_native":false},"gas_left":19989}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":19988,"instruction":"MoveLoc(0)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Read","location":{"frame_id":4,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"U64","value":1000}],"type_":"0x2::coin::Coin"}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":4,"return_":[{"type":"Struct","fields":[{"type":"Struct","fields":[{"type":"U64","value":1000}],"type_":"0x2::coin::Coin"}],"type_":"0x1::generic_mod::Wrapper"}],"gas_left":19987}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":19980}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":19990,"instruction":"Call"}}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":4,"function_name":"wrap","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["0x2::coin::Coin<0x2::sui::SUI>"],"parameters":[{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"U64","value":1000}]]}}}}],"return_types":[],"locals_types":[{"type_":"0x2::coin::Coin"}],"is_native":false},"gas_left":19989}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":19988,"instruction":"MoveLoc(0)"}}"#,
+        r#"{"Effect":{"Read":{"location":{"Local":[4,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"U64","value":1000}]]}}}},"moved":false}}}"#,
+        r#"{"CloseFrame":{"frame_id":4,"return_":[{"type":"Struct","value":{"type_":{"name":"0x1::generic_mod::Wrapper"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"U64","value":1000}]]}}]]}}],"gas_left":19987}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":19980}}"#,
     ]
     .join("\n");
 

@@ -112,12 +112,11 @@ pub fn convert_trace(
             }
 
             TraceEvent::CloseFrame {
-                return_: return_vals,
+                return_values,
                 ..
             } => {
-                let ret_val = return_vals
-                    .as_ref()
-                    .and_then(|vals| vals.first())
+                let ret_val = return_values
+                    .first()
                     .map(|v| convert_move_value(v, &type_ids))
                     .unwrap_or(NONE_VALUE);
 
@@ -138,12 +137,16 @@ pub fn convert_trace(
                 }
             }
 
-            TraceEvent::Effect { effect } => match effect {
+            TraceEvent::Effect(effect) => match effect {
                 Effect::Write {
-                    location, value, ..
+                    location,
+                    root_value_after_write,
                 } => {
-                    let name = format!("local_{}", location.local_index);
-                    let val = convert_move_value(value.inner_value(), &type_ids);
+                    let name = format!("local_{}", location.local_index());
+                    let val = convert_move_value(
+                        root_value_after_write.inner_value(),
+                        &type_ids,
+                    );
                     TraceWriter::register_variable_with_full_value(
                         &mut *writer,
                         &name,
@@ -151,17 +154,22 @@ pub fn convert_trace(
                     );
                 }
                 Effect::Read {
-                    location, value, ..
+                    location,
+                    root_value_read,
+                    ..
                 } => {
-                    let name = format!("local_{}", location.local_index);
-                    let val = convert_move_value(value.inner_value(), &type_ids);
+                    let name = format!("local_{}", location.local_index());
+                    let val = convert_move_value(
+                        root_value_read.inner_value(),
+                        &type_ids,
+                    );
                     TraceWriter::register_variable_with_full_value(
                         &mut *writer,
                         &name,
                         val,
                     );
                 }
-                Effect::Push { value } => {
+                Effect::Push(value) => {
                     let val = convert_move_value(value.inner_value(), &type_ids);
                     TraceWriter::register_variable_with_full_value(
                         &mut *writer,
@@ -169,7 +177,7 @@ pub fn convert_trace(
                         val,
                     );
                 }
-                Effect::Pop { value } => {
+                Effect::Pop(value) => {
                     let val = convert_move_value(value.inner_value(), &type_ids);
                     TraceWriter::register_variable_with_full_value(
                         &mut *writer,
@@ -185,7 +193,7 @@ pub fn convert_trace(
                 }
             },
 
-            TraceEvent::External { .. } => {
+            TraceEvent::External(_) => {
                 // External effects are informational for now.
             }
         }
@@ -276,20 +284,25 @@ pub fn convert_move_value(
             text: v.clone(),
             type_id: type_ids.address_id,
         },
-        SerializableMoveValue::Struct { fields, type_ } => {
-            let field_values: Vec<ValueRecord> = fields
+        SerializableMoveValue::Struct { value: content } => {
+            let field_strs: Vec<String> = content
+                .fields
                 .iter()
-                .map(|f| convert_move_value(f, type_ids))
+                .map(|(name, val)| {
+                    let converted = convert_move_value(val, type_ids);
+                    format!("{name}: {}", value_record_to_display(&converted))
+                })
                 .collect();
-            let field_strs: Vec<String> = field_values
-                .iter()
-                .enumerate()
-                .map(|(i, v)| format!("field_{i}: {}", value_record_to_display(v)))
-                .collect();
-            let display = if type_.is_empty() {
+            // Extract the struct type name from the JSON value if present.
+            let type_name = content
+                .type_
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let display = if type_name.is_empty() {
                 format!("{{ {} }}", field_strs.join(", "))
             } else {
-                format!("{} {{ {} }}", type_, field_strs.join(", "))
+                format!("{type_name} {{ {} }}", field_strs.join(", "))
             };
             ValueRecord::String {
                 text: display,

@@ -15,29 +15,29 @@ fn create_synthetic_trace() -> String {
     let lines = vec![
         r#"{"version":3}"#,
         // OpenFrame for test_computation
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"test_computation","module":{"address":"0x0","name":"flow_test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64","u64","u64","u64","u64"],"is_native":false},"gas_left":1000000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"test_computation","module":{"address":"0x0","name":"flow_test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"},{"type_":"u64"},{"type_":"u64"},{"type_":"u64"},{"type_":"u64"}],"is_native":false},"gas_left":1000000}}"#,
         // Instruction pc=0: let a = 10
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999990,"instruction":"LdU64(10)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":10}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":10}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999990,"instruction":"LdU64(10)"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":10}}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":10}}}}}}"#,
         // Instruction pc=1: let b = 32
-        r#"{"type":"Instruction","type_parameters":[],"pc":1,"gas_left":999980,"instruction":"LdU64(32)"}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":32}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"U64","value":32}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":999980,"instruction":"LdU64(32)"}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":32}}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":32}}}}}}"#,
         // Instruction pc=2: let sum = a + b
-        r#"{"type":"Instruction","type_parameters":[],"pc":2,"gas_left":999970,"instruction":"Add"}"#,
-        r#"{"type":"Effect","effect":{"type":"Pop","value":{"type":"RuntimeValue","value":{"type":"U64","value":32}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Pop","value":{"type":"RuntimeValue","value":{"type":"U64","value":10}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":2},"value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":999970,"instruction":"Add"}}"#,
+        r#"{"Effect":{"Pop":{"RuntimeValue":{"value":{"type":"U64","value":32}}}}}"#,
+        r#"{"Effect":{"Pop":{"RuntimeValue":{"value":{"type":"U64","value":10}}}}}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":42}}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,2]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":42}}}}}}"#,
         // Instruction pc=3: let doubled = sum * 2
-        r#"{"type":"Instruction","type_parameters":[],"pc":3,"gas_left":999960,"instruction":"Mul"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":3},"value":{"type":"RuntimeValue","value":{"type":"U64","value":84}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":999960,"instruction":"Mul"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,3]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":84}}}}}}"#,
         // Instruction pc=4: let final_val = doubled + a
-        r#"{"type":"Instruction","type_parameters":[],"pc":4,"gas_left":999950,"instruction":"Add"}"#,
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":4},"value":{"type":"RuntimeValue","value":{"type":"U64","value":94}}}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":4,"gas_left":999950,"instruction":"Add"}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,4]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":94}}}}}}"#,
         // CloseFrame
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":94}],"gas_left":999940}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":94}],"gas_left":999940}}"#,
     ];
     lines.join("\n")
 }
@@ -82,8 +82,8 @@ fn test_move_trace_parser_basic() {
             TraceEvent::OpenFrame { .. } => open_frame_count += 1,
             TraceEvent::CloseFrame { .. } => close_frame_count += 1,
             TraceEvent::Instruction { .. } => instruction_count += 1,
-            TraceEvent::Effect { .. } => effect_count += 1,
-            TraceEvent::External { .. } => {}
+            TraceEvent::Effect(..) => effect_count += 1,
+            TraceEvent::External(..) => {}
         }
     }
 
@@ -210,15 +210,15 @@ fn test_move_to_ct_call_trace() {
     let trace_str = vec![
         r#"{"version":3}"#,
         // Open outer function
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"outer","module":{"address":"0x0","name":"mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999,"instruction":"Call"}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"outer","module":{"address":"0x0","name":"mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"Call"}}"#,
         // Open inner function
-        r#"{"type":"OpenFrame","frame":{"frame_id":2,"function_name":"inner","module":{"address":"0x0","name":"mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":998}"#,
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":997,"instruction":"LdU64(1)"}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"inner","module":{"address":"0x0","name":"mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":998}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":997,"instruction":"LdU64(1)"}}"#,
         // Close inner function
-        r#"{"type":"CloseFrame","frame_id":2,"return_":[{"type":"U64","value":1}],"gas_left":996}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":1}],"gas_left":996}}"#,
         // Close outer function
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":995}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":995}}"#,
     ]
     .join("\n");
 
@@ -330,16 +330,16 @@ fn test_move_to_ct_value_conversion() {
     // Test with various value types.
     let trace_str = vec![
         r#"{"version":3}"#,
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"value_test","module":{"address":"0x0","name":"val_mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64","bool","address"],"is_native":false},"gas_left":1000}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"value_test","module":{"address":"0x0","name":"val_mod"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"},{"type_":"bool"},{"type_":"address"}],"is_native":false},"gas_left":1000}}"#,
         // Write a u64 value
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":42}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":42}}}}}}"#,
         // Write a bool value
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":1},"value":{"type":"RuntimeValue","value":{"type":"Bool","value":true}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Bool","value":true}}}}}}"#,
         // Write an address value
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":2},"value":{"type":"RuntimeValue","value":{"type":"Address","value":"0xCAFE"}}}}"#,
+        r#"{"Effect":{"Write":{"location":{"Local":[1,2]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Address","value":"0xCAFE"}}}}}}"#,
         // Push a struct value
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"Struct","fields":[{"type":"U64","value":100},{"type":"Bool","value":false}],"type_":"MyStruct"}}}}"#,
-        r#"{"type":"CloseFrame","frame_id":1,"gas_left":900}"#,
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"MyStruct"},"fields":[["field_0",{"type":"U64","value":100}],["field_1",{"type":"Bool","value":false}]]}}}}}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"gas_left":900}}"#,
     ]
     .join("\n");
 
@@ -382,13 +382,13 @@ fn test_move_to_ct_value_conversion() {
     }
 
     let struct_val: SerializableMoveValue = serde_json::from_str(
-        r#"{"type":"Struct","fields":[{"type":"U64","value":10}],"type_":"Foo"}"#,
+        r#"{"type":"Struct","value":{"type_":{"name":"Foo"},"fields":[["field_0",{"type":"U64","value":10}]]}}"#,
     )
     .expect("parse Struct");
     match struct_val {
-        SerializableMoveValue::Struct { fields, type_ } => {
-            assert_eq!(type_, "Foo");
-            assert_eq!(fields.len(), 1);
+        SerializableMoveValue::Struct { value: content } => {
+            assert_eq!(content.type_.get("name").and_then(|v| v.as_str()), Some("Foo"));
+            assert_eq!(content.fields.len(), 1);
         }
         _ => panic!("expected Struct variant"),
     }
