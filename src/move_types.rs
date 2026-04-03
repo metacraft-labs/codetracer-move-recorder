@@ -1,8 +1,8 @@
 //! Move trace format type definitions.
 //!
-//! These types mirror the Move VM trace format (version 3) JSON schema,
-//! allowing deserialization from NDJSON trace files without depending on
-//! the heavyweight Sui crate.
+//! These types mirror the Move VM trace format (version 3) JSON schema
+//! as produced by Sui ≥1.68.  The format uses serde's default external
+//! tagging for enums, e.g. `{"OpenFrame": {...}}`.
 
 use serde::Deserialize;
 use serde::de;
@@ -14,8 +14,10 @@ pub struct VersionHeader {
 }
 
 /// A single trace event (one JSON line after the version header).
+///
+/// Sui ≥1.68 uses externally tagged enums (serde default), e.g.:
+///   `{"OpenFrame": {"frame": {...}, "gas_left": 123}}`
 #[derive(Deserialize, Debug)]
-#[serde(tag = "type")]
 pub enum TraceEvent {
     OpenFrame {
         frame: Frame,
@@ -23,8 +25,8 @@ pub enum TraceEvent {
     },
     CloseFrame {
         frame_id: u64,
-        #[serde(default)]
-        return_: Option<Vec<SerializableMoveValue>>,
+        #[serde(default, rename = "return_")]
+        return_values: Vec<SerializableMoveValue>,
         gas_left: u64,
     },
     Instruction {
@@ -34,12 +36,8 @@ pub enum TraceEvent {
         gas_left: u64,
         instruction: String,
     },
-    Effect {
-        effect: Effect,
-    },
-    External {
-        effect: ExternalEffect,
-    },
+    Effect(Effect),
+    External(ExternalEffect),
 }
 
 /// A function frame opened during execution.
@@ -49,13 +47,17 @@ pub struct Frame {
     pub function_name: String,
     pub module: ModuleId,
     #[serde(default)]
+    pub version_id: String,
+    #[serde(default)]
+    pub binary_member_index: u64,
+    #[serde(default)]
     pub type_instantiation: Vec<String>,
     #[serde(default)]
     pub parameters: Vec<TraceValue>,
     #[serde(default)]
     pub return_types: Vec<String>,
     #[serde(default)]
-    pub locals_types: Vec<String>,
+    pub locals_types: Vec<LocalType>,
     #[serde(default)]
     pub is_native: bool,
 }
@@ -67,23 +69,31 @@ pub struct ModuleId {
     pub name: String,
 }
 
-/// An effect produced by executing an instruction.
+/// A local variable's type annotation in a frame.
 #[derive(Deserialize, Debug)]
-#[serde(tag = "type")]
+pub struct LocalType {
+    #[serde(default)]
+    pub type_: serde_json::Value,
+    #[serde(default)]
+    pub ref_type: Option<String>,
+}
+
+/// An effect produced by executing an instruction.
+///
+/// Externally tagged: `{"Push": {...}}`, `{"Write": {...}}`, etc.
+#[derive(Deserialize, Debug)]
 pub enum Effect {
-    Pop {
-        value: TraceValue,
-    },
-    Push {
-        value: TraceValue,
-    },
+    Pop(TraceValue),
+    Push(TraceValue),
     Read {
         location: Location,
-        value: TraceValue,
+        root_value_read: TraceValue,
+        #[serde(default)]
+        moved: bool,
     },
     Write {
         location: Location,
-        value: TraceValue,
+        root_value_after_write: TraceValue,
     },
     DataLoad {
         #[serde(default)]
@@ -95,16 +105,30 @@ pub enum Effect {
     },
 }
 
-/// A local variable location within a frame.
+/// A variable location within a frame.
+///
+/// Serialized as `{"Local": [frame_id, local_index]}`.
 #[derive(Deserialize, Debug)]
-pub struct Location {
-    pub frame_id: u64,
-    pub local_index: u64,
+pub enum Location {
+    Local(u64, u64),
+    /// Indexed variant (may appear in some Sui versions).
+    Indexed(u64, u64, u64),
+}
+
+impl Location {
+    /// Extract the local variable index (second element of the tuple).
+    pub fn local_index(&self) -> u64 {
+        match self {
+            Location::Local(_, idx) => *idx,
+            Location::Indexed(_, idx, _) => *idx,
+        }
+    }
 }
 
 /// A value on the stack or in a local variable.
+///
+/// Externally tagged: `{"RuntimeValue": {"value": {...}}}`.
 #[derive(Deserialize, Debug)]
-#[serde(tag = "type")]
 pub enum TraceValue {
     RuntimeValue {
         value: SerializableMoveValue,
@@ -120,6 +144,8 @@ pub enum TraceValue {
 }
 
 /// Concrete Move value (the `value` / `snapshot` fields).
+///
+/// Still internally tagged with `"type"`: `{"type": "U64", "value": 10}`.
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum SerializableMoveValue {
@@ -134,12 +160,14 @@ pub enum SerializableMoveValue {
     U256 { value: String },
     Bool { value: bool },
     Address { value: String },
+    /// Struct values have a nested `value` containing `type_` and `fields`.
+    ///
+    /// JSON: `{"type": "Struct", "value": {"type_": {...}, "fields": [["x", {...}], ...]}}`
     Struct {
-        fields: Vec<SerializableMoveValue>,
-        #[serde(default)]
-        type_: String,
+        value: StructContent,
     },
     Vector {
+        #[serde(alias = "value")]
         elements: Vec<SerializableMoveValue>,
     },
     Variant {
@@ -148,6 +176,15 @@ pub enum SerializableMoveValue {
         #[serde(default)]
         type_: String,
     },
+}
+
+/// The inner content of a Struct value.
+#[derive(Deserialize, Debug, Clone)]
+pub struct StructContent {
+    #[serde(default)]
+    pub type_: serde_json::Value,
+    /// Fields are name-value pairs: `[["field_name", {value}], ...]`
+    pub fields: Vec<(String, SerializableMoveValue)>,
 }
 
 /// Custom deserializer for u128 values.

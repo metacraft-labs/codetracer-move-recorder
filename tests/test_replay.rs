@@ -9,15 +9,15 @@ use codetracer_trace_writer::TraceEventsFileFormat;
 use codetracer_move_recorder::replay::{self, ReplayConfig};
 use codetracer_move_recorder::source_lookup::SourceLookup;
 
-/// Minimal valid NDJSON trace data for testing.
+/// Minimal valid NDJSON trace data for testing (Sui ≥1.68 format).
 fn minimal_trace_ndjson() -> &'static str {
     concat!(
         r#"{"version":3}"#, "\n",
-        r#"{"type":"OpenFrame","frame":{"frame_id":1,"function_name":"transfer","module":{"address":"0x2","name":"coin"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":["u64"],"is_native":false},"gas_left":1000000}"#, "\n",
-        r#"{"type":"Instruction","type_parameters":[],"pc":0,"gas_left":999990,"instruction":"LdU64(100)"}"#, "\n",
-        r#"{"type":"Effect","effect":{"type":"Push","value":{"type":"RuntimeValue","value":{"type":"U64","value":100}}}}"#, "\n",
-        r#"{"type":"Effect","effect":{"type":"Write","location":{"frame_id":1,"local_index":0},"value":{"type":"RuntimeValue","value":{"type":"U64","value":100}}}}"#, "\n",
-        r#"{"type":"CloseFrame","frame_id":1,"return_":[{"type":"U64","value":100}],"gas_left":999900}"#, "\n",
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"transfer","module":{"address":"0x2","name":"coin"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64","ref_type":null}],"is_native":false},"gas_left":1000000}}"#, "\n",
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999990,"instruction":"LdU64(100)"}}"#, "\n",
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":100}}}}}"#, "\n",
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":100}}}}}}"#, "\n",
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":100}],"gas_left":999900}}"#, "\n",
     )
 }
 
