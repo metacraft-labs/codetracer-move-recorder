@@ -17,7 +17,7 @@ fn minimal_trace_ndjson() -> &'static str {
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999990,"instruction":"LdU64(100)"}}"#, "\n",
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":100}}}}}"#, "\n",
         r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":100}}}}}}"#, "\n",
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":100}],"gas_left":999900}}"#, "\n",
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":100}}}],"gas_left":999900}}"#, "\n",
     )
 }
 

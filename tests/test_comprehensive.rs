@@ -393,7 +393,7 @@ fn test_simple_function_call() {
         r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"simple_fn","module":{"address":"0x1","name":"my_module"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":1000}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(5)"}}"#,
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":5}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":5}],"gas_left":998}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":5}}}],"gas_left":998}}"#,
     ]
     .join("\n");
 
@@ -429,11 +429,11 @@ fn test_nested_calls_a_calls_b_calls_c() {
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9995,"instruction":"LdU64(99)"}}"#,
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":99}}}}}"#,
         // C closes
-        r#"{"CloseFrame":{"frame_id":3,"return_":[{"type":"U64","value":99}],"gas_left":9994}}"#,
+        r#"{"CloseFrame":{"frame_id":3,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":99}}}],"gas_left":9994}}"#,
         // B closes
-        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":99}],"gas_left":9993}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":99}}}],"gas_left":9993}}"#,
         // A closes
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":99}],"gas_left":9992}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":99}}}],"gas_left":9992}}"#,
     ]
     .join("\n");
 
@@ -470,7 +470,7 @@ fn test_generic_function_instantiation() {
     match event {
         TraceEvent::OpenFrame { frame, .. } => {
             assert_eq!(frame.type_instantiation.len(), 1);
-            assert!(frame.type_instantiation[0].contains("Coin"));
+            assert!(frame.type_instantiation[0].as_str().unwrap_or("").contains("Coin"));
         }
         _ => panic!("expected OpenFrame"),
     }
@@ -532,7 +532,7 @@ fn test_module_crossing_calls() {
         r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"withdraw","module":{"address":"0x2","name":"balance"},"type_instantiation":["0x2::sui::SUI"],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":9998}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9997,"instruction":"LdU64(500)"}}"#,
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":500}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":500}],"gas_left":9996}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":500}}}],"gas_left":9996}}"#,
         // Back in coin module, call transfer::transfer_internal
         r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":9995,"instruction":"Call"}}"#,
         r#"{"OpenFrame":{"frame":{"frame_id":3,"function_name":"transfer_internal","module":{"address":"0x2","name":"transfer"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":9994}}"#,
@@ -575,15 +575,15 @@ fn test_recursive_function_calls() {
         r#"{"OpenFrame":{"frame":{"frame_id":3,"function_name":"factorial","module":{"address":"0x1","name":"math"},"type_instantiation":[],"parameters":[{"RuntimeValue":{"value":{"type":"U64","value":1}}}],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":9994}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9993,"instruction":"LdU64(1)"}}"#,
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":1}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":3,"return_":[{"type":"U64","value":1}],"gas_left":9992}}"#,
+        r#"{"CloseFrame":{"frame_id":3,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":1}}}],"gas_left":9992}}"#,
         // factorial(2) multiplies: 2 * 1 = 2
         r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9991,"instruction":"Mul"}}"#,
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":2}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":2}],"gas_left":9990}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":2}}}],"gas_left":9990}}"#,
         // factorial(3) multiplies: 3 * 2 = 6
         r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":9989,"instruction":"Mul"}}"#,
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":6}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":6}],"gas_left":9988}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":6}}}],"gas_left":9988}}"#,
     ]
     .join("\n");
 
@@ -634,7 +634,7 @@ fn test_effect_push_pop() {
         r#"{"Effect":{"Pop":{"RuntimeValue":{"value":{"type":"U64","value":20}}}}}"#,
         r#"{"Effect":{"Pop":{"RuntimeValue":{"value":{"type":"U64","value":10}}}}}"#,
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":30}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":30}],"gas_left":996}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":30}}}],"gas_left":996}}"#,
     ]
     .join("\n");
 
@@ -671,7 +671,7 @@ fn test_effect_read_write_locals() {
         // Read local_1
         r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":996,"instruction":"MoveLoc(1)"}}"#,
         r#"{"Effect":{"Read":{"location":{"Local":[1,1]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":42}}},"moved":false}}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":42}],"gas_left":995}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":42}}}],"gas_left":995}}"#,
     ]
     .join("\n");
 
@@ -874,7 +874,7 @@ fn test_branch_pattern() {
         r#"{"Instruction":{"type_parameters":[],"pc":5,"gas_left":996,"instruction":"LdU64(20)"}}"#,
         r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":20}}}}}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":6,"gas_left":995,"instruction":"Ret"}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":20}],"gas_left":994}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":20}}}],"gas_left":994}}"#,
     ]
     .join("\n");
 
@@ -956,7 +956,7 @@ fn test_loop_pattern() {
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Bool","value":false}}}}}"#,
         // After loop
         r#"{"Instruction":{"type_parameters":[],"pc":6,"gas_left":9987,"instruction":"Ret"}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":3}],"gas_left":9986}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":3}}}],"gas_left":9986}}"#,
     ]
     .join("\n");
 
@@ -1022,7 +1022,7 @@ fn test_execution_error_abort() {
         r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":0}}}}}}"#,
         // Abort instruction triggers ExecutionError
         r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":998,"instruction":"Abort"}}"#,
-        r#"{"Effect":{"ExecutionError":{"error":"ABORT with code 42"}}}"#,
+        r#"{"Effect":{"ExecutionError":"ABORT with code 42"}}"#,
         r#"{"CloseFrame":{"frame_id":1,"gas_left":997}}"#,
     ]
     .join("\n");
@@ -1061,7 +1061,7 @@ fn test_scenario_token_transfer() {
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":99996,"instruction":"LdU64(500)"}}"#,
         r#"{"Effect":{"Write":{"location":{"Local":[2,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":500}}}}}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":99995,"instruction":"Ret"}}"#,
-        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"Struct","value":{"type_":{"name":"0x2::balance::Balance"},"fields":[["field_0",{"type":"U64","value":500}]]}}],"gas_left":99994}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::balance::Balance"},"fields":[["field_0",{"type":"U64","value":500}]]}}}}],"gas_left":99994}}"#,
         // Store split balance
         r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":99993,"instruction":"StLoc(3)"}}"#,
         r#"{"Effect":{"Write":{"location":{"Local":[1,3]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::balance::Balance"},"fields":[["field_0",{"type":"U64","value":500}]]}}}}}}}"#,
@@ -1183,7 +1183,7 @@ fn test_scenario_object_creation() {
         // Create UID via object::new
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":49999,"instruction":"Call"}}"#,
         r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"new","module":{"address":"0x2","name":"object"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":49998}}"#,
-        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"Struct","value":{"type_":{"name":"0x2::object::UID"},"fields":[["field_0",{"type":"Address","value":"0xUID_ADDR_123"}]]}}],"gas_left":49997}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::object::UID"},"fields":[["field_0",{"type":"Address","value":"0xUID_ADDR_123"}]]}}}}],"gas_left":49997}}"#,
         // Store UID
         r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::object::UID"},"fields":[["field_0",{"type":"Address","value":"0xUID_ADDR_123"}]]}}}}}}}"#,
         // Pack NFT struct: NFT { id: uid, name_length: 5, value: 100 }
@@ -1231,7 +1231,7 @@ fn test_scenario_vector_manipulation() {
         // vector::length => 2
         r#"{"Instruction":{"type_parameters":[],"pc":5,"gas_left":9994,"instruction":"VecLen"}}"#,
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":2}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":2}],"gas_left":9993}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":2}}}],"gas_left":9993}}"#,
     ]
     .join("\n");
 
@@ -1276,7 +1276,7 @@ fn test_scenario_error_abort_with_code() {
         r#"{"Effect":{"Read":{"location":{"Local":[1,1]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":500}}},"moved":false}}}"#,
         // Check balance >= amount => false, abort
         r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":4997,"instruction":"Abort"}}"#,
-        r#"{"Effect":{"ExecutionError":{"error":"ABORT with code 1 (EInsufficientBalance)"}}}"#,
+        r#"{"Effect":{"ExecutionError":"ABORT with code 1 (EInsufficientBalance)"}}"#,
         r#"{"CloseFrame":{"frame_id":1,"gas_left":4996}}"#,
     ]
     .join("\n");
@@ -1323,7 +1323,7 @@ fn test_multiple_return_values() {
     let trace = vec![
         r#"{"version":3}"#,
         r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"multi_ret","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":1},{"type":"Bool","value":true},{"type":"Address","value":"0xABC"}],"gas_left":999}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":1}}},{"RuntimeValue":{"value":{"type":"Bool","value":true}}},{"RuntimeValue":{"value":{"type":"Address","value":"0xABC"}}}],"gas_left":999}}"#,
     ]
     .join("\n");
 
@@ -1340,7 +1340,7 @@ fn test_native_function_frame() {
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":9999,"instruction":"Call"}}"#,
         // Native function call
         r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"native_hash","module":{"address":"0x1","name":"hash"},"type_instantiation":[],"parameters":[{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U8","value":1},{"type":"U8","value":2}]}}}],"return_types":[],"locals_types":[],"is_native":true},"gas_left":9998}}"#,
-        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"Vector","elements":[{"type":"U8","value":100},{"type":"U8","value":200}]}],"gas_left":9997}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U8","value":100},{"type":"U8","value":200}]}}}],"gas_left":9997}}"#,
         r#"{"CloseFrame":{"frame_id":1,"gas_left":9996}}"#,
     ]
     .join("\n");
@@ -1449,7 +1449,7 @@ fn test_deeply_nested_struct_through_converter() {
         r#"{"version":3}"#,
         r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"deep_test","module":{"address":"0x0","name":"test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000}}"#,
         r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"Outer"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Middle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Inner"},"fields":[["field_0",{"type":"U64","value":42}]]}}]]}}]]}}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"Struct","value":{"type_":{"name":"Outer"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Middle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Inner"},"fields":[["field_0",{"type":"U64","value":42}]]}}]]}}]]}}],"gas_left":999}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"Outer"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Middle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"Inner"},"fields":[["field_0",{"type":"U64","value":42}]]}}]]}}]]}}}}],"gas_left":999}}"#,
     ]
     .join("\n");
 
@@ -1596,7 +1596,7 @@ fn test_no_source_map_entries_still_works() {
         r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"no_map","module":{"address":"0x0","name":"unknown"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":1000}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999,"instruction":"LdU64(1)"}}"#,
         r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":1}}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"U64","value":1}],"gas_left":998}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":1}}}],"gas_left":998}}"#,
     ]
     .join("\n");
 
@@ -1639,7 +1639,7 @@ fn test_full_defi_swap_scenario() {
         r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":499995,"instruction":"Div"}}"#,
         r#"{"Effect":{"Write":{"location":{"Local":[2,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":198}}}}}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":499994,"instruction":"Ret"}}"#,
-        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":198}],"gas_left":499993}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":198}}}],"gas_left":499993}}"#,
         // Store output amount
         r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":499992,"instruction":"StLoc(3)"}}"#,
         r#"{"Effect":{"Write":{"location":{"Local":[1,3]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":198}}}}}}"#,
@@ -1654,7 +1654,7 @@ fn test_full_defi_swap_scenario() {
         r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x3::dex::Pool"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"UID"},"fields":[["field_0",{"type":"Address","value":"0xPOOL_ID"}]]}}],["field_1",{"type":"U64","value":1000100}],["field_2",{"type":"U64","value":1999802}]]}}}}}}}"#,
         // Return output coin
         r#"{"Instruction":{"type_parameters":[],"pc":5,"gas_left":499989,"instruction":"Ret"}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"UID"},"fields":[["field_0",{"type":"Address","value":"0xCOIN_OUT"}]]}}],["field_1",{"type":"Struct","value":{"type_":{"name":"Balance"},"fields":[["field_0",{"type":"U64","value":198}]]}}]]}}],"gas_left":499988}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"UID"},"fields":[["field_0",{"type":"Address","value":"0xCOIN_OUT"}]]}}],["field_1",{"type":"Struct","value":{"type_":{"name":"Balance"},"fields":[["field_0",{"type":"U64","value":198}]]}}]]}}}}],"gas_left":499988}}"#,
     ]
     .join("\n");
 
@@ -1750,7 +1750,7 @@ fn test_struct_fields_correctly_converted_point_rectangle() {
         // Create Rectangle { origin: Point { x: 10, y: 20 }, width: 100, height: 200 }
         r#"{"Instruction":{"type_parameters":[],"pc":1,"gas_left":9998,"instruction":"Pack(Rectangle)"}}"#,
         r#"{"Effect":{"Write":{"location":{"Local":[1,1]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Rectangle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Point"},"fields":[["field_0",{"type":"U64","value":10}],["field_1",{"type":"U64","value":20}]]}}],["field_1",{"type":"U64","value":100}],["field_2",{"type":"U64","value":200}]]}}}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Rectangle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Point"},"fields":[["field_0",{"type":"U64","value":10}],["field_1",{"type":"U64","value":20}]]}}],["field_1",{"type":"U64","value":100}],["field_2",{"type":"U64","value":200}]]}}],"gas_left":9990}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Rectangle"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x1::geometry::Point"},"fields":[["field_0",{"type":"U64","value":10}],["field_1",{"type":"U64","value":20}]]}}],["field_1",{"type":"U64","value":100}],["field_2",{"type":"U64","value":200}]]}}}}],"gas_left":9990}}"#,
     ]
     .join("\n");
 
@@ -1899,7 +1899,7 @@ fn test_vector_operations_produce_correct_element_values() {
         // pop_back => removes 300, vector becomes [100, 200]
         r#"{"Instruction":{"type_parameters":[],"pc":4,"gas_left":9995,"instruction":"VecPopBack"}}"#,
         r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}}}}}}"#,
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}],"gas_left":9990}}"#,
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"Vector","elements":[{"type":"U64","value":100},{"type":"U64","value":200}]}}}],"gas_left":9990}}"#,
     ]
     .join("\n");
 
@@ -2015,19 +2015,19 @@ fn test_generic_function_instantiation_type_specific_values() {
         r#"{"OpenFrame":{"frame":{"frame_id":2,"function_name":"identity","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["u64"],"parameters":[{"RuntimeValue":{"value":{"type":"U64","value":42}}}],"return_types":[],"locals_types":[{"type_":"u64"}],"is_native":false},"gas_left":19997}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":19996,"instruction":"MoveLoc(0)"}}"#,
         r#"{"Effect":{"Read":{"location":{"Local":[2,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"U64","value":42}}},"moved":false}}}"#,
-        r#"{"CloseFrame":{"frame_id":2,"return_":[{"type":"U64","value":42}],"gas_left":19995}}"#,
+        r#"{"CloseFrame":{"frame_id":2,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":42}}}],"gas_left":19995}}"#,
         // Call identity<bool>(true)
         r#"{"Instruction":{"type_parameters":[],"pc":2,"gas_left":19994,"instruction":"Call"}}"#,
         r#"{"OpenFrame":{"frame":{"frame_id":3,"function_name":"identity","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["bool"],"parameters":[{"RuntimeValue":{"value":{"type":"Bool","value":true}}}],"return_types":[],"locals_types":[{"type_":"bool"}],"is_native":false},"gas_left":19993}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":19992,"instruction":"MoveLoc(0)"}}"#,
         r#"{"Effect":{"Read":{"location":{"Local":[3,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"Bool","value":true}}},"moved":false}}}"#,
-        r#"{"CloseFrame":{"frame_id":3,"return_":[{"type":"Bool","value":true}],"gas_left":19991}}"#,
+        r#"{"CloseFrame":{"frame_id":3,"return_":[{"RuntimeValue":{"value":{"type":"Bool","value":true}}}],"gas_left":19991}}"#,
         // Call wrap<Coin<SUI>> with a struct value
         r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":19990,"instruction":"Call"}}"#,
         r#"{"OpenFrame":{"frame":{"frame_id":4,"function_name":"wrap","module":{"address":"0x1","name":"generic_mod"},"type_instantiation":["0x2::coin::Coin<0x2::sui::SUI>"],"parameters":[{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"U64","value":1000}]]}}}}],"return_types":[],"locals_types":[{"type_":"0x2::coin::Coin"}],"is_native":false},"gas_left":19989}}"#,
         r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":19988,"instruction":"MoveLoc(0)"}}"#,
         r#"{"Effect":{"Read":{"location":{"Local":[4,0]},"root_value_read":{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"U64","value":1000}]]}}}},"moved":false}}}"#,
-        r#"{"CloseFrame":{"frame_id":4,"return_":[{"type":"Struct","value":{"type_":{"name":"0x1::generic_mod::Wrapper"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"U64","value":1000}]]}}]]}}],"gas_left":19987}}"#,
+        r#"{"CloseFrame":{"frame_id":4,"return_":[{"RuntimeValue":{"value":{"type":"Struct","value":{"type_":{"name":"0x1::generic_mod::Wrapper"},"fields":[["field_0",{"type":"Struct","value":{"type_":{"name":"0x2::coin::Coin"},"fields":[["field_0",{"type":"U64","value":1000}]]}}]]}}}}],"gas_left":19987}}"#,
         r#"{"CloseFrame":{"frame_id":1,"gas_left":19980}}"#,
     ]
     .join("\n");
@@ -2134,7 +2134,7 @@ fn test_generic_function_instantiation_type_specific_values() {
     // Parse the raw NDJSON to confirm type parameters.
     let mut lines = trace.lines();
     lines.next(); // version
-    let mut type_instantiations: Vec<Vec<String>> = Vec::new();
+    let mut type_instantiations: Vec<Vec<serde_json::Value>> = Vec::new();
     for line in lines {
         if let Ok(event) = serde_json::from_str::<TraceEvent>(line) {
             if let TraceEvent::OpenFrame { frame, .. } = event {
@@ -2151,11 +2151,11 @@ fn test_generic_function_instantiation_type_specific_values() {
         "expected 3 frames with type_instantiation, got {}",
         type_instantiations.len()
     );
-    assert_eq!(type_instantiations[0], vec!["u64"], "identity<u64>");
-    assert_eq!(type_instantiations[1], vec!["bool"], "identity<bool>");
+    assert_eq!(type_instantiations[0], vec![serde_json::Value::String("u64".to_string())], "identity<u64>");
+    assert_eq!(type_instantiations[1], vec![serde_json::Value::String("bool".to_string())], "identity<bool>");
     assert_eq!(
         type_instantiations[2],
-        vec!["0x2::coin::Coin<0x2::sui::SUI>"],
+        vec![serde_json::Value::String("0x2::coin::Coin<0x2::sui::SUI>".to_string())],
         "wrap<Coin<SUI>>"
     );
 }

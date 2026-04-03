@@ -26,12 +26,12 @@ pub enum TraceEvent {
     CloseFrame {
         frame_id: u64,
         #[serde(default, rename = "return_")]
-        return_values: Vec<SerializableMoveValue>,
+        return_values: Vec<TraceValue>,
         gas_left: u64,
     },
     Instruction {
         #[serde(default)]
-        type_parameters: Vec<String>,
+        type_parameters: Vec<serde_json::Value>,
         pc: u64,
         gas_left: u64,
         instruction: String,
@@ -51,11 +51,11 @@ pub struct Frame {
     #[serde(default)]
     pub binary_member_index: u64,
     #[serde(default)]
-    pub type_instantiation: Vec<String>,
+    pub type_instantiation: Vec<serde_json::Value>,
     #[serde(default)]
     pub parameters: Vec<TraceValue>,
     #[serde(default)]
-    pub return_types: Vec<String>,
+    pub return_types: Vec<LocalType>,
     #[serde(default)]
     pub locals_types: Vec<LocalType>,
     #[serde(default)]
@@ -99,28 +99,29 @@ pub enum Effect {
         #[serde(default)]
         address: Option<String>,
     },
-    ExecutionError {
-        #[serde(default)]
-        error: String,
-    },
+    ExecutionError(String),
 }
 
 /// A variable location within a frame.
 ///
-/// Serialized as `{"Local": [frame_id, local_index]}`.
+/// `Local` is serialized as `{"Local": [frame_id, local_index]}`.
+/// `Indexed` is `{"Indexed": [<nested_location>, field_index]}` and
+/// appears when accessing struct fields through references.
 #[derive(Deserialize, Debug)]
 pub enum Location {
     Local(u64, u64),
-    /// Indexed variant (may appear in some Sui versions).
-    Indexed(u64, u64, u64),
+    Indexed(Box<Location>, u64),
 }
 
 impl Location {
-    /// Extract the local variable index (second element of the tuple).
+    /// Extract the innermost local variable index.
+    ///
+    /// For `Local(frame_id, idx)` returns `idx`.
+    /// For `Indexed(inner, _)` recurses into `inner` to find the base local.
     pub fn local_index(&self) -> u64 {
         match self {
             Location::Local(_, idx) => *idx,
-            Location::Indexed(_, idx, _) => *idx,
+            Location::Indexed(inner, _) => inner.local_index(),
         }
     }
 }
