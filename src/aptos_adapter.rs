@@ -328,9 +328,9 @@ pub fn convert_aptos_trace(
 
     // Track function call stack for proper Call/Return pairing.
     let mut current_function: Option<String> = None;
-    let mut step_line: i64 = 1;
 
-    for entry in entries {
+    for (step_idx, entry) in entries.iter().enumerate() {
+        let step_line = (step_idx + 1) as i64;
         let func_name = &entry.trace.function_name;
 
         // If we've entered a new function, emit Call/Return.
@@ -377,7 +377,6 @@ pub fn convert_aptos_trace(
         // Emit a step for each trace entry.
         // Note: without source maps, we use incrementing line numbers as placeholders.
         TraceWriter::register_step(&mut *writer, source_path, Line(step_line));
-        step_line += 1;
     }
 
     // Close the last function.
