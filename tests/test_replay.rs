@@ -36,7 +36,7 @@ fn test_find_trace_file_zst() {
 #[test]
 fn test_find_trace_file_json() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let json_path = tmp.path().join("trace.json");
+    let json_path = tmp.path().join("trace.bin");
     fs::write(&json_path, b"fake json data").unwrap();
 
     let found = replay::find_trace_file(tmp.path()).unwrap();
@@ -139,7 +139,7 @@ fn test_replay_end_to_end_with_existing_trace() {
         &zst_path,
         &[tmp.path().to_path_buf()],
         &out_dir,
-        TraceEventsFileFormat::Json,
+        TraceEventsFileFormat::Binary,
     )
     .expect("replay_from_existing_trace should succeed");
 

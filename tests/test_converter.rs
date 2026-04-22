@@ -317,7 +317,7 @@ fn test_move_trace_3file_output() {
         &source_map,
         source_path,
         &out_dir,
-        TraceEventsFileFormat::Json,
+        TraceEventsFileFormat::Binary,
     )
     .expect("convert_trace should succeed");
 

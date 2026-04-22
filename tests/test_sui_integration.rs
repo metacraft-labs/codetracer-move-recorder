@@ -224,7 +224,7 @@ fn test_sui_move_trace_integration() {
             &source_map,
             &source_path,
             &out_dir,
-            TraceEventsFileFormat::Json,
+            TraceEventsFileFormat::Binary,
         )
         .unwrap_or_else(|e| {
             panic!(
@@ -235,7 +235,7 @@ fn test_sui_move_trace_integration() {
 
         // ---- Step 4: Verify the output files exist --------------------------
         assert!(
-            out_dir.join("trace.json").exists(),
+            out_dir.join("trace.bin").exists(),
             "trace.json should exist after conversion"
         );
         assert!(
@@ -248,7 +248,7 @@ fn test_sui_move_trace_integration() {
         );
 
         // ---- Step 5: Parse and verify the CodeTracer trace ------------------
-        let events = parse_trace_events(&out_dir.join("trace.json"));
+        let events = parse_trace_events(&out_dir.join("trace.bin"));
         assert!(
             !events.is_empty(),
             "trace.json should contain events"

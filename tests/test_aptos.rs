@@ -202,7 +202,7 @@ fn test_aptos_trace_to_codetracer() {
         &entries,
         source_path,
         &out_dir,
-        TraceEventsFileFormat::Json,
+        TraceEventsFileFormat::Binary,
     )
     .expect("convert_aptos_trace should succeed");
 
@@ -229,7 +229,7 @@ fn test_aptos_trace_to_codetracer_empty() {
         &[],
         source_path,
         &out_dir,
-        TraceEventsFileFormat::Json,
+        TraceEventsFileFormat::Binary,
     );
 
     assert!(result.is_err(), "should fail with empty entries");
@@ -437,7 +437,7 @@ fn test_aptos_replay_config_custom() {
         txn_version: 42,
         source_dir: Some(std::path::PathBuf::from("/tmp/sources")),
         out_dir: std::path::PathBuf::from("/tmp/output"),
-        format: TraceEventsFileFormat::Json,
+        format: TraceEventsFileFormat::Binary,
         profile_gas: false,
     };
 
@@ -581,7 +581,7 @@ fn test_aptos_replay_from_existing_data() {
         Some(gas_json),
         source_path,
         &out_dir,
-        TraceEventsFileFormat::Json,
+        TraceEventsFileFormat::Binary,
     )
     .expect("aptos_replay_from_existing_data should succeed");
 
@@ -612,7 +612,7 @@ fn test_aptos_replay_from_existing_data_no_gas() {
         None,
         source_path,
         &out_dir,
-        TraceEventsFileFormat::Json,
+        TraceEventsFileFormat::Binary,
     )
     .expect("should succeed without gas data");
 
@@ -639,7 +639,7 @@ fn test_aptos_replay_from_existing_data_empty_trace() {
         None,
         source_path,
         &out_dir,
-        TraceEventsFileFormat::Json,
+        TraceEventsFileFormat::Binary,
     );
 
     assert!(result.is_err(), "should fail with empty trace");
