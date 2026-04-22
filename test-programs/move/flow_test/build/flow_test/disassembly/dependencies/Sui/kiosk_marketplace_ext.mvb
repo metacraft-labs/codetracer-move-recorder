@@ -1,0 +1,260 @@
+// Move bytecode v6
+module 2.kiosk_marketplace_ext {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::bag;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::kiosk;
+use 0000000000000000000000000000000000000000000000000000000000000002::kiosk_extension;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::sui;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Ext<phantom Market> has drop {
+	dummy_field: bool
+}
+
+struct Bid<phantom T> has copy, drop, store {
+	dummy_field: bool
+}
+
+public add<Market>(kiosk#0#0: &mut Kiosk, cap#0#0: &KioskOwnerCap, ctx#0#0: &mut TxContext) {
+B0:
+	0: LdFalse
+	1: PackGeneric[0](Ext<Market>)
+	2: MoveLoc[0](kiosk#0#0: &mut Kiosk)
+	3: MoveLoc[1](cap#0#0: &KioskOwnerCap)
+	4: LdU128(3)
+	5: MoveLoc[2](ctx#0#0: &mut TxContext)
+	6: Call kiosk_extension::add<Ext<Market>>(Ext<Market>, &mut Kiosk, &KioskOwnerCap, u128, &mut TxContext)
+	7: Ret
+}
+
+public bid<Market, T: store + key>(kiosk#0#0: &mut Kiosk, cap#0#0: &KioskOwnerCap, bid#0#0: Coin<SUI>) {
+B0:
+	0: CopyLoc[0](kiosk#0#0: &mut Kiosk)
+	1: MoveLoc[1](cap#0#0: &KioskOwnerCap)
+	2: Call kiosk::has_access(&mut Kiosk, &KioskOwnerCap): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[0](kiosk#0#0: &mut Kiosk)
+	6: Pop
+	7: LdConst[0](u64: 0)
+	8: Abort
+B3:
+	9: CopyLoc[0](kiosk#0#0: &mut Kiosk)
+	10: FreezeRef
+	11: Call kiosk_extension::is_installed<Ext<Market>>(&Kiosk): bool
+	12: BrFalse(14)
+B4:
+	13: Branch(18)
+B5:
+	14: MoveLoc[0](kiosk#0#0: &mut Kiosk)
+	15: Pop
+	16: LdConst[3](u64: 3)
+	17: Abort
+B6:
+	18: LdFalse
+	19: PackGeneric[0](Ext<Market>)
+	20: MoveLoc[0](kiosk#0#0: &mut Kiosk)
+	21: Call kiosk_extension::storage_mut<Ext<Market>>(Ext<Market>, &mut Kiosk): &mut Bag
+	22: LdFalse
+	23: PackGeneric[1](Bid<T>)
+	24: MoveLoc[2](bid#0#0: Coin<SUI>)
+	25: Call bag::add<Bid<T>, Coin<SUI>>(&mut Bag, Bid<T>, Coin<SUI>)
+	26: Ret
+}
+
+public accept_bid<Market, T: store + key>(destination#0#0: &mut Kiosk, source#0#0: &mut Kiosk, purchase_cap#0#0: PurchaseCap<T>, policy#0#0: &TransferPolicy<T>, lock#0#0: bool): TransferRequest<T> * TransferRequest<Market> {
+L5:	bid#1#0: Coin<SUI>
+L6:	item#1#0: T
+L7:	market_request#1#0: TransferRequest<Market>
+L8:	request#1#0: TransferRequest<T>
+B0:
+	0: LdFalse
+	1: PackGeneric[0](Ext<Market>)
+	2: CopyLoc[0](destination#0#0: &mut Kiosk)
+	3: Call kiosk_extension::storage_mut<Ext<Market>>(Ext<Market>, &mut Kiosk): &mut Bag
+	4: LdFalse
+	5: PackGeneric[1](Bid<T>)
+	6: Call bag::remove<Bid<T>, Coin<SUI>>(&mut Bag, Bid<T>): Coin<SUI>
+	7: StLoc[5](bid#1#0: Coin<SUI>)
+	8: ImmBorrowLoc[2](purchase_cap#0#0: PurchaseCap<T>)
+	9: Call kiosk::purchase_cap_item<T>(&PurchaseCap<T>): ID
+	10: ImmBorrowLoc[5](bid#1#0: Coin<SUI>)
+	11: Call coin::value<SUI>(&Coin<SUI>): u64
+	12: CopyLoc[1](source#0#0: &mut Kiosk)
+	13: FreezeRef
+	14: Call object::id<Kiosk>(&Kiosk): ID
+	15: Call transfer_policy::new_request<Market>(ID, u64, ID): TransferRequest<Market>
+	16: StLoc[7](market_request#1#0: TransferRequest<Market>)
+	17: ImmBorrowLoc[2](purchase_cap#0#0: PurchaseCap<T>)
+	18: Call kiosk::purchase_cap_kiosk<T>(&PurchaseCap<T>): ID
+	19: CopyLoc[1](source#0#0: &mut Kiosk)
+	20: FreezeRef
+	21: Call object::id<Kiosk>(&Kiosk): ID
+	22: Eq
+	23: BrFalse(25)
+B1:
+	24: Branch(33)
+B2:
+	25: MoveLoc[1](source#0#0: &mut Kiosk)
+	26: Pop
+	27: MoveLoc[3](policy#0#0: &TransferPolicy<T>)
+	28: Pop
+	29: MoveLoc[0](destination#0#0: &mut Kiosk)
+	30: Pop
+	31: LdConst[2](u64: 2)
+	32: Abort
+B3:
+	33: ImmBorrowLoc[2](purchase_cap#0#0: PurchaseCap<T>)
+	34: Call kiosk::purchase_cap_min_price<T>(&PurchaseCap<T>): u64
+	35: ImmBorrowLoc[5](bid#1#0: Coin<SUI>)
+	36: Call coin::value<SUI>(&Coin<SUI>): u64
+	37: Le
+	38: BrFalse(40)
+B4:
+	39: Branch(48)
+B5:
+	40: MoveLoc[1](source#0#0: &mut Kiosk)
+	41: Pop
+	42: MoveLoc[3](policy#0#0: &TransferPolicy<T>)
+	43: Pop
+	44: MoveLoc[0](destination#0#0: &mut Kiosk)
+	45: Pop
+	46: LdConst[1](u64: 1)
+	47: Abort
+B6:
+	48: MoveLoc[1](source#0#0: &mut Kiosk)
+	49: MoveLoc[2](purchase_cap#0#0: PurchaseCap<T>)
+	50: MoveLoc[5](bid#1#0: Coin<SUI>)
+	51: Call kiosk::purchase_with_cap<T>(&mut Kiosk, PurchaseCap<T>, Coin<SUI>): T * TransferRequest<T>
+	52: StLoc[8](request#1#0: TransferRequest<T>)
+	53: StLoc[6](item#1#0: T)
+	54: MoveLoc[4](lock#0#0: bool)
+	55: BrFalse(63)
+B7:
+	56: LdFalse
+	57: PackGeneric[0](Ext<Market>)
+	58: MoveLoc[0](destination#0#0: &mut Kiosk)
+	59: MoveLoc[6](item#1#0: T)
+	60: MoveLoc[3](policy#0#0: &TransferPolicy<T>)
+	61: Call kiosk_extension::lock<Ext<Market>, T>(Ext<Market>, &mut Kiosk, T, &TransferPolicy<T>)
+	62: Branch(69)
+B8:
+	63: LdFalse
+	64: PackGeneric[0](Ext<Market>)
+	65: MoveLoc[0](destination#0#0: &mut Kiosk)
+	66: MoveLoc[6](item#1#0: T)
+	67: MoveLoc[3](policy#0#0: &TransferPolicy<T>)
+	68: Call kiosk_extension::place<Ext<Market>, T>(Ext<Market>, &mut Kiosk, T, &TransferPolicy<T>)
+B9:
+	69: MoveLoc[8](request#1#0: TransferRequest<T>)
+	70: MoveLoc[7](market_request#1#0: TransferRequest<Market>)
+	71: Ret
+}
+
+public list<Market, T: store + key>(kiosk#0#0: &mut Kiosk, cap#0#0: &KioskOwnerCap, item_id#0#0: ID, price#0#0: u64, ctx#0#0: &mut TxContext) {
+L5:	purchase_cap#1#0: PurchaseCap<T>
+B0:
+	0: CopyLoc[0](kiosk#0#0: &mut Kiosk)
+	1: MoveLoc[1](cap#0#0: &KioskOwnerCap)
+	2: CopyLoc[2](item_id#0#0: ID)
+	3: MoveLoc[3](price#0#0: u64)
+	4: MoveLoc[4](ctx#0#0: &mut TxContext)
+	5: Call kiosk::list_with_purchase_cap<T>(&mut Kiosk, &KioskOwnerCap, ID, u64, &mut TxContext): PurchaseCap<T>
+	6: StLoc[5](purchase_cap#1#0: PurchaseCap<T>)
+	7: LdFalse
+	8: PackGeneric[0](Ext<Market>)
+	9: MoveLoc[0](kiosk#0#0: &mut Kiosk)
+	10: Call kiosk_extension::storage_mut<Ext<Market>>(Ext<Market>, &mut Kiosk): &mut Bag
+	11: MoveLoc[2](item_id#0#0: ID)
+	12: MoveLoc[5](purchase_cap#1#0: PurchaseCap<T>)
+	13: Call bag::add<ID, PurchaseCap<T>>(&mut Bag, ID, PurchaseCap<T>)
+	14: Ret
+}
+
+public purchase<Market, T: store + key>(kiosk#0#0: &mut Kiosk, item_id#0#0: ID, payment#0#0: Coin<SUI>): T * TransferRequest<T> * TransferRequest<Market> {
+L3:	market_request#1#0: TransferRequest<Market>
+L4:	purchase_cap#1#0: PurchaseCap<T>
+B0:
+	0: LdFalse
+	1: PackGeneric[0](Ext<Market>)
+	2: CopyLoc[0](kiosk#0#0: &mut Kiosk)
+	3: Call kiosk_extension::storage_mut<Ext<Market>>(Ext<Market>, &mut Kiosk): &mut Bag
+	4: CopyLoc[1](item_id#0#0: ID)
+	5: Call bag::remove<ID, PurchaseCap<T>>(&mut Bag, ID): PurchaseCap<T>
+	6: StLoc[4](purchase_cap#1#0: PurchaseCap<T>)
+	7: ImmBorrowLoc[2](payment#0#0: Coin<SUI>)
+	8: Call coin::value<SUI>(&Coin<SUI>): u64
+	9: ImmBorrowLoc[4](purchase_cap#1#0: PurchaseCap<T>)
+	10: Call kiosk::purchase_cap_min_price<T>(&PurchaseCap<T>): u64
+	11: Eq
+	12: BrFalse(14)
+B1:
+	13: Branch(18)
+B2:
+	14: MoveLoc[0](kiosk#0#0: &mut Kiosk)
+	15: Pop
+	16: LdConst[1](u64: 1)
+	17: Abort
+B3:
+	18: MoveLoc[1](item_id#0#0: ID)
+	19: ImmBorrowLoc[2](payment#0#0: Coin<SUI>)
+	20: Call coin::value<SUI>(&Coin<SUI>): u64
+	21: CopyLoc[0](kiosk#0#0: &mut Kiosk)
+	22: FreezeRef
+	23: Call object::id<Kiosk>(&Kiosk): ID
+	24: Call transfer_policy::new_request<Market>(ID, u64, ID): TransferRequest<Market>
+	25: StLoc[3](market_request#1#0: TransferRequest<Market>)
+	26: MoveLoc[0](kiosk#0#0: &mut Kiosk)
+	27: MoveLoc[4](purchase_cap#1#0: PurchaseCap<T>)
+	28: MoveLoc[2](payment#0#0: Coin<SUI>)
+	29: Call kiosk::purchase_with_cap<T>(&mut Kiosk, PurchaseCap<T>, Coin<SUI>): T * TransferRequest<T>
+	30: MoveLoc[3](market_request#1#0: TransferRequest<Market>)
+	31: Ret
+}
+
+public delist<Market, T: store + key>(kiosk#0#0: &mut Kiosk, cap#0#0: &KioskOwnerCap, item_id#0#0: ID) {
+L3:	purchase_cap#1#0: PurchaseCap<T>
+B0:
+	0: CopyLoc[0](kiosk#0#0: &mut Kiosk)
+	1: MoveLoc[1](cap#0#0: &KioskOwnerCap)
+	2: Call kiosk::has_access(&mut Kiosk, &KioskOwnerCap): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[0](kiosk#0#0: &mut Kiosk)
+	6: Pop
+	7: LdConst[0](u64: 0)
+	8: Abort
+B3:
+	9: LdFalse
+	10: PackGeneric[0](Ext<Market>)
+	11: CopyLoc[0](kiosk#0#0: &mut Kiosk)
+	12: Call kiosk_extension::storage_mut<Ext<Market>>(Ext<Market>, &mut Kiosk): &mut Bag
+	13: MoveLoc[2](item_id#0#0: ID)
+	14: Call bag::remove<ID, PurchaseCap<T>>(&mut Bag, ID): PurchaseCap<T>
+	15: StLoc[3](purchase_cap#1#0: PurchaseCap<T>)
+	16: MoveLoc[0](kiosk#0#0: &mut Kiosk)
+	17: MoveLoc[3](purchase_cap#1#0: PurchaseCap<T>)
+	18: Call kiosk::return_purchase_cap<T>(&mut Kiosk, PurchaseCap<T>)
+	19: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => u64: 3
+]
+}

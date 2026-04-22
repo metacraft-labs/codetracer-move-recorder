@@ -1,0 +1,429 @@
+// Move bytecode v6
+module 2.config {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Config<phantom WriteCap> has key {
+	id: UID
+}
+
+struct Setting<Value: copy + drop + store> has drop, store {
+	data: Option<SettingData<Value>>
+}
+
+struct SettingData<Value: copy + drop + store> has drop, store {
+	newer_value_epoch: u64,
+	newer_value: Option<Value>,
+	older_value_opt: Option<Value>
+}
+
+public(friend) new<WriteCap>(_cap#0#0: &mut WriteCap, ctx#0#0: &mut TxContext): Config<WriteCap> {
+B0:
+	0: MoveLoc[1](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: PackGeneric[0](Config<WriteCap>)
+	3: Ret
+}
+
+public(friend) share<WriteCap>(config#0#0: Config<WriteCap>) {
+B0:
+	0: MoveLoc[0](config#0#0: Config<WriteCap>)
+	1: Call transfer::share_object<Config<WriteCap>>(Config<WriteCap>)
+	2: Ret
+}
+
+public(friend) transfer<WriteCap>(config#0#0: Config<WriteCap>, owner#0#0: address) {
+B0:
+	0: MoveLoc[0](config#0#0: Config<WriteCap>)
+	1: MoveLoc[1](owner#0#0: address)
+	2: Call transfer::transfer<Config<WriteCap>>(Config<WriteCap>, address)
+	3: Ret
+}
+
+public(friend) add_for_next_epoch<WriteCap, Name: copy + drop + store, Value: copy + drop + store>(config#0#0: &mut Config<WriteCap>, _cap#0#0: &mut WriteCap, name#0#0: Name, value#0#0: Value, ctx#0#0: &mut TxContext): Option<Value> {
+L5:	%#1: Option<Value>
+L6:	%#2: Option<Value>
+L7:	%#3: Option<Value>
+L8:	epoch#1#0: u64
+L9:	newer_value#1#0: Option<Value>
+L10:	newer_value_epoch#1#0: u64
+L11:	older_value_opt#1#0: Option<Value>
+L12:	older_value_opt#2#0: Option<Value>
+L13:	removed_value#1#0: Option<Value>
+L14:	sobj#1#0: Setting<Value>
+L15:	sobj#2#0: &mut Setting<Value>
+B0:
+	0: MoveLoc[4](ctx#0#0: &mut TxContext)
+	1: FreezeRef
+	2: Call tx_context::epoch(&TxContext): u64
+	3: StLoc[8](epoch#1#0: u64)
+	4: CopyLoc[0](config#0#0: &mut Config<WriteCap>)
+	5: ImmBorrowFieldGeneric[0](Config.id: UID)
+	6: CopyLoc[2](name#0#0: Name)
+	7: Call dynamic_field::exists_<Name>(&UID, Name): bool
+	8: Not
+	9: BrFalse(26)
+B1:
+	10: MoveLoc[8](epoch#1#0: u64)
+	11: MoveLoc[3](value#0#0: Value)
+	12: Call option::some<Value>(Value): Option<Value>
+	13: Call option::none<Value>(): Option<Value>
+	14: PackGeneric[1](SettingData<Value>)
+	15: Call option::some<SettingData<Value>>(SettingData<Value>): Option<SettingData<Value>>
+	16: PackGeneric[2](Setting<Value>)
+	17: StLoc[14](sobj#1#0: Setting<Value>)
+	18: MoveLoc[0](config#0#0: &mut Config<WriteCap>)
+	19: MutBorrowFieldGeneric[0](Config.id: UID)
+	20: MoveLoc[2](name#0#0: Name)
+	21: MoveLoc[14](sobj#1#0: Setting<Value>)
+	22: Call dynamic_field::add<Name, Setting<Value>>(&mut UID, Name, Setting<Value>)
+	23: Call option::none<Value>(): Option<Value>
+	24: StLoc[7](%#3: Option<Value>)
+	25: Branch(82)
+B2:
+	26: MoveLoc[0](config#0#0: &mut Config<WriteCap>)
+	27: MutBorrowFieldGeneric[0](Config.id: UID)
+	28: MoveLoc[2](name#0#0: Name)
+	29: Call dynamic_field::borrow_mut<Name, Setting<Value>>(&mut UID, Name): &mut Setting<Value>
+	30: StLoc[15](sobj#2#0: &mut Setting<Value>)
+	31: CopyLoc[15](sobj#2#0: &mut Setting<Value>)
+	32: MutBorrowFieldGeneric[1](Setting.data: Option<SettingData<Value>>)
+	33: Call option::extract<SettingData<Value>>(&mut Option<SettingData<Value>>): SettingData<Value>
+	34: UnpackGeneric[1](SettingData<Value>)
+	35: StLoc[11](older_value_opt#1#0: Option<Value>)
+	36: StLoc[9](newer_value#1#0: Option<Value>)
+	37: StLoc[10](newer_value_epoch#1#0: u64)
+	38: CopyLoc[8](epoch#1#0: u64)
+	39: CopyLoc[10](newer_value_epoch#1#0: u64)
+	40: Gt
+	41: BrFalse(47)
+B3:
+	42: MoveLoc[9](newer_value#1#0: Option<Value>)
+	43: MoveLoc[11](older_value_opt#1#0: Option<Value>)
+	44: StLoc[6](%#2: Option<Value>)
+	45: StLoc[5](%#1: Option<Value>)
+	46: Branch(68)
+B4:
+	47: CopyLoc[8](epoch#1#0: u64)
+	48: MoveLoc[10](newer_value_epoch#1#0: u64)
+	49: Eq
+	50: BrFalse(52)
+B5:
+	51: Branch(56)
+B6:
+	52: MoveLoc[15](sobj#2#0: &mut Setting<Value>)
+	53: Pop
+	54: LdU64(13906834543710568447)
+	55: Abort
+B7:
+	56: ImmBorrowLoc[9](newer_value#1#0: Option<Value>)
+	57: Call option::is_none<Value>(&Option<Value>): bool
+	58: BrFalse(60)
+B8:
+	59: Branch(64)
+B9:
+	60: MoveLoc[15](sobj#2#0: &mut Setting<Value>)
+	61: Pop
+	62: LdConst[0](u64: 0)
+	63: Abort
+B10:
+	64: MoveLoc[11](older_value_opt#1#0: Option<Value>)
+	65: Call option::none<Value>(): Option<Value>
+	66: StLoc[6](%#2: Option<Value>)
+	67: StLoc[5](%#1: Option<Value>)
+B11:
+	68: MoveLoc[5](%#1: Option<Value>)
+	69: MoveLoc[6](%#2: Option<Value>)
+	70: StLoc[13](removed_value#1#0: Option<Value>)
+	71: StLoc[12](older_value_opt#2#0: Option<Value>)
+	72: MoveLoc[15](sobj#2#0: &mut Setting<Value>)
+	73: MutBorrowFieldGeneric[1](Setting.data: Option<SettingData<Value>>)
+	74: MoveLoc[8](epoch#1#0: u64)
+	75: MoveLoc[3](value#0#0: Value)
+	76: Call option::some<Value>(Value): Option<Value>
+	77: MoveLoc[12](older_value_opt#2#0: Option<Value>)
+	78: PackGeneric[1](SettingData<Value>)
+	79: Call option::fill<SettingData<Value>>(&mut Option<SettingData<Value>>, SettingData<Value>)
+	80: MoveLoc[13](removed_value#1#0: Option<Value>)
+	81: StLoc[7](%#3: Option<Value>)
+B12:
+	82: MoveLoc[7](%#3: Option<Value>)
+	83: Ret
+}
+
+public(friend) remove_for_next_epoch<WriteCap, Name: copy + drop + store, Value: copy + drop + store>(config#0#0: &mut Config<WriteCap>, _cap#0#0: &mut WriteCap, name#0#0: Name, ctx#0#0: &mut TxContext): Option<Value> {
+L4:	%#1: Option<Value>
+L5:	%#2: Option<Value>
+L6:	epoch#1#0: u64
+L7:	newer_value#1#0: Option<Value>
+L8:	newer_value_epoch#1#0: u64
+L9:	older_value_opt#1#0: Option<Value>
+L10:	older_value_opt#2#0: Option<Value>
+L11:	older_value_opt_is_none#1#0: bool
+L12:	removed_value#1#0: Option<Value>
+L13:	sobj#1#0: &mut Setting<Value>
+B0:
+	0: MoveLoc[3](ctx#0#0: &mut TxContext)
+	1: FreezeRef
+	2: Call tx_context::epoch(&TxContext): u64
+	3: StLoc[6](epoch#1#0: u64)
+	4: CopyLoc[0](config#0#0: &mut Config<WriteCap>)
+	5: ImmBorrowFieldGeneric[0](Config.id: UID)
+	6: CopyLoc[2](name#0#0: Name)
+	7: Call dynamic_field::exists_<Name>(&UID, Name): bool
+	8: Not
+	9: BrFalse(14)
+B1:
+	10: MoveLoc[0](config#0#0: &mut Config<WriteCap>)
+	11: Pop
+	12: Call option::none<Value>(): Option<Value>
+	13: Ret
+B2:
+	14: CopyLoc[0](config#0#0: &mut Config<WriteCap>)
+	15: MutBorrowFieldGeneric[0](Config.id: UID)
+	16: CopyLoc[2](name#0#0: Name)
+	17: Call dynamic_field::borrow_mut<Name, Setting<Value>>(&mut UID, Name): &mut Setting<Value>
+	18: StLoc[13](sobj#1#0: &mut Setting<Value>)
+	19: CopyLoc[13](sobj#1#0: &mut Setting<Value>)
+	20: MutBorrowFieldGeneric[1](Setting.data: Option<SettingData<Value>>)
+	21: Call option::extract<SettingData<Value>>(&mut Option<SettingData<Value>>): SettingData<Value>
+	22: UnpackGeneric[1](SettingData<Value>)
+	23: StLoc[9](older_value_opt#1#0: Option<Value>)
+	24: StLoc[7](newer_value#1#0: Option<Value>)
+	25: StLoc[8](newer_value_epoch#1#0: u64)
+	26: CopyLoc[6](epoch#1#0: u64)
+	27: CopyLoc[8](newer_value_epoch#1#0: u64)
+	28: Gt
+	29: BrFalse(35)
+B3:
+	30: MoveLoc[7](newer_value#1#0: Option<Value>)
+	31: Call option::none<Value>(): Option<Value>
+	32: StLoc[5](%#2: Option<Value>)
+	33: StLoc[4](%#1: Option<Value>)
+	34: Branch(50)
+B4:
+	35: CopyLoc[6](epoch#1#0: u64)
+	36: MoveLoc[8](newer_value_epoch#1#0: u64)
+	37: Eq
+	38: BrFalse(40)
+B5:
+	39: Branch(46)
+B6:
+	40: MoveLoc[13](sobj#1#0: &mut Setting<Value>)
+	41: Pop
+	42: MoveLoc[0](config#0#0: &mut Config<WriteCap>)
+	43: Pop
+	44: LdU64(13906834715509260287)
+	45: Abort
+B7:
+	46: MoveLoc[9](older_value_opt#1#0: Option<Value>)
+	47: MoveLoc[7](newer_value#1#0: Option<Value>)
+	48: StLoc[5](%#2: Option<Value>)
+	49: StLoc[4](%#1: Option<Value>)
+B8:
+	50: MoveLoc[4](%#1: Option<Value>)
+	51: MoveLoc[5](%#2: Option<Value>)
+	52: StLoc[12](removed_value#1#0: Option<Value>)
+	53: StLoc[10](older_value_opt#2#0: Option<Value>)
+	54: ImmBorrowLoc[10](older_value_opt#2#0: Option<Value>)
+	55: Call option::is_none<Value>(&Option<Value>): bool
+	56: StLoc[11](older_value_opt_is_none#1#0: bool)
+	57: MoveLoc[13](sobj#1#0: &mut Setting<Value>)
+	58: MutBorrowFieldGeneric[1](Setting.data: Option<SettingData<Value>>)
+	59: MoveLoc[6](epoch#1#0: u64)
+	60: Call option::none<Value>(): Option<Value>
+	61: MoveLoc[10](older_value_opt#2#0: Option<Value>)
+	62: PackGeneric[1](SettingData<Value>)
+	63: Call option::fill<SettingData<Value>>(&mut Option<SettingData<Value>>, SettingData<Value>)
+	64: MoveLoc[11](older_value_opt_is_none#1#0: bool)
+	65: BrFalse(72)
+B9:
+	66: MoveLoc[0](config#0#0: &mut Config<WriteCap>)
+	67: MutBorrowFieldGeneric[0](Config.id: UID)
+	68: MoveLoc[2](name#0#0: Name)
+	69: Call dynamic_field::remove<Name, Setting<Value>>(&mut UID, Name): Setting<Value>
+	70: Pop
+	71: Branch(74)
+B10:
+	72: MoveLoc[0](config#0#0: &mut Config<WriteCap>)
+	73: Pop
+B11:
+	74: MoveLoc[12](removed_value#1#0: Option<Value>)
+	75: Ret
+}
+
+public(friend) exists_with_type<WriteCap, Name: copy + drop + store, Value: copy + drop + store>(config#0#0: &Config<WriteCap>, name#0#0: Name): bool {
+B0:
+	0: MoveLoc[0](config#0#0: &Config<WriteCap>)
+	1: ImmBorrowFieldGeneric[0](Config.id: UID)
+	2: MoveLoc[1](name#0#0: Name)
+	3: Call dynamic_field::exists_with_type<Name, Setting<Value>>(&UID, Name): bool
+	4: Ret
+}
+
+public(friend) exists_with_type_for_next_epoch<WriteCap, Name: copy + drop + store, Value: copy + drop + store>(config#0#0: &Config<WriteCap>, name#0#0: Name, ctx#0#0: &TxContext): bool {
+L3:	%#1: bool
+L4:	%#2: bool
+L5:	epoch#1#0: u64
+L6:	sobj#1#0: &Setting<Value>
+B0:
+	0: CopyLoc[0](config#0#0: &Config<WriteCap>)
+	1: ImmBorrowFieldGeneric[0](Config.id: UID)
+	2: CopyLoc[1](name#0#0: Name)
+	3: Call dynamic_field::exists_with_type<Name, Setting<Value>>(&UID, Name): bool
+	4: BrFalse(35)
+B1:
+	5: MoveLoc[2](ctx#0#0: &TxContext)
+	6: Call tx_context::epoch(&TxContext): u64
+	7: StLoc[5](epoch#1#0: u64)
+	8: MoveLoc[0](config#0#0: &Config<WriteCap>)
+	9: ImmBorrowFieldGeneric[0](Config.id: UID)
+	10: MoveLoc[1](name#0#0: Name)
+	11: Call dynamic_field::borrow<Name, Setting<Value>>(&UID, Name): &Setting<Value>
+	12: StLoc[6](sobj#1#0: &Setting<Value>)
+	13: MoveLoc[5](epoch#1#0: u64)
+	14: CopyLoc[6](sobj#1#0: &Setting<Value>)
+	15: ImmBorrowFieldGeneric[1](Setting.data: Option<SettingData<Value>>)
+	16: Call option::borrow<SettingData<Value>>(&Option<SettingData<Value>>): &SettingData<Value>
+	17: ImmBorrowFieldGeneric[2](SettingData.newer_value_epoch: u64)
+	18: ReadRef
+	19: Eq
+	20: BrFalse(28)
+B2:
+	21: MoveLoc[6](sobj#1#0: &Setting<Value>)
+	22: ImmBorrowFieldGeneric[1](Setting.data: Option<SettingData<Value>>)
+	23: Call option::borrow<SettingData<Value>>(&Option<SettingData<Value>>): &SettingData<Value>
+	24: ImmBorrowFieldGeneric[3](SettingData.newer_value: Option<Value>)
+	25: Call option::is_some<Value>(&Option<Value>): bool
+	26: StLoc[4](%#2: bool)
+	27: Branch(32)
+B3:
+	28: MoveLoc[6](sobj#1#0: &Setting<Value>)
+	29: Pop
+	30: LdFalse
+	31: StLoc[4](%#2: bool)
+B4:
+	32: MoveLoc[4](%#2: bool)
+	33: StLoc[3](%#1: bool)
+	34: Branch(41)
+B5:
+	35: MoveLoc[2](ctx#0#0: &TxContext)
+	36: Pop
+	37: MoveLoc[0](config#0#0: &Config<WriteCap>)
+	38: Pop
+	39: LdFalse
+	40: StLoc[3](%#1: bool)
+B6:
+	41: MoveLoc[3](%#1: bool)
+	42: Ret
+}
+
+public(friend) borrow_for_next_epoch_mut<WriteCap, Name: copy + drop + store, Value: copy + drop + store>(config#0#0: &mut Config<WriteCap>, _cap#0#0: &mut WriteCap, name#0#0: Name, ctx#0#0: &mut TxContext): &mut Value {
+L4:	data#1#0: &mut SettingData<Value>
+L5:	epoch#1#0: u64
+B0:
+	0: MoveLoc[3](ctx#0#0: &mut TxContext)
+	1: FreezeRef
+	2: Call tx_context::epoch(&TxContext): u64
+	3: StLoc[5](epoch#1#0: u64)
+	4: MoveLoc[0](config#0#0: &mut Config<WriteCap>)
+	5: MutBorrowFieldGeneric[0](Config.id: UID)
+	6: MoveLoc[2](name#0#0: Name)
+	7: Call dynamic_field::borrow_mut<Name, Setting<Value>>(&mut UID, Name): &mut Setting<Value>
+	8: MutBorrowFieldGeneric[1](Setting.data: Option<SettingData<Value>>)
+	9: Call option::borrow_mut<SettingData<Value>>(&mut Option<SettingData<Value>>): &mut SettingData<Value>
+	10: StLoc[4](data#1#0: &mut SettingData<Value>)
+	11: CopyLoc[4](data#1#0: &mut SettingData<Value>)
+	12: ImmBorrowFieldGeneric[2](SettingData.newer_value_epoch: u64)
+	13: ReadRef
+	14: MoveLoc[5](epoch#1#0: u64)
+	15: Eq
+	16: BrFalse(18)
+B1:
+	17: Branch(22)
+B2:
+	18: MoveLoc[4](data#1#0: &mut SettingData<Value>)
+	19: Pop
+	20: LdConst[1](u64: 1)
+	21: Abort
+B3:
+	22: CopyLoc[4](data#1#0: &mut SettingData<Value>)
+	23: ImmBorrowFieldGeneric[3](SettingData.newer_value: Option<Value>)
+	24: Call option::is_some<Value>(&Option<Value>): bool
+	25: BrFalse(27)
+B4:
+	26: Branch(31)
+B5:
+	27: MoveLoc[4](data#1#0: &mut SettingData<Value>)
+	28: Pop
+	29: LdConst[1](u64: 1)
+	30: Abort
+B6:
+	31: MoveLoc[4](data#1#0: &mut SettingData<Value>)
+	32: MutBorrowFieldGeneric[3](SettingData.newer_value: Option<Value>)
+	33: Call option::borrow_mut<Value>(&mut Option<Value>): &mut Value
+	34: Ret
+}
+
+public(friend) read_setting_for_next_epoch<WriteCap, Name: copy + drop + store, Value: copy + drop + store>(config#0#0: &Config<WriteCap>, name#0#0: Name): Option<Value> {
+B0:
+	0: CopyLoc[0](config#0#0: &Config<WriteCap>)
+	1: ImmBorrowFieldGeneric[0](Config.id: UID)
+	2: CopyLoc[1](name#0#0: Name)
+	3: Call dynamic_field::exists_with_type<Name, Setting<Value>>(&UID, Name): bool
+	4: Not
+	5: BrFalse(10)
+B1:
+	6: MoveLoc[0](config#0#0: &Config<WriteCap>)
+	7: Pop
+	8: Call option::none<Value>(): Option<Value>
+	9: Ret
+B2:
+	10: MoveLoc[0](config#0#0: &Config<WriteCap>)
+	11: ImmBorrowFieldGeneric[0](Config.id: UID)
+	12: MoveLoc[1](name#0#0: Name)
+	13: Call dynamic_field::borrow<Name, Setting<Value>>(&UID, Name): &Setting<Value>
+	14: ImmBorrowFieldGeneric[1](Setting.data: Option<SettingData<Value>>)
+	15: Call option::borrow<SettingData<Value>>(&Option<SettingData<Value>>): &SettingData<Value>
+	16: ImmBorrowFieldGeneric[3](SettingData.newer_value: Option<Value>)
+	17: ReadRef
+	18: Ret
+}
+
+public(friend) read_setting<Name: copy + drop + store, Value: copy + drop + store>(config#0#0: ID, name#0#0: Name, ctx#0#0: &TxContext): Option<Value> {
+L3:	config_id#1#0: address
+L4:	setting_df#1#0: address
+B0:
+	0: ImmBorrowLoc[0](config#0#0: ID)
+	1: Call object::id_to_address(&ID): address
+	2: StLoc[3](config_id#1#0: address)
+	3: CopyLoc[3](config_id#1#0: address)
+	4: MoveLoc[1](name#0#0: Name)
+	5: Call dynamic_field::hash_type_and_key<Name>(address, Name): address
+	6: StLoc[4](setting_df#1#0: address)
+	7: MoveLoc[3](config_id#1#0: address)
+	8: MoveLoc[4](setting_df#1#0: address)
+	9: MoveLoc[2](ctx#0#0: &TxContext)
+	10: Call tx_context::epoch(&TxContext): u64
+	11: Call read_setting_impl<Field<Name, Setting<Value>>, Setting<Value>, SettingData<Value>, Value>(address, address, u64): Option<Value>
+	12: Ret
+}
+
+native read_setting_impl<FieldSettingValue: key, SettingValue: store, SettingDataValue: store, Value: copy + drop + store>(config#0#0: address, name#0#0: address, current_epoch#0#0: u64): Option<Value>;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+]
+}

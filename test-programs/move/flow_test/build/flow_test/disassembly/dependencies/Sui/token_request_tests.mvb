@@ -1,0 +1,368 @@
+// Move bytecode v6
+module 2.token_request_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::balance;
+use 0000000000000000000000000000000000000000000000000000000000000002::token;
+use 0000000000000000000000000000000000000000000000000000000000000002::token_test_utils;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Rule1 has drop {
+	dummy_field: bool
+}
+
+struct Rule2 has drop {
+	dummy_field: bool
+}
+
+test_request_confirm() {
+L0:	%#1: TxContext
+L1:	action#1#0: String
+L2:	cap#1#0: TokenPolicyCap<TEST>
+L3:	ctx#1#0: &mut TxContext
+L4:	policy#1#0: TokenPolicy<TEST>
+L5:	request#1#0: ActionRequest<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[3](ctx#1#0: &mut TxContext)
+	5: CopyLoc[3](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[4](policy#1#0: TokenPolicy<TEST>)
+	9: LdConst[1](vector<u8>: "tes..)
+	10: Call string::utf8(vector<u8>): String
+	11: StLoc[1](action#1#0: String)
+	12: MutBorrowLoc[4](policy#1#0: TokenPolicy<TEST>)
+	13: ImmBorrowLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	14: CopyLoc[1](action#1#0: String)
+	15: CopyLoc[3](ctx#1#0: &mut TxContext)
+	16: Call token::allow<TEST>(&mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, String, &mut TxContext)
+	17: MoveLoc[1](action#1#0: String)
+	18: LdU64(100)
+	19: Call option::none<address>(): Option<address>
+	20: Call option::none<Balance<TEST>>(): Option<Balance<TEST>>
+	21: CopyLoc[3](ctx#1#0: &mut TxContext)
+	22: FreezeRef
+	23: Call token::new_request<TEST>(String, u64, Option<address>, Option<Balance<TEST>>, &TxContext): ActionRequest<TEST>
+	24: StLoc[5](request#1#0: ActionRequest<TEST>)
+	25: ImmBorrowLoc[4](policy#1#0: TokenPolicy<TEST>)
+	26: MoveLoc[5](request#1#0: ActionRequest<TEST>)
+	27: MoveLoc[3](ctx#1#0: &mut TxContext)
+	28: Call token::confirm_request<TEST>(&TokenPolicy<TEST>, ActionRequest<TEST>, &mut TxContext): String * u64 * address * Option<address>
+	29: Pop
+	30: Pop
+	31: Pop
+	32: Pop
+	33: MoveLoc[4](policy#1#0: TokenPolicy<TEST>)
+	34: MoveLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	35: Call token_test_utils::return_policy(TokenPolicy<TEST>, TokenPolicyCap<TEST>)
+	36: Ret
+}
+
+test_request_confirm_with_cap() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TokenPolicyCap<TEST>
+L2:	ctx#1#0: &mut TxContext
+L3:	policy#1#0: TokenPolicy<TEST>
+L4:	request#1#0: ActionRequest<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[2](ctx#1#0: &mut TxContext)
+	5: CopyLoc[2](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[3](policy#1#0: TokenPolicy<TEST>)
+	9: LdU64(100)
+	10: CopyLoc[2](ctx#1#0: &mut TxContext)
+	11: Call token_test_utils::mint(u64, &mut TxContext): Token<TEST>
+	12: LdConst[2](address: 0x00..)
+	13: CopyLoc[2](ctx#1#0: &mut TxContext)
+	14: Call token::transfer<TEST>(Token<TEST>, address, &mut TxContext): ActionRequest<TEST>
+	15: StLoc[4](request#1#0: ActionRequest<TEST>)
+	16: ImmBorrowLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	17: MoveLoc[4](request#1#0: ActionRequest<TEST>)
+	18: MoveLoc[2](ctx#1#0: &mut TxContext)
+	19: Call token::confirm_with_policy_cap<TEST>(&TokenPolicyCap<TEST>, ActionRequest<TEST>, &mut TxContext): String * u64 * address * Option<address>
+	20: Pop
+	21: Pop
+	22: Pop
+	23: Pop
+	24: MoveLoc[3](policy#1#0: TokenPolicy<TEST>)
+	25: MoveLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	26: Call token_test_utils::return_policy(TokenPolicy<TEST>, TokenPolicyCap<TEST>)
+	27: Ret
+}
+
+test_request_confirm_excessive_approvals_pass() {
+L0:	%#1: TxContext
+L1:	action#1#0: String
+L2:	cap#1#0: TokenPolicyCap<TEST>
+L3:	ctx#1#0: &mut TxContext
+L4:	policy#1#0: TokenPolicy<TEST>
+L5:	request#1#0: ActionRequest<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[3](ctx#1#0: &mut TxContext)
+	5: CopyLoc[3](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[4](policy#1#0: TokenPolicy<TEST>)
+	9: LdConst[1](vector<u8>: "tes..)
+	10: Call string::utf8(vector<u8>): String
+	11: StLoc[1](action#1#0: String)
+	12: MutBorrowLoc[4](policy#1#0: TokenPolicy<TEST>)
+	13: ImmBorrowLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	14: CopyLoc[1](action#1#0: String)
+	15: CopyLoc[3](ctx#1#0: &mut TxContext)
+	16: Call token::add_rule_for_action<TEST, Rule1>(&mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, String, &mut TxContext)
+	17: MoveLoc[1](action#1#0: String)
+	18: LdU64(100)
+	19: Call option::none<address>(): Option<address>
+	20: Call option::none<Balance<TEST>>(): Option<Balance<TEST>>
+	21: CopyLoc[3](ctx#1#0: &mut TxContext)
+	22: FreezeRef
+	23: Call token::new_request<TEST>(String, u64, Option<address>, Option<Balance<TEST>>, &TxContext): ActionRequest<TEST>
+	24: StLoc[5](request#1#0: ActionRequest<TEST>)
+	25: LdFalse
+	26: Pack[0](Rule1)
+	27: MutBorrowLoc[5](request#1#0: ActionRequest<TEST>)
+	28: CopyLoc[3](ctx#1#0: &mut TxContext)
+	29: Call token::add_approval<TEST, Rule1>(Rule1, &mut ActionRequest<TEST>, &mut TxContext)
+	30: LdFalse
+	31: Pack[1](Rule2)
+	32: MutBorrowLoc[5](request#1#0: ActionRequest<TEST>)
+	33: CopyLoc[3](ctx#1#0: &mut TxContext)
+	34: Call token::add_approval<TEST, Rule2>(Rule2, &mut ActionRequest<TEST>, &mut TxContext)
+	35: ImmBorrowLoc[4](policy#1#0: TokenPolicy<TEST>)
+	36: MoveLoc[5](request#1#0: ActionRequest<TEST>)
+	37: MoveLoc[3](ctx#1#0: &mut TxContext)
+	38: Call token::confirm_request<TEST>(&TokenPolicy<TEST>, ActionRequest<TEST>, &mut TxContext): String * u64 * address * Option<address>
+	39: Pop
+	40: Pop
+	41: Pop
+	42: Pop
+	43: MoveLoc[4](policy#1#0: TokenPolicy<TEST>)
+	44: MoveLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	45: Call token_test_utils::return_policy(TokenPolicy<TEST>, TokenPolicyCap<TEST>)
+	46: Ret
+}
+
+test_request_confirm_unknown_action_fail() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TokenPolicyCap<TEST>
+L2:	ctx#1#0: &mut TxContext
+L3:	policy#1#0: TokenPolicy<TEST>
+L4:	request#1#0: ActionRequest<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[2](ctx#1#0: &mut TxContext)
+	5: CopyLoc[2](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[3](policy#1#0: TokenPolicy<TEST>)
+	9: LdConst[1](vector<u8>: "tes..)
+	10: Call string::utf8(vector<u8>): String
+	11: LdU64(100)
+	12: Call option::none<address>(): Option<address>
+	13: Call option::none<Balance<TEST>>(): Option<Balance<TEST>>
+	14: CopyLoc[2](ctx#1#0: &mut TxContext)
+	15: FreezeRef
+	16: Call token::new_request<TEST>(String, u64, Option<address>, Option<Balance<TEST>>, &TxContext): ActionRequest<TEST>
+	17: StLoc[4](request#1#0: ActionRequest<TEST>)
+	18: ImmBorrowLoc[3](policy#1#0: TokenPolicy<TEST>)
+	19: MoveLoc[4](request#1#0: ActionRequest<TEST>)
+	20: MoveLoc[2](ctx#1#0: &mut TxContext)
+	21: Call token::confirm_request<TEST>(&TokenPolicy<TEST>, ActionRequest<TEST>, &mut TxContext): String * u64 * address * Option<address>
+	22: Pop
+	23: Pop
+	24: Pop
+	25: Pop
+	26: MoveLoc[3](policy#1#0: TokenPolicy<TEST>)
+	27: MoveLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	28: Call token_test_utils::return_policy(TokenPolicy<TEST>, TokenPolicyCap<TEST>)
+	29: Ret
+}
+
+test_request_confirm_not_approved_fail() {
+L0:	%#1: TxContext
+L1:	action#1#0: String
+L2:	cap#1#0: TokenPolicyCap<TEST>
+L3:	ctx#1#0: &mut TxContext
+L4:	policy#1#0: TokenPolicy<TEST>
+L5:	request#1#0: ActionRequest<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[3](ctx#1#0: &mut TxContext)
+	5: CopyLoc[3](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[4](policy#1#0: TokenPolicy<TEST>)
+	9: LdConst[1](vector<u8>: "tes..)
+	10: Call string::utf8(vector<u8>): String
+	11: StLoc[1](action#1#0: String)
+	12: MutBorrowLoc[4](policy#1#0: TokenPolicy<TEST>)
+	13: ImmBorrowLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	14: CopyLoc[1](action#1#0: String)
+	15: CopyLoc[3](ctx#1#0: &mut TxContext)
+	16: Call token::add_rule_for_action<TEST, Rule1>(&mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, String, &mut TxContext)
+	17: MoveLoc[1](action#1#0: String)
+	18: LdU64(100)
+	19: Call option::none<address>(): Option<address>
+	20: Call option::none<Balance<TEST>>(): Option<Balance<TEST>>
+	21: CopyLoc[3](ctx#1#0: &mut TxContext)
+	22: FreezeRef
+	23: Call token::new_request<TEST>(String, u64, Option<address>, Option<Balance<TEST>>, &TxContext): ActionRequest<TEST>
+	24: StLoc[5](request#1#0: ActionRequest<TEST>)
+	25: LdFalse
+	26: Pack[1](Rule2)
+	27: MutBorrowLoc[5](request#1#0: ActionRequest<TEST>)
+	28: CopyLoc[3](ctx#1#0: &mut TxContext)
+	29: Call token::add_approval<TEST, Rule2>(Rule2, &mut ActionRequest<TEST>, &mut TxContext)
+	30: ImmBorrowLoc[4](policy#1#0: TokenPolicy<TEST>)
+	31: MoveLoc[5](request#1#0: ActionRequest<TEST>)
+	32: MoveLoc[3](ctx#1#0: &mut TxContext)
+	33: Call token::confirm_request<TEST>(&TokenPolicy<TEST>, ActionRequest<TEST>, &mut TxContext): String * u64 * address * Option<address>
+	34: Pop
+	35: Pop
+	36: Pop
+	37: Pop
+	38: LdU64(1337)
+	39: Abort
+}
+
+test_request_cant_consume_balance_with_cap() {
+L0:	%#1: TxContext
+L1:	_policy#1#0: TokenPolicy<TEST>
+L2:	cap#1#0: TokenPolicyCap<TEST>
+L3:	ctx#1#0: &mut TxContext
+L4:	request#1#0: ActionRequest<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[3](ctx#1#0: &mut TxContext)
+	5: CopyLoc[3](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[1](_policy#1#0: TokenPolicy<TEST>)
+	9: LdU64(100)
+	10: CopyLoc[3](ctx#1#0: &mut TxContext)
+	11: Call token_test_utils::mint(u64, &mut TxContext): Token<TEST>
+	12: CopyLoc[3](ctx#1#0: &mut TxContext)
+	13: Call token::spend<TEST>(Token<TEST>, &mut TxContext): ActionRequest<TEST>
+	14: StLoc[4](request#1#0: ActionRequest<TEST>)
+	15: ImmBorrowLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	16: MoveLoc[4](request#1#0: ActionRequest<TEST>)
+	17: MoveLoc[3](ctx#1#0: &mut TxContext)
+	18: Call token::confirm_with_policy_cap<TEST>(&TokenPolicyCap<TEST>, ActionRequest<TEST>, &mut TxContext): String * u64 * address * Option<address>
+	19: Pop
+	20: Pop
+	21: Pop
+	22: Pop
+	23: LdU64(1337)
+	24: Abort
+}
+
+test_request_use_mutable_confirm_fail() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TokenPolicyCap<TEST>
+L2:	ctx#1#0: &mut TxContext
+L3:	policy#1#0: TokenPolicy<TEST>
+L4:	request#1#0: ActionRequest<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[2](ctx#1#0: &mut TxContext)
+	5: CopyLoc[2](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[3](policy#1#0: TokenPolicy<TEST>)
+	9: LdU64(100)
+	10: CopyLoc[2](ctx#1#0: &mut TxContext)
+	11: Call token_test_utils::mint(u64, &mut TxContext): Token<TEST>
+	12: LdConst[2](address: 0x00..)
+	13: CopyLoc[2](ctx#1#0: &mut TxContext)
+	14: Call token::transfer<TEST>(Token<TEST>, address, &mut TxContext): ActionRequest<TEST>
+	15: StLoc[4](request#1#0: ActionRequest<TEST>)
+	16: MutBorrowLoc[3](policy#1#0: TokenPolicy<TEST>)
+	17: ImmBorrowLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	18: Call token::transfer_action(): String
+	19: CopyLoc[2](ctx#1#0: &mut TxContext)
+	20: Call token::allow<TEST>(&mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, String, &mut TxContext)
+	21: MutBorrowLoc[3](policy#1#0: TokenPolicy<TEST>)
+	22: MoveLoc[4](request#1#0: ActionRequest<TEST>)
+	23: MoveLoc[2](ctx#1#0: &mut TxContext)
+	24: Call token::confirm_request_mut<TEST>(&mut TokenPolicy<TEST>, ActionRequest<TEST>, &mut TxContext): String * u64 * address * Option<address>
+	25: Pop
+	26: Pop
+	27: Pop
+	28: Pop
+	29: LdU64(1337)
+	30: Abort
+}
+
+test_request_use_mutable_action_not_allowed_fail() {
+L0:	%#1: TxContext
+L1:	_cap#1#0: TokenPolicyCap<TEST>
+L2:	ctx#1#0: &mut TxContext
+L3:	policy#1#0: TokenPolicy<TEST>
+L4:	request#1#0: ActionRequest<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[2](ctx#1#0: &mut TxContext)
+	5: CopyLoc[2](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[1](_cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[3](policy#1#0: TokenPolicy<TEST>)
+	9: LdU64(100)
+	10: CopyLoc[2](ctx#1#0: &mut TxContext)
+	11: Call token_test_utils::mint(u64, &mut TxContext): Token<TEST>
+	12: CopyLoc[2](ctx#1#0: &mut TxContext)
+	13: Call token::spend<TEST>(Token<TEST>, &mut TxContext): ActionRequest<TEST>
+	14: StLoc[4](request#1#0: ActionRequest<TEST>)
+	15: MutBorrowLoc[3](policy#1#0: TokenPolicy<TEST>)
+	16: MoveLoc[4](request#1#0: ActionRequest<TEST>)
+	17: MoveLoc[2](ctx#1#0: &mut TxContext)
+	18: Call token::confirm_request_mut<TEST>(&mut TokenPolicy<TEST>, ActionRequest<TEST>, &mut TxContext): String * u64 * address * Option<address>
+	19: Pop
+	20: Pop
+	21: Pop
+	22: Pop
+	23: LdU64(1337)
+	24: Abort
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	1 => vector<u8>: "test" // interpreted as UTF8 string
+	2 => address: 0x0000000000000000000000000000000000000000000000000000000000000002
+]
+}

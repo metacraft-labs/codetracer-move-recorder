@@ -1,0 +1,431 @@
+// Move bytecode v6
+module 2.linked_table {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct LinkedTable<K: copy + drop + store, phantom V: store> has store, key {
+	id: UID,
+	size: u64,
+	head: Option<K>,
+	tail: Option<K>
+}
+
+struct Node<K: copy + drop + store, V: store> has store {
+	prev: Option<K>,
+	next: Option<K>,
+	value: V
+}
+
+public new<K: copy + drop + store, V: store>(ctx#0#0: &mut TxContext): LinkedTable<K, V> {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: LdU64(0)
+	3: Call option::none<K>(): Option<K>
+	4: Call option::none<K>(): Option<K>
+	5: PackGeneric[0](LinkedTable<K, V>)
+	6: Ret
+}
+
+public front<K: copy + drop + store, V: store>(table#0#0: &LinkedTable<K, V>): &Option<K> {
+B0:
+	0: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[0](LinkedTable.head: Option<K>)
+	2: Ret
+}
+
+public back<K: copy + drop + store, V: store>(table#0#0: &LinkedTable<K, V>): &Option<K> {
+B0:
+	0: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[1](LinkedTable.tail: Option<K>)
+	2: Ret
+}
+
+public push_front<K: copy + drop + store, V: store>(table#0#0: &mut LinkedTable<K, V>, k#0#0: K, value#0#0: V) {
+L3:	%#1: Option<K>
+L4:	next#1#0: Option<K>
+L5:	old_head#1#0: Option<K>
+L6:	old_head_k#1#0: K
+L7:	prev#1#0: Option<K>
+B0:
+	0: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	1: MutBorrowFieldGeneric[0](LinkedTable.head: Option<K>)
+	2: CopyLoc[1](k#0#0: K)
+	3: Call option::swap_or_fill<K>(&mut Option<K>, K): Option<K>
+	4: StLoc[5](old_head#1#0: Option<K>)
+	5: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	6: ImmBorrowFieldGeneric[1](LinkedTable.tail: Option<K>)
+	7: Call option::is_none<K>(&Option<K>): bool
+	8: BrFalse(13)
+B1:
+	9: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	10: MutBorrowFieldGeneric[1](LinkedTable.tail: Option<K>)
+	11: CopyLoc[1](k#0#0: K)
+	12: Call option::fill<K>(&mut Option<K>, K)
+B2:
+	13: Call option::none<K>(): Option<K>
+	14: StLoc[7](prev#1#0: Option<K>)
+	15: ImmBorrowLoc[5](old_head#1#0: Option<K>)
+	16: Call option::is_some<K>(&Option<K>): bool
+	17: BrFalse(33)
+B3:
+	18: MoveLoc[5](old_head#1#0: Option<K>)
+	19: Call option::destroy_some<K>(Option<K>): K
+	20: StLoc[6](old_head_k#1#0: K)
+	21: CopyLoc[1](k#0#0: K)
+	22: Call option::some<K>(K): Option<K>
+	23: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	24: MutBorrowFieldGeneric[2](LinkedTable.id: UID)
+	25: CopyLoc[6](old_head_k#1#0: K)
+	26: Call dynamic_field::borrow_mut<K, Node<K, V>>(&mut UID, K): &mut Node<K, V>
+	27: MutBorrowFieldGeneric[3](Node.prev: Option<K>)
+	28: WriteRef
+	29: MoveLoc[6](old_head_k#1#0: K)
+	30: Call option::some<K>(K): Option<K>
+	31: StLoc[3](%#1: Option<K>)
+	32: Branch(35)
+B4:
+	33: Call option::none<K>(): Option<K>
+	34: StLoc[3](%#1: Option<K>)
+B5:
+	35: MoveLoc[3](%#1: Option<K>)
+	36: StLoc[4](next#1#0: Option<K>)
+	37: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	38: MutBorrowFieldGeneric[2](LinkedTable.id: UID)
+	39: MoveLoc[1](k#0#0: K)
+	40: MoveLoc[7](prev#1#0: Option<K>)
+	41: MoveLoc[4](next#1#0: Option<K>)
+	42: MoveLoc[2](value#0#0: V)
+	43: PackGeneric[1](Node<K, V>)
+	44: Call dynamic_field::add<K, Node<K, V>>(&mut UID, K, Node<K, V>)
+	45: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	46: ImmBorrowFieldGeneric[4](LinkedTable.size: u64)
+	47: ReadRef
+	48: LdU64(1)
+	49: Add
+	50: MoveLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	51: MutBorrowFieldGeneric[4](LinkedTable.size: u64)
+	52: WriteRef
+	53: Ret
+}
+
+public push_back<K: copy + drop + store, V: store>(table#0#0: &mut LinkedTable<K, V>, k#0#0: K, value#0#0: V) {
+L3:	%#1: Option<K>
+L4:	next#1#0: Option<K>
+L5:	old_tail#1#0: Option<K>
+L6:	old_tail_k#1#0: K
+L7:	prev#1#0: Option<K>
+B0:
+	0: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[0](LinkedTable.head: Option<K>)
+	2: Call option::is_none<K>(&Option<K>): bool
+	3: BrFalse(8)
+B1:
+	4: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	5: MutBorrowFieldGeneric[0](LinkedTable.head: Option<K>)
+	6: CopyLoc[1](k#0#0: K)
+	7: Call option::fill<K>(&mut Option<K>, K)
+B2:
+	8: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	9: MutBorrowFieldGeneric[1](LinkedTable.tail: Option<K>)
+	10: CopyLoc[1](k#0#0: K)
+	11: Call option::swap_or_fill<K>(&mut Option<K>, K): Option<K>
+	12: StLoc[5](old_tail#1#0: Option<K>)
+	13: ImmBorrowLoc[5](old_tail#1#0: Option<K>)
+	14: Call option::is_some<K>(&Option<K>): bool
+	15: BrFalse(31)
+B3:
+	16: MoveLoc[5](old_tail#1#0: Option<K>)
+	17: Call option::destroy_some<K>(Option<K>): K
+	18: StLoc[6](old_tail_k#1#0: K)
+	19: CopyLoc[1](k#0#0: K)
+	20: Call option::some<K>(K): Option<K>
+	21: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	22: MutBorrowFieldGeneric[2](LinkedTable.id: UID)
+	23: CopyLoc[6](old_tail_k#1#0: K)
+	24: Call dynamic_field::borrow_mut<K, Node<K, V>>(&mut UID, K): &mut Node<K, V>
+	25: MutBorrowFieldGeneric[5](Node.next: Option<K>)
+	26: WriteRef
+	27: MoveLoc[6](old_tail_k#1#0: K)
+	28: Call option::some<K>(K): Option<K>
+	29: StLoc[3](%#1: Option<K>)
+	30: Branch(33)
+B4:
+	31: Call option::none<K>(): Option<K>
+	32: StLoc[3](%#1: Option<K>)
+B5:
+	33: MoveLoc[3](%#1: Option<K>)
+	34: StLoc[7](prev#1#0: Option<K>)
+	35: Call option::none<K>(): Option<K>
+	36: StLoc[4](next#1#0: Option<K>)
+	37: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	38: MutBorrowFieldGeneric[2](LinkedTable.id: UID)
+	39: MoveLoc[1](k#0#0: K)
+	40: MoveLoc[7](prev#1#0: Option<K>)
+	41: MoveLoc[4](next#1#0: Option<K>)
+	42: MoveLoc[2](value#0#0: V)
+	43: PackGeneric[1](Node<K, V>)
+	44: Call dynamic_field::add<K, Node<K, V>>(&mut UID, K, Node<K, V>)
+	45: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	46: ImmBorrowFieldGeneric[4](LinkedTable.size: u64)
+	47: ReadRef
+	48: LdU64(1)
+	49: Add
+	50: MoveLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	51: MutBorrowFieldGeneric[4](LinkedTable.size: u64)
+	52: WriteRef
+	53: Ret
+}
+
+public borrow<K: copy + drop + store, V: store>(table#0#0: &LinkedTable<K, V>, k#0#0: K): &V {
+B0:
+	0: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[2](LinkedTable.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_field::borrow<K, Node<K, V>>(&UID, K): &Node<K, V>
+	4: ImmBorrowFieldGeneric[6](Node.value: V)
+	5: Ret
+}
+
+public borrow_mut<K: copy + drop + store, V: store>(table#0#0: &mut LinkedTable<K, V>, k#0#0: K): &mut V {
+B0:
+	0: MoveLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	1: MutBorrowFieldGeneric[2](LinkedTable.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_field::borrow_mut<K, Node<K, V>>(&mut UID, K): &mut Node<K, V>
+	4: MutBorrowFieldGeneric[6](Node.value: V)
+	5: Ret
+}
+
+public prev<K: copy + drop + store, V: store>(table#0#0: &LinkedTable<K, V>, k#0#0: K): &Option<K> {
+B0:
+	0: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[2](LinkedTable.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_field::borrow<K, Node<K, V>>(&UID, K): &Node<K, V>
+	4: ImmBorrowFieldGeneric[3](Node.prev: Option<K>)
+	5: Ret
+}
+
+public next<K: copy + drop + store, V: store>(table#0#0: &LinkedTable<K, V>, k#0#0: K): &Option<K> {
+B0:
+	0: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[2](LinkedTable.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_field::borrow<K, Node<K, V>>(&UID, K): &Node<K, V>
+	4: ImmBorrowFieldGeneric[5](Node.next: Option<K>)
+	5: Ret
+}
+
+public remove<K: copy + drop + store, V: store>(table#0#0: &mut LinkedTable<K, V>, k#0#0: K): V {
+L2:	next#1#0: Option<K>
+L3:	prev#1#0: Option<K>
+L4:	value#1#0: V
+B0:
+	0: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	1: MutBorrowFieldGeneric[2](LinkedTable.id: UID)
+	2: CopyLoc[1](k#0#0: K)
+	3: Call dynamic_field::remove<K, Node<K, V>>(&mut UID, K): Node<K, V>
+	4: UnpackGeneric[1](Node<K, V>)
+	5: StLoc[4](value#1#0: V)
+	6: StLoc[2](next#1#0: Option<K>)
+	7: StLoc[3](prev#1#0: Option<K>)
+	8: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	9: ImmBorrowFieldGeneric[4](LinkedTable.size: u64)
+	10: ReadRef
+	11: LdU64(1)
+	12: Sub
+	13: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	14: MutBorrowFieldGeneric[4](LinkedTable.size: u64)
+	15: WriteRef
+	16: ImmBorrowLoc[3](prev#1#0: Option<K>)
+	17: Call option::is_some<K>(&Option<K>): bool
+	18: BrFalse(28)
+B1:
+	19: CopyLoc[2](next#1#0: Option<K>)
+	20: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	21: MutBorrowFieldGeneric[2](LinkedTable.id: UID)
+	22: ImmBorrowLoc[3](prev#1#0: Option<K>)
+	23: Call option::borrow<K>(&Option<K>): &K
+	24: ReadRef
+	25: Call dynamic_field::borrow_mut<K, Node<K, V>>(&mut UID, K): &mut Node<K, V>
+	26: MutBorrowFieldGeneric[5](Node.next: Option<K>)
+	27: WriteRef
+B2:
+	28: ImmBorrowLoc[2](next#1#0: Option<K>)
+	29: Call option::is_some<K>(&Option<K>): bool
+	30: BrFalse(40)
+B3:
+	31: CopyLoc[3](prev#1#0: Option<K>)
+	32: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	33: MutBorrowFieldGeneric[2](LinkedTable.id: UID)
+	34: ImmBorrowLoc[2](next#1#0: Option<K>)
+	35: Call option::borrow<K>(&Option<K>): &K
+	36: ReadRef
+	37: Call dynamic_field::borrow_mut<K, Node<K, V>>(&mut UID, K): &mut Node<K, V>
+	38: MutBorrowFieldGeneric[3](Node.prev: Option<K>)
+	39: WriteRef
+B4:
+	40: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	41: ImmBorrowFieldGeneric[0](LinkedTable.head: Option<K>)
+	42: Call option::borrow<K>(&Option<K>): &K
+	43: ImmBorrowLoc[1](k#0#0: K)
+	44: Eq
+	45: BrFalse(50)
+B5:
+	46: MoveLoc[2](next#1#0: Option<K>)
+	47: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	48: MutBorrowFieldGeneric[0](LinkedTable.head: Option<K>)
+	49: WriteRef
+B6:
+	50: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	51: ImmBorrowFieldGeneric[1](LinkedTable.tail: Option<K>)
+	52: Call option::borrow<K>(&Option<K>): &K
+	53: ImmBorrowLoc[1](k#0#0: K)
+	54: Eq
+	55: BrFalse(61)
+B7:
+	56: MoveLoc[3](prev#1#0: Option<K>)
+	57: MoveLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	58: MutBorrowFieldGeneric[1](LinkedTable.tail: Option<K>)
+	59: WriteRef
+	60: Branch(63)
+B8:
+	61: MoveLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	62: Pop
+B9:
+	63: MoveLoc[4](value#1#0: V)
+	64: Ret
+}
+
+public pop_front<K: copy + drop + store, V: store>(table#0#0: &mut LinkedTable<K, V>): K * V {
+L1:	head#1#0: K
+B0:
+	0: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[0](LinkedTable.head: Option<K>)
+	2: Call option::is_some<K>(&Option<K>): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	6: Pop
+	7: LdConst[1](u64: 1)
+	8: Abort
+B3:
+	9: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	10: ImmBorrowFieldGeneric[0](LinkedTable.head: Option<K>)
+	11: Call option::borrow<K>(&Option<K>): &K
+	12: ReadRef
+	13: StLoc[1](head#1#0: K)
+	14: CopyLoc[1](head#1#0: K)
+	15: MoveLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	16: MoveLoc[1](head#1#0: K)
+	17: Call remove<K, V>(&mut LinkedTable<K, V>, K): V
+	18: Ret
+}
+
+public pop_back<K: copy + drop + store, V: store>(table#0#0: &mut LinkedTable<K, V>): K * V {
+L1:	tail#1#0: K
+B0:
+	0: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[1](LinkedTable.tail: Option<K>)
+	2: Call option::is_some<K>(&Option<K>): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	6: Pop
+	7: LdConst[1](u64: 1)
+	8: Abort
+B3:
+	9: CopyLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	10: ImmBorrowFieldGeneric[1](LinkedTable.tail: Option<K>)
+	11: Call option::borrow<K>(&Option<K>): &K
+	12: ReadRef
+	13: StLoc[1](tail#1#0: K)
+	14: CopyLoc[1](tail#1#0: K)
+	15: MoveLoc[0](table#0#0: &mut LinkedTable<K, V>)
+	16: MoveLoc[1](tail#1#0: K)
+	17: Call remove<K, V>(&mut LinkedTable<K, V>, K): V
+	18: Ret
+}
+
+public contains<K: copy + drop + store, V: store>(table#0#0: &LinkedTable<K, V>, k#0#0: K): bool {
+B0:
+	0: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[2](LinkedTable.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_field::exists_with_type<K, Node<K, V>>(&UID, K): bool
+	4: Ret
+}
+
+public length<K: copy + drop + store, V: store>(table#0#0: &LinkedTable<K, V>): u64 {
+B0:
+	0: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[4](LinkedTable.size: u64)
+	2: ReadRef
+	3: Ret
+}
+
+public is_empty<K: copy + drop + store, V: store>(table#0#0: &LinkedTable<K, V>): bool {
+B0:
+	0: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	1: ImmBorrowFieldGeneric[4](LinkedTable.size: u64)
+	2: ReadRef
+	3: LdU64(0)
+	4: Eq
+	5: Ret
+}
+
+public destroy_empty<K: copy + drop + store, V: store>(table#0#0: LinkedTable<K, V>) {
+L1:	id#1#0: UID
+L2:	size#1#0: u64
+B0:
+	0: MoveLoc[0](table#0#0: LinkedTable<K, V>)
+	1: UnpackGeneric[0](LinkedTable<K, V>)
+	2: Pop
+	3: Pop
+	4: StLoc[2](size#1#0: u64)
+	5: StLoc[1](id#1#0: UID)
+	6: MoveLoc[2](size#1#0: u64)
+	7: LdU64(0)
+	8: Eq
+	9: BrFalse(11)
+B1:
+	10: Branch(13)
+B2:
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: MoveLoc[1](id#1#0: UID)
+	14: Call object::delete(UID)
+	15: Ret
+}
+
+public drop<K: copy + drop + store, V: drop + store>(table#0#0: LinkedTable<K, V>) {
+B0:
+	0: MoveLoc[0](table#0#0: LinkedTable<K, V>)
+	1: UnpackGeneric[0](LinkedTable<K, V>)
+	2: Pop
+	3: Pop
+	4: Pop
+	5: Call object::delete(UID)
+	6: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+]
+}

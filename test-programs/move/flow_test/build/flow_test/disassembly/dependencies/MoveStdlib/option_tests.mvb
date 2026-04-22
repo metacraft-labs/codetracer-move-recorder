@@ -1,0 +1,2815 @@
+// Move bytecode v6
+module 1.option_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+
+struct NoDrop {
+	dummy_field: bool
+}
+
+option_none_is_none() {
+L0:	none#1#0: Option<u64>
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[0](none#1#0: Option<u64>)
+	2: ImmBorrowLoc[0](none#1#0: Option<u64>)
+	3: Call option::is_none<u64>(&Option<u64>): bool
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdU64(13906834238767890431)
+	7: Abort
+B3:
+	8: ImmBorrowLoc[0](none#1#0: Option<u64>)
+	9: Call option::is_some<u64>(&Option<u64>): bool
+	10: Not
+	11: BrFalse(13)
+B4:
+	12: Branch(15)
+B5:
+	13: LdU64(13906834243062857727)
+	14: Abort
+B6:
+	15: Ret
+}
+
+option_some_is_some() {
+L0:	some#1#0: Option<u64>
+B0:
+	0: LdU64(5)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: StLoc[0](some#1#0: Option<u64>)
+	3: ImmBorrowLoc[0](some#1#0: Option<u64>)
+	4: Call option::is_none<u64>(&Option<u64>): bool
+	5: Not
+	6: BrFalse(8)
+B1:
+	7: Branch(10)
+B2:
+	8: LdU64(13906834268832661503)
+	9: Abort
+B3:
+	10: ImmBorrowLoc[0](some#1#0: Option<u64>)
+	11: Call option::is_some<u64>(&Option<u64>): bool
+	12: BrFalse(14)
+B4:
+	13: Branch(16)
+B5:
+	14: LdU64(13906834273127628799)
+	15: Abort
+B6:
+	16: Ret
+}
+
+option_contains() {
+L0:	%#1: u64
+L1:	%#2: &Option<u64>
+L2:	%#3: u64
+L3:	%#4: &Option<u64>
+L4:	%#5: u64
+L5:	%#6: &Option<u64>
+L6:	%#7: u64
+L7:	%#8: &Option<u64>
+L8:	none#1#0: Option<u64>
+L9:	some#1#0: Option<u64>
+L10:	some_other#1#0: Option<u64>
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[8](none#1#0: Option<u64>)
+	2: LdU64(5)
+	3: Call option::some<u64>(u64): Option<u64>
+	4: StLoc[9](some#1#0: Option<u64>)
+	5: LdU64(6)
+	6: Call option::some<u64>(u64): Option<u64>
+	7: StLoc[10](some_other#1#0: Option<u64>)
+	8: ImmBorrowLoc[9](some#1#0: Option<u64>)
+	9: StLoc[1](%#2: &Option<u64>)
+	10: LdU64(5)
+	11: StLoc[0](%#1: u64)
+	12: MoveLoc[1](%#2: &Option<u64>)
+	13: ImmBorrowLoc[0](%#1: u64)
+	14: Call option::contains<u64>(&Option<u64>, &u64): bool
+	15: BrFalse(17)
+B1:
+	16: Branch(19)
+B2:
+	17: LdU64(13906834307487367167)
+	18: Abort
+B3:
+	19: ImmBorrowLoc[10](some_other#1#0: Option<u64>)
+	20: StLoc[3](%#4: &Option<u64>)
+	21: LdU64(6)
+	22: StLoc[2](%#3: u64)
+	23: MoveLoc[3](%#4: &Option<u64>)
+	24: ImmBorrowLoc[2](%#3: u64)
+	25: Call option::contains<u64>(&Option<u64>, &u64): bool
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdU64(13906834311782334463)
+	29: Abort
+B6:
+	30: ImmBorrowLoc[8](none#1#0: Option<u64>)
+	31: StLoc[5](%#6: &Option<u64>)
+	32: LdU64(5)
+	33: StLoc[4](%#5: u64)
+	34: MoveLoc[5](%#6: &Option<u64>)
+	35: ImmBorrowLoc[4](%#5: u64)
+	36: Call option::contains<u64>(&Option<u64>, &u64): bool
+	37: Not
+	38: BrFalse(40)
+B7:
+	39: Branch(42)
+B8:
+	40: LdU64(13906834316077301759)
+	41: Abort
+B9:
+	42: ImmBorrowLoc[10](some_other#1#0: Option<u64>)
+	43: StLoc[7](%#8: &Option<u64>)
+	44: LdU64(5)
+	45: StLoc[6](%#7: u64)
+	46: MoveLoc[7](%#8: &Option<u64>)
+	47: ImmBorrowLoc[6](%#7: u64)
+	48: Call option::contains<u64>(&Option<u64>, &u64): bool
+	49: Not
+	50: BrFalse(52)
+B10:
+	51: Branch(54)
+B11:
+	52: LdU64(13906834320372269055)
+	53: Abort
+B12:
+	54: Ret
+}
+
+option_borrow_some() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	some#1#0: Option<u64>
+L5:	some_other#1#0: Option<u64>
+L6:	t1#1#1: u64
+L7:	t1#1#10: &u64
+L8:	t1#1#4: &u64
+L9:	t1#1#7: u64
+L10:	t2#1#1: u64
+L11:	t2#1#10: &u64
+L12:	t2#1#4: &u64
+L13:	t2#1#7: u64
+B0:
+	0: LdU64(5)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: StLoc[4](some#1#0: Option<u64>)
+	3: LdU64(6)
+	4: Call option::some<u64>(u64): Option<u64>
+	5: StLoc[5](some_other#1#0: Option<u64>)
+	6: ImmBorrowLoc[4](some#1#0: Option<u64>)
+	7: Call option::borrow<u64>(&Option<u64>): &u64
+	8: ReadRef
+	9: StLoc[6](t1#1#1: u64)
+	10: LdU64(5)
+	11: StLoc[10](t2#1#1: u64)
+	12: ImmBorrowLoc[6](t1#1#1: u64)
+	13: StLoc[8](t1#1#4: &u64)
+	14: ImmBorrowLoc[10](t2#1#1: u64)
+	15: StLoc[12](t2#1#4: &u64)
+	16: CopyLoc[8](t1#1#4: &u64)
+	17: CopyLoc[12](t2#1#4: &u64)
+	18: Eq
+	19: Not
+	20: BrFalse(37)
+B1:
+	21: LdConst[0](vector<u8>: "Ass..)
+	22: Call string::utf8(vector<u8>): String
+	23: StLoc[0](%#1: String)
+	24: ImmBorrowLoc[0](%#1: String)
+	25: Call debug::print<String>(&String)
+	26: MoveLoc[8](t1#1#4: &u64)
+	27: Call debug::print<u64>(&u64)
+	28: LdConst[1](vector<u8>: "!="..)
+	29: Call string::utf8(vector<u8>): String
+	30: StLoc[1](%#2: String)
+	31: ImmBorrowLoc[1](%#2: String)
+	32: Call debug::print<String>(&String)
+	33: MoveLoc[12](t2#1#4: &u64)
+	34: Call debug::print<u64>(&u64)
+	35: LdU64(13906834350437040127)
+	36: Abort
+B2:
+	37: MoveLoc[12](t2#1#4: &u64)
+	38: Pop
+	39: MoveLoc[8](t1#1#4: &u64)
+	40: Pop
+	41: ImmBorrowLoc[5](some_other#1#0: Option<u64>)
+	42: Call option::borrow<u64>(&Option<u64>): &u64
+	43: ReadRef
+	44: StLoc[9](t1#1#7: u64)
+	45: LdU64(6)
+	46: StLoc[13](t2#1#7: u64)
+	47: ImmBorrowLoc[9](t1#1#7: u64)
+	48: StLoc[7](t1#1#10: &u64)
+	49: ImmBorrowLoc[13](t2#1#7: u64)
+	50: StLoc[11](t2#1#10: &u64)
+	51: CopyLoc[7](t1#1#10: &u64)
+	52: CopyLoc[11](t2#1#10: &u64)
+	53: Eq
+	54: Not
+	55: BrFalse(72)
+B3:
+	56: LdConst[0](vector<u8>: "Ass..)
+	57: Call string::utf8(vector<u8>): String
+	58: StLoc[2](%#3: String)
+	59: ImmBorrowLoc[2](%#3: String)
+	60: Call debug::print<String>(&String)
+	61: MoveLoc[7](t1#1#10: &u64)
+	62: Call debug::print<u64>(&u64)
+	63: LdConst[1](vector<u8>: "!="..)
+	64: Call string::utf8(vector<u8>): String
+	65: StLoc[3](%#4: String)
+	66: ImmBorrowLoc[3](%#4: String)
+	67: Call debug::print<String>(&String)
+	68: MoveLoc[11](t2#1#10: &u64)
+	69: Call debug::print<u64>(&u64)
+	70: LdU64(13906834354732007423)
+	71: Abort
+B4:
+	72: MoveLoc[11](t2#1#10: &u64)
+	73: Pop
+	74: MoveLoc[7](t1#1#10: &u64)
+	75: Pop
+	76: Ret
+}
+
+option_borrow_none() {
+L0:	%#1: Option<u64>
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[0](%#1: Option<u64>)
+	2: ImmBorrowLoc[0](%#1: Option<u64>)
+	3: Call option::borrow<u64>(&Option<u64>): &u64
+	4: Pop
+	5: Ret
+}
+
+borrow_mut_some() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	ref#1#0: &mut u64
+L3:	some#1#0: Option<u64>
+L4:	t1#1#1: u64
+L5:	t1#1#4: &u64
+L6:	t2#1#1: u64
+L7:	t2#1#4: &u64
+B0:
+	0: LdU64(1)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: StLoc[3](some#1#0: Option<u64>)
+	3: MutBorrowLoc[3](some#1#0: Option<u64>)
+	4: Call option::borrow_mut<u64>(&mut Option<u64>): &mut u64
+	5: StLoc[2](ref#1#0: &mut u64)
+	6: LdU64(10)
+	7: MoveLoc[2](ref#1#0: &mut u64)
+	8: WriteRef
+	9: ImmBorrowLoc[3](some#1#0: Option<u64>)
+	10: Call option::borrow<u64>(&Option<u64>): &u64
+	11: ReadRef
+	12: StLoc[4](t1#1#1: u64)
+	13: LdU64(10)
+	14: StLoc[6](t2#1#1: u64)
+	15: ImmBorrowLoc[4](t1#1#1: u64)
+	16: StLoc[5](t1#1#4: &u64)
+	17: ImmBorrowLoc[6](t2#1#1: u64)
+	18: StLoc[7](t2#1#4: &u64)
+	19: CopyLoc[5](t1#1#4: &u64)
+	20: CopyLoc[7](t2#1#4: &u64)
+	21: Eq
+	22: Not
+	23: BrFalse(40)
+B1:
+	24: LdConst[0](vector<u8>: "Ass..)
+	25: Call string::utf8(vector<u8>): String
+	26: StLoc[0](%#1: String)
+	27: ImmBorrowLoc[0](%#1: String)
+	28: Call debug::print<String>(&String)
+	29: MoveLoc[5](t1#1#4: &u64)
+	30: Call debug::print<u64>(&u64)
+	31: LdConst[1](vector<u8>: "!="..)
+	32: Call string::utf8(vector<u8>): String
+	33: StLoc[1](%#2: String)
+	34: ImmBorrowLoc[1](%#2: String)
+	35: Call debug::print<String>(&String)
+	36: MoveLoc[7](t2#1#4: &u64)
+	37: Call debug::print<u64>(&u64)
+	38: LdU64(13906834410566582271)
+	39: Abort
+B2:
+	40: MoveLoc[7](t2#1#4: &u64)
+	41: Pop
+	42: MoveLoc[5](t1#1#4: &u64)
+	43: Pop
+	44: Ret
+}
+
+borrow_mut_none() {
+L0:	%#1: Option<u64>
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[0](%#1: Option<u64>)
+	2: MutBorrowLoc[0](%#1: Option<u64>)
+	3: Call option::borrow_mut<u64>(&mut Option<u64>): &mut u64
+	4: Pop
+	5: Ret
+}
+
+borrow_with_default() {
+L0:	%#1: u64
+L1:	%#2: &Option<u64>
+L2:	%#3: String
+L3:	%#4: String
+L4:	%#5: u64
+L5:	%#6: &Option<u64>
+L6:	%#7: String
+L7:	%#8: String
+L8:	none#1#0: Option<u64>
+L9:	some#1#0: Option<u64>
+L10:	t1#1#1: u64
+L11:	t1#1#10: &u64
+L12:	t1#1#4: &u64
+L13:	t1#1#7: u64
+L14:	t2#1#1: u64
+L15:	t2#1#10: &u64
+L16:	t2#1#4: &u64
+L17:	t2#1#7: u64
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[8](none#1#0: Option<u64>)
+	2: LdU64(5)
+	3: Call option::some<u64>(u64): Option<u64>
+	4: StLoc[9](some#1#0: Option<u64>)
+	5: ImmBorrowLoc[9](some#1#0: Option<u64>)
+	6: StLoc[1](%#2: &Option<u64>)
+	7: LdU64(7)
+	8: StLoc[0](%#1: u64)
+	9: MoveLoc[1](%#2: &Option<u64>)
+	10: ImmBorrowLoc[0](%#1: u64)
+	11: Call option::borrow_with_default<u64>(&Option<u64>, &u64): &u64
+	12: ReadRef
+	13: StLoc[10](t1#1#1: u64)
+	14: LdU64(5)
+	15: StLoc[14](t2#1#1: u64)
+	16: ImmBorrowLoc[10](t1#1#1: u64)
+	17: StLoc[12](t1#1#4: &u64)
+	18: ImmBorrowLoc[14](t2#1#1: u64)
+	19: StLoc[16](t2#1#4: &u64)
+	20: CopyLoc[12](t1#1#4: &u64)
+	21: CopyLoc[16](t2#1#4: &u64)
+	22: Eq
+	23: Not
+	24: BrFalse(41)
+B1:
+	25: LdConst[0](vector<u8>: "Ass..)
+	26: Call string::utf8(vector<u8>): String
+	27: StLoc[2](%#3: String)
+	28: ImmBorrowLoc[2](%#3: String)
+	29: Call debug::print<String>(&String)
+	30: MoveLoc[12](t1#1#4: &u64)
+	31: Call debug::print<u64>(&u64)
+	32: LdConst[1](vector<u8>: "!="..)
+	33: Call string::utf8(vector<u8>): String
+	34: StLoc[3](%#4: String)
+	35: ImmBorrowLoc[3](%#4: String)
+	36: Call debug::print<String>(&String)
+	37: MoveLoc[16](t2#1#4: &u64)
+	38: Call debug::print<u64>(&u64)
+	39: LdU64(13906834462106189823)
+	40: Abort
+B2:
+	41: MoveLoc[16](t2#1#4: &u64)
+	42: Pop
+	43: MoveLoc[12](t1#1#4: &u64)
+	44: Pop
+	45: ImmBorrowLoc[8](none#1#0: Option<u64>)
+	46: StLoc[5](%#6: &Option<u64>)
+	47: LdU64(7)
+	48: StLoc[4](%#5: u64)
+	49: MoveLoc[5](%#6: &Option<u64>)
+	50: ImmBorrowLoc[4](%#5: u64)
+	51: Call option::borrow_with_default<u64>(&Option<u64>, &u64): &u64
+	52: ReadRef
+	53: StLoc[13](t1#1#7: u64)
+	54: LdU64(7)
+	55: StLoc[17](t2#1#7: u64)
+	56: ImmBorrowLoc[13](t1#1#7: u64)
+	57: StLoc[11](t1#1#10: &u64)
+	58: ImmBorrowLoc[17](t2#1#7: u64)
+	59: StLoc[15](t2#1#10: &u64)
+	60: CopyLoc[11](t1#1#10: &u64)
+	61: CopyLoc[15](t2#1#10: &u64)
+	62: Eq
+	63: Not
+	64: BrFalse(81)
+B3:
+	65: LdConst[0](vector<u8>: "Ass..)
+	66: Call string::utf8(vector<u8>): String
+	67: StLoc[6](%#7: String)
+	68: ImmBorrowLoc[6](%#7: String)
+	69: Call debug::print<String>(&String)
+	70: MoveLoc[11](t1#1#10: &u64)
+	71: Call debug::print<u64>(&u64)
+	72: LdConst[1](vector<u8>: "!="..)
+	73: Call string::utf8(vector<u8>): String
+	74: StLoc[7](%#8: String)
+	75: ImmBorrowLoc[7](%#8: String)
+	76: Call debug::print<String>(&String)
+	77: MoveLoc[15](t2#1#10: &u64)
+	78: Call debug::print<u64>(&u64)
+	79: LdU64(13906834466401157119)
+	80: Abort
+B4:
+	81: MoveLoc[15](t2#1#10: &u64)
+	82: Pop
+	83: MoveLoc[11](t1#1#10: &u64)
+	84: Pop
+	85: Ret
+}
+
+get_with_default() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	none#1#0: Option<u64>
+L5:	some#1#0: Option<u64>
+L6:	t1#1#1: u64
+L7:	t1#1#10: &u64
+L8:	t1#1#4: &u64
+L9:	t1#1#7: u64
+L10:	t2#1#1: u64
+L11:	t2#1#10: &u64
+L12:	t2#1#4: &u64
+L13:	t2#1#7: u64
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[4](none#1#0: Option<u64>)
+	2: LdU64(5)
+	3: Call option::some<u64>(u64): Option<u64>
+	4: StLoc[5](some#1#0: Option<u64>)
+	5: ImmBorrowLoc[5](some#1#0: Option<u64>)
+	6: LdU64(7)
+	7: Call option::get_with_default<u64>(&Option<u64>, u64): u64
+	8: StLoc[6](t1#1#1: u64)
+	9: LdU64(5)
+	10: StLoc[10](t2#1#1: u64)
+	11: ImmBorrowLoc[6](t1#1#1: u64)
+	12: StLoc[8](t1#1#4: &u64)
+	13: ImmBorrowLoc[10](t2#1#1: u64)
+	14: StLoc[12](t2#1#4: &u64)
+	15: CopyLoc[8](t1#1#4: &u64)
+	16: CopyLoc[12](t2#1#4: &u64)
+	17: Eq
+	18: Not
+	19: BrFalse(36)
+B1:
+	20: LdConst[0](vector<u8>: "Ass..)
+	21: Call string::utf8(vector<u8>): String
+	22: StLoc[0](%#1: String)
+	23: ImmBorrowLoc[0](%#1: String)
+	24: Call debug::print<String>(&String)
+	25: MoveLoc[8](t1#1#4: &u64)
+	26: Call debug::print<u64>(&u64)
+	27: LdConst[1](vector<u8>: "!="..)
+	28: Call string::utf8(vector<u8>): String
+	29: StLoc[1](%#2: String)
+	30: ImmBorrowLoc[1](%#2: String)
+	31: Call debug::print<String>(&String)
+	32: MoveLoc[12](t2#1#4: &u64)
+	33: Call debug::print<u64>(&u64)
+	34: LdU64(13906834496465928191)
+	35: Abort
+B2:
+	36: MoveLoc[12](t2#1#4: &u64)
+	37: Pop
+	38: MoveLoc[8](t1#1#4: &u64)
+	39: Pop
+	40: ImmBorrowLoc[4](none#1#0: Option<u64>)
+	41: LdU64(7)
+	42: Call option::get_with_default<u64>(&Option<u64>, u64): u64
+	43: StLoc[9](t1#1#7: u64)
+	44: LdU64(7)
+	45: StLoc[13](t2#1#7: u64)
+	46: ImmBorrowLoc[9](t1#1#7: u64)
+	47: StLoc[7](t1#1#10: &u64)
+	48: ImmBorrowLoc[13](t2#1#7: u64)
+	49: StLoc[11](t2#1#10: &u64)
+	50: CopyLoc[7](t1#1#10: &u64)
+	51: CopyLoc[11](t2#1#10: &u64)
+	52: Eq
+	53: Not
+	54: BrFalse(71)
+B3:
+	55: LdConst[0](vector<u8>: "Ass..)
+	56: Call string::utf8(vector<u8>): String
+	57: StLoc[2](%#3: String)
+	58: ImmBorrowLoc[2](%#3: String)
+	59: Call debug::print<String>(&String)
+	60: MoveLoc[7](t1#1#10: &u64)
+	61: Call debug::print<u64>(&u64)
+	62: LdConst[1](vector<u8>: "!="..)
+	63: Call string::utf8(vector<u8>): String
+	64: StLoc[3](%#4: String)
+	65: ImmBorrowLoc[3](%#4: String)
+	66: Call debug::print<String>(&String)
+	67: MoveLoc[11](t2#1#10: &u64)
+	68: Call debug::print<u64>(&u64)
+	69: LdU64(13906834500760895487)
+	70: Abort
+B4:
+	71: MoveLoc[11](t2#1#10: &u64)
+	72: Pop
+	73: MoveLoc[7](t1#1#10: &u64)
+	74: Pop
+	75: Ret
+}
+
+extract_some() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	opt#1#0: Option<u64>
+L3:	t1#1#1: u64
+L4:	t1#1#4: &u64
+L5:	t2#1#1: u64
+L6:	t2#1#4: &u64
+B0:
+	0: LdU64(1)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: StLoc[2](opt#1#0: Option<u64>)
+	3: MutBorrowLoc[2](opt#1#0: Option<u64>)
+	4: Call option::extract<u64>(&mut Option<u64>): u64
+	5: StLoc[3](t1#1#1: u64)
+	6: LdU64(1)
+	7: StLoc[5](t2#1#1: u64)
+	8: ImmBorrowLoc[3](t1#1#1: u64)
+	9: StLoc[4](t1#1#4: &u64)
+	10: ImmBorrowLoc[5](t2#1#1: u64)
+	11: StLoc[6](t2#1#4: &u64)
+	12: CopyLoc[4](t1#1#4: &u64)
+	13: CopyLoc[6](t2#1#4: &u64)
+	14: Eq
+	15: Not
+	16: BrFalse(33)
+B1:
+	17: LdConst[0](vector<u8>: "Ass..)
+	18: Call string::utf8(vector<u8>): String
+	19: StLoc[0](%#1: String)
+	20: ImmBorrowLoc[0](%#1: String)
+	21: Call debug::print<String>(&String)
+	22: MoveLoc[4](t1#1#4: &u64)
+	23: Call debug::print<u64>(&u64)
+	24: LdConst[1](vector<u8>: "!="..)
+	25: Call string::utf8(vector<u8>): String
+	26: StLoc[1](%#2: String)
+	27: ImmBorrowLoc[1](%#2: String)
+	28: Call debug::print<String>(&String)
+	29: MoveLoc[6](t2#1#4: &u64)
+	30: Call debug::print<u64>(&u64)
+	31: LdU64(13906834526530699263)
+	32: Abort
+B2:
+	33: MoveLoc[6](t2#1#4: &u64)
+	34: Pop
+	35: MoveLoc[4](t1#1#4: &u64)
+	36: Pop
+	37: ImmBorrowLoc[2](opt#1#0: Option<u64>)
+	38: Call option::is_none<u64>(&Option<u64>): bool
+	39: BrFalse(41)
+B3:
+	40: Branch(43)
+B4:
+	41: LdU64(13906834530825666559)
+	42: Abort
+B5:
+	43: Ret
+}
+
+extract_none() {
+L0:	%#1: Option<u64>
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[0](%#1: Option<u64>)
+	2: MutBorrowLoc[0](%#1: Option<u64>)
+	3: Call option::extract<u64>(&mut Option<u64>): u64
+	4: Pop
+	5: Ret
+}
+
+swap_some() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	some#1#0: Option<u64>
+L5:	t1#1#1: u64
+L6:	t1#1#10: &u64
+L7:	t1#1#4: &u64
+L8:	t1#1#7: u64
+L9:	t2#1#1: u64
+L10:	t2#1#10: &u64
+L11:	t2#1#4: &u64
+L12:	t2#1#7: u64
+B0:
+	0: LdU64(5)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: StLoc[4](some#1#0: Option<u64>)
+	3: MutBorrowLoc[4](some#1#0: Option<u64>)
+	4: LdU64(1)
+	5: Call option::swap<u64>(&mut Option<u64>, u64): u64
+	6: StLoc[5](t1#1#1: u64)
+	7: LdU64(5)
+	8: StLoc[9](t2#1#1: u64)
+	9: ImmBorrowLoc[5](t1#1#1: u64)
+	10: StLoc[7](t1#1#4: &u64)
+	11: ImmBorrowLoc[9](t2#1#1: u64)
+	12: StLoc[11](t2#1#4: &u64)
+	13: CopyLoc[7](t1#1#4: &u64)
+	14: CopyLoc[11](t2#1#4: &u64)
+	15: Eq
+	16: Not
+	17: BrFalse(34)
+B1:
+	18: LdConst[0](vector<u8>: "Ass..)
+	19: Call string::utf8(vector<u8>): String
+	20: StLoc[0](%#1: String)
+	21: ImmBorrowLoc[0](%#1: String)
+	22: Call debug::print<String>(&String)
+	23: MoveLoc[7](t1#1#4: &u64)
+	24: Call debug::print<u64>(&u64)
+	25: LdConst[1](vector<u8>: "!="..)
+	26: Call string::utf8(vector<u8>): String
+	27: StLoc[1](%#2: String)
+	28: ImmBorrowLoc[1](%#2: String)
+	29: Call debug::print<String>(&String)
+	30: MoveLoc[11](t2#1#4: &u64)
+	31: Call debug::print<u64>(&u64)
+	32: LdU64(13906834578070306815)
+	33: Abort
+B2:
+	34: MoveLoc[11](t2#1#4: &u64)
+	35: Pop
+	36: MoveLoc[7](t1#1#4: &u64)
+	37: Pop
+	38: ImmBorrowLoc[4](some#1#0: Option<u64>)
+	39: Call option::borrow<u64>(&Option<u64>): &u64
+	40: ReadRef
+	41: StLoc[8](t1#1#7: u64)
+	42: LdU64(1)
+	43: StLoc[12](t2#1#7: u64)
+	44: ImmBorrowLoc[8](t1#1#7: u64)
+	45: StLoc[6](t1#1#10: &u64)
+	46: ImmBorrowLoc[12](t2#1#7: u64)
+	47: StLoc[10](t2#1#10: &u64)
+	48: CopyLoc[6](t1#1#10: &u64)
+	49: CopyLoc[10](t2#1#10: &u64)
+	50: Eq
+	51: Not
+	52: BrFalse(69)
+B3:
+	53: LdConst[0](vector<u8>: "Ass..)
+	54: Call string::utf8(vector<u8>): String
+	55: StLoc[2](%#3: String)
+	56: ImmBorrowLoc[2](%#3: String)
+	57: Call debug::print<String>(&String)
+	58: MoveLoc[6](t1#1#10: &u64)
+	59: Call debug::print<u64>(&u64)
+	60: LdConst[1](vector<u8>: "!="..)
+	61: Call string::utf8(vector<u8>): String
+	62: StLoc[3](%#4: String)
+	63: ImmBorrowLoc[3](%#4: String)
+	64: Call debug::print<String>(&String)
+	65: MoveLoc[10](t2#1#10: &u64)
+	66: Call debug::print<u64>(&u64)
+	67: LdU64(13906834582365274111)
+	68: Abort
+B4:
+	69: MoveLoc[10](t2#1#10: &u64)
+	70: Pop
+	71: MoveLoc[6](t1#1#10: &u64)
+	72: Pop
+	73: Ret
+}
+
+swap_or_fill_some() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	some#1#0: Option<u64>
+L5:	t1#1#1: Option<u64>
+L6:	t1#1#10: &u64
+L7:	t1#1#4: &Option<u64>
+L8:	t1#1#7: u64
+L9:	t2#1#1: Option<u64>
+L10:	t2#1#10: &u64
+L11:	t2#1#4: &Option<u64>
+L12:	t2#1#7: u64
+B0:
+	0: LdU64(5)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: StLoc[4](some#1#0: Option<u64>)
+	3: MutBorrowLoc[4](some#1#0: Option<u64>)
+	4: LdU64(1)
+	5: Call option::swap_or_fill<u64>(&mut Option<u64>, u64): Option<u64>
+	6: StLoc[5](t1#1#1: Option<u64>)
+	7: LdU64(5)
+	8: Call option::some<u64>(u64): Option<u64>
+	9: StLoc[9](t2#1#1: Option<u64>)
+	10: ImmBorrowLoc[5](t1#1#1: Option<u64>)
+	11: StLoc[7](t1#1#4: &Option<u64>)
+	12: ImmBorrowLoc[9](t2#1#1: Option<u64>)
+	13: StLoc[11](t2#1#4: &Option<u64>)
+	14: CopyLoc[7](t1#1#4: &Option<u64>)
+	15: CopyLoc[11](t2#1#4: &Option<u64>)
+	16: Eq
+	17: Not
+	18: BrFalse(35)
+B1:
+	19: LdConst[0](vector<u8>: "Ass..)
+	20: Call string::utf8(vector<u8>): String
+	21: StLoc[0](%#1: String)
+	22: ImmBorrowLoc[0](%#1: String)
+	23: Call debug::print<String>(&String)
+	24: MoveLoc[7](t1#1#4: &Option<u64>)
+	25: Call debug::print<Option<u64>>(&Option<u64>)
+	26: LdConst[1](vector<u8>: "!="..)
+	27: Call string::utf8(vector<u8>): String
+	28: StLoc[1](%#2: String)
+	29: ImmBorrowLoc[1](%#2: String)
+	30: Call debug::print<String>(&String)
+	31: MoveLoc[11](t2#1#4: &Option<u64>)
+	32: Call debug::print<Option<u64>>(&Option<u64>)
+	33: LdU64(13906834608135077887)
+	34: Abort
+B2:
+	35: MoveLoc[11](t2#1#4: &Option<u64>)
+	36: Pop
+	37: MoveLoc[7](t1#1#4: &Option<u64>)
+	38: Pop
+	39: ImmBorrowLoc[4](some#1#0: Option<u64>)
+	40: Call option::borrow<u64>(&Option<u64>): &u64
+	41: ReadRef
+	42: StLoc[8](t1#1#7: u64)
+	43: LdU64(1)
+	44: StLoc[12](t2#1#7: u64)
+	45: ImmBorrowLoc[8](t1#1#7: u64)
+	46: StLoc[6](t1#1#10: &u64)
+	47: ImmBorrowLoc[12](t2#1#7: u64)
+	48: StLoc[10](t2#1#10: &u64)
+	49: CopyLoc[6](t1#1#10: &u64)
+	50: CopyLoc[10](t2#1#10: &u64)
+	51: Eq
+	52: Not
+	53: BrFalse(70)
+B3:
+	54: LdConst[0](vector<u8>: "Ass..)
+	55: Call string::utf8(vector<u8>): String
+	56: StLoc[2](%#3: String)
+	57: ImmBorrowLoc[2](%#3: String)
+	58: Call debug::print<String>(&String)
+	59: MoveLoc[6](t1#1#10: &u64)
+	60: Call debug::print<u64>(&u64)
+	61: LdConst[1](vector<u8>: "!="..)
+	62: Call string::utf8(vector<u8>): String
+	63: StLoc[3](%#4: String)
+	64: ImmBorrowLoc[3](%#4: String)
+	65: Call debug::print<String>(&String)
+	66: MoveLoc[10](t2#1#10: &u64)
+	67: Call debug::print<u64>(&u64)
+	68: LdU64(13906834612430045183)
+	69: Abort
+B4:
+	70: MoveLoc[10](t2#1#10: &u64)
+	71: Pop
+	72: MoveLoc[6](t1#1#10: &u64)
+	73: Pop
+	74: Ret
+}
+
+swap_or_fill_none() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	none#1#0: Option<u64>
+L5:	t1#1#1: Option<u64>
+L6:	t1#1#10: &u64
+L7:	t1#1#4: &Option<u64>
+L8:	t1#1#7: u64
+L9:	t2#1#1: Option<u64>
+L10:	t2#1#10: &u64
+L11:	t2#1#4: &Option<u64>
+L12:	t2#1#7: u64
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[4](none#1#0: Option<u64>)
+	2: MutBorrowLoc[4](none#1#0: Option<u64>)
+	3: LdU64(1)
+	4: Call option::swap_or_fill<u64>(&mut Option<u64>, u64): Option<u64>
+	5: StLoc[5](t1#1#1: Option<u64>)
+	6: Call option::none<u64>(): Option<u64>
+	7: StLoc[9](t2#1#1: Option<u64>)
+	8: ImmBorrowLoc[5](t1#1#1: Option<u64>)
+	9: StLoc[7](t1#1#4: &Option<u64>)
+	10: ImmBorrowLoc[9](t2#1#1: Option<u64>)
+	11: StLoc[11](t2#1#4: &Option<u64>)
+	12: CopyLoc[7](t1#1#4: &Option<u64>)
+	13: CopyLoc[11](t2#1#4: &Option<u64>)
+	14: Eq
+	15: Not
+	16: BrFalse(33)
+B1:
+	17: LdConst[0](vector<u8>: "Ass..)
+	18: Call string::utf8(vector<u8>): String
+	19: StLoc[0](%#1: String)
+	20: ImmBorrowLoc[0](%#1: String)
+	21: Call debug::print<String>(&String)
+	22: MoveLoc[7](t1#1#4: &Option<u64>)
+	23: Call debug::print<Option<u64>>(&Option<u64>)
+	24: LdConst[1](vector<u8>: "!="..)
+	25: Call string::utf8(vector<u8>): String
+	26: StLoc[1](%#2: String)
+	27: ImmBorrowLoc[1](%#2: String)
+	28: Call debug::print<String>(&String)
+	29: MoveLoc[11](t2#1#4: &Option<u64>)
+	30: Call debug::print<Option<u64>>(&Option<u64>)
+	31: LdU64(13906834638199848959)
+	32: Abort
+B2:
+	33: MoveLoc[11](t2#1#4: &Option<u64>)
+	34: Pop
+	35: MoveLoc[7](t1#1#4: &Option<u64>)
+	36: Pop
+	37: ImmBorrowLoc[4](none#1#0: Option<u64>)
+	38: Call option::borrow<u64>(&Option<u64>): &u64
+	39: ReadRef
+	40: StLoc[8](t1#1#7: u64)
+	41: LdU64(1)
+	42: StLoc[12](t2#1#7: u64)
+	43: ImmBorrowLoc[8](t1#1#7: u64)
+	44: StLoc[6](t1#1#10: &u64)
+	45: ImmBorrowLoc[12](t2#1#7: u64)
+	46: StLoc[10](t2#1#10: &u64)
+	47: CopyLoc[6](t1#1#10: &u64)
+	48: CopyLoc[10](t2#1#10: &u64)
+	49: Eq
+	50: Not
+	51: BrFalse(68)
+B3:
+	52: LdConst[0](vector<u8>: "Ass..)
+	53: Call string::utf8(vector<u8>): String
+	54: StLoc[2](%#3: String)
+	55: ImmBorrowLoc[2](%#3: String)
+	56: Call debug::print<String>(&String)
+	57: MoveLoc[6](t1#1#10: &u64)
+	58: Call debug::print<u64>(&u64)
+	59: LdConst[1](vector<u8>: "!="..)
+	60: Call string::utf8(vector<u8>): String
+	61: StLoc[3](%#4: String)
+	62: ImmBorrowLoc[3](%#4: String)
+	63: Call debug::print<String>(&String)
+	64: MoveLoc[10](t2#1#10: &u64)
+	65: Call debug::print<u64>(&u64)
+	66: LdU64(13906834642494816255)
+	67: Abort
+B4:
+	68: MoveLoc[10](t2#1#10: &u64)
+	69: Pop
+	70: MoveLoc[6](t1#1#10: &u64)
+	71: Pop
+	72: Ret
+}
+
+swap_none() {
+L0:	%#1: Option<u64>
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[0](%#1: Option<u64>)
+	2: MutBorrowLoc[0](%#1: Option<u64>)
+	3: LdU64(1)
+	4: Call option::swap<u64>(&mut Option<u64>, u64): u64
+	5: Pop
+	6: Ret
+}
+
+fill_none() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	none#1#0: Option<u64>
+L3:	t1#1#1: u64
+L4:	t1#1#4: &u64
+L5:	t2#1#1: u64
+L6:	t2#1#4: &u64
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[2](none#1#0: Option<u64>)
+	2: MutBorrowLoc[2](none#1#0: Option<u64>)
+	3: LdU64(3)
+	4: Call option::fill<u64>(&mut Option<u64>, u64)
+	5: ImmBorrowLoc[2](none#1#0: Option<u64>)
+	6: Call option::is_some<u64>(&Option<u64>): bool
+	7: BrFalse(9)
+B1:
+	8: Branch(11)
+B2:
+	9: LdU64(13906834694034423807)
+	10: Abort
+B3:
+	11: ImmBorrowLoc[2](none#1#0: Option<u64>)
+	12: Call option::borrow<u64>(&Option<u64>): &u64
+	13: ReadRef
+	14: StLoc[3](t1#1#1: u64)
+	15: LdU64(3)
+	16: StLoc[5](t2#1#1: u64)
+	17: ImmBorrowLoc[3](t1#1#1: u64)
+	18: StLoc[4](t1#1#4: &u64)
+	19: ImmBorrowLoc[5](t2#1#1: u64)
+	20: StLoc[6](t2#1#4: &u64)
+	21: CopyLoc[4](t1#1#4: &u64)
+	22: CopyLoc[6](t2#1#4: &u64)
+	23: Eq
+	24: Not
+	25: BrFalse(42)
+B4:
+	26: LdConst[0](vector<u8>: "Ass..)
+	27: Call string::utf8(vector<u8>): String
+	28: StLoc[0](%#1: String)
+	29: ImmBorrowLoc[0](%#1: String)
+	30: Call debug::print<String>(&String)
+	31: MoveLoc[4](t1#1#4: &u64)
+	32: Call debug::print<u64>(&u64)
+	33: LdConst[1](vector<u8>: "!="..)
+	34: Call string::utf8(vector<u8>): String
+	35: StLoc[1](%#2: String)
+	36: ImmBorrowLoc[1](%#2: String)
+	37: Call debug::print<String>(&String)
+	38: MoveLoc[6](t2#1#4: &u64)
+	39: Call debug::print<u64>(&u64)
+	40: LdU64(13906834698329391103)
+	41: Abort
+B5:
+	42: MoveLoc[6](t2#1#4: &u64)
+	43: Pop
+	44: MoveLoc[4](t1#1#4: &u64)
+	45: Pop
+	46: Ret
+}
+
+fill_some() {
+L0:	%#1: Option<u64>
+B0:
+	0: LdU64(3)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: StLoc[0](%#1: Option<u64>)
+	3: MutBorrowLoc[0](%#1: Option<u64>)
+	4: LdU64(0)
+	5: Call option::fill<u64>(&mut Option<u64>, u64)
+	6: Ret
+}
+
+destroy_with_default() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	t1#1#1: u64
+L5:	t1#1#10: &u64
+L6:	t1#1#4: &u64
+L7:	t1#1#7: u64
+L8:	t2#1#1: u64
+L9:	t2#1#10: &u64
+L10:	t2#1#4: &u64
+L11:	t2#1#7: u64
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: LdU64(4)
+	2: Call option::destroy_with_default<u64>(Option<u64>, u64): u64
+	3: StLoc[4](t1#1#1: u64)
+	4: LdU64(4)
+	5: StLoc[8](t2#1#1: u64)
+	6: ImmBorrowLoc[4](t1#1#1: u64)
+	7: StLoc[6](t1#1#4: &u64)
+	8: ImmBorrowLoc[8](t2#1#1: u64)
+	9: StLoc[10](t2#1#4: &u64)
+	10: CopyLoc[6](t1#1#4: &u64)
+	11: CopyLoc[10](t2#1#4: &u64)
+	12: Eq
+	13: Not
+	14: BrFalse(31)
+B1:
+	15: LdConst[0](vector<u8>: "Ass..)
+	16: Call string::utf8(vector<u8>): String
+	17: StLoc[0](%#1: String)
+	18: ImmBorrowLoc[0](%#1: String)
+	19: Call debug::print<String>(&String)
+	20: MoveLoc[6](t1#1#4: &u64)
+	21: Call debug::print<u64>(&u64)
+	22: LdConst[1](vector<u8>: "!="..)
+	23: Call string::utf8(vector<u8>): String
+	24: StLoc[1](%#2: String)
+	25: ImmBorrowLoc[1](%#2: String)
+	26: Call debug::print<String>(&String)
+	27: MoveLoc[10](t2#1#4: &u64)
+	28: Call debug::print<u64>(&u64)
+	29: LdU64(13906834741279064063)
+	30: Abort
+B2:
+	31: MoveLoc[10](t2#1#4: &u64)
+	32: Pop
+	33: MoveLoc[6](t1#1#4: &u64)
+	34: Pop
+	35: LdU64(4)
+	36: Call option::some<u64>(u64): Option<u64>
+	37: LdU64(5)
+	38: Call option::destroy_with_default<u64>(Option<u64>, u64): u64
+	39: StLoc[7](t1#1#7: u64)
+	40: LdU64(4)
+	41: StLoc[11](t2#1#7: u64)
+	42: ImmBorrowLoc[7](t1#1#7: u64)
+	43: StLoc[5](t1#1#10: &u64)
+	44: ImmBorrowLoc[11](t2#1#7: u64)
+	45: StLoc[9](t2#1#10: &u64)
+	46: CopyLoc[5](t1#1#10: &u64)
+	47: CopyLoc[9](t2#1#10: &u64)
+	48: Eq
+	49: Not
+	50: BrFalse(67)
+B3:
+	51: LdConst[0](vector<u8>: "Ass..)
+	52: Call string::utf8(vector<u8>): String
+	53: StLoc[2](%#3: String)
+	54: ImmBorrowLoc[2](%#3: String)
+	55: Call debug::print<String>(&String)
+	56: MoveLoc[5](t1#1#10: &u64)
+	57: Call debug::print<u64>(&u64)
+	58: LdConst[1](vector<u8>: "!="..)
+	59: Call string::utf8(vector<u8>): String
+	60: StLoc[3](%#4: String)
+	61: ImmBorrowLoc[3](%#4: String)
+	62: Call debug::print<String>(&String)
+	63: MoveLoc[9](t2#1#10: &u64)
+	64: Call debug::print<u64>(&u64)
+	65: LdU64(13906834745574031359)
+	66: Abort
+B4:
+	67: MoveLoc[9](t2#1#10: &u64)
+	68: Pop
+	69: MoveLoc[5](t1#1#10: &u64)
+	70: Pop
+	71: Ret
+}
+
+destroy_some() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	t1#1#1: u64
+L3:	t1#1#4: &u64
+L4:	t2#1#1: u64
+L5:	t2#1#4: &u64
+B0:
+	0: LdU64(4)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: Call option::destroy_some<u64>(Option<u64>): u64
+	3: StLoc[2](t1#1#1: u64)
+	4: LdU64(4)
+	5: StLoc[4](t2#1#1: u64)
+	6: ImmBorrowLoc[2](t1#1#1: u64)
+	7: StLoc[3](t1#1#4: &u64)
+	8: ImmBorrowLoc[4](t2#1#1: u64)
+	9: StLoc[5](t2#1#4: &u64)
+	10: CopyLoc[3](t1#1#4: &u64)
+	11: CopyLoc[5](t2#1#4: &u64)
+	12: Eq
+	13: Not
+	14: BrFalse(31)
+B1:
+	15: LdConst[0](vector<u8>: "Ass..)
+	16: Call string::utf8(vector<u8>): String
+	17: StLoc[0](%#1: String)
+	18: ImmBorrowLoc[0](%#1: String)
+	19: Call debug::print<String>(&String)
+	20: MoveLoc[3](t1#1#4: &u64)
+	21: Call debug::print<u64>(&u64)
+	22: LdConst[1](vector<u8>: "!="..)
+	23: Call string::utf8(vector<u8>): String
+	24: StLoc[1](%#2: String)
+	25: ImmBorrowLoc[1](%#2: String)
+	26: Call debug::print<String>(&String)
+	27: MoveLoc[5](t2#1#4: &u64)
+	28: Call debug::print<u64>(&u64)
+	29: LdU64(13906834767048867839)
+	30: Abort
+B2:
+	31: MoveLoc[5](t2#1#4: &u64)
+	32: Pop
+	33: MoveLoc[3](t1#1#4: &u64)
+	34: Pop
+	35: Ret
+}
+
+destroy_some_none() {
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: Call option::destroy_some<u64>(Option<u64>): u64
+	2: Pop
+	3: Ret
+}
+
+destroy_none() {
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: Call option::destroy_none<u64>(Option<u64>)
+	2: Ret
+}
+
+destroy_none_some() {
+B0:
+	0: LdU64(0)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: Call option::destroy_none<u64>(Option<u64>)
+	3: Ret
+}
+
+into_vec_some() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	t1#1#1: u64
+L5:	t1#1#10: &u64
+L6:	t1#1#4: &u64
+L7:	t1#1#7: u64
+L8:	t2#1#1: u64
+L9:	t2#1#10: &u64
+L10:	t2#1#4: &u64
+L11:	t2#1#7: u64
+L12:	v#1#0: vector<u64>
+B0:
+	0: LdU64(0)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: Call option::to_vec<u64>(Option<u64>): vector<u64>
+	3: StLoc[12](v#1#0: vector<u64>)
+	4: ImmBorrowLoc[12](v#1#0: vector<u64>)
+	5: VecLen(2)
+	6: StLoc[4](t1#1#1: u64)
+	7: LdU64(1)
+	8: StLoc[8](t2#1#1: u64)
+	9: ImmBorrowLoc[4](t1#1#1: u64)
+	10: StLoc[6](t1#1#4: &u64)
+	11: ImmBorrowLoc[8](t2#1#1: u64)
+	12: StLoc[10](t2#1#4: &u64)
+	13: CopyLoc[6](t1#1#4: &u64)
+	14: CopyLoc[10](t2#1#4: &u64)
+	15: Eq
+	16: Not
+	17: BrFalse(34)
+B1:
+	18: LdConst[0](vector<u8>: "Ass..)
+	19: Call string::utf8(vector<u8>): String
+	20: StLoc[0](%#1: String)
+	21: ImmBorrowLoc[0](%#1: String)
+	22: Call debug::print<String>(&String)
+	23: MoveLoc[6](t1#1#4: &u64)
+	24: Call debug::print<u64>(&u64)
+	25: LdConst[1](vector<u8>: "!="..)
+	26: Call string::utf8(vector<u8>): String
+	27: StLoc[1](%#2: String)
+	28: ImmBorrowLoc[1](%#2: String)
+	29: Call debug::print<String>(&String)
+	30: MoveLoc[10](t2#1#4: &u64)
+	31: Call debug::print<u64>(&u64)
+	32: LdU64(13906834857243181055)
+	33: Abort
+B2:
+	34: MoveLoc[10](t2#1#4: &u64)
+	35: Pop
+	36: MoveLoc[6](t1#1#4: &u64)
+	37: Pop
+	38: MutBorrowLoc[12](v#1#0: vector<u64>)
+	39: VecPopBack(2)
+	40: StLoc[7](t1#1#7: u64)
+	41: LdU64(0)
+	42: StLoc[11](t2#1#7: u64)
+	43: ImmBorrowLoc[7](t1#1#7: u64)
+	44: StLoc[5](t1#1#10: &u64)
+	45: ImmBorrowLoc[11](t2#1#7: u64)
+	46: StLoc[9](t2#1#10: &u64)
+	47: CopyLoc[5](t1#1#10: &u64)
+	48: CopyLoc[9](t2#1#10: &u64)
+	49: Eq
+	50: Not
+	51: BrFalse(68)
+B3:
+	52: LdConst[0](vector<u8>: "Ass..)
+	53: Call string::utf8(vector<u8>): String
+	54: StLoc[2](%#3: String)
+	55: ImmBorrowLoc[2](%#3: String)
+	56: Call debug::print<String>(&String)
+	57: MoveLoc[5](t1#1#10: &u64)
+	58: Call debug::print<u64>(&u64)
+	59: LdConst[1](vector<u8>: "!="..)
+	60: Call string::utf8(vector<u8>): String
+	61: StLoc[3](%#4: String)
+	62: ImmBorrowLoc[3](%#4: String)
+	63: Call debug::print<String>(&String)
+	64: MoveLoc[9](t2#1#10: &u64)
+	65: Call debug::print<u64>(&u64)
+	66: LdU64(13906834865833115647)
+	67: Abort
+B4:
+	68: MoveLoc[9](t2#1#10: &u64)
+	69: Pop
+	70: MoveLoc[5](t1#1#10: &u64)
+	71: Pop
+	72: Ret
+}
+
+into_vec_none() {
+L0:	v#1#0: vector<u64>
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: Call option::to_vec<u64>(Option<u64>): vector<u64>
+	2: StLoc[0](v#1#0: vector<u64>)
+	3: ImmBorrowLoc[0](v#1#0: vector<u64>)
+	4: Call vector::is_empty<u64>(&vector<u64>): bool
+	5: BrFalse(7)
+B1:
+	6: Branch(9)
+B2:
+	7: LdU64(13906834891602919423)
+	8: Abort
+B3:
+	9: Ret
+}
+
+do_destroy() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	counter#1#0: u64
+L3:	none#1#0: Option<NoDrop>
+L4:	o#1#12: Option<NoDrop>
+L5:	o#1#14: Option<NoDrop>
+L6:	o#1#16: Option<u64>
+L7:	o#1#18: Option<u64>
+L8:	o#1#2: Option<u64>
+L9:	o#1#21: Option<u64>
+L10:	o#1#24: Option<u64>
+L11:	o#1#4: Option<u64>
+L12:	some#1#0: Option<NoDrop>
+L13:	t1#1#6: u64
+L14:	t1#1#9: &u64
+L15:	t2#1#6: u64
+L16:	t2#1#9: &u64
+L17:	x#2#5: u64
+B0:
+	0: LdU64(0)
+	1: StLoc[2](counter#1#0: u64)
+	2: LdU64(5)
+	3: Call option::some<u64>(u64): Option<u64>
+	4: StLoc[8](o#1#2: Option<u64>)
+	5: ImmBorrowLoc[8](o#1#2: Option<u64>)
+	6: Call option::is_some<u64>(&Option<u64>): bool
+	7: BrFalse(12)
+B1:
+	8: MoveLoc[8](o#1#2: Option<u64>)
+	9: Call option::destroy_some<u64>(Option<u64>): u64
+	10: StLoc[2](counter#1#0: u64)
+	11: Branch(14)
+B2:
+	12: MoveLoc[8](o#1#2: Option<u64>)
+	13: Call option::destroy_none<u64>(Option<u64>)
+B3:
+	14: LdU64(10)
+	15: Call option::some<u64>(u64): Option<u64>
+	16: StLoc[11](o#1#4: Option<u64>)
+	17: ImmBorrowLoc[11](o#1#4: Option<u64>)
+	18: Call option::is_some<u64>(&Option<u64>): bool
+	19: BrFalse(28)
+B4:
+	20: MoveLoc[11](o#1#4: Option<u64>)
+	21: Call option::destroy_some<u64>(Option<u64>): u64
+	22: StLoc[17](x#2#5: u64)
+	23: MoveLoc[2](counter#1#0: u64)
+	24: MoveLoc[17](x#2#5: u64)
+	25: Add
+	26: StLoc[2](counter#1#0: u64)
+	27: Branch(30)
+B5:
+	28: MoveLoc[11](o#1#4: Option<u64>)
+	29: Call option::destroy_none<u64>(Option<u64>)
+B6:
+	30: MoveLoc[2](counter#1#0: u64)
+	31: StLoc[13](t1#1#6: u64)
+	32: LdU64(15)
+	33: StLoc[15](t2#1#6: u64)
+	34: ImmBorrowLoc[13](t1#1#6: u64)
+	35: StLoc[14](t1#1#9: &u64)
+	36: ImmBorrowLoc[15](t2#1#6: u64)
+	37: StLoc[16](t2#1#9: &u64)
+	38: CopyLoc[14](t1#1#9: &u64)
+	39: CopyLoc[16](t2#1#9: &u64)
+	40: Eq
+	41: Not
+	42: BrFalse(59)
+B7:
+	43: LdConst[0](vector<u8>: "Ass..)
+	44: Call string::utf8(vector<u8>): String
+	45: StLoc[0](%#1: String)
+	46: ImmBorrowLoc[0](%#1: String)
+	47: Call debug::print<String>(&String)
+	48: MoveLoc[14](t1#1#9: &u64)
+	49: Call debug::print<u64>(&u64)
+	50: LdConst[1](vector<u8>: "!="..)
+	51: Call string::utf8(vector<u8>): String
+	52: StLoc[1](%#2: String)
+	53: ImmBorrowLoc[1](%#2: String)
+	54: Call debug::print<String>(&String)
+	55: MoveLoc[16](t2#1#9: &u64)
+	56: Call debug::print<u64>(&u64)
+	57: LdU64(13906834947437494271)
+	58: Abort
+B8:
+	59: MoveLoc[16](t2#1#9: &u64)
+	60: Pop
+	61: MoveLoc[14](t1#1#9: &u64)
+	62: Pop
+	63: LdFalse
+	64: Pack[0](NoDrop)
+	65: Call option::some<NoDrop>(NoDrop): Option<NoDrop>
+	66: StLoc[12](some#1#0: Option<NoDrop>)
+	67: Call option::none<NoDrop>(): Option<NoDrop>
+	68: StLoc[3](none#1#0: Option<NoDrop>)
+	69: MoveLoc[12](some#1#0: Option<NoDrop>)
+	70: StLoc[4](o#1#12: Option<NoDrop>)
+	71: ImmBorrowLoc[4](o#1#12: Option<NoDrop>)
+	72: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	73: BrFalse(79)
+B9:
+	74: MoveLoc[4](o#1#12: Option<NoDrop>)
+	75: Call option::destroy_some<NoDrop>(Option<NoDrop>): NoDrop
+	76: Unpack[0](NoDrop)
+	77: Pop
+	78: Branch(81)
+B10:
+	79: MoveLoc[4](o#1#12: Option<NoDrop>)
+	80: Call option::destroy_none<NoDrop>(Option<NoDrop>)
+B11:
+	81: MoveLoc[3](none#1#0: Option<NoDrop>)
+	82: StLoc[5](o#1#14: Option<NoDrop>)
+	83: ImmBorrowLoc[5](o#1#14: Option<NoDrop>)
+	84: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	85: BrFalse(91)
+B12:
+	86: MoveLoc[5](o#1#14: Option<NoDrop>)
+	87: Call option::destroy_some<NoDrop>(Option<NoDrop>): NoDrop
+	88: Unpack[0](NoDrop)
+	89: Pop
+	90: Branch(93)
+B13:
+	91: MoveLoc[5](o#1#14: Option<NoDrop>)
+	92: Call option::destroy_none<NoDrop>(Option<NoDrop>)
+B14:
+	93: LdU64(5)
+	94: Call option::some<u64>(u64): Option<u64>
+	95: StLoc[6](o#1#16: Option<u64>)
+	96: ImmBorrowLoc[6](o#1#16: Option<u64>)
+	97: Call option::is_some<u64>(&Option<u64>): bool
+	98: BrFalse(103)
+B15:
+	99: MoveLoc[6](o#1#16: Option<u64>)
+	100: Call option::destroy_some<u64>(Option<u64>): u64
+	101: Pop
+	102: Branch(105)
+B16:
+	103: MoveLoc[6](o#1#16: Option<u64>)
+	104: Call option::destroy_none<u64>(Option<u64>)
+B17:
+	105: LdU64(5)
+	106: Call option::some<u64>(u64): Option<u64>
+	107: StLoc[7](o#1#18: Option<u64>)
+	108: ImmBorrowLoc[7](o#1#18: Option<u64>)
+	109: Call option::is_some<u64>(&Option<u64>): bool
+	110: BrFalse(115)
+B18:
+	111: MoveLoc[7](o#1#18: Option<u64>)
+	112: Call option::destroy_some<u64>(Option<u64>): u64
+	113: Pop
+	114: Branch(117)
+B19:
+	115: MoveLoc[7](o#1#18: Option<u64>)
+	116: Call option::destroy_none<u64>(Option<u64>)
+B20:
+	117: LdU64(5)
+	118: Call option::some<u64>(u64): Option<u64>
+	119: StLoc[9](o#1#21: Option<u64>)
+	120: ImmBorrowLoc[9](o#1#21: Option<u64>)
+	121: Call option::is_some<u64>(&Option<u64>): bool
+	122: BrFalse(127)
+B21:
+	123: MoveLoc[9](o#1#21: Option<u64>)
+	124: Call option::destroy_some<u64>(Option<u64>): u64
+	125: Pop
+	126: Branch(129)
+B22:
+	127: MoveLoc[9](o#1#21: Option<u64>)
+	128: Call option::destroy_none<u64>(Option<u64>)
+B23:
+	129: LdU64(5)
+	130: Call option::some<u64>(u64): Option<u64>
+	131: StLoc[10](o#1#24: Option<u64>)
+	132: ImmBorrowLoc[10](o#1#24: Option<u64>)
+	133: Call option::is_some<u64>(&Option<u64>): bool
+	134: BrFalse(139)
+B24:
+	135: MoveLoc[10](o#1#24: Option<u64>)
+	136: Call option::destroy_some<u64>(Option<u64>): u64
+	137: Pop
+	138: Branch(141)
+B25:
+	139: MoveLoc[10](o#1#24: Option<u64>)
+	140: Call option::destroy_none<u64>(Option<u64>)
+B26:
+	141: Ret
+}
+
+do_ref_mut() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	counter#1#0: u64
+L3:	o#1#1: &mut Option<u64>
+L4:	o#1#11: &Option<u64>
+L5:	o#1#13: &Option<u64>
+L6:	o#1#15: &mut Option<u64>
+L7:	o#1#17: &mut Option<u64>
+L8:	o#1#3: &Option<u64>
+L9:	opt#1#0: Option<u64>
+L10:	t1#1#5: u64
+L11:	t1#1#8: &u64
+L12:	t2#1#5: u64
+L13:	t2#1#8: &u64
+L14:	x#1#2: &mut u64
+B0:
+	0: LdU64(0)
+	1: StLoc[2](counter#1#0: u64)
+	2: LdU64(5)
+	3: Call option::some<u64>(u64): Option<u64>
+	4: StLoc[9](opt#1#0: Option<u64>)
+	5: MutBorrowLoc[9](opt#1#0: Option<u64>)
+	6: StLoc[3](o#1#1: &mut Option<u64>)
+	7: CopyLoc[3](o#1#1: &mut Option<u64>)
+	8: FreezeRef
+	9: Call option::is_some<u64>(&Option<u64>): bool
+	10: BrFalse(18)
+B1:
+	11: MoveLoc[3](o#1#1: &mut Option<u64>)
+	12: Call option::borrow_mut<u64>(&mut Option<u64>): &mut u64
+	13: StLoc[14](x#1#2: &mut u64)
+	14: LdU64(100)
+	15: MoveLoc[14](x#1#2: &mut u64)
+	16: WriteRef
+	17: Branch(20)
+B2:
+	18: MoveLoc[3](o#1#1: &mut Option<u64>)
+	19: Pop
+B3:
+	20: ImmBorrowLoc[9](opt#1#0: Option<u64>)
+	21: StLoc[8](o#1#3: &Option<u64>)
+	22: CopyLoc[8](o#1#3: &Option<u64>)
+	23: Call option::is_some<u64>(&Option<u64>): bool
+	24: BrFalse(30)
+B4:
+	25: MoveLoc[8](o#1#3: &Option<u64>)
+	26: Call option::borrow<u64>(&Option<u64>): &u64
+	27: ReadRef
+	28: StLoc[2](counter#1#0: u64)
+	29: Branch(32)
+B5:
+	30: MoveLoc[8](o#1#3: &Option<u64>)
+	31: Pop
+B6:
+	32: MoveLoc[2](counter#1#0: u64)
+	33: StLoc[10](t1#1#5: u64)
+	34: LdU64(100)
+	35: StLoc[12](t2#1#5: u64)
+	36: ImmBorrowLoc[10](t1#1#5: u64)
+	37: StLoc[11](t1#1#8: &u64)
+	38: ImmBorrowLoc[12](t2#1#5: u64)
+	39: StLoc[13](t2#1#8: &u64)
+	40: CopyLoc[11](t1#1#8: &u64)
+	41: CopyLoc[13](t2#1#8: &u64)
+	42: Eq
+	43: Not
+	44: BrFalse(61)
+B7:
+	45: LdConst[0](vector<u8>: "Ass..)
+	46: Call string::utf8(vector<u8>): String
+	47: StLoc[0](%#1: String)
+	48: ImmBorrowLoc[0](%#1: String)
+	49: Call debug::print<String>(&String)
+	50: MoveLoc[11](t1#1#8: &u64)
+	51: Call debug::print<u64>(&u64)
+	52: LdConst[1](vector<u8>: "!="..)
+	53: Call string::utf8(vector<u8>): String
+	54: StLoc[1](%#2: String)
+	55: ImmBorrowLoc[1](%#2: String)
+	56: Call debug::print<String>(&String)
+	57: MoveLoc[13](t2#1#8: &u64)
+	58: Call debug::print<u64>(&u64)
+	59: LdU64(13906835041926774783)
+	60: Abort
+B8:
+	61: MoveLoc[13](t2#1#8: &u64)
+	62: Pop
+	63: MoveLoc[11](t1#1#8: &u64)
+	64: Pop
+	65: ImmBorrowLoc[9](opt#1#0: Option<u64>)
+	66: StLoc[4](o#1#11: &Option<u64>)
+	67: CopyLoc[4](o#1#11: &Option<u64>)
+	68: Call option::is_some<u64>(&Option<u64>): bool
+	69: BrFalse(75)
+B9:
+	70: MoveLoc[4](o#1#11: &Option<u64>)
+	71: Call option::borrow<u64>(&Option<u64>): &u64
+	72: ReadRef
+	73: Pop
+	74: Branch(77)
+B10:
+	75: MoveLoc[4](o#1#11: &Option<u64>)
+	76: Pop
+B11:
+	77: ImmBorrowLoc[9](opt#1#0: Option<u64>)
+	78: StLoc[5](o#1#13: &Option<u64>)
+	79: CopyLoc[5](o#1#13: &Option<u64>)
+	80: Call option::is_some<u64>(&Option<u64>): bool
+	81: BrFalse(86)
+B12:
+	82: MoveLoc[5](o#1#13: &Option<u64>)
+	83: Call option::borrow<u64>(&Option<u64>): &u64
+	84: Pop
+	85: Branch(88)
+B13:
+	86: MoveLoc[5](o#1#13: &Option<u64>)
+	87: Pop
+B14:
+	88: MutBorrowLoc[9](opt#1#0: Option<u64>)
+	89: StLoc[6](o#1#15: &mut Option<u64>)
+	90: CopyLoc[6](o#1#15: &mut Option<u64>)
+	91: FreezeRef
+	92: Call option::is_some<u64>(&Option<u64>): bool
+	93: BrFalse(98)
+B15:
+	94: MoveLoc[6](o#1#15: &mut Option<u64>)
+	95: Call option::borrow_mut<u64>(&mut Option<u64>): &mut u64
+	96: Pop
+	97: Branch(100)
+B16:
+	98: MoveLoc[6](o#1#15: &mut Option<u64>)
+	99: Pop
+B17:
+	100: MutBorrowLoc[9](opt#1#0: Option<u64>)
+	101: StLoc[7](o#1#17: &mut Option<u64>)
+	102: CopyLoc[7](o#1#17: &mut Option<u64>)
+	103: FreezeRef
+	104: Call option::is_some<u64>(&Option<u64>): bool
+	105: BrFalse(110)
+B18:
+	106: MoveLoc[7](o#1#17: &mut Option<u64>)
+	107: Call option::borrow_mut<u64>(&mut Option<u64>): &mut u64
+	108: Pop
+	109: Branch(112)
+B19:
+	110: MoveLoc[7](o#1#17: &mut Option<u64>)
+	111: Pop
+B20:
+	112: Ret
+}
+
+map_map_ref() {
+L0:	%#10: String
+L1:	%#11: String
+L2:	%#14: Option<vector<u8>>
+L3:	%#15: String
+L4:	%#16: String
+L5:	%#17: Option<u8>
+L6:	%#20: Option<vector<u8>>
+L7:	%#21: String
+L8:	%#22: String
+L9:	%#3: Option<vector<u64>>
+L10:	%#4: String
+L11:	%#5: String
+L12:	%#6: Option<u64>
+L13:	%#9: Option<vector<u64>>
+L14:	o#1#12: &Option<u64>
+L15:	o#1#20: Option<u8>
+L16:	o#1#28: &Option<u8>
+L17:	o#1#4: Option<u64>
+L18:	t1#1#1: Option<vector<u64>>
+L19:	t1#1#14: &Option<vector<u64>>
+L20:	t1#1#17: Option<vector<u8>>
+L21:	t1#1#22: &Option<vector<u8>>
+L22:	t1#1#25: Option<vector<u8>>
+L23:	t1#1#30: &Option<vector<u8>>
+L24:	t1#1#6: &Option<vector<u64>>
+L25:	t1#1#9: Option<vector<u64>>
+L26:	t2#1#1: Option<vector<u64>>
+L27:	t2#1#14: &Option<vector<u64>>
+L28:	t2#1#17: Option<vector<u8>>
+L29:	t2#1#22: &Option<vector<u8>>
+L30:	t2#1#25: Option<vector<u8>>
+L31:	t2#1#30: &Option<vector<u8>>
+L32:	t2#1#6: &Option<vector<u64>>
+L33:	t2#1#9: Option<vector<u64>>
+B0:
+	0: LdU64(5)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: StLoc[17](o#1#4: Option<u64>)
+	3: ImmBorrowLoc[17](o#1#4: Option<u64>)
+	4: Call option::is_some<u64>(&Option<u64>): bool
+	5: BrFalse(12)
+B1:
+	6: MoveLoc[17](o#1#4: Option<u64>)
+	7: Call option::destroy_some<u64>(Option<u64>): u64
+	8: VecPack(2, 1)
+	9: Call option::some<vector<u64>>(vector<u64>): Option<vector<u64>>
+	10: StLoc[9](%#3: Option<vector<u64>>)
+	11: Branch(16)
+B2:
+	12: MoveLoc[17](o#1#4: Option<u64>)
+	13: Call option::destroy_none<u64>(Option<u64>)
+	14: Call option::none<vector<u64>>(): Option<vector<u64>>
+	15: StLoc[9](%#3: Option<vector<u64>>)
+B3:
+	16: MoveLoc[9](%#3: Option<vector<u64>>)
+	17: StLoc[18](t1#1#1: Option<vector<u64>>)
+	18: LdConst[2](vector<u64>: 0105..)
+	19: Call option::some<vector<u64>>(vector<u64>): Option<vector<u64>>
+	20: StLoc[26](t2#1#1: Option<vector<u64>>)
+	21: ImmBorrowLoc[18](t1#1#1: Option<vector<u64>>)
+	22: StLoc[24](t1#1#6: &Option<vector<u64>>)
+	23: ImmBorrowLoc[26](t2#1#1: Option<vector<u64>>)
+	24: StLoc[32](t2#1#6: &Option<vector<u64>>)
+	25: CopyLoc[24](t1#1#6: &Option<vector<u64>>)
+	26: CopyLoc[32](t2#1#6: &Option<vector<u64>>)
+	27: Eq
+	28: Not
+	29: BrFalse(46)
+B4:
+	30: LdConst[0](vector<u8>: "Ass..)
+	31: Call string::utf8(vector<u8>): String
+	32: StLoc[10](%#4: String)
+	33: ImmBorrowLoc[10](%#4: String)
+	34: Call debug::print<String>(&String)
+	35: MoveLoc[24](t1#1#6: &Option<vector<u64>>)
+	36: Call debug::print<Option<vector<u64>>>(&Option<vector<u64>>)
+	37: LdConst[1](vector<u8>: "!="..)
+	38: Call string::utf8(vector<u8>): String
+	39: StLoc[11](%#5: String)
+	40: ImmBorrowLoc[11](%#5: String)
+	41: Call debug::print<String>(&String)
+	42: MoveLoc[32](t2#1#6: &Option<vector<u64>>)
+	43: Call debug::print<Option<vector<u64>>>(&Option<vector<u64>>)
+	44: LdU64(13906835084876447743)
+	45: Abort
+B5:
+	46: MoveLoc[32](t2#1#6: &Option<vector<u64>>)
+	47: Pop
+	48: MoveLoc[24](t1#1#6: &Option<vector<u64>>)
+	49: Pop
+	50: LdU64(5)
+	51: Call option::some<u64>(u64): Option<u64>
+	52: StLoc[12](%#6: Option<u64>)
+	53: ImmBorrowLoc[12](%#6: Option<u64>)
+	54: StLoc[14](o#1#12: &Option<u64>)
+	55: CopyLoc[14](o#1#12: &Option<u64>)
+	56: Call option::is_some<u64>(&Option<u64>): bool
+	57: BrFalse(65)
+B6:
+	58: MoveLoc[14](o#1#12: &Option<u64>)
+	59: Call option::borrow<u64>(&Option<u64>): &u64
+	60: ReadRef
+	61: VecPack(2, 1)
+	62: Call option::some<vector<u64>>(vector<u64>): Option<vector<u64>>
+	63: StLoc[13](%#9: Option<vector<u64>>)
+	64: Branch(69)
+B7:
+	65: MoveLoc[14](o#1#12: &Option<u64>)
+	66: Pop
+	67: Call option::none<vector<u64>>(): Option<vector<u64>>
+	68: StLoc[13](%#9: Option<vector<u64>>)
+B8:
+	69: MoveLoc[13](%#9: Option<vector<u64>>)
+	70: StLoc[25](t1#1#9: Option<vector<u64>>)
+	71: LdConst[2](vector<u64>: 0105..)
+	72: Call option::some<vector<u64>>(vector<u64>): Option<vector<u64>>
+	73: StLoc[33](t2#1#9: Option<vector<u64>>)
+	74: ImmBorrowLoc[25](t1#1#9: Option<vector<u64>>)
+	75: StLoc[19](t1#1#14: &Option<vector<u64>>)
+	76: ImmBorrowLoc[33](t2#1#9: Option<vector<u64>>)
+	77: StLoc[27](t2#1#14: &Option<vector<u64>>)
+	78: CopyLoc[19](t1#1#14: &Option<vector<u64>>)
+	79: CopyLoc[27](t2#1#14: &Option<vector<u64>>)
+	80: Eq
+	81: Not
+	82: BrFalse(99)
+B9:
+	83: LdConst[0](vector<u8>: "Ass..)
+	84: Call string::utf8(vector<u8>): String
+	85: StLoc[0](%#10: String)
+	86: ImmBorrowLoc[0](%#10: String)
+	87: Call debug::print<String>(&String)
+	88: MoveLoc[19](t1#1#14: &Option<vector<u64>>)
+	89: Call debug::print<Option<vector<u64>>>(&Option<vector<u64>>)
+	90: LdConst[1](vector<u8>: "!="..)
+	91: Call string::utf8(vector<u8>): String
+	92: StLoc[1](%#11: String)
+	93: ImmBorrowLoc[1](%#11: String)
+	94: Call debug::print<String>(&String)
+	95: MoveLoc[27](t2#1#14: &Option<vector<u64>>)
+	96: Call debug::print<Option<vector<u64>>>(&Option<vector<u64>>)
+	97: LdU64(13906835089171415039)
+	98: Abort
+B10:
+	99: MoveLoc[27](t2#1#14: &Option<vector<u64>>)
+	100: Pop
+	101: MoveLoc[19](t1#1#14: &Option<vector<u64>>)
+	102: Pop
+	103: Call option::none<u8>(): Option<u8>
+	104: StLoc[15](o#1#20: Option<u8>)
+	105: ImmBorrowLoc[15](o#1#20: Option<u8>)
+	106: Call option::is_some<u8>(&Option<u8>): bool
+	107: BrFalse(114)
+B11:
+	108: MoveLoc[15](o#1#20: Option<u8>)
+	109: Call option::destroy_some<u8>(Option<u8>): u8
+	110: VecPack(34, 1)
+	111: Call option::some<vector<u8>>(vector<u8>): Option<vector<u8>>
+	112: StLoc[2](%#14: Option<vector<u8>>)
+	113: Branch(118)
+B12:
+	114: MoveLoc[15](o#1#20: Option<u8>)
+	115: Call option::destroy_none<u8>(Option<u8>)
+	116: Call option::none<vector<u8>>(): Option<vector<u8>>
+	117: StLoc[2](%#14: Option<vector<u8>>)
+B13:
+	118: MoveLoc[2](%#14: Option<vector<u8>>)
+	119: StLoc[20](t1#1#17: Option<vector<u8>>)
+	120: Call option::none<vector<u8>>(): Option<vector<u8>>
+	121: StLoc[28](t2#1#17: Option<vector<u8>>)
+	122: ImmBorrowLoc[20](t1#1#17: Option<vector<u8>>)
+	123: StLoc[21](t1#1#22: &Option<vector<u8>>)
+	124: ImmBorrowLoc[28](t2#1#17: Option<vector<u8>>)
+	125: StLoc[29](t2#1#22: &Option<vector<u8>>)
+	126: CopyLoc[21](t1#1#22: &Option<vector<u8>>)
+	127: CopyLoc[29](t2#1#22: &Option<vector<u8>>)
+	128: Eq
+	129: Not
+	130: BrFalse(147)
+B14:
+	131: LdConst[0](vector<u8>: "Ass..)
+	132: Call string::utf8(vector<u8>): String
+	133: StLoc[3](%#15: String)
+	134: ImmBorrowLoc[3](%#15: String)
+	135: Call debug::print<String>(&String)
+	136: MoveLoc[21](t1#1#22: &Option<vector<u8>>)
+	137: Call debug::print<Option<vector<u8>>>(&Option<vector<u8>>)
+	138: LdConst[1](vector<u8>: "!="..)
+	139: Call string::utf8(vector<u8>): String
+	140: StLoc[4](%#16: String)
+	141: ImmBorrowLoc[4](%#16: String)
+	142: Call debug::print<String>(&String)
+	143: MoveLoc[29](t2#1#22: &Option<vector<u8>>)
+	144: Call debug::print<Option<vector<u8>>>(&Option<vector<u8>>)
+	145: LdU64(13906835093466382335)
+	146: Abort
+B15:
+	147: MoveLoc[29](t2#1#22: &Option<vector<u8>>)
+	148: Pop
+	149: MoveLoc[21](t1#1#22: &Option<vector<u8>>)
+	150: Pop
+	151: Call option::none<u8>(): Option<u8>
+	152: StLoc[5](%#17: Option<u8>)
+	153: ImmBorrowLoc[5](%#17: Option<u8>)
+	154: StLoc[16](o#1#28: &Option<u8>)
+	155: CopyLoc[16](o#1#28: &Option<u8>)
+	156: Call option::is_some<u8>(&Option<u8>): bool
+	157: BrFalse(165)
+B16:
+	158: MoveLoc[16](o#1#28: &Option<u8>)
+	159: Call option::borrow<u8>(&Option<u8>): &u8
+	160: ReadRef
+	161: VecPack(34, 1)
+	162: Call option::some<vector<u8>>(vector<u8>): Option<vector<u8>>
+	163: StLoc[6](%#20: Option<vector<u8>>)
+	164: Branch(169)
+B17:
+	165: MoveLoc[16](o#1#28: &Option<u8>)
+	166: Pop
+	167: Call option::none<vector<u8>>(): Option<vector<u8>>
+	168: StLoc[6](%#20: Option<vector<u8>>)
+B18:
+	169: MoveLoc[6](%#20: Option<vector<u8>>)
+	170: StLoc[22](t1#1#25: Option<vector<u8>>)
+	171: Call option::none<vector<u8>>(): Option<vector<u8>>
+	172: StLoc[30](t2#1#25: Option<vector<u8>>)
+	173: ImmBorrowLoc[22](t1#1#25: Option<vector<u8>>)
+	174: StLoc[23](t1#1#30: &Option<vector<u8>>)
+	175: ImmBorrowLoc[30](t2#1#25: Option<vector<u8>>)
+	176: StLoc[31](t2#1#30: &Option<vector<u8>>)
+	177: CopyLoc[23](t1#1#30: &Option<vector<u8>>)
+	178: CopyLoc[31](t2#1#30: &Option<vector<u8>>)
+	179: Eq
+	180: Not
+	181: BrFalse(198)
+B19:
+	182: LdConst[0](vector<u8>: "Ass..)
+	183: Call string::utf8(vector<u8>): String
+	184: StLoc[7](%#21: String)
+	185: ImmBorrowLoc[7](%#21: String)
+	186: Call debug::print<String>(&String)
+	187: MoveLoc[23](t1#1#30: &Option<vector<u8>>)
+	188: Call debug::print<Option<vector<u8>>>(&Option<vector<u8>>)
+	189: LdConst[1](vector<u8>: "!="..)
+	190: Call string::utf8(vector<u8>): String
+	191: StLoc[8](%#22: String)
+	192: ImmBorrowLoc[8](%#22: String)
+	193: Call debug::print<String>(&String)
+	194: MoveLoc[31](t2#1#30: &Option<vector<u8>>)
+	195: Call debug::print<Option<vector<u8>>>(&Option<vector<u8>>)
+	196: LdU64(13906835097761349631)
+	197: Abort
+B20:
+	198: MoveLoc[31](t2#1#30: &Option<vector<u8>>)
+	199: Pop
+	200: MoveLoc[23](t1#1#30: &Option<vector<u8>>)
+	201: Pop
+	202: Ret
+}
+
+map_no_drop() {
+L0:	%#10: String
+L1:	%#3: Option<u64>
+L2:	%#6: Option<u64>
+L3:	%#7: String
+L4:	%#8: String
+L5:	%#9: String
+L6:	none#1#0: Option<u64>
+L7:	o#1#1: Option<NoDrop>
+L8:	o#1#3: Option<NoDrop>
+L9:	some#1#0: Option<u64>
+L10:	t1#1#11: Option<u64>
+L11:	t1#1#14: &Option<u64>
+L12:	t1#1#5: Option<u64>
+L13:	t1#1#8: &Option<u64>
+L14:	t2#1#11: Option<u64>
+L15:	t2#1#14: &Option<u64>
+L16:	t2#1#5: Option<u64>
+L17:	t2#1#8: &Option<u64>
+B0:
+	0: Call option::none<NoDrop>(): Option<NoDrop>
+	1: StLoc[7](o#1#1: Option<NoDrop>)
+	2: ImmBorrowLoc[7](o#1#1: Option<NoDrop>)
+	3: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	4: BrFalse(13)
+B1:
+	5: MoveLoc[7](o#1#1: Option<NoDrop>)
+	6: Call option::destroy_some<NoDrop>(Option<NoDrop>): NoDrop
+	7: Unpack[0](NoDrop)
+	8: Pop
+	9: LdU64(100)
+	10: Call option::some<u64>(u64): Option<u64>
+	11: StLoc[1](%#3: Option<u64>)
+	12: Branch(17)
+B2:
+	13: MoveLoc[7](o#1#1: Option<NoDrop>)
+	14: Call option::destroy_none<NoDrop>(Option<NoDrop>)
+	15: Call option::none<u64>(): Option<u64>
+	16: StLoc[1](%#3: Option<u64>)
+B3:
+	17: MoveLoc[1](%#3: Option<u64>)
+	18: StLoc[6](none#1#0: Option<u64>)
+	19: LdFalse
+	20: Pack[0](NoDrop)
+	21: Call option::some<NoDrop>(NoDrop): Option<NoDrop>
+	22: StLoc[8](o#1#3: Option<NoDrop>)
+	23: ImmBorrowLoc[8](o#1#3: Option<NoDrop>)
+	24: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	25: BrFalse(34)
+B4:
+	26: MoveLoc[8](o#1#3: Option<NoDrop>)
+	27: Call option::destroy_some<NoDrop>(Option<NoDrop>): NoDrop
+	28: Unpack[0](NoDrop)
+	29: Pop
+	30: LdU64(100)
+	31: Call option::some<u64>(u64): Option<u64>
+	32: StLoc[2](%#6: Option<u64>)
+	33: Branch(38)
+B5:
+	34: MoveLoc[8](o#1#3: Option<NoDrop>)
+	35: Call option::destroy_none<NoDrop>(Option<NoDrop>)
+	36: Call option::none<u64>(): Option<u64>
+	37: StLoc[2](%#6: Option<u64>)
+B6:
+	38: MoveLoc[2](%#6: Option<u64>)
+	39: StLoc[9](some#1#0: Option<u64>)
+	40: MoveLoc[6](none#1#0: Option<u64>)
+	41: StLoc[12](t1#1#5: Option<u64>)
+	42: Call option::none<u64>(): Option<u64>
+	43: StLoc[16](t2#1#5: Option<u64>)
+	44: ImmBorrowLoc[12](t1#1#5: Option<u64>)
+	45: StLoc[13](t1#1#8: &Option<u64>)
+	46: ImmBorrowLoc[16](t2#1#5: Option<u64>)
+	47: StLoc[17](t2#1#8: &Option<u64>)
+	48: CopyLoc[13](t1#1#8: &Option<u64>)
+	49: CopyLoc[17](t2#1#8: &Option<u64>)
+	50: Eq
+	51: Not
+	52: BrFalse(69)
+B7:
+	53: LdConst[0](vector<u8>: "Ass..)
+	54: Call string::utf8(vector<u8>): String
+	55: StLoc[3](%#7: String)
+	56: ImmBorrowLoc[3](%#7: String)
+	57: Call debug::print<String>(&String)
+	58: MoveLoc[13](t1#1#8: &Option<u64>)
+	59: Call debug::print<Option<u64>>(&Option<u64>)
+	60: LdConst[1](vector<u8>: "!="..)
+	61: Call string::utf8(vector<u8>): String
+	62: StLoc[4](%#8: String)
+	63: ImmBorrowLoc[4](%#8: String)
+	64: Call debug::print<String>(&String)
+	65: MoveLoc[17](t2#1#8: &Option<u64>)
+	66: Call debug::print<Option<u64>>(&Option<u64>)
+	67: LdU64(13906835157890891775)
+	68: Abort
+B8:
+	69: MoveLoc[17](t2#1#8: &Option<u64>)
+	70: Pop
+	71: MoveLoc[13](t1#1#8: &Option<u64>)
+	72: Pop
+	73: MoveLoc[9](some#1#0: Option<u64>)
+	74: StLoc[10](t1#1#11: Option<u64>)
+	75: LdU64(100)
+	76: Call option::some<u64>(u64): Option<u64>
+	77: StLoc[14](t2#1#11: Option<u64>)
+	78: ImmBorrowLoc[10](t1#1#11: Option<u64>)
+	79: StLoc[11](t1#1#14: &Option<u64>)
+	80: ImmBorrowLoc[14](t2#1#11: Option<u64>)
+	81: StLoc[15](t2#1#14: &Option<u64>)
+	82: CopyLoc[11](t1#1#14: &Option<u64>)
+	83: CopyLoc[15](t2#1#14: &Option<u64>)
+	84: Eq
+	85: Not
+	86: BrFalse(103)
+B9:
+	87: LdConst[0](vector<u8>: "Ass..)
+	88: Call string::utf8(vector<u8>): String
+	89: StLoc[5](%#9: String)
+	90: ImmBorrowLoc[5](%#9: String)
+	91: Call debug::print<String>(&String)
+	92: MoveLoc[11](t1#1#14: &Option<u64>)
+	93: Call debug::print<Option<u64>>(&Option<u64>)
+	94: LdConst[1](vector<u8>: "!="..)
+	95: Call string::utf8(vector<u8>): String
+	96: StLoc[0](%#10: String)
+	97: ImmBorrowLoc[0](%#10: String)
+	98: Call debug::print<String>(&String)
+	99: MoveLoc[15](t2#1#14: &Option<u64>)
+	100: Call debug::print<Option<u64>>(&Option<u64>)
+	101: LdU64(13906835162185859071)
+	102: Abort
+B10:
+	103: MoveLoc[15](t2#1#14: &Option<u64>)
+	104: Pop
+	105: MoveLoc[11](t1#1#14: &Option<u64>)
+	106: Pop
+	107: Ret
+}
+
+or_no_drop() {
+L0:	%#2: Option<NoDrop>
+L1:	%#4: Option<NoDrop>
+L2:	none#1#0: Option<NoDrop>
+L3:	o#1#1: Option<NoDrop>
+L4:	o#1#3: Option<NoDrop>
+L5:	some#1#0: Option<NoDrop>
+B0:
+	0: Call option::none<NoDrop>(): Option<NoDrop>
+	1: StLoc[3](o#1#1: Option<NoDrop>)
+	2: ImmBorrowLoc[3](o#1#1: Option<NoDrop>)
+	3: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	4: BrFalse(8)
+B1:
+	5: MoveLoc[3](o#1#1: Option<NoDrop>)
+	6: StLoc[0](%#2: Option<NoDrop>)
+	7: Branch(14)
+B2:
+	8: MoveLoc[3](o#1#1: Option<NoDrop>)
+	9: Call option::destroy_none<NoDrop>(Option<NoDrop>)
+	10: LdFalse
+	11: Pack[0](NoDrop)
+	12: Call option::some<NoDrop>(NoDrop): Option<NoDrop>
+	13: StLoc[0](%#2: Option<NoDrop>)
+B3:
+	14: MoveLoc[0](%#2: Option<NoDrop>)
+	15: StLoc[2](none#1#0: Option<NoDrop>)
+	16: LdFalse
+	17: Pack[0](NoDrop)
+	18: Call option::some<NoDrop>(NoDrop): Option<NoDrop>
+	19: StLoc[4](o#1#3: Option<NoDrop>)
+	20: ImmBorrowLoc[4](o#1#3: Option<NoDrop>)
+	21: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	22: BrFalse(26)
+B4:
+	23: MoveLoc[4](o#1#3: Option<NoDrop>)
+	24: StLoc[1](%#4: Option<NoDrop>)
+	25: Branch(32)
+B5:
+	26: MoveLoc[4](o#1#3: Option<NoDrop>)
+	27: Call option::destroy_none<NoDrop>(Option<NoDrop>)
+	28: LdFalse
+	29: Pack[0](NoDrop)
+	30: Call option::some<NoDrop>(NoDrop): Option<NoDrop>
+	31: StLoc[1](%#4: Option<NoDrop>)
+B6:
+	32: MoveLoc[1](%#4: Option<NoDrop>)
+	33: StLoc[5](some#1#0: Option<NoDrop>)
+	34: ImmBorrowLoc[2](none#1#0: Option<NoDrop>)
+	35: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	36: BrFalse(38)
+B7:
+	37: Branch(40)
+B8:
+	38: LdU64(13906835196545597439)
+	39: Abort
+B9:
+	40: ImmBorrowLoc[5](some#1#0: Option<NoDrop>)
+	41: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	42: BrFalse(44)
+B10:
+	43: Branch(46)
+B11:
+	44: LdU64(13906835200840564735)
+	45: Abort
+B12:
+	46: MoveLoc[2](none#1#0: Option<NoDrop>)
+	47: Call option::destroy_some<NoDrop>(Option<NoDrop>): NoDrop
+	48: Unpack[0](NoDrop)
+	49: Pop
+	50: MoveLoc[5](some#1#0: Option<NoDrop>)
+	51: Call option::destroy_some<NoDrop>(Option<NoDrop>): NoDrop
+	52: Unpack[0](NoDrop)
+	53: Pop
+	54: Ret
+}
+
+and_no_drop() {
+L0:	%#10: String
+L1:	%#3: Option<u64>
+L2:	%#6: Option<u64>
+L3:	%#7: String
+L4:	%#8: String
+L5:	%#9: String
+L6:	none#1#0: Option<u64>
+L7:	o#1#1: Option<NoDrop>
+L8:	o#1#3: Option<NoDrop>
+L9:	t1#1#11: Option<u64>
+L10:	t1#1#14: &Option<u64>
+L11:	t1#1#5: Option<u64>
+L12:	t1#1#8: &Option<u64>
+L13:	t2#1#11: Option<u64>
+L14:	t2#1#14: &Option<u64>
+L15:	t2#1#5: Option<u64>
+L16:	t2#1#8: &Option<u64>
+B0:
+	0: Call option::none<NoDrop>(): Option<NoDrop>
+	1: StLoc[7](o#1#1: Option<NoDrop>)
+	2: ImmBorrowLoc[7](o#1#1: Option<NoDrop>)
+	3: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	4: BrFalse(13)
+B1:
+	5: MoveLoc[7](o#1#1: Option<NoDrop>)
+	6: Call option::destroy_some<NoDrop>(Option<NoDrop>): NoDrop
+	7: Unpack[0](NoDrop)
+	8: Pop
+	9: LdU64(100)
+	10: Call option::some<u64>(u64): Option<u64>
+	11: StLoc[1](%#3: Option<u64>)
+	12: Branch(17)
+B2:
+	13: MoveLoc[7](o#1#1: Option<NoDrop>)
+	14: Call option::destroy_none<NoDrop>(Option<NoDrop>)
+	15: Call option::none<u64>(): Option<u64>
+	16: StLoc[1](%#3: Option<u64>)
+B3:
+	17: MoveLoc[1](%#3: Option<u64>)
+	18: StLoc[6](none#1#0: Option<u64>)
+	19: LdFalse
+	20: Pack[0](NoDrop)
+	21: Call option::some<NoDrop>(NoDrop): Option<NoDrop>
+	22: StLoc[8](o#1#3: Option<NoDrop>)
+	23: ImmBorrowLoc[8](o#1#3: Option<NoDrop>)
+	24: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	25: BrFalse(34)
+B4:
+	26: MoveLoc[8](o#1#3: Option<NoDrop>)
+	27: Call option::destroy_some<NoDrop>(Option<NoDrop>): NoDrop
+	28: Unpack[0](NoDrop)
+	29: Pop
+	30: LdU64(100)
+	31: Call option::some<u64>(u64): Option<u64>
+	32: StLoc[2](%#6: Option<u64>)
+	33: Branch(38)
+B5:
+	34: MoveLoc[8](o#1#3: Option<NoDrop>)
+	35: Call option::destroy_none<NoDrop>(Option<NoDrop>)
+	36: Call option::none<u64>(): Option<u64>
+	37: StLoc[2](%#6: Option<u64>)
+B6:
+	38: MoveLoc[2](%#6: Option<u64>)
+	39: StLoc[11](t1#1#5: Option<u64>)
+	40: LdU64(100)
+	41: Call option::some<u64>(u64): Option<u64>
+	42: StLoc[15](t2#1#5: Option<u64>)
+	43: ImmBorrowLoc[11](t1#1#5: Option<u64>)
+	44: StLoc[12](t1#1#8: &Option<u64>)
+	45: ImmBorrowLoc[15](t2#1#5: Option<u64>)
+	46: StLoc[16](t2#1#8: &Option<u64>)
+	47: CopyLoc[12](t1#1#8: &Option<u64>)
+	48: CopyLoc[16](t2#1#8: &Option<u64>)
+	49: Eq
+	50: Not
+	51: BrFalse(68)
+B7:
+	52: LdConst[0](vector<u8>: "Ass..)
+	53: Call string::utf8(vector<u8>): String
+	54: StLoc[3](%#7: String)
+	55: ImmBorrowLoc[3](%#7: String)
+	56: Call debug::print<String>(&String)
+	57: MoveLoc[12](t1#1#8: &Option<u64>)
+	58: Call debug::print<Option<u64>>(&Option<u64>)
+	59: LdConst[1](vector<u8>: "!="..)
+	60: Call string::utf8(vector<u8>): String
+	61: StLoc[4](%#8: String)
+	62: ImmBorrowLoc[4](%#8: String)
+	63: Call debug::print<String>(&String)
+	64: MoveLoc[16](t2#1#8: &Option<u64>)
+	65: Call debug::print<Option<u64>>(&Option<u64>)
+	66: LdU64(13906835278149976063)
+	67: Abort
+B8:
+	68: MoveLoc[16](t2#1#8: &Option<u64>)
+	69: Pop
+	70: MoveLoc[12](t1#1#8: &Option<u64>)
+	71: Pop
+	72: MoveLoc[6](none#1#0: Option<u64>)
+	73: StLoc[9](t1#1#11: Option<u64>)
+	74: Call option::none<u64>(): Option<u64>
+	75: StLoc[13](t2#1#11: Option<u64>)
+	76: ImmBorrowLoc[9](t1#1#11: Option<u64>)
+	77: StLoc[10](t1#1#14: &Option<u64>)
+	78: ImmBorrowLoc[13](t2#1#11: Option<u64>)
+	79: StLoc[14](t2#1#14: &Option<u64>)
+	80: CopyLoc[10](t1#1#14: &Option<u64>)
+	81: CopyLoc[14](t2#1#14: &Option<u64>)
+	82: Eq
+	83: Not
+	84: BrFalse(101)
+B9:
+	85: LdConst[0](vector<u8>: "Ass..)
+	86: Call string::utf8(vector<u8>): String
+	87: StLoc[5](%#9: String)
+	88: ImmBorrowLoc[5](%#9: String)
+	89: Call debug::print<String>(&String)
+	90: MoveLoc[10](t1#1#14: &Option<u64>)
+	91: Call debug::print<Option<u64>>(&Option<u64>)
+	92: LdConst[1](vector<u8>: "!="..)
+	93: Call string::utf8(vector<u8>): String
+	94: StLoc[0](%#10: String)
+	95: ImmBorrowLoc[0](%#10: String)
+	96: Call debug::print<String>(&String)
+	97: MoveLoc[14](t2#1#14: &Option<u64>)
+	98: Call debug::print<Option<u64>>(&Option<u64>)
+	99: LdU64(13906835282444943359)
+	100: Abort
+B10:
+	101: MoveLoc[14](t2#1#14: &Option<u64>)
+	102: Pop
+	103: MoveLoc[10](t1#1#14: &Option<u64>)
+	104: Pop
+	105: Ret
+}
+
+filter() {
+L0:	%#2: bool
+L1:	%#4: Option<u64>
+L2:	%#6: bool
+L3:	%#8: Option<u64>
+L4:	o#1#1: Option<u64>
+L5:	o#1#3: Option<u64>
+B0:
+	0: LdU64(5)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: StLoc[4](o#1#1: Option<u64>)
+	3: ImmBorrowLoc[4](o#1#1: Option<u64>)
+	4: Call option::is_some<u64>(&Option<u64>): bool
+	5: BrFalse(13)
+B1:
+	6: ImmBorrowLoc[4](o#1#1: Option<u64>)
+	7: Call option::borrow<u64>(&Option<u64>): &u64
+	8: ReadRef
+	9: LdU64(5)
+	10: Eq
+	11: StLoc[0](%#2: bool)
+	12: Branch(15)
+B2:
+	13: LdFalse
+	14: StLoc[0](%#2: bool)
+B3:
+	15: MoveLoc[0](%#2: bool)
+	16: BrFalse(20)
+B4:
+	17: MoveLoc[4](o#1#1: Option<u64>)
+	18: StLoc[1](%#4: Option<u64>)
+	19: Branch(22)
+B5:
+	20: Call option::none<u64>(): Option<u64>
+	21: StLoc[1](%#4: Option<u64>)
+B6:
+	22: MoveLoc[1](%#4: Option<u64>)
+	23: LdU64(5)
+	24: Call option::some<u64>(u64): Option<u64>
+	25: Eq
+	26: BrFalse(28)
+B7:
+	27: Branch(30)
+B8:
+	28: LdU64(13906835303919779839)
+	29: Abort
+B9:
+	30: LdU64(5)
+	31: Call option::some<u64>(u64): Option<u64>
+	32: StLoc[5](o#1#3: Option<u64>)
+	33: ImmBorrowLoc[5](o#1#3: Option<u64>)
+	34: Call option::is_some<u64>(&Option<u64>): bool
+	35: BrFalse(43)
+B10:
+	36: ImmBorrowLoc[5](o#1#3: Option<u64>)
+	37: Call option::borrow<u64>(&Option<u64>): &u64
+	38: ReadRef
+	39: LdU64(6)
+	40: Eq
+	41: StLoc[2](%#6: bool)
+	42: Branch(45)
+B11:
+	43: LdFalse
+	44: StLoc[2](%#6: bool)
+B12:
+	45: MoveLoc[2](%#6: bool)
+	46: BrFalse(50)
+B13:
+	47: MoveLoc[5](o#1#3: Option<u64>)
+	48: StLoc[3](%#8: Option<u64>)
+	49: Branch(52)
+B14:
+	50: Call option::none<u64>(): Option<u64>
+	51: StLoc[3](%#8: Option<u64>)
+B15:
+	52: MoveLoc[3](%#8: Option<u64>)
+	53: Call option::none<u64>(): Option<u64>
+	54: Eq
+	55: BrFalse(57)
+B16:
+	56: Branch(59)
+B17:
+	57: LdU64(13906835308214747135)
+	58: Abort
+B18:
+	59: Ret
+}
+
+is_some_and() {
+L0:	%#1: Option<u64>
+L1:	%#11: bool
+L2:	%#3: bool
+L3:	%#5: Option<u64>
+L4:	%#7: bool
+L5:	%#9: Option<u64>
+L6:	o#1#1: &Option<u64>
+L7:	o#1#3: &Option<u64>
+L8:	o#1#5: &Option<u64>
+B0:
+	0: LdU64(5)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: StLoc[0](%#1: Option<u64>)
+	3: ImmBorrowLoc[0](%#1: Option<u64>)
+	4: StLoc[6](o#1#1: &Option<u64>)
+	5: CopyLoc[6](o#1#1: &Option<u64>)
+	6: Call option::is_some<u64>(&Option<u64>): bool
+	7: BrFalse(15)
+B1:
+	8: MoveLoc[6](o#1#1: &Option<u64>)
+	9: Call option::borrow<u64>(&Option<u64>): &u64
+	10: ReadRef
+	11: LdU64(5)
+	12: Eq
+	13: StLoc[2](%#3: bool)
+	14: Branch(19)
+B2:
+	15: MoveLoc[6](o#1#1: &Option<u64>)
+	16: Pop
+	17: LdFalse
+	18: StLoc[2](%#3: bool)
+B3:
+	19: MoveLoc[2](%#3: bool)
+	20: BrFalse(22)
+B4:
+	21: Branch(24)
+B5:
+	22: LdU64(13906835329689583615)
+	23: Abort
+B6:
+	24: LdU64(5)
+	25: Call option::some<u64>(u64): Option<u64>
+	26: StLoc[3](%#5: Option<u64>)
+	27: ImmBorrowLoc[3](%#5: Option<u64>)
+	28: StLoc[7](o#1#3: &Option<u64>)
+	29: CopyLoc[7](o#1#3: &Option<u64>)
+	30: Call option::is_some<u64>(&Option<u64>): bool
+	31: BrFalse(39)
+B7:
+	32: MoveLoc[7](o#1#3: &Option<u64>)
+	33: Call option::borrow<u64>(&Option<u64>): &u64
+	34: ReadRef
+	35: LdU64(6)
+	36: Eq
+	37: StLoc[4](%#7: bool)
+	38: Branch(43)
+B8:
+	39: MoveLoc[7](o#1#3: &Option<u64>)
+	40: Pop
+	41: LdFalse
+	42: StLoc[4](%#7: bool)
+B9:
+	43: MoveLoc[4](%#7: bool)
+	44: Not
+	45: BrFalse(47)
+B10:
+	46: Branch(49)
+B11:
+	47: LdU64(13906835333984550911)
+	48: Abort
+B12:
+	49: Call option::none<u64>(): Option<u64>
+	50: StLoc[5](%#9: Option<u64>)
+	51: ImmBorrowLoc[5](%#9: Option<u64>)
+	52: StLoc[8](o#1#5: &Option<u64>)
+	53: CopyLoc[8](o#1#5: &Option<u64>)
+	54: Call option::is_some<u64>(&Option<u64>): bool
+	55: BrFalse(63)
+B13:
+	56: MoveLoc[8](o#1#5: &Option<u64>)
+	57: Call option::borrow<u64>(&Option<u64>): &u64
+	58: ReadRef
+	59: LdU64(5)
+	60: Eq
+	61: StLoc[1](%#11: bool)
+	62: Branch(67)
+B14:
+	63: MoveLoc[8](o#1#5: &Option<u64>)
+	64: Pop
+	65: LdFalse
+	66: StLoc[1](%#11: bool)
+B15:
+	67: MoveLoc[1](%#11: bool)
+	68: Not
+	69: BrFalse(71)
+B16:
+	70: Branch(73)
+B17:
+	71: LdU64(13906835338279518207)
+	72: Abort
+B18:
+	73: Ret
+}
+
+destroy_or() {
+L0:	%#10: u64
+L1:	%#11: String
+L2:	%#12: String
+L3:	%#2: u64
+L4:	%#3: String
+L5:	%#4: String
+L6:	%#6: u64
+L7:	%#7: String
+L8:	%#8: String
+L9:	o#1#12: Option<u64>
+L10:	o#1#20: Option<u64>
+L11:	o#1#4: Option<u64>
+L12:	some#1#0: Option<u64>
+L13:	t1#1#1: u64
+L14:	t1#1#14: &u64
+L15:	t1#1#17: u64
+L16:	t1#1#22: &u64
+L17:	t1#1#6: &u64
+L18:	t1#1#9: u64
+L19:	t2#1#1: u64
+L20:	t2#1#14: &u64
+L21:	t2#1#17: u64
+L22:	t2#1#22: &u64
+L23:	t2#1#6: &u64
+L24:	t2#1#9: u64
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[11](o#1#4: Option<u64>)
+	2: ImmBorrowLoc[11](o#1#4: Option<u64>)
+	3: Call option::is_some<u64>(&Option<u64>): bool
+	4: BrFalse(9)
+B1:
+	5: MoveLoc[11](o#1#4: Option<u64>)
+	6: Call option::destroy_some<u64>(Option<u64>): u64
+	7: StLoc[3](%#2: u64)
+	8: Branch(13)
+B2:
+	9: MoveLoc[11](o#1#4: Option<u64>)
+	10: Call option::destroy_none<u64>(Option<u64>)
+	11: LdU64(10)
+	12: StLoc[3](%#2: u64)
+B3:
+	13: MoveLoc[3](%#2: u64)
+	14: StLoc[13](t1#1#1: u64)
+	15: LdU64(10)
+	16: StLoc[19](t2#1#1: u64)
+	17: ImmBorrowLoc[13](t1#1#1: u64)
+	18: StLoc[17](t1#1#6: &u64)
+	19: ImmBorrowLoc[19](t2#1#1: u64)
+	20: StLoc[23](t2#1#6: &u64)
+	21: CopyLoc[17](t1#1#6: &u64)
+	22: CopyLoc[23](t2#1#6: &u64)
+	23: Eq
+	24: Not
+	25: BrFalse(42)
+B4:
+	26: LdConst[0](vector<u8>: "Ass..)
+	27: Call string::utf8(vector<u8>): String
+	28: StLoc[4](%#3: String)
+	29: ImmBorrowLoc[4](%#3: String)
+	30: Call debug::print<String>(&String)
+	31: MoveLoc[17](t1#1#6: &u64)
+	32: Call debug::print<u64>(&u64)
+	33: LdConst[1](vector<u8>: "!="..)
+	34: Call string::utf8(vector<u8>): String
+	35: StLoc[5](%#4: String)
+	36: ImmBorrowLoc[5](%#4: String)
+	37: Call debug::print<String>(&String)
+	38: MoveLoc[23](t2#1#6: &u64)
+	39: Call debug::print<u64>(&u64)
+	40: LdU64(13906835359754354687)
+	41: Abort
+B5:
+	42: MoveLoc[23](t2#1#6: &u64)
+	43: Pop
+	44: MoveLoc[17](t1#1#6: &u64)
+	45: Pop
+	46: LdU64(5)
+	47: Call option::some<u64>(u64): Option<u64>
+	48: StLoc[9](o#1#12: Option<u64>)
+	49: ImmBorrowLoc[9](o#1#12: Option<u64>)
+	50: Call option::is_some<u64>(&Option<u64>): bool
+	51: BrFalse(56)
+B6:
+	52: MoveLoc[9](o#1#12: Option<u64>)
+	53: Call option::destroy_some<u64>(Option<u64>): u64
+	54: StLoc[6](%#6: u64)
+	55: Branch(60)
+B7:
+	56: MoveLoc[9](o#1#12: Option<u64>)
+	57: Call option::destroy_none<u64>(Option<u64>)
+	58: LdU64(10)
+	59: StLoc[6](%#6: u64)
+B8:
+	60: MoveLoc[6](%#6: u64)
+	61: StLoc[18](t1#1#9: u64)
+	62: LdU64(5)
+	63: StLoc[24](t2#1#9: u64)
+	64: ImmBorrowLoc[18](t1#1#9: u64)
+	65: StLoc[14](t1#1#14: &u64)
+	66: ImmBorrowLoc[24](t2#1#9: u64)
+	67: StLoc[20](t2#1#14: &u64)
+	68: CopyLoc[14](t1#1#14: &u64)
+	69: CopyLoc[20](t2#1#14: &u64)
+	70: Eq
+	71: Not
+	72: BrFalse(89)
+B9:
+	73: LdConst[0](vector<u8>: "Ass..)
+	74: Call string::utf8(vector<u8>): String
+	75: StLoc[7](%#7: String)
+	76: ImmBorrowLoc[7](%#7: String)
+	77: Call debug::print<String>(&String)
+	78: MoveLoc[14](t1#1#14: &u64)
+	79: Call debug::print<u64>(&u64)
+	80: LdConst[1](vector<u8>: "!="..)
+	81: Call string::utf8(vector<u8>): String
+	82: StLoc[8](%#8: String)
+	83: ImmBorrowLoc[8](%#8: String)
+	84: Call debug::print<String>(&String)
+	85: MoveLoc[20](t2#1#14: &u64)
+	86: Call debug::print<u64>(&u64)
+	87: LdU64(13906835364049321983)
+	88: Abort
+B10:
+	89: MoveLoc[20](t2#1#14: &u64)
+	90: Pop
+	91: MoveLoc[14](t1#1#14: &u64)
+	92: Pop
+	93: LdU64(10)
+	94: Call option::some<u64>(u64): Option<u64>
+	95: StLoc[12](some#1#0: Option<u64>)
+	96: CopyLoc[12](some#1#0: Option<u64>)
+	97: StLoc[10](o#1#20: Option<u64>)
+	98: ImmBorrowLoc[10](o#1#20: Option<u64>)
+	99: Call option::is_some<u64>(&Option<u64>): bool
+	100: BrFalse(105)
+B11:
+	101: MoveLoc[10](o#1#20: Option<u64>)
+	102: Call option::destroy_some<u64>(Option<u64>): u64
+	103: StLoc[0](%#10: u64)
+	104: Branch(109)
+B12:
+	105: MoveLoc[10](o#1#20: Option<u64>)
+	106: Call option::destroy_none<u64>(Option<u64>)
+	107: LdU64(0)
+	108: StLoc[0](%#10: u64)
+B13:
+	109: MoveLoc[0](%#10: u64)
+	110: StLoc[15](t1#1#17: u64)
+	111: LdU64(10)
+	112: StLoc[21](t2#1#17: u64)
+	113: ImmBorrowLoc[15](t1#1#17: u64)
+	114: StLoc[16](t1#1#22: &u64)
+	115: ImmBorrowLoc[21](t2#1#17: u64)
+	116: StLoc[22](t2#1#22: &u64)
+	117: CopyLoc[16](t1#1#22: &u64)
+	118: CopyLoc[22](t2#1#22: &u64)
+	119: Eq
+	120: Not
+	121: BrFalse(138)
+B14:
+	122: LdConst[0](vector<u8>: "Ass..)
+	123: Call string::utf8(vector<u8>): String
+	124: StLoc[1](%#11: String)
+	125: ImmBorrowLoc[1](%#11: String)
+	126: Call debug::print<String>(&String)
+	127: MoveLoc[16](t1#1#22: &u64)
+	128: Call debug::print<u64>(&u64)
+	129: LdConst[1](vector<u8>: "!="..)
+	130: Call string::utf8(vector<u8>): String
+	131: StLoc[2](%#12: String)
+	132: ImmBorrowLoc[2](%#12: String)
+	133: Call debug::print<String>(&String)
+	134: MoveLoc[22](t2#1#22: &u64)
+	135: Call debug::print<u64>(&u64)
+	136: LdU64(13906835376934223871)
+	137: Abort
+B15:
+	138: MoveLoc[22](t2#1#22: &u64)
+	139: Pop
+	140: MoveLoc[16](t1#1#22: &u64)
+	141: Pop
+	142: ImmBorrowLoc[12](some#1#0: Option<u64>)
+	143: Call option::is_some<u64>(&Option<u64>): bool
+	144: BrFalse(146)
+B16:
+	145: Branch(148)
+B17:
+	146: LdU64(13906835381229191167)
+	147: Abort
+B18:
+	148: Ret
+}
+
+destroy_or_no_drop() {
+L0:	%#2: NoDrop
+L1:	none#1#0: NoDrop
+L2:	o#1#1: Option<NoDrop>
+L3:	o#1#3: Option<NoDrop>
+B0:
+	0: Call option::none<NoDrop>(): Option<NoDrop>
+	1: StLoc[2](o#1#1: Option<NoDrop>)
+	2: ImmBorrowLoc[2](o#1#1: Option<NoDrop>)
+	3: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	4: BrFalse(9)
+B1:
+	5: MoveLoc[2](o#1#1: Option<NoDrop>)
+	6: Call option::destroy_some<NoDrop>(Option<NoDrop>): NoDrop
+	7: StLoc[0](%#2: NoDrop)
+	8: Branch(14)
+B2:
+	9: MoveLoc[2](o#1#1: Option<NoDrop>)
+	10: Call option::destroy_none<NoDrop>(Option<NoDrop>)
+	11: LdFalse
+	12: Pack[0](NoDrop)
+	13: StLoc[0](%#2: NoDrop)
+B3:
+	14: MoveLoc[0](%#2: NoDrop)
+	15: StLoc[1](none#1#0: NoDrop)
+	16: LdFalse
+	17: Pack[0](NoDrop)
+	18: Call option::some<NoDrop>(NoDrop): Option<NoDrop>
+	19: StLoc[3](o#1#3: Option<NoDrop>)
+	20: ImmBorrowLoc[3](o#1#3: Option<NoDrop>)
+	21: Call option::is_some<NoDrop>(&Option<NoDrop>): bool
+	22: BrFalse(24)
+B4:
+	23: Branch(28)
+B5:
+	24: MoveLoc[3](o#1#3: Option<NoDrop>)
+	25: Call option::destroy_none<NoDrop>(Option<NoDrop>)
+	26: LdU64(13906835406998994943)
+	27: Abort
+B6:
+	28: MoveLoc[3](o#1#3: Option<NoDrop>)
+	29: Call option::destroy_some<NoDrop>(Option<NoDrop>): NoDrop
+	30: Unpack[0](NoDrop)
+	31: Pop
+	32: MoveLoc[1](none#1#0: NoDrop)
+	33: Unpack[0](NoDrop)
+	34: Pop
+	35: Ret
+}
+
+extract_or() {
+L0:	%#2: u64
+L1:	%#3: String
+L2:	%#4: String
+L3:	%#6: u64
+L4:	%#7: String
+L5:	%#8: String
+L6:	none#1#0: Option<u64>
+L7:	o#1#12: &mut Option<u64>
+L8:	o#1#4: &mut Option<u64>
+L9:	some#1#0: Option<u64>
+L10:	t1#1#1: u64
+L11:	t1#1#14: &u64
+L12:	t1#1#6: &u64
+L13:	t1#1#9: u64
+L14:	t2#1#1: u64
+L15:	t2#1#14: &u64
+L16:	t2#1#6: &u64
+L17:	t2#1#9: u64
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: StLoc[6](none#1#0: Option<u64>)
+	2: MutBorrowLoc[6](none#1#0: Option<u64>)
+	3: StLoc[8](o#1#4: &mut Option<u64>)
+	4: CopyLoc[8](o#1#4: &mut Option<u64>)
+	5: FreezeRef
+	6: Call option::is_some<u64>(&Option<u64>): bool
+	7: BrFalse(12)
+B1:
+	8: MoveLoc[8](o#1#4: &mut Option<u64>)
+	9: Call option::extract<u64>(&mut Option<u64>): u64
+	10: StLoc[0](%#2: u64)
+	11: Branch(16)
+B2:
+	12: MoveLoc[8](o#1#4: &mut Option<u64>)
+	13: Pop
+	14: LdU64(10)
+	15: StLoc[0](%#2: u64)
+B3:
+	16: MoveLoc[0](%#2: u64)
+	17: StLoc[10](t1#1#1: u64)
+	18: LdU64(10)
+	19: StLoc[14](t2#1#1: u64)
+	20: ImmBorrowLoc[10](t1#1#1: u64)
+	21: StLoc[12](t1#1#6: &u64)
+	22: ImmBorrowLoc[14](t2#1#1: u64)
+	23: StLoc[16](t2#1#6: &u64)
+	24: CopyLoc[12](t1#1#6: &u64)
+	25: CopyLoc[16](t2#1#6: &u64)
+	26: Eq
+	27: Not
+	28: BrFalse(45)
+B4:
+	29: LdConst[0](vector<u8>: "Ass..)
+	30: Call string::utf8(vector<u8>): String
+	31: StLoc[1](%#3: String)
+	32: ImmBorrowLoc[1](%#3: String)
+	33: Call debug::print<String>(&String)
+	34: MoveLoc[12](t1#1#6: &u64)
+	35: Call debug::print<u64>(&u64)
+	36: LdConst[1](vector<u8>: "!="..)
+	37: Call string::utf8(vector<u8>): String
+	38: StLoc[2](%#4: String)
+	39: ImmBorrowLoc[2](%#4: String)
+	40: Call debug::print<String>(&String)
+	41: MoveLoc[16](t2#1#6: &u64)
+	42: Call debug::print<u64>(&u64)
+	43: LdU64(13906835445653700607)
+	44: Abort
+B5:
+	45: MoveLoc[16](t2#1#6: &u64)
+	46: Pop
+	47: MoveLoc[12](t1#1#6: &u64)
+	48: Pop
+	49: ImmBorrowLoc[6](none#1#0: Option<u64>)
+	50: Call option::is_none<u64>(&Option<u64>): bool
+	51: BrFalse(53)
+B6:
+	52: Branch(55)
+B7:
+	53: LdU64(13906835449948667903)
+	54: Abort
+B8:
+	55: LdU64(5)
+	56: Call option::some<u64>(u64): Option<u64>
+	57: StLoc[9](some#1#0: Option<u64>)
+	58: MutBorrowLoc[9](some#1#0: Option<u64>)
+	59: StLoc[7](o#1#12: &mut Option<u64>)
+	60: CopyLoc[7](o#1#12: &mut Option<u64>)
+	61: FreezeRef
+	62: Call option::is_some<u64>(&Option<u64>): bool
+	63: BrFalse(68)
+B9:
+	64: MoveLoc[7](o#1#12: &mut Option<u64>)
+	65: Call option::extract<u64>(&mut Option<u64>): u64
+	66: StLoc[3](%#6: u64)
+	67: Branch(72)
+B10:
+	68: MoveLoc[7](o#1#12: &mut Option<u64>)
+	69: Pop
+	70: LdU64(10)
+	71: StLoc[3](%#6: u64)
+B11:
+	72: MoveLoc[3](%#6: u64)
+	73: StLoc[13](t1#1#9: u64)
+	74: LdU64(5)
+	75: StLoc[17](t2#1#9: u64)
+	76: ImmBorrowLoc[13](t1#1#9: u64)
+	77: StLoc[11](t1#1#14: &u64)
+	78: ImmBorrowLoc[17](t2#1#9: u64)
+	79: StLoc[15](t2#1#14: &u64)
+	80: CopyLoc[11](t1#1#14: &u64)
+	81: CopyLoc[15](t2#1#14: &u64)
+	82: Eq
+	83: Not
+	84: BrFalse(101)
+B12:
+	85: LdConst[0](vector<u8>: "Ass..)
+	86: Call string::utf8(vector<u8>): String
+	87: StLoc[4](%#7: String)
+	88: ImmBorrowLoc[4](%#7: String)
+	89: Call debug::print<String>(&String)
+	90: MoveLoc[11](t1#1#14: &u64)
+	91: Call debug::print<u64>(&u64)
+	92: LdConst[1](vector<u8>: "!="..)
+	93: Call string::utf8(vector<u8>): String
+	94: StLoc[5](%#8: String)
+	95: ImmBorrowLoc[5](%#8: String)
+	96: Call debug::print<String>(&String)
+	97: MoveLoc[15](t2#1#14: &u64)
+	98: Call debug::print<u64>(&u64)
+	99: LdU64(13906835462833569791)
+	100: Abort
+B13:
+	101: MoveLoc[15](t2#1#14: &u64)
+	102: Pop
+	103: MoveLoc[11](t1#1#14: &u64)
+	104: Pop
+	105: ImmBorrowLoc[9](some#1#0: Option<u64>)
+	106: Call option::is_none<u64>(&Option<u64>): bool
+	107: BrFalse(109)
+B14:
+	108: Branch(111)
+B15:
+	109: LdU64(13906835467128537087)
+	110: Abort
+B16:
+	111: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	1 => vector<u8>: "!=" // interpreted as UTF8 string
+	2 => vector<u64>: 010500000000000000
+]
+}

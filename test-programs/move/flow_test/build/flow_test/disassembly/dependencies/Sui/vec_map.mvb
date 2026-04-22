@@ -1,0 +1,666 @@
+// Move bytecode v6
+module 2.vec_map {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+
+struct VecMap<K: copy, V> has copy, drop, store {
+	contents: vector<Entry<K, V>>
+}
+
+struct Entry<K: copy, V> has copy, drop, store {
+	key: K,
+	value: V
+}
+
+public empty<K: copy, V>(): VecMap<K, V> {
+B0:
+	0: VecPack(20, 0)
+	1: PackGeneric[0](VecMap<K, V>)
+	2: Ret
+}
+
+public insert<K: copy, V>(self#0#0: &mut VecMap<K, V>, key#0#0: K, value#0#0: V) {
+B0:
+	0: CopyLoc[0](self#0#0: &mut VecMap<K, V>)
+	1: FreezeRef
+	2: ImmBorrowLoc[1](key#0#0: K)
+	3: Call contains<K, V>(&VecMap<K, V>, &K): bool
+	4: Not
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](self#0#0: &mut VecMap<K, V>)
+	8: Pop
+	9: LdConst[0](u64: 0)
+	10: Abort
+B3:
+	11: MoveLoc[0](self#0#0: &mut VecMap<K, V>)
+	12: MutBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	13: MoveLoc[1](key#0#0: K)
+	14: MoveLoc[2](value#0#0: V)
+	15: PackGeneric[1](Entry<K, V>)
+	16: VecPushBack(20)
+	17: Ret
+}
+
+public remove<K: copy, V>(self#0#0: &mut VecMap<K, V>, key#0#0: &K): K * V {
+L2:	idx#1#0: u64
+B0:
+	0: CopyLoc[0](self#0#0: &mut VecMap<K, V>)
+	1: FreezeRef
+	2: MoveLoc[1](key#0#0: &K)
+	3: Call get_idx<K, V>(&VecMap<K, V>, &K): u64
+	4: StLoc[2](idx#1#0: u64)
+	5: MoveLoc[0](self#0#0: &mut VecMap<K, V>)
+	6: MutBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	7: MoveLoc[2](idx#1#0: u64)
+	8: Call vector::remove<Entry<K, V>>(&mut vector<Entry<K, V>>, u64): Entry<K, V>
+	9: UnpackGeneric[1](Entry<K, V>)
+	10: Ret
+}
+
+public pop<K: copy, V>(self#0#0: &mut VecMap<K, V>): K * V {
+B0:
+	0: CopyLoc[0](self#0#0: &mut VecMap<K, V>)
+	1: ImmBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	2: VecLen(20)
+	3: LdU64(0)
+	4: Neq
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](self#0#0: &mut VecMap<K, V>)
+	8: Pop
+	9: LdConst[4](u64: 4)
+	10: Abort
+B3:
+	11: MoveLoc[0](self#0#0: &mut VecMap<K, V>)
+	12: MutBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	13: VecPopBack(20)
+	14: UnpackGeneric[1](Entry<K, V>)
+	15: Ret
+}
+
+public get_mut<K: copy, V>(self#0#0: &mut VecMap<K, V>, key#0#0: &K): &mut V {
+L2:	idx#1#0: u64
+B0:
+	0: CopyLoc[0](self#0#0: &mut VecMap<K, V>)
+	1: FreezeRef
+	2: MoveLoc[1](key#0#0: &K)
+	3: Call get_idx<K, V>(&VecMap<K, V>, &K): u64
+	4: StLoc[2](idx#1#0: u64)
+	5: MoveLoc[0](self#0#0: &mut VecMap<K, V>)
+	6: MutBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	7: MoveLoc[2](idx#1#0: u64)
+	8: VecMutBorrow(20)
+	9: MutBorrowFieldGeneric[1](Entry.value: V)
+	10: Ret
+}
+
+public get<K: copy, V>(self#0#0: &VecMap<K, V>, key#0#0: &K): &V {
+L2:	idx#1#0: u64
+B0:
+	0: CopyLoc[0](self#0#0: &VecMap<K, V>)
+	1: MoveLoc[1](key#0#0: &K)
+	2: Call get_idx<K, V>(&VecMap<K, V>, &K): u64
+	3: StLoc[2](idx#1#0: u64)
+	4: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	5: ImmBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	6: MoveLoc[2](idx#1#0: u64)
+	7: VecImmBorrow(20)
+	8: ImmBorrowFieldGeneric[1](Entry.value: V)
+	9: Ret
+}
+
+public try_get<K: copy, V: copy>(self#0#0: &VecMap<K, V>, key#0#0: &K): Option<V> {
+L2:	%#1: Option<V>
+B0:
+	0: CopyLoc[0](self#0#0: &VecMap<K, V>)
+	1: CopyLoc[1](key#0#0: &K)
+	2: Call contains<K, V>(&VecMap<K, V>, &K): bool
+	3: BrFalse(11)
+B1:
+	4: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	5: MoveLoc[1](key#0#0: &K)
+	6: Call get<K, V>(&VecMap<K, V>, &K): &V
+	7: ReadRef
+	8: Call option::some<V>(V): Option<V>
+	9: StLoc[2](%#1: Option<V>)
+	10: Branch(17)
+B2:
+	11: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	12: Pop
+	13: MoveLoc[1](key#0#0: &K)
+	14: Pop
+	15: Call option::none<V>(): Option<V>
+	16: StLoc[2](%#1: Option<V>)
+B3:
+	17: MoveLoc[2](%#1: Option<V>)
+	18: Ret
+}
+
+public contains<K: copy, V>(self#0#0: &VecMap<K, V>, key#0#0: &K): bool {
+L2:	%#1: Option<u64>
+B0:
+	0: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	1: MoveLoc[1](key#0#0: &K)
+	2: Call get_idx_opt<K, V>(&VecMap<K, V>, &K): Option<u64>
+	3: StLoc[2](%#1: Option<u64>)
+	4: ImmBorrowLoc[2](%#1: Option<u64>)
+	5: Call option::is_some<u64>(&Option<u64>): bool
+	6: Ret
+}
+
+public length<K: copy, V>(self#0#0: &VecMap<K, V>): u64 {
+B0:
+	0: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	1: ImmBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	2: VecLen(20)
+	3: Ret
+}
+
+public is_empty<K: copy, V>(self#0#0: &VecMap<K, V>): bool {
+B0:
+	0: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	1: Call length<K, V>(&VecMap<K, V>): u64
+	2: LdU64(0)
+	3: Eq
+	4: Ret
+}
+
+public destroy_empty<K: copy, V>(self#0#0: VecMap<K, V>) {
+L1:	contents#1#0: vector<Entry<K, V>>
+B0:
+	0: MoveLoc[0](self#0#0: VecMap<K, V>)
+	1: UnpackGeneric[0](VecMap<K, V>)
+	2: StLoc[1](contents#1#0: vector<Entry<K, V>>)
+	3: ImmBorrowLoc[1](contents#1#0: vector<Entry<K, V>>)
+	4: Call vector::is_empty<Entry<K, V>>(&vector<Entry<K, V>>): bool
+	5: BrFalse(7)
+B1:
+	6: Branch(9)
+B2:
+	7: LdConst[2](u64: 2)
+	8: Abort
+B3:
+	9: MoveLoc[1](contents#1#0: vector<Entry<K, V>>)
+	10: VecUnpack(20, 0)
+	11: Ret
+}
+
+public into_keys_values<K: copy, V>(self#0#0: VecMap<K, V>): vector<K> * vector<V> {
+L1:	$stop#0#3: u64
+L2:	contents#1#0: vector<Entry<K, V>>
+L3:	i#1#6: u64
+L4:	key#1#10: K
+L5:	keys#1#0: vector<K>
+L6:	stop#1#6: u64
+L7:	v#1#1: vector<Entry<K, V>>
+L8:	value#1#10: V
+L9:	values#1#0: vector<V>
+B0:
+	0: MoveLoc[0](self#0#0: VecMap<K, V>)
+	1: UnpackGeneric[0](VecMap<K, V>)
+	2: StLoc[2](contents#1#0: vector<Entry<K, V>>)
+	3: VecPack(22, 0)
+	4: StLoc[5](keys#1#0: vector<K>)
+	5: VecPack(23, 0)
+	6: StLoc[9](values#1#0: vector<V>)
+	7: MoveLoc[2](contents#1#0: vector<Entry<K, V>>)
+	8: StLoc[7](v#1#1: vector<Entry<K, V>>)
+	9: MutBorrowLoc[7](v#1#1: vector<Entry<K, V>>)
+	10: Call vector::reverse<Entry<K, V>>(&mut vector<Entry<K, V>>)
+	11: ImmBorrowLoc[7](v#1#1: vector<Entry<K, V>>)
+	12: VecLen(20)
+	13: StLoc[1]($stop#0#3: u64)
+	14: LdU64(0)
+	15: StLoc[3](i#1#6: u64)
+	16: MoveLoc[1]($stop#0#3: u64)
+	17: StLoc[6](stop#1#6: u64)
+B1:
+	18: CopyLoc[3](i#1#6: u64)
+	19: CopyLoc[6](stop#1#6: u64)
+	20: Lt
+	21: BrFalse(40)
+B2:
+	22: CopyLoc[3](i#1#6: u64)
+	23: Pop
+	24: MutBorrowLoc[7](v#1#1: vector<Entry<K, V>>)
+	25: VecPopBack(20)
+	26: UnpackGeneric[1](Entry<K, V>)
+	27: StLoc[8](value#1#10: V)
+	28: StLoc[4](key#1#10: K)
+	29: MutBorrowLoc[5](keys#1#0: vector<K>)
+	30: MoveLoc[4](key#1#10: K)
+	31: VecPushBack(22)
+	32: MutBorrowLoc[9](values#1#0: vector<V>)
+	33: MoveLoc[8](value#1#10: V)
+	34: VecPushBack(23)
+	35: MoveLoc[3](i#1#6: u64)
+	36: LdU64(1)
+	37: Add
+	38: StLoc[3](i#1#6: u64)
+	39: Branch(18)
+B3:
+	40: MoveLoc[7](v#1#1: vector<Entry<K, V>>)
+	41: VecUnpack(20, 0)
+	42: MoveLoc[5](keys#1#0: vector<K>)
+	43: MoveLoc[9](values#1#0: vector<V>)
+	44: Ret
+}
+
+public from_keys_values<K: copy, V>(keys#0#0: vector<K>, values#0#0: vector<V>): VecMap<K, V> {
+L2:	$stop#0#7: u64
+L3:	contents#1#0: VecMap<K, V>
+L4:	i#1#10: u64
+L5:	key#1#15: K
+L6:	stop#1#10: u64
+L7:	v#1#4: vector<K>
+L8:	v1#1#1: vector<K>
+L9:	v2#1#1: vector<V>
+L10:	value#1#15: V
+B0:
+	0: ImmBorrowLoc[0](keys#0#0: vector<K>)
+	1: VecLen(22)
+	2: ImmBorrowLoc[1](values#0#0: vector<V>)
+	3: VecLen(23)
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(9)
+B2:
+	7: LdConst[5](u64: 5)
+	8: Abort
+B3:
+	9: VecPack(20, 0)
+	10: PackGeneric[0](VecMap<K, V>)
+	11: StLoc[3](contents#1#0: VecMap<K, V>)
+	12: MoveLoc[0](keys#0#0: vector<K>)
+	13: StLoc[8](v1#1#1: vector<K>)
+	14: MoveLoc[1](values#0#0: vector<V>)
+	15: StLoc[9](v2#1#1: vector<V>)
+	16: MutBorrowLoc[9](v2#1#1: vector<V>)
+	17: Call vector::reverse<V>(&mut vector<V>)
+	18: ImmBorrowLoc[8](v1#1#1: vector<K>)
+	19: VecLen(22)
+	20: ImmBorrowLoc[9](v2#1#1: vector<V>)
+	21: VecLen(23)
+	22: Eq
+	23: BrFalse(25)
+B4:
+	24: Branch(27)
+B5:
+	25: LdU64(13906834771343835135)
+	26: Abort
+B6:
+	27: MoveLoc[8](v1#1#1: vector<K>)
+	28: StLoc[7](v#1#4: vector<K>)
+	29: MutBorrowLoc[7](v#1#4: vector<K>)
+	30: Call vector::reverse<K>(&mut vector<K>)
+	31: ImmBorrowLoc[7](v#1#4: vector<K>)
+	32: VecLen(22)
+	33: StLoc[2]($stop#0#7: u64)
+	34: LdU64(0)
+	35: StLoc[4](i#1#10: u64)
+	36: MoveLoc[2]($stop#0#7: u64)
+	37: StLoc[6](stop#1#10: u64)
+B7:
+	38: CopyLoc[4](i#1#10: u64)
+	39: CopyLoc[6](stop#1#10: u64)
+	40: Lt
+	41: BrFalse(59)
+B8:
+	42: CopyLoc[4](i#1#10: u64)
+	43: Pop
+	44: MutBorrowLoc[7](v#1#4: vector<K>)
+	45: VecPopBack(22)
+	46: StLoc[5](key#1#15: K)
+	47: MutBorrowLoc[9](v2#1#1: vector<V>)
+	48: VecPopBack(23)
+	49: StLoc[10](value#1#15: V)
+	50: MutBorrowLoc[3](contents#1#0: VecMap<K, V>)
+	51: MoveLoc[5](key#1#15: K)
+	52: MoveLoc[10](value#1#15: V)
+	53: Call insert<K, V>(&mut VecMap<K, V>, K, V)
+	54: MoveLoc[4](i#1#10: u64)
+	55: LdU64(1)
+	56: Add
+	57: StLoc[4](i#1#10: u64)
+	58: Branch(38)
+B9:
+	59: MoveLoc[7](v#1#4: vector<K>)
+	60: VecUnpack(22, 0)
+	61: MoveLoc[9](v2#1#1: vector<V>)
+	62: VecUnpack(23, 0)
+	63: MoveLoc[3](contents#1#0: VecMap<K, V>)
+	64: Ret
+}
+
+public keys<K: copy, V>(self#0#0: &VecMap<K, V>): vector<K> {
+L1:	$stop#0#6: u64
+L2:	%#2: &Entry<K, V>
+L3:	%#3: K
+L4:	%#4: &mut vector<K>
+L5:	e#1#13: &Entry<K, V>
+L6:	i#1#12: u64
+L7:	i#1#9: u64
+L8:	key#1#14: &K
+L9:	r#1#1: vector<K>
+L10:	stop#1#9: u64
+L11:	v#1#1: &vector<Entry<K, V>>
+L12:	v#1#3: &vector<Entry<K, V>>
+B0:
+	0: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	1: ImmBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	2: StLoc[11](v#1#1: &vector<Entry<K, V>>)
+	3: VecPack(22, 0)
+	4: StLoc[9](r#1#1: vector<K>)
+	5: MoveLoc[11](v#1#1: &vector<Entry<K, V>>)
+	6: StLoc[12](v#1#3: &vector<Entry<K, V>>)
+	7: CopyLoc[12](v#1#3: &vector<Entry<K, V>>)
+	8: VecLen(20)
+	9: StLoc[1]($stop#0#6: u64)
+	10: LdU64(0)
+	11: StLoc[7](i#1#9: u64)
+	12: MoveLoc[1]($stop#0#6: u64)
+	13: StLoc[10](stop#1#9: u64)
+B1:
+	14: CopyLoc[7](i#1#9: u64)
+	15: CopyLoc[10](stop#1#9: u64)
+	16: Lt
+	17: BrFalse(45)
+B2:
+	18: CopyLoc[7](i#1#9: u64)
+	19: StLoc[6](i#1#12: u64)
+	20: CopyLoc[12](v#1#3: &vector<Entry<K, V>>)
+	21: MoveLoc[6](i#1#12: u64)
+	22: VecImmBorrow(20)
+	23: StLoc[5](e#1#13: &Entry<K, V>)
+	24: MutBorrowLoc[9](r#1#1: vector<K>)
+	25: StLoc[4](%#4: &mut vector<K>)
+	26: MoveLoc[5](e#1#13: &Entry<K, V>)
+	27: StLoc[2](%#2: &Entry<K, V>)
+	28: CopyLoc[2](%#2: &Entry<K, V>)
+	29: ImmBorrowFieldGeneric[2](Entry.key: K)
+	30: StLoc[8](key#1#14: &K)
+	31: MoveLoc[2](%#2: &Entry<K, V>)
+	32: ImmBorrowFieldGeneric[1](Entry.value: V)
+	33: Pop
+	34: MoveLoc[8](key#1#14: &K)
+	35: ReadRef
+	36: StLoc[3](%#3: K)
+	37: MoveLoc[4](%#4: &mut vector<K>)
+	38: MoveLoc[3](%#3: K)
+	39: VecPushBack(22)
+	40: MoveLoc[7](i#1#9: u64)
+	41: LdU64(1)
+	42: Add
+	43: StLoc[7](i#1#9: u64)
+	44: Branch(14)
+B3:
+	45: MoveLoc[12](v#1#3: &vector<Entry<K, V>>)
+	46: Pop
+	47: MoveLoc[9](r#1#1: vector<K>)
+	48: Ret
+}
+
+public get_idx_opt<K: copy, V>(self#0#0: &VecMap<K, V>, key#0#0: &K): Option<u64> {
+L2:	$stop#0#3: u64
+L3:	%#2: Option<u64>
+L4:	%#3: &Entry<K, V>
+L5:	i#1#6: u64
+L6:	i#1#9: u64
+L7:	k#1#10: &K
+L8:	stop#1#6: u64
+L9:	v#1#1: &vector<Entry<K, V>>
+B0:
+	0: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	1: ImmBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	2: StLoc[9](v#1#1: &vector<Entry<K, V>>)
+	3: CopyLoc[9](v#1#1: &vector<Entry<K, V>>)
+	4: VecLen(20)
+	5: StLoc[2]($stop#0#3: u64)
+	6: LdU64(0)
+	7: StLoc[5](i#1#6: u64)
+	8: MoveLoc[2]($stop#0#3: u64)
+	9: StLoc[8](stop#1#6: u64)
+B1:
+	10: CopyLoc[5](i#1#6: u64)
+	11: CopyLoc[8](stop#1#6: u64)
+	12: Lt
+	13: BrFalse(43)
+B2:
+	14: CopyLoc[5](i#1#6: u64)
+	15: StLoc[6](i#1#9: u64)
+	16: CopyLoc[9](v#1#1: &vector<Entry<K, V>>)
+	17: CopyLoc[6](i#1#9: u64)
+	18: VecImmBorrow(20)
+	19: StLoc[4](%#3: &Entry<K, V>)
+	20: CopyLoc[4](%#3: &Entry<K, V>)
+	21: ImmBorrowFieldGeneric[2](Entry.key: K)
+	22: StLoc[7](k#1#10: &K)
+	23: MoveLoc[4](%#3: &Entry<K, V>)
+	24: ImmBorrowFieldGeneric[1](Entry.value: V)
+	25: Pop
+	26: MoveLoc[7](k#1#10: &K)
+	27: CopyLoc[1](key#0#0: &K)
+	28: Eq
+	29: BrFalse(38)
+B3:
+	30: MoveLoc[9](v#1#1: &vector<Entry<K, V>>)
+	31: Pop
+	32: MoveLoc[1](key#0#0: &K)
+	33: Pop
+	34: MoveLoc[6](i#1#9: u64)
+	35: Call option::some<u64>(u64): Option<u64>
+	36: StLoc[3](%#2: Option<u64>)
+	37: Branch(49)
+B4:
+	38: MoveLoc[5](i#1#6: u64)
+	39: LdU64(1)
+	40: Add
+	41: StLoc[5](i#1#6: u64)
+	42: Branch(10)
+B5:
+	43: MoveLoc[9](v#1#1: &vector<Entry<K, V>>)
+	44: Pop
+	45: MoveLoc[1](key#0#0: &K)
+	46: Pop
+	47: Call option::none<u64>(): Option<u64>
+	48: StLoc[3](%#2: Option<u64>)
+B6:
+	49: MoveLoc[3](%#2: Option<u64>)
+	50: Ret
+}
+
+public get_idx<K: copy, V>(self#0#0: &VecMap<K, V>, key#0#0: &K): u64 {
+L2:	$stop#0#3: u64
+L3:	%#2: Option<u64>
+L4:	%#3: &Entry<K, V>
+L5:	i#1#6: u64
+L6:	i#1#9: u64
+L7:	k#1#10: &K
+L8:	o#1#11: Option<u64>
+L9:	stop#1#6: u64
+L10:	v#1#1: &vector<Entry<K, V>>
+B0:
+	0: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	1: ImmBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	2: StLoc[10](v#1#1: &vector<Entry<K, V>>)
+	3: CopyLoc[10](v#1#1: &vector<Entry<K, V>>)
+	4: VecLen(20)
+	5: StLoc[2]($stop#0#3: u64)
+	6: LdU64(0)
+	7: StLoc[5](i#1#6: u64)
+	8: MoveLoc[2]($stop#0#3: u64)
+	9: StLoc[9](stop#1#6: u64)
+B1:
+	10: CopyLoc[5](i#1#6: u64)
+	11: CopyLoc[9](stop#1#6: u64)
+	12: Lt
+	13: BrFalse(43)
+B2:
+	14: CopyLoc[5](i#1#6: u64)
+	15: StLoc[6](i#1#9: u64)
+	16: CopyLoc[10](v#1#1: &vector<Entry<K, V>>)
+	17: CopyLoc[6](i#1#9: u64)
+	18: VecImmBorrow(20)
+	19: StLoc[4](%#3: &Entry<K, V>)
+	20: CopyLoc[4](%#3: &Entry<K, V>)
+	21: ImmBorrowFieldGeneric[2](Entry.key: K)
+	22: StLoc[7](k#1#10: &K)
+	23: MoveLoc[4](%#3: &Entry<K, V>)
+	24: ImmBorrowFieldGeneric[1](Entry.value: V)
+	25: Pop
+	26: MoveLoc[7](k#1#10: &K)
+	27: CopyLoc[1](key#0#0: &K)
+	28: Eq
+	29: BrFalse(38)
+B3:
+	30: MoveLoc[10](v#1#1: &vector<Entry<K, V>>)
+	31: Pop
+	32: MoveLoc[1](key#0#0: &K)
+	33: Pop
+	34: MoveLoc[6](i#1#9: u64)
+	35: Call option::some<u64>(u64): Option<u64>
+	36: StLoc[3](%#2: Option<u64>)
+	37: Branch(49)
+B4:
+	38: MoveLoc[5](i#1#6: u64)
+	39: LdU64(1)
+	40: Add
+	41: StLoc[5](i#1#6: u64)
+	42: Branch(10)
+B5:
+	43: MoveLoc[10](v#1#1: &vector<Entry<K, V>>)
+	44: Pop
+	45: MoveLoc[1](key#0#0: &K)
+	46: Pop
+	47: Call option::none<u64>(): Option<u64>
+	48: StLoc[3](%#2: Option<u64>)
+B6:
+	49: MoveLoc[3](%#2: Option<u64>)
+	50: StLoc[8](o#1#11: Option<u64>)
+	51: ImmBorrowLoc[8](o#1#11: Option<u64>)
+	52: Call option::is_some<u64>(&Option<u64>): bool
+	53: BrFalse(55)
+B7:
+	54: Branch(59)
+B8:
+	55: MoveLoc[8](o#1#11: Option<u64>)
+	56: Call option::destroy_none<u64>(Option<u64>)
+	57: LdConst[1](u64: 1)
+	58: Abort
+B9:
+	59: MoveLoc[8](o#1#11: Option<u64>)
+	60: Call option::destroy_some<u64>(Option<u64>): u64
+	61: Ret
+}
+
+public get_entry_by_idx<K: copy, V>(self#0#0: &VecMap<K, V>, idx#0#0: u64): &K * &V {
+L2:	entry#1#0: &Entry<K, V>
+B0:
+	0: CopyLoc[1](idx#0#0: u64)
+	1: CopyLoc[0](self#0#0: &VecMap<K, V>)
+	2: Call length<K, V>(&VecMap<K, V>): u64
+	3: Lt
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	7: Pop
+	8: LdConst[3](u64: 3)
+	9: Abort
+B3:
+	10: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	11: ImmBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	12: MoveLoc[1](idx#0#0: u64)
+	13: VecImmBorrow(20)
+	14: StLoc[2](entry#1#0: &Entry<K, V>)
+	15: CopyLoc[2](entry#1#0: &Entry<K, V>)
+	16: ImmBorrowFieldGeneric[2](Entry.key: K)
+	17: MoveLoc[2](entry#1#0: &Entry<K, V>)
+	18: ImmBorrowFieldGeneric[1](Entry.value: V)
+	19: Ret
+}
+
+public get_entry_by_idx_mut<K: copy, V>(self#0#0: &mut VecMap<K, V>, idx#0#0: u64): &K * &mut V {
+L2:	entry#1#0: &mut Entry<K, V>
+B0:
+	0: CopyLoc[1](idx#0#0: u64)
+	1: CopyLoc[0](self#0#0: &mut VecMap<K, V>)
+	2: FreezeRef
+	3: Call length<K, V>(&VecMap<K, V>): u64
+	4: Lt
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](self#0#0: &mut VecMap<K, V>)
+	8: Pop
+	9: LdConst[3](u64: 3)
+	10: Abort
+B3:
+	11: MoveLoc[0](self#0#0: &mut VecMap<K, V>)
+	12: MutBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	13: MoveLoc[1](idx#0#0: u64)
+	14: VecMutBorrow(20)
+	15: StLoc[2](entry#1#0: &mut Entry<K, V>)
+	16: CopyLoc[2](entry#1#0: &mut Entry<K, V>)
+	17: ImmBorrowFieldGeneric[2](Entry.key: K)
+	18: MoveLoc[2](entry#1#0: &mut Entry<K, V>)
+	19: MutBorrowFieldGeneric[1](Entry.value: V)
+	20: Ret
+}
+
+public remove_entry_by_idx<K: copy, V>(self#0#0: &mut VecMap<K, V>, idx#0#0: u64): K * V {
+B0:
+	0: CopyLoc[1](idx#0#0: u64)
+	1: CopyLoc[0](self#0#0: &mut VecMap<K, V>)
+	2: FreezeRef
+	3: Call length<K, V>(&VecMap<K, V>): u64
+	4: Lt
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](self#0#0: &mut VecMap<K, V>)
+	8: Pop
+	9: LdConst[3](u64: 3)
+	10: Abort
+B3:
+	11: MoveLoc[0](self#0#0: &mut VecMap<K, V>)
+	12: MutBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	13: MoveLoc[1](idx#0#0: u64)
+	14: Call vector::remove<Entry<K, V>>(&mut vector<Entry<K, V>>, u64): Entry<K, V>
+	15: UnpackGeneric[1](Entry<K, V>)
+	16: Ret
+}
+
+public size<K: copy, V>(self#0#0: &VecMap<K, V>): u64 {
+B0:
+	0: MoveLoc[0](self#0#0: &VecMap<K, V>)
+	1: ImmBorrowFieldGeneric[0](VecMap.contents: vector<Entry<K, V>>)
+	2: VecLen(20)
+	3: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => u64: 3
+	4 => u64: 4
+	5 => u64: 5
+]
+}

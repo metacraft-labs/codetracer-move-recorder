@@ -1,0 +1,306 @@
+// Move bytecode v6
+module 2.tx_context {
+use 0000000000000000000000000000000000000000000000000000000000000001::bcs;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+struct TxContext has drop {
+	sender: address,
+	tx_hash: vector<u8>,
+	epoch: u64,
+	epoch_timestamp_ms: u64,
+	ids_created: u64
+}
+
+public sender(_self#0#0: &TxContext): address {
+B0:
+	0: Call native_sender(): address
+	1: Ret
+}
+
+native native_sender(): address;
+
+public digest(self#0#0: &TxContext): &vector<u8> {
+B0:
+	0: MoveLoc[0](self#0#0: &TxContext)
+	1: ImmBorrowField[0](TxContext.tx_hash: vector<u8>)
+	2: Ret
+}
+
+public epoch(_self#0#0: &TxContext): u64 {
+B0:
+	0: Call native_epoch(): u64
+	1: Ret
+}
+
+native native_epoch(): u64;
+
+public epoch_timestamp_ms(_self#0#0: &TxContext): u64 {
+B0:
+	0: Call native_epoch_timestamp_ms(): u64
+	1: Ret
+}
+
+native native_epoch_timestamp_ms(): u64;
+
+public sponsor(_self#0#0: &TxContext): Option<address> {
+B0:
+	0: Call option_sponsor(): Option<address>
+	1: Ret
+}
+
+public fresh_object_address(_ctx#0#0: &mut TxContext): address {
+B0:
+	0: Call fresh_id(): address
+	1: Ret
+}
+
+native fresh_id(): address;
+
+public reference_gas_price(_self#0#0: &TxContext): u64 {
+B0:
+	0: Call native_rgp(): u64
+	1: Ret
+}
+
+native native_rgp(): u64;
+
+public gas_price(_self#0#0: &TxContext): u64 {
+B0:
+	0: Call native_gas_price(): u64
+	1: Ret
+}
+
+native native_gas_price(): u64;
+
+public ids_created(_self#0#0: &TxContext): u64 {
+B0:
+	0: Call native_ids_created(): u64
+	1: Ret
+}
+
+native native_ids_created(): u64;
+
+public gas_budget(_self#0#0: &TxContext): u64 {
+B0:
+	0: Call native_gas_budget(): u64
+	1: Ret
+}
+
+native native_gas_budget(): u64;
+
+public create(sender#0#0: address, tx_hash#0#0: vector<u8>, epoch#0#0: u64, epoch_timestamp_ms#0#0: u64, ids_created#0#0: u64, rgp#0#0: u64, gas_price#0#0: u64, gas_budget#0#0: u64, sponsor#0#0: Option<address>): TxContext {
+B0:
+	0: ImmBorrowLoc[1](tx_hash#0#0: vector<u8>)
+	1: VecLen(16)
+	2: LdConst[0](u64: 32)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdConst[1](u64: 0)
+	7: Abort
+B3:
+	8: MoveLoc[0](sender#0#0: address)
+	9: CopyLoc[1](tx_hash#0#0: vector<u8>)
+	10: MoveLoc[2](epoch#0#0: u64)
+	11: MoveLoc[3](epoch_timestamp_ms#0#0: u64)
+	12: MoveLoc[4](ids_created#0#0: u64)
+	13: MoveLoc[5](rgp#0#0: u64)
+	14: MoveLoc[6](gas_price#0#0: u64)
+	15: MoveLoc[7](gas_budget#0#0: u64)
+	16: MoveLoc[8](sponsor#0#0: Option<address>)
+	17: Call option::to_vec<address>(Option<address>): vector<address>
+	18: Call replace(address, vector<u8>, u64, u64, u64, u64, u64, u64, vector<address>)
+	19: LdConst[2](address: 0x00..)
+	20: MoveLoc[1](tx_hash#0#0: vector<u8>)
+	21: LdU64(0)
+	22: LdU64(0)
+	23: LdU64(0)
+	24: Pack[0](TxContext)
+	25: Ret
+}
+
+public new(sender#0#0: address, tx_hash#0#0: vector<u8>, epoch#0#0: u64, epoch_timestamp_ms#0#0: u64, ids_created#0#0: u64): TxContext {
+B0:
+	0: ImmBorrowLoc[1](tx_hash#0#0: vector<u8>)
+	1: VecLen(16)
+	2: LdConst[0](u64: 32)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdConst[1](u64: 0)
+	7: Abort
+B3:
+	8: MoveLoc[0](sender#0#0: address)
+	9: MoveLoc[1](tx_hash#0#0: vector<u8>)
+	10: MoveLoc[2](epoch#0#0: u64)
+	11: MoveLoc[3](epoch_timestamp_ms#0#0: u64)
+	12: MoveLoc[4](ids_created#0#0: u64)
+	13: Call native_rgp(): u64
+	14: Call native_gas_price(): u64
+	15: Call native_gas_budget(): u64
+	16: Call option_sponsor(): Option<address>
+	17: Call create(address, vector<u8>, u64, u64, u64, u64, u64, u64, Option<address>): TxContext
+	18: Ret
+}
+
+public new_from_hint(addr#0#0: address, hint#0#0: u64, epoch#0#0: u64, epoch_timestamp_ms#0#0: u64, ids_created#0#0: u64): TxContext {
+B0:
+	0: MoveLoc[0](addr#0#0: address)
+	1: MoveLoc[1](hint#0#0: u64)
+	2: Call dummy_tx_hash_with_hint(u64): vector<u8>
+	3: MoveLoc[2](epoch#0#0: u64)
+	4: MoveLoc[3](epoch_timestamp_ms#0#0: u64)
+	5: MoveLoc[4](ids_created#0#0: u64)
+	6: Call new(address, vector<u8>, u64, u64, u64): TxContext
+	7: Ret
+}
+
+public dummy(): TxContext {
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: LdConst[3](vector<u8>: 203a..)
+	2: LdU64(0)
+	3: LdU64(0)
+	4: LdU64(0)
+	5: Call new(address, vector<u8>, u64, u64, u64): TxContext
+	6: Ret
+}
+
+public dummy_tx_hash_with_hint(hint#0#0: u64): vector<u8> {
+L1:	tx_hash#1#0: vector<u8>
+B0:
+	0: ImmBorrowLoc[0](hint#0#0: u64)
+	1: Call bcs::to_bytes<u64>(&u64): vector<u8>
+	2: StLoc[1](tx_hash#1#0: vector<u8>)
+B1:
+	3: ImmBorrowLoc[1](tx_hash#1#0: vector<u8>)
+	4: VecLen(16)
+	5: LdConst[0](u64: 32)
+	6: Lt
+	7: BrFalse(13)
+B2:
+	8: Branch(9)
+B3:
+	9: MutBorrowLoc[1](tx_hash#1#0: vector<u8>)
+	10: LdU8(0)
+	11: VecPushBack(16)
+	12: Branch(3)
+B4:
+	13: MoveLoc[1](tx_hash#1#0: vector<u8>)
+	14: Ret
+}
+
+public get_ids_created(self#0#0: &TxContext): u64 {
+B0:
+	0: MoveLoc[0](self#0#0: &TxContext)
+	1: Call ids_created(&TxContext): u64
+	2: Ret
+}
+
+public last_created_object_id(_self#0#0: &TxContext): address {
+B0:
+	0: Call last_created_id(): address
+	1: Ret
+}
+
+native last_created_id(): address;
+
+public increment_epoch_number(self#0#0: &mut TxContext) {
+L1:	epoch#1#0: u64
+B0:
+	0: CopyLoc[0](self#0#0: &mut TxContext)
+	1: FreezeRef
+	2: Call epoch(&TxContext): u64
+	3: LdU64(1)
+	4: Add
+	5: StLoc[1](epoch#1#0: u64)
+	6: Call native_sender(): address
+	7: MoveLoc[0](self#0#0: &mut TxContext)
+	8: ImmBorrowField[0](TxContext.tx_hash: vector<u8>)
+	9: ReadRef
+	10: MoveLoc[1](epoch#1#0: u64)
+	11: Call native_epoch_timestamp_ms(): u64
+	12: Call native_ids_created(): u64
+	13: Call native_rgp(): u64
+	14: Call native_gas_price(): u64
+	15: Call native_gas_budget(): u64
+	16: Call native_sponsor(): vector<address>
+	17: Call replace(address, vector<u8>, u64, u64, u64, u64, u64, u64, vector<address>)
+	18: Ret
+}
+
+public increment_epoch_timestamp(self#0#0: &mut TxContext, delta_ms#0#0: u64) {
+L2:	epoch_timestamp_ms#1#0: u64
+B0:
+	0: CopyLoc[0](self#0#0: &mut TxContext)
+	1: FreezeRef
+	2: Call epoch_timestamp_ms(&TxContext): u64
+	3: MoveLoc[1](delta_ms#0#0: u64)
+	4: Add
+	5: StLoc[2](epoch_timestamp_ms#1#0: u64)
+	6: Call native_sender(): address
+	7: MoveLoc[0](self#0#0: &mut TxContext)
+	8: ImmBorrowField[0](TxContext.tx_hash: vector<u8>)
+	9: ReadRef
+	10: Call native_epoch(): u64
+	11: MoveLoc[2](epoch_timestamp_ms#1#0: u64)
+	12: Call native_ids_created(): u64
+	13: Call native_rgp(): u64
+	14: Call native_gas_price(): u64
+	15: Call native_gas_budget(): u64
+	16: Call native_sponsor(): vector<address>
+	17: Call replace(address, vector<u8>, u64, u64, u64, u64, u64, u64, vector<address>)
+	18: Ret
+}
+
+option_sponsor(): Option<address> {
+L0:	%#1: Option<address>
+L1:	sponsor#1#0: vector<address>
+B0:
+	0: Call native_sponsor(): vector<address>
+	1: StLoc[1](sponsor#1#0: vector<address>)
+	2: ImmBorrowLoc[1](sponsor#1#0: vector<address>)
+	3: VecLen(1)
+	4: LdU64(0)
+	5: Eq
+	6: BrFalse(10)
+B1:
+	7: Call option::none<address>(): Option<address>
+	8: StLoc[0](%#1: Option<address>)
+	9: Branch(16)
+B2:
+	10: ImmBorrowLoc[1](sponsor#1#0: vector<address>)
+	11: LdU64(0)
+	12: VecImmBorrow(1)
+	13: ReadRef
+	14: Call option::some<address>(address): Option<address>
+	15: StLoc[0](%#1: Option<address>)
+B3:
+	16: MoveLoc[0](%#1: Option<address>)
+	17: Ret
+}
+
+native native_sponsor(): vector<address>;
+
+native replace(sender#0#0: address, tx_hash#0#0: vector<u8>, epoch#0#0: u64, epoch_timestamp_ms#0#0: u64, ids_created#0#0: u64, rgp#0#0: u64, gas_price#0#0: u64, gas_budget#0#0: u64, sponsor#0#0: vector<address>);
+
+native derive_id(tx_hash#0#0: vector<u8>, ids_created#0#0: u64): address;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 32
+	1 => u64: 0
+	2 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	3 => vector<u8>: 203a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532
+]
+}

@@ -1,0 +1,653 @@
+// Move bytecode v6
+module 2.object_table_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::object_table;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Counter has store, key {
+	id: UID,
+	count: u64
+}
+
+simple_all_functions() {
+L0:	%#1: Option<ID>
+L1:	%#2: Option<ID>
+L2:	counter1#1#0: Counter
+L3:	counter2#1#0: Counter
+L4:	id1#1#0: ID
+L5:	id2#1#0: ID
+L6:	scenario#1#0: Scenario
+L7:	table#1#0: ObjectTable<vector<u8>, Counter>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[6](scenario#1#0: Scenario)
+	3: MutBorrowLoc[6](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_table::new<vector<u8>, Counter>(&mut TxContext): ObjectTable<vector<u8>, Counter>
+	6: StLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	7: MutBorrowLoc[6](scenario#1#0: Scenario)
+	8: Call new(&mut Scenario): Counter
+	9: StLoc[2](counter1#1#0: Counter)
+	10: ImmBorrowLoc[2](counter1#1#0: Counter)
+	11: Call object::id<Counter>(&Counter): ID
+	12: StLoc[4](id1#1#0: ID)
+	13: MutBorrowLoc[6](scenario#1#0: Scenario)
+	14: Call new(&mut Scenario): Counter
+	15: StLoc[3](counter2#1#0: Counter)
+	16: ImmBorrowLoc[3](counter2#1#0: Counter)
+	17: Call object::id<Counter>(&Counter): ID
+	18: StLoc[5](id2#1#0: ID)
+	19: MutBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	20: LdConst[1](vector<u8>: "hel..)
+	21: MoveLoc[2](counter1#1#0: Counter)
+	22: Call object_table::add<vector<u8>, Counter>(&mut ObjectTable<vector<u8>, Counter>, vector<u8>, Counter)
+	23: MutBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	24: LdConst[2](vector<u8>: "goo..)
+	25: MoveLoc[3](counter2#1#0: Counter)
+	26: Call object_table::add<vector<u8>, Counter>(&mut ObjectTable<vector<u8>, Counter>, vector<u8>, Counter)
+	27: ImmBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	28: LdConst[1](vector<u8>: "hel..)
+	29: Call object_table::contains<vector<u8>, Counter>(&ObjectTable<vector<u8>, Counter>, vector<u8>): bool
+	30: BrFalse(32)
+B1:
+	31: Branch(34)
+B2:
+	32: LdU64(13906834298897432575)
+	33: Abort
+B3:
+	34: ImmBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	35: LdConst[2](vector<u8>: "goo..)
+	36: Call object_table::contains<vector<u8>, Counter>(&ObjectTable<vector<u8>, Counter>, vector<u8>): bool
+	37: BrFalse(39)
+B4:
+	38: Branch(41)
+B5:
+	39: LdU64(13906834303192399871)
+	40: Abort
+B6:
+	41: ImmBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	42: LdConst[1](vector<u8>: "hel..)
+	43: Call object_table::value_id<vector<u8>, Counter>(&ObjectTable<vector<u8>, Counter>, vector<u8>): Option<ID>
+	44: StLoc[0](%#1: Option<ID>)
+	45: ImmBorrowLoc[0](%#1: Option<ID>)
+	46: Call option::borrow<ID>(&Option<ID>): &ID
+	47: ImmBorrowLoc[4](id1#1#0: ID)
+	48: Eq
+	49: BrFalse(51)
+B7:
+	50: Branch(53)
+B8:
+	51: LdU64(13906834311782334463)
+	52: Abort
+B9:
+	53: ImmBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	54: LdConst[2](vector<u8>: "goo..)
+	55: Call object_table::value_id<vector<u8>, Counter>(&ObjectTable<vector<u8>, Counter>, vector<u8>): Option<ID>
+	56: StLoc[1](%#2: Option<ID>)
+	57: ImmBorrowLoc[1](%#2: Option<ID>)
+	58: Call option::borrow<ID>(&Option<ID>): &ID
+	59: ImmBorrowLoc[5](id2#1#0: ID)
+	60: Eq
+	61: BrFalse(63)
+B10:
+	62: Branch(65)
+B11:
+	63: LdU64(13906834316077301759)
+	64: Abort
+B12:
+	65: ImmBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	66: LdConst[1](vector<u8>: "hel..)
+	67: Call object_table::borrow<vector<u8>, Counter>(&ObjectTable<vector<u8>, Counter>, vector<u8>): &Counter
+	68: Call count(&Counter): u64
+	69: LdU64(0)
+	70: Eq
+	71: BrFalse(73)
+B13:
+	72: Branch(75)
+B14:
+	73: LdU64(13906834324667236351)
+	74: Abort
+B15:
+	75: ImmBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	76: LdConst[2](vector<u8>: "goo..)
+	77: Call object_table::borrow<vector<u8>, Counter>(&ObjectTable<vector<u8>, Counter>, vector<u8>): &Counter
+	78: Call count(&Counter): u64
+	79: LdU64(0)
+	80: Eq
+	81: BrFalse(83)
+B16:
+	82: Branch(85)
+B17:
+	83: LdU64(13906834328962203647)
+	84: Abort
+B18:
+	85: MutBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	86: LdConst[1](vector<u8>: "hel..)
+	87: Call object_table::borrow_mut<vector<u8>, Counter>(&mut ObjectTable<vector<u8>, Counter>, vector<u8>): &mut Counter
+	88: Call bump(&mut Counter): &mut Counter
+	89: Pop
+	90: MutBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	91: LdConst[2](vector<u8>: "goo..)
+	92: Call object_table::borrow_mut<vector<u8>, Counter>(&mut ObjectTable<vector<u8>, Counter>, vector<u8>): &mut Counter
+	93: Call bump(&mut Counter): &mut Counter
+	94: Call bump(&mut Counter): &mut Counter
+	95: Pop
+	96: ImmBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	97: LdConst[1](vector<u8>: "hel..)
+	98: Call object_table::borrow<vector<u8>, Counter>(&ObjectTable<vector<u8>, Counter>, vector<u8>): &Counter
+	99: Call count(&Counter): u64
+	100: LdU64(1)
+	101: Eq
+	102: BrFalse(104)
+B19:
+	103: Branch(106)
+B20:
+	104: LdU64(13906834350437040127)
+	105: Abort
+B21:
+	106: ImmBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	107: LdConst[2](vector<u8>: "goo..)
+	108: Call object_table::borrow<vector<u8>, Counter>(&ObjectTable<vector<u8>, Counter>, vector<u8>): &Counter
+	109: Call count(&Counter): u64
+	110: LdU64(2)
+	111: Eq
+	112: BrFalse(114)
+B22:
+	113: Branch(116)
+B23:
+	114: LdU64(13906834354732007423)
+	115: Abort
+B24:
+	116: MutBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	117: LdConst[1](vector<u8>: "hel..)
+	118: Call object_table::remove<vector<u8>, Counter>(&mut ObjectTable<vector<u8>, Counter>, vector<u8>): Counter
+	119: Call destroy(Counter): u64
+	120: LdU64(1)
+	121: Eq
+	122: BrFalse(124)
+B25:
+	123: Branch(126)
+B26:
+	124: LdU64(13906834363321942015)
+	125: Abort
+B27:
+	126: MutBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	127: LdConst[2](vector<u8>: "goo..)
+	128: Call object_table::remove<vector<u8>, Counter>(&mut ObjectTable<vector<u8>, Counter>, vector<u8>): Counter
+	129: Call destroy(Counter): u64
+	130: LdU64(2)
+	131: Eq
+	132: BrFalse(134)
+B28:
+	133: Branch(136)
+B29:
+	134: LdU64(13906834367616909311)
+	135: Abort
+B30:
+	136: ImmBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	137: LdConst[1](vector<u8>: "hel..)
+	138: Call object_table::contains<vector<u8>, Counter>(&ObjectTable<vector<u8>, Counter>, vector<u8>): bool
+	139: Not
+	140: BrFalse(142)
+B31:
+	141: Branch(144)
+B32:
+	142: LdU64(13906834376206843903)
+	143: Abort
+B33:
+	144: ImmBorrowLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	145: LdConst[2](vector<u8>: "goo..)
+	146: Call object_table::contains<vector<u8>, Counter>(&ObjectTable<vector<u8>, Counter>, vector<u8>): bool
+	147: Not
+	148: BrFalse(150)
+B34:
+	149: Branch(152)
+B35:
+	150: LdU64(13906834380501811199)
+	151: Abort
+B36:
+	152: MoveLoc[6](scenario#1#0: Scenario)
+	153: Call test_scenario::end(Scenario): TransactionEffects
+	154: Pop
+	155: MoveLoc[7](table#1#0: ObjectTable<vector<u8>, Counter>)
+	156: Call object_table::destroy_empty<vector<u8>, Counter>(ObjectTable<vector<u8>, Counter>)
+	157: Ret
+}
+
+add_duplicate() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: ObjectTable<vector<u8>, Counter>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_table::new<vector<u8>, Counter>(&mut TxContext): ObjectTable<vector<u8>, Counter>
+	6: StLoc[1](table#1#0: ObjectTable<vector<u8>, Counter>)
+	7: MutBorrowLoc[1](table#1#0: ObjectTable<vector<u8>, Counter>)
+	8: LdConst[1](vector<u8>: "hel..)
+	9: MutBorrowLoc[0](scenario#1#0: Scenario)
+	10: Call new(&mut Scenario): Counter
+	11: Call object_table::add<vector<u8>, Counter>(&mut ObjectTable<vector<u8>, Counter>, vector<u8>, Counter)
+	12: MutBorrowLoc[1](table#1#0: ObjectTable<vector<u8>, Counter>)
+	13: LdConst[1](vector<u8>: "hel..)
+	14: MutBorrowLoc[0](scenario#1#0: Scenario)
+	15: Call new(&mut Scenario): Counter
+	16: Call object_table::add<vector<u8>, Counter>(&mut ObjectTable<vector<u8>, Counter>, vector<u8>, Counter)
+	17: LdU64(42)
+	18: Abort
+}
+
+borrow_missing() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: ObjectTable<u64, Counter>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_table::new<u64, Counter>(&mut TxContext): ObjectTable<u64, Counter>
+	6: StLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	7: ImmBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	8: LdU64(0)
+	9: Call object_table::borrow<u64, Counter>(&ObjectTable<u64, Counter>, u64): &Counter
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+borrow_mut_missing() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: ObjectTable<u64, Counter>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_table::new<u64, Counter>(&mut TxContext): ObjectTable<u64, Counter>
+	6: StLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	7: MutBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	8: LdU64(0)
+	9: Call object_table::borrow_mut<u64, Counter>(&mut ObjectTable<u64, Counter>, u64): &mut Counter
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+remove_missing() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: ObjectTable<u64, Counter>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_table::new<u64, Counter>(&mut TxContext): ObjectTable<u64, Counter>
+	6: StLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	7: MutBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	8: LdU64(0)
+	9: Call object_table::remove<u64, Counter>(&mut ObjectTable<u64, Counter>, u64): Counter
+	10: Call destroy(Counter): u64
+	11: Pop
+	12: LdU64(42)
+	13: Abort
+}
+
+destroy_non_empty() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: ObjectTable<u64, Counter>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_table::new<u64, Counter>(&mut TxContext): ObjectTable<u64, Counter>
+	6: StLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	7: MutBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	8: LdU64(0)
+	9: MutBorrowLoc[0](scenario#1#0: Scenario)
+	10: Call new(&mut Scenario): Counter
+	11: Call object_table::add<u64, Counter>(&mut ObjectTable<u64, Counter>, u64, Counter)
+	12: MoveLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	13: Call object_table::destroy_empty<u64, Counter>(ObjectTable<u64, Counter>)
+	14: MoveLoc[0](scenario#1#0: Scenario)
+	15: Call test_scenario::end(Scenario): TransactionEffects
+	16: Pop
+	17: Ret
+}
+
+sanity_check_contains() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: ObjectTable<u64, Counter>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_table::new<u64, Counter>(&mut TxContext): ObjectTable<u64, Counter>
+	6: StLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	7: ImmBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	8: LdU64(0)
+	9: Call object_table::contains<u64, Counter>(&ObjectTable<u64, Counter>, u64): bool
+	10: Not
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834646789783551)
+	14: Abort
+B3:
+	15: MutBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	16: LdU64(0)
+	17: MutBorrowLoc[0](scenario#1#0: Scenario)
+	18: Call new(&mut Scenario): Counter
+	19: Call object_table::add<u64, Counter>(&mut ObjectTable<u64, Counter>, u64, Counter)
+	20: ImmBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	21: LdU64(0)
+	22: Call object_table::contains<u64, Counter>(&ObjectTable<u64, Counter>, u64): bool
+	23: BrFalse(25)
+B4:
+	24: Branch(27)
+B5:
+	25: LdU64(13906834655379718143)
+	26: Abort
+B6:
+	27: ImmBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	28: LdU64(1)
+	29: Call object_table::contains<u64, Counter>(&ObjectTable<u64, Counter>, u64): bool
+	30: Not
+	31: BrFalse(33)
+B7:
+	32: Branch(35)
+B8:
+	33: LdU64(13906834659674685439)
+	34: Abort
+B9:
+	35: MoveLoc[0](scenario#1#0: Scenario)
+	36: Call test_scenario::end(Scenario): TransactionEffects
+	37: Pop
+	38: MutBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	39: LdU64(0)
+	40: Call object_table::remove<u64, Counter>(&mut ObjectTable<u64, Counter>, u64): Counter
+	41: Call destroy(Counter): u64
+	42: Pop
+	43: MoveLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	44: Call object_table::destroy_empty<u64, Counter>(ObjectTable<u64, Counter>)
+	45: Ret
+}
+
+sanity_check_size() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: ObjectTable<u64, Counter>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_table::new<u64, Counter>(&mut TxContext): ObjectTable<u64, Counter>
+	6: StLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	7: ImmBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	8: Call object_table::is_empty<u64, Counter>(&ObjectTable<u64, Counter>): bool
+	9: BrFalse(11)
+B1:
+	10: Branch(13)
+B2:
+	11: LdU64(13906834706919325695)
+	12: Abort
+B3:
+	13: ImmBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	14: Call object_table::length<u64, Counter>(&ObjectTable<u64, Counter>): u64
+	15: LdU64(0)
+	16: Eq
+	17: BrFalse(19)
+B4:
+	18: Branch(21)
+B5:
+	19: LdU64(13906834711214292991)
+	20: Abort
+B6:
+	21: MutBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	22: LdU64(0)
+	23: MutBorrowLoc[0](scenario#1#0: Scenario)
+	24: Call new(&mut Scenario): Counter
+	25: Call object_table::add<u64, Counter>(&mut ObjectTable<u64, Counter>, u64, Counter)
+	26: ImmBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	27: Call object_table::is_empty<u64, Counter>(&ObjectTable<u64, Counter>): bool
+	28: Not
+	29: BrFalse(31)
+B7:
+	30: Branch(33)
+B8:
+	31: LdU64(13906834719804227583)
+	32: Abort
+B9:
+	33: ImmBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	34: Call object_table::length<u64, Counter>(&ObjectTable<u64, Counter>): u64
+	35: LdU64(1)
+	36: Eq
+	37: BrFalse(39)
+B10:
+	38: Branch(41)
+B11:
+	39: LdU64(13906834724099194879)
+	40: Abort
+B12:
+	41: MutBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	42: LdU64(1)
+	43: MutBorrowLoc[0](scenario#1#0: Scenario)
+	44: Call new(&mut Scenario): Counter
+	45: Call object_table::add<u64, Counter>(&mut ObjectTable<u64, Counter>, u64, Counter)
+	46: ImmBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	47: Call object_table::is_empty<u64, Counter>(&ObjectTable<u64, Counter>): bool
+	48: Not
+	49: BrFalse(51)
+B13:
+	50: Branch(53)
+B14:
+	51: LdU64(13906834732689129471)
+	52: Abort
+B15:
+	53: ImmBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	54: Call object_table::length<u64, Counter>(&ObjectTable<u64, Counter>): u64
+	55: LdU64(2)
+	56: Eq
+	57: BrFalse(59)
+B16:
+	58: Branch(61)
+B17:
+	59: LdU64(13906834736984096767)
+	60: Abort
+B18:
+	61: MoveLoc[0](scenario#1#0: Scenario)
+	62: Call test_scenario::end(Scenario): TransactionEffects
+	63: Pop
+	64: MutBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	65: LdU64(0)
+	66: Call object_table::remove<u64, Counter>(&mut ObjectTable<u64, Counter>, u64): Counter
+	67: Call destroy(Counter): u64
+	68: Pop
+	69: MutBorrowLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	70: LdU64(1)
+	71: Call object_table::remove<u64, Counter>(&mut ObjectTable<u64, Counter>, u64): Counter
+	72: Call destroy(Counter): u64
+	73: Pop
+	74: MoveLoc[1](table#1#0: ObjectTable<u64, Counter>)
+	75: Call object_table::destroy_empty<u64, Counter>(ObjectTable<u64, Counter>)
+	76: Ret
+}
+
+transfer_object() {
+L0:	c#1#0: Counter
+L1:	scenario#1#0: Scenario
+L2:	table1#1#0: ObjectTable<u64, Counter>
+L3:	table2#1#0: ObjectTable<u64, Counter>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_table::new<u64, Counter>(&mut TxContext): ObjectTable<u64, Counter>
+	6: StLoc[2](table1#1#0: ObjectTable<u64, Counter>)
+	7: MutBorrowLoc[1](scenario#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call object_table::new<u64, Counter>(&mut TxContext): ObjectTable<u64, Counter>
+	10: StLoc[3](table2#1#0: ObjectTable<u64, Counter>)
+	11: MutBorrowLoc[2](table1#1#0: ObjectTable<u64, Counter>)
+	12: LdU64(0)
+	13: MutBorrowLoc[1](scenario#1#0: Scenario)
+	14: Call new(&mut Scenario): Counter
+	15: Call object_table::add<u64, Counter>(&mut ObjectTable<u64, Counter>, u64, Counter)
+	16: ImmBorrowLoc[2](table1#1#0: ObjectTable<u64, Counter>)
+	17: LdU64(0)
+	18: Call object_table::contains<u64, Counter>(&ObjectTable<u64, Counter>, u64): bool
+	19: BrFalse(21)
+B1:
+	20: Branch(23)
+B2:
+	21: LdU64(13906834801408606207)
+	22: Abort
+B3:
+	23: ImmBorrowLoc[3](table2#1#0: ObjectTable<u64, Counter>)
+	24: LdU64(0)
+	25: Call object_table::contains<u64, Counter>(&ObjectTable<u64, Counter>, u64): bool
+	26: Not
+	27: BrFalse(29)
+B4:
+	28: Branch(31)
+B5:
+	29: LdU64(13906834805703573503)
+	30: Abort
+B6:
+	31: MutBorrowLoc[2](table1#1#0: ObjectTable<u64, Counter>)
+	32: LdU64(0)
+	33: Call object_table::borrow_mut<u64, Counter>(&mut ObjectTable<u64, Counter>, u64): &mut Counter
+	34: Call bump(&mut Counter): &mut Counter
+	35: Pop
+	36: MutBorrowLoc[2](table1#1#0: ObjectTable<u64, Counter>)
+	37: LdU64(0)
+	38: Call object_table::remove<u64, Counter>(&mut ObjectTable<u64, Counter>, u64): Counter
+	39: StLoc[0](c#1#0: Counter)
+	40: MutBorrowLoc[3](table2#1#0: ObjectTable<u64, Counter>)
+	41: LdU64(0)
+	42: MoveLoc[0](c#1#0: Counter)
+	43: Call object_table::add<u64, Counter>(&mut ObjectTable<u64, Counter>, u64, Counter)
+	44: ImmBorrowLoc[2](table1#1#0: ObjectTable<u64, Counter>)
+	45: LdU64(0)
+	46: Call object_table::contains<u64, Counter>(&ObjectTable<u64, Counter>, u64): bool
+	47: Not
+	48: BrFalse(50)
+B7:
+	49: Branch(52)
+B8:
+	50: LdU64(13906834822883442687)
+	51: Abort
+B9:
+	52: ImmBorrowLoc[3](table2#1#0: ObjectTable<u64, Counter>)
+	53: LdU64(0)
+	54: Call object_table::contains<u64, Counter>(&ObjectTable<u64, Counter>, u64): bool
+	55: BrFalse(57)
+B10:
+	56: Branch(59)
+B11:
+	57: LdU64(13906834827178409983)
+	58: Abort
+B12:
+	59: MutBorrowLoc[3](table2#1#0: ObjectTable<u64, Counter>)
+	60: LdU64(0)
+	61: Call object_table::borrow_mut<u64, Counter>(&mut ObjectTable<u64, Counter>, u64): &mut Counter
+	62: Call bump(&mut Counter): &mut Counter
+	63: Pop
+	64: ImmBorrowLoc[3](table2#1#0: ObjectTable<u64, Counter>)
+	65: LdU64(0)
+	66: Call object_table::borrow<u64, Counter>(&ObjectTable<u64, Counter>, u64): &Counter
+	67: Call count(&Counter): u64
+	68: LdU64(2)
+	69: Eq
+	70: BrFalse(72)
+B13:
+	71: Branch(74)
+B14:
+	72: LdU64(13906834835768344575)
+	73: Abort
+B15:
+	74: MoveLoc[1](scenario#1#0: Scenario)
+	75: Call test_scenario::end(Scenario): TransactionEffects
+	76: Pop
+	77: MutBorrowLoc[3](table2#1#0: ObjectTable<u64, Counter>)
+	78: LdU64(0)
+	79: Call object_table::remove<u64, Counter>(&mut ObjectTable<u64, Counter>, u64): Counter
+	80: Call destroy(Counter): u64
+	81: Pop
+	82: MoveLoc[2](table1#1#0: ObjectTable<u64, Counter>)
+	83: Call object_table::destroy_empty<u64, Counter>(ObjectTable<u64, Counter>)
+	84: MoveLoc[3](table2#1#0: ObjectTable<u64, Counter>)
+	85: Call object_table::destroy_empty<u64, Counter>(ObjectTable<u64, Counter>)
+	86: Ret
+}
+
+new(scenario#0#0: &mut Scenario): Counter {
+B0:
+	0: MoveLoc[0](scenario#0#0: &mut Scenario)
+	1: Call test_scenario::new_object(&mut Scenario): UID
+	2: LdU64(0)
+	3: Pack[0](Counter)
+	4: Ret
+}
+
+count(counter#0#0: &Counter): u64 {
+B0:
+	0: MoveLoc[0](counter#0#0: &Counter)
+	1: ImmBorrowField[0](Counter.count: u64)
+	2: ReadRef
+	3: Ret
+}
+
+bump(counter#0#0: &mut Counter): &mut Counter {
+B0:
+	0: CopyLoc[0](counter#0#0: &mut Counter)
+	1: ImmBorrowField[0](Counter.count: u64)
+	2: ReadRef
+	3: LdU64(1)
+	4: Add
+	5: CopyLoc[0](counter#0#0: &mut Counter)
+	6: MutBorrowField[0](Counter.count: u64)
+	7: WriteRef
+	8: MoveLoc[0](counter#0#0: &mut Counter)
+	9: Ret
+}
+
+destroy(counter#0#0: Counter): u64 {
+L1:	count#1#0: u64
+B0:
+	0: MoveLoc[0](counter#0#0: Counter)
+	1: Unpack[0](Counter)
+	2: StLoc[1](count#1#0: u64)
+	3: Call object::delete(UID)
+	4: MoveLoc[1](count#1#0: u64)
+	5: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	1 => vector<u8>: "hello" // interpreted as UTF8 string
+	2 => vector<u8>: "goodbye" // interpreted as UTF8 string
+]
+}

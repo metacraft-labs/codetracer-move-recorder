@@ -1,0 +1,902 @@
+// Move bytecode v6
+module 2.coin {
+use 0000000000000000000000000000000000000000000000000000000000000001::ascii;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::type_name;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::balance;
+use 0000000000000000000000000000000000000000000000000000000000000002::deny_list;
+use 0000000000000000000000000000000000000000000000000000000000000002::funds_accumulator;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::types;
+use 0000000000000000000000000000000000000000000000000000000000000002::url;
+
+struct Coin<phantom T> has store, key {
+	id: UID,
+	balance: Balance<T>
+}
+
+struct CoinMetadata<phantom T> has store, key {
+	id: UID,
+	decimals: u8,
+	name: String,
+	symbol: String,
+	description: String,
+	icon_url: Option<Url>
+}
+
+struct RegulatedCoinMetadata<phantom T> has key {
+	id: UID,
+	coin_metadata_object: ID,
+	deny_cap_object: ID
+}
+
+struct TreasuryCap<phantom T> has store, key {
+	id: UID,
+	total_supply: Supply<T>
+}
+
+struct DenyCapV2<phantom T> has store, key {
+	id: UID,
+	allow_global_pause: bool
+}
+
+struct CurrencyCreated<phantom T> has copy, drop {
+	decimals: u8
+}
+
+struct DenyCap<phantom T> has store, key {
+	id: UID
+}
+
+public total_supply<T>(cap#0#0: &TreasuryCap<T>): u64 {
+B0:
+	0: MoveLoc[0](cap#0#0: &TreasuryCap<T>)
+	1: ImmBorrowFieldGeneric[0](TreasuryCap.total_supply: Supply<T>)
+	2: Call balance::supply_value<T>(&Supply<T>): u64
+	3: Ret
+}
+
+public treasury_into_supply<T>(treasury#0#0: TreasuryCap<T>): Supply<T> {
+L1:	total_supply#1#0: Supply<T>
+B0:
+	0: MoveLoc[0](treasury#0#0: TreasuryCap<T>)
+	1: UnpackGeneric[0](TreasuryCap<T>)
+	2: StLoc[1](total_supply#1#0: Supply<T>)
+	3: Call object::delete(UID)
+	4: MoveLoc[1](total_supply#1#0: Supply<T>)
+	5: Ret
+}
+
+public supply_immut<T>(treasury#0#0: &TreasuryCap<T>): &Supply<T> {
+B0:
+	0: MoveLoc[0](treasury#0#0: &TreasuryCap<T>)
+	1: ImmBorrowFieldGeneric[0](TreasuryCap.total_supply: Supply<T>)
+	2: Ret
+}
+
+public supply_mut<T>(treasury#0#0: &mut TreasuryCap<T>): &mut Supply<T> {
+B0:
+	0: MoveLoc[0](treasury#0#0: &mut TreasuryCap<T>)
+	1: MutBorrowFieldGeneric[0](TreasuryCap.total_supply: Supply<T>)
+	2: Ret
+}
+
+public value<T>(self#0#0: &Coin<T>): u64 {
+B0:
+	0: MoveLoc[0](self#0#0: &Coin<T>)
+	1: ImmBorrowFieldGeneric[1](Coin.balance: Balance<T>)
+	2: Call balance::value<T>(&Balance<T>): u64
+	3: Ret
+}
+
+public balance<T>(coin#0#0: &Coin<T>): &Balance<T> {
+B0:
+	0: MoveLoc[0](coin#0#0: &Coin<T>)
+	1: ImmBorrowFieldGeneric[1](Coin.balance: Balance<T>)
+	2: Ret
+}
+
+public balance_mut<T>(coin#0#0: &mut Coin<T>): &mut Balance<T> {
+B0:
+	0: MoveLoc[0](coin#0#0: &mut Coin<T>)
+	1: MutBorrowFieldGeneric[1](Coin.balance: Balance<T>)
+	2: Ret
+}
+
+public from_balance<T>(balance#0#0: Balance<T>, ctx#0#0: &mut TxContext): Coin<T> {
+B0:
+	0: MoveLoc[1](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: MoveLoc[0](balance#0#0: Balance<T>)
+	3: PackGeneric[1](Coin<T>)
+	4: Ret
+}
+
+public into_balance<T>(coin#0#0: Coin<T>): Balance<T> {
+L1:	balance#1#0: Balance<T>
+B0:
+	0: MoveLoc[0](coin#0#0: Coin<T>)
+	1: UnpackGeneric[1](Coin<T>)
+	2: StLoc[1](balance#1#0: Balance<T>)
+	3: Call object::delete(UID)
+	4: MoveLoc[1](balance#1#0: Balance<T>)
+	5: Ret
+}
+
+public take<T>(balance#0#0: &mut Balance<T>, value#0#0: u64, ctx#0#0: &mut TxContext): Coin<T> {
+B0:
+	0: MoveLoc[2](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: MoveLoc[0](balance#0#0: &mut Balance<T>)
+	3: MoveLoc[1](value#0#0: u64)
+	4: Call balance::split<T>(&mut Balance<T>, u64): Balance<T>
+	5: PackGeneric[1](Coin<T>)
+	6: Ret
+}
+
+public put<T>(balance#0#0: &mut Balance<T>, coin#0#0: Coin<T>) {
+B0:
+	0: MoveLoc[0](balance#0#0: &mut Balance<T>)
+	1: MoveLoc[1](coin#0#0: Coin<T>)
+	2: Call into_balance<T>(Coin<T>): Balance<T>
+	3: Call balance::join<T>(&mut Balance<T>, Balance<T>): u64
+	4: Pop
+	5: Ret
+}
+
+public redeem_funds<T>(withdrawal#0#0: Withdrawal<Balance<T>>, ctx#0#0: &mut TxContext): Coin<T> {
+B0:
+	0: MoveLoc[0](withdrawal#0#0: Withdrawal<Balance<T>>)
+	1: Call balance::redeem_funds<T>(Withdrawal<Balance<T>>): Balance<T>
+	2: MoveLoc[1](ctx#0#0: &mut TxContext)
+	3: Call from_balance<T>(Balance<T>, &mut TxContext): Coin<T>
+	4: Ret
+}
+
+public send_funds<T>(coin#0#0: Coin<T>, recipient#0#0: address) {
+B0:
+	0: MoveLoc[0](coin#0#0: Coin<T>)
+	1: Call into_balance<T>(Coin<T>): Balance<T>
+	2: MoveLoc[1](recipient#0#0: address)
+	3: Call balance::send_funds<T>(Balance<T>, address)
+	4: Ret
+}
+
+entry public join<T>(self#0#0: &mut Coin<T>, c#0#0: Coin<T>) {
+L2:	balance#1#0: Balance<T>
+B0:
+	0: MoveLoc[1](c#0#0: Coin<T>)
+	1: UnpackGeneric[1](Coin<T>)
+	2: StLoc[2](balance#1#0: Balance<T>)
+	3: Call object::delete(UID)
+	4: MoveLoc[0](self#0#0: &mut Coin<T>)
+	5: MutBorrowFieldGeneric[1](Coin.balance: Balance<T>)
+	6: MoveLoc[2](balance#1#0: Balance<T>)
+	7: Call balance::join<T>(&mut Balance<T>, Balance<T>): u64
+	8: Pop
+	9: Ret
+}
+
+public split<T>(self#0#0: &mut Coin<T>, split_amount#0#0: u64, ctx#0#0: &mut TxContext): Coin<T> {
+B0:
+	0: MoveLoc[0](self#0#0: &mut Coin<T>)
+	1: MutBorrowFieldGeneric[1](Coin.balance: Balance<T>)
+	2: MoveLoc[1](split_amount#0#0: u64)
+	3: MoveLoc[2](ctx#0#0: &mut TxContext)
+	4: Call take<T>(&mut Balance<T>, u64, &mut TxContext): Coin<T>
+	5: Ret
+}
+
+public divide_into_n<T>(self#0#0: &mut Coin<T>, n#0#0: u64, ctx#0#0: &mut TxContext): vector<Coin<T>> {
+L3:	$stop#0#4: u64
+L4:	%#2: Coin<T>
+L5:	%#3: &mut vector<Coin<T>>
+L6:	i#1#10: u64
+L7:	i#1#7: u64
+L8:	split_amount#1#0: u64
+L9:	stop#1#7: u64
+L10:	v#1#1: vector<Coin<T>>
+B0:
+	0: CopyLoc[1](n#0#0: u64)
+	1: LdU64(0)
+	2: Gt
+	3: BrFalse(5)
+B1:
+	4: Branch(11)
+B2:
+	5: MoveLoc[0](self#0#0: &mut Coin<T>)
+	6: Pop
+	7: MoveLoc[2](ctx#0#0: &mut TxContext)
+	8: Pop
+	9: LdConst[1](u64: 1)
+	10: Abort
+B3:
+	11: CopyLoc[1](n#0#0: u64)
+	12: CopyLoc[0](self#0#0: &mut Coin<T>)
+	13: FreezeRef
+	14: Call value<T>(&Coin<T>): u64
+	15: Le
+	16: BrFalse(18)
+B4:
+	17: Branch(24)
+B5:
+	18: MoveLoc[0](self#0#0: &mut Coin<T>)
+	19: Pop
+	20: MoveLoc[2](ctx#0#0: &mut TxContext)
+	21: Pop
+	22: LdConst[2](u64: 2)
+	23: Abort
+B6:
+	24: CopyLoc[0](self#0#0: &mut Coin<T>)
+	25: FreezeRef
+	26: Call value<T>(&Coin<T>): u64
+	27: CopyLoc[1](n#0#0: u64)
+	28: Div
+	29: StLoc[8](split_amount#1#0: u64)
+	30: VecPack(12, 0)
+	31: StLoc[10](v#1#1: vector<Coin<T>>)
+	32: MoveLoc[1](n#0#0: u64)
+	33: LdU64(1)
+	34: Sub
+	35: StLoc[3]($stop#0#4: u64)
+	36: LdU64(0)
+	37: StLoc[7](i#1#7: u64)
+	38: MoveLoc[3]($stop#0#4: u64)
+	39: StLoc[9](stop#1#7: u64)
+B7:
+	40: CopyLoc[7](i#1#7: u64)
+	41: CopyLoc[9](stop#1#7: u64)
+	42: Lt
+	43: BrFalse(63)
+B8:
+	44: CopyLoc[7](i#1#7: u64)
+	45: StLoc[6](i#1#10: u64)
+	46: MutBorrowLoc[10](v#1#1: vector<Coin<T>>)
+	47: StLoc[5](%#3: &mut vector<Coin<T>>)
+	48: MoveLoc[6](i#1#10: u64)
+	49: Pop
+	50: CopyLoc[0](self#0#0: &mut Coin<T>)
+	51: CopyLoc[8](split_amount#1#0: u64)
+	52: CopyLoc[2](ctx#0#0: &mut TxContext)
+	53: Call split<T>(&mut Coin<T>, u64, &mut TxContext): Coin<T>
+	54: StLoc[4](%#2: Coin<T>)
+	55: MoveLoc[5](%#3: &mut vector<Coin<T>>)
+	56: MoveLoc[4](%#2: Coin<T>)
+	57: VecPushBack(12)
+	58: MoveLoc[7](i#1#7: u64)
+	59: LdU64(1)
+	60: Add
+	61: StLoc[7](i#1#7: u64)
+	62: Branch(40)
+B9:
+	63: MoveLoc[0](self#0#0: &mut Coin<T>)
+	64: Pop
+	65: MoveLoc[2](ctx#0#0: &mut TxContext)
+	66: Pop
+	67: MoveLoc[10](v#1#1: vector<Coin<T>>)
+	68: Ret
+}
+
+public zero<T>(ctx#0#0: &mut TxContext): Coin<T> {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: Call balance::zero<T>(): Balance<T>
+	3: PackGeneric[1](Coin<T>)
+	4: Ret
+}
+
+public destroy_zero<T>(c#0#0: Coin<T>) {
+L1:	balance#1#0: Balance<T>
+B0:
+	0: MoveLoc[0](c#0#0: Coin<T>)
+	1: UnpackGeneric[1](Coin<T>)
+	2: StLoc[1](balance#1#0: Balance<T>)
+	3: Call object::delete(UID)
+	4: MoveLoc[1](balance#1#0: Balance<T>)
+	5: Call balance::destroy_zero<T>(Balance<T>)
+	6: Ret
+}
+
+public create_currency<T: drop>(witness#0#0: T, decimals#0#0: u8, symbol#0#0: vector<u8>, name#0#0: vector<u8>, description#0#0: vector<u8>, icon_url#0#0: Option<Url>, ctx#0#0: &mut TxContext): TreasuryCap<T> * CoinMetadata<T> {
+B0:
+	0: ImmBorrowLoc[0](witness#0#0: T)
+	1: Call types::is_one_time_witness<T>(&T): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(8)
+B2:
+	4: MoveLoc[6](ctx#0#0: &mut TxContext)
+	5: Pop
+	6: LdConst[0](u64: 0)
+	7: Abort
+B3:
+	8: CopyLoc[6](ctx#0#0: &mut TxContext)
+	9: Call object::new(&mut TxContext): UID
+	10: MoveLoc[0](witness#0#0: T)
+	11: Call balance::create_supply<T>(T): Supply<T>
+	12: PackGeneric[0](TreasuryCap<T>)
+	13: MoveLoc[6](ctx#0#0: &mut TxContext)
+	14: Call object::new(&mut TxContext): UID
+	15: MoveLoc[1](decimals#0#0: u8)
+	16: MoveLoc[3](name#0#0: vector<u8>)
+	17: Call string::utf8(vector<u8>): String
+	18: MoveLoc[2](symbol#0#0: vector<u8>)
+	19: Call ascii::string(vector<u8>): String
+	20: MoveLoc[4](description#0#0: vector<u8>)
+	21: Call string::utf8(vector<u8>): String
+	22: MoveLoc[5](icon_url#0#0: Option<Url>)
+	23: PackGeneric[2](CoinMetadata<T>)
+	24: Ret
+}
+
+public create_regulated_currency_v2<T: drop>(witness#0#0: T, decimals#0#0: u8, symbol#0#0: vector<u8>, name#0#0: vector<u8>, description#0#0: vector<u8>, icon_url#0#0: Option<Url>, allow_global_pause#0#0: bool, ctx#0#0: &mut TxContext): TreasuryCap<T> * DenyCapV2<T> * CoinMetadata<T> {
+L8:	deny_cap#1#0: DenyCapV2<T>
+L9:	metadata#1#0: CoinMetadata<T>
+L10:	treasury_cap#1#0: TreasuryCap<T>
+B0:
+	0: MoveLoc[0](witness#0#0: T)
+	1: MoveLoc[1](decimals#0#0: u8)
+	2: MoveLoc[2](symbol#0#0: vector<u8>)
+	3: MoveLoc[3](name#0#0: vector<u8>)
+	4: MoveLoc[4](description#0#0: vector<u8>)
+	5: MoveLoc[5](icon_url#0#0: Option<Url>)
+	6: CopyLoc[7](ctx#0#0: &mut TxContext)
+	7: Call create_currency<T>(T, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, &mut TxContext): TreasuryCap<T> * CoinMetadata<T>
+	8: StLoc[9](metadata#1#0: CoinMetadata<T>)
+	9: StLoc[10](treasury_cap#1#0: TreasuryCap<T>)
+	10: CopyLoc[7](ctx#0#0: &mut TxContext)
+	11: Call object::new(&mut TxContext): UID
+	12: MoveLoc[6](allow_global_pause#0#0: bool)
+	13: PackGeneric[3](DenyCapV2<T>)
+	14: StLoc[8](deny_cap#1#0: DenyCapV2<T>)
+	15: MoveLoc[7](ctx#0#0: &mut TxContext)
+	16: Call object::new(&mut TxContext): UID
+	17: ImmBorrowLoc[9](metadata#1#0: CoinMetadata<T>)
+	18: Call object::id<CoinMetadata<T>>(&CoinMetadata<T>): ID
+	19: ImmBorrowLoc[8](deny_cap#1#0: DenyCapV2<T>)
+	20: Call object::id<DenyCapV2<T>>(&DenyCapV2<T>): ID
+	21: PackGeneric[4](RegulatedCoinMetadata<T>)
+	22: Call transfer::freeze_object<RegulatedCoinMetadata<T>>(RegulatedCoinMetadata<T>)
+	23: MoveLoc[10](treasury_cap#1#0: TreasuryCap<T>)
+	24: MoveLoc[8](deny_cap#1#0: DenyCapV2<T>)
+	25: MoveLoc[9](metadata#1#0: CoinMetadata<T>)
+	26: Ret
+}
+
+public migrate_regulated_currency_to_v2<T>(deny_list#0#0: &mut DenyList, cap#0#0: DenyCap<T>, allow_global_pause#0#0: bool, ctx#0#0: &mut TxContext): DenyCapV2<T> {
+L4:	ty#1#0: vector<u8>
+B0:
+	0: MoveLoc[1](cap#0#0: DenyCap<T>)
+	1: UnpackGeneric[5](DenyCap<T>)
+	2: Call object::delete(UID)
+	3: Call type_name::with_original_ids<T>(): TypeName
+	4: Call type_name::into_string(TypeName): String
+	5: Call ascii::into_bytes(String): vector<u8>
+	6: StLoc[4](ty#1#0: vector<u8>)
+	7: MoveLoc[0](deny_list#0#0: &mut DenyList)
+	8: LdConst[0](u64: 0)
+	9: MoveLoc[4](ty#1#0: vector<u8>)
+	10: CopyLoc[3](ctx#0#0: &mut TxContext)
+	11: Call deny_list::migrate_v1_to_v2(&mut DenyList, u64, vector<u8>, &mut TxContext)
+	12: MoveLoc[3](ctx#0#0: &mut TxContext)
+	13: Call object::new(&mut TxContext): UID
+	14: MoveLoc[2](allow_global_pause#0#0: bool)
+	15: PackGeneric[3](DenyCapV2<T>)
+	16: Ret
+}
+
+public mint<T>(cap#0#0: &mut TreasuryCap<T>, value#0#0: u64, ctx#0#0: &mut TxContext): Coin<T> {
+B0:
+	0: MoveLoc[2](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: MoveLoc[0](cap#0#0: &mut TreasuryCap<T>)
+	3: MutBorrowFieldGeneric[0](TreasuryCap.total_supply: Supply<T>)
+	4: MoveLoc[1](value#0#0: u64)
+	5: Call balance::increase_supply<T>(&mut Supply<T>, u64): Balance<T>
+	6: PackGeneric[1](Coin<T>)
+	7: Ret
+}
+
+public mint_balance<T>(cap#0#0: &mut TreasuryCap<T>, value#0#0: u64): Balance<T> {
+B0:
+	0: MoveLoc[0](cap#0#0: &mut TreasuryCap<T>)
+	1: MutBorrowFieldGeneric[0](TreasuryCap.total_supply: Supply<T>)
+	2: MoveLoc[1](value#0#0: u64)
+	3: Call balance::increase_supply<T>(&mut Supply<T>, u64): Balance<T>
+	4: Ret
+}
+
+entry public burn<T>(cap#0#0: &mut TreasuryCap<T>, c#0#0: Coin<T>): u64 {
+L2:	balance#1#0: Balance<T>
+B0:
+	0: MoveLoc[1](c#0#0: Coin<T>)
+	1: UnpackGeneric[1](Coin<T>)
+	2: StLoc[2](balance#1#0: Balance<T>)
+	3: Call object::delete(UID)
+	4: MoveLoc[0](cap#0#0: &mut TreasuryCap<T>)
+	5: MutBorrowFieldGeneric[0](TreasuryCap.total_supply: Supply<T>)
+	6: MoveLoc[2](balance#1#0: Balance<T>)
+	7: Call balance::decrease_supply<T>(&mut Supply<T>, Balance<T>): u64
+	8: Ret
+}
+
+public deny_list_v2_add<T>(deny_list#0#0: &mut DenyList, _deny_cap#0#0: &mut DenyCapV2<T>, addr#0#0: address, ctx#0#0: &mut TxContext) {
+L4:	ty#1#0: vector<u8>
+B0:
+	0: Call type_name::with_original_ids<T>(): TypeName
+	1: Call type_name::into_string(TypeName): String
+	2: Call ascii::into_bytes(String): vector<u8>
+	3: StLoc[4](ty#1#0: vector<u8>)
+	4: MoveLoc[0](deny_list#0#0: &mut DenyList)
+	5: LdConst[0](u64: 0)
+	6: MoveLoc[4](ty#1#0: vector<u8>)
+	7: MoveLoc[2](addr#0#0: address)
+	8: MoveLoc[3](ctx#0#0: &mut TxContext)
+	9: Call deny_list::v2_add(&mut DenyList, u64, vector<u8>, address, &mut TxContext)
+	10: Ret
+}
+
+public deny_list_v2_remove<T>(deny_list#0#0: &mut DenyList, _deny_cap#0#0: &mut DenyCapV2<T>, addr#0#0: address, ctx#0#0: &mut TxContext) {
+L4:	ty#1#0: vector<u8>
+B0:
+	0: Call type_name::with_original_ids<T>(): TypeName
+	1: Call type_name::into_string(TypeName): String
+	2: Call ascii::into_bytes(String): vector<u8>
+	3: StLoc[4](ty#1#0: vector<u8>)
+	4: MoveLoc[0](deny_list#0#0: &mut DenyList)
+	5: LdConst[0](u64: 0)
+	6: MoveLoc[4](ty#1#0: vector<u8>)
+	7: MoveLoc[2](addr#0#0: address)
+	8: MoveLoc[3](ctx#0#0: &mut TxContext)
+	9: Call deny_list::v2_remove(&mut DenyList, u64, vector<u8>, address, &mut TxContext)
+	10: Ret
+}
+
+public deny_list_v2_contains_current_epoch<T>(deny_list#0#0: &DenyList, addr#0#0: address, ctx#0#0: &TxContext): bool {
+L3:	ty#1#0: vector<u8>
+B0:
+	0: Call type_name::with_original_ids<T>(): TypeName
+	1: Call type_name::into_string(TypeName): String
+	2: Call ascii::into_bytes(String): vector<u8>
+	3: StLoc[3](ty#1#0: vector<u8>)
+	4: MoveLoc[0](deny_list#0#0: &DenyList)
+	5: LdConst[0](u64: 0)
+	6: MoveLoc[3](ty#1#0: vector<u8>)
+	7: MoveLoc[1](addr#0#0: address)
+	8: MoveLoc[2](ctx#0#0: &TxContext)
+	9: Call deny_list::v2_contains_current_epoch(&DenyList, u64, vector<u8>, address, &TxContext): bool
+	10: Ret
+}
+
+public deny_list_v2_contains_next_epoch<T>(deny_list#0#0: &DenyList, addr#0#0: address): bool {
+L2:	ty#1#0: vector<u8>
+B0:
+	0: Call type_name::with_original_ids<T>(): TypeName
+	1: Call type_name::into_string(TypeName): String
+	2: Call ascii::into_bytes(String): vector<u8>
+	3: StLoc[2](ty#1#0: vector<u8>)
+	4: MoveLoc[0](deny_list#0#0: &DenyList)
+	5: LdConst[0](u64: 0)
+	6: MoveLoc[2](ty#1#0: vector<u8>)
+	7: MoveLoc[1](addr#0#0: address)
+	8: Call deny_list::v2_contains_next_epoch(&DenyList, u64, vector<u8>, address): bool
+	9: Ret
+}
+
+public deny_list_v2_enable_global_pause<T>(deny_list#0#0: &mut DenyList, deny_cap#0#0: &mut DenyCapV2<T>, ctx#0#0: &mut TxContext) {
+L3:	ty#1#0: vector<u8>
+B0:
+	0: MoveLoc[1](deny_cap#0#0: &mut DenyCapV2<T>)
+	1: ImmBorrowFieldGeneric[2](DenyCapV2.allow_global_pause: bool)
+	2: ReadRef
+	3: BrFalse(5)
+B1:
+	4: Branch(11)
+B2:
+	5: MoveLoc[0](deny_list#0#0: &mut DenyList)
+	6: Pop
+	7: MoveLoc[2](ctx#0#0: &mut TxContext)
+	8: Pop
+	9: LdConst[3](u64: 3)
+	10: Abort
+B3:
+	11: Call type_name::with_original_ids<T>(): TypeName
+	12: Call type_name::into_string(TypeName): String
+	13: Call ascii::into_bytes(String): vector<u8>
+	14: StLoc[3](ty#1#0: vector<u8>)
+	15: MoveLoc[0](deny_list#0#0: &mut DenyList)
+	16: LdConst[0](u64: 0)
+	17: MoveLoc[3](ty#1#0: vector<u8>)
+	18: MoveLoc[2](ctx#0#0: &mut TxContext)
+	19: Call deny_list::v2_enable_global_pause(&mut DenyList, u64, vector<u8>, &mut TxContext)
+	20: Ret
+}
+
+public deny_list_v2_disable_global_pause<T>(deny_list#0#0: &mut DenyList, deny_cap#0#0: &mut DenyCapV2<T>, ctx#0#0: &mut TxContext) {
+L3:	ty#1#0: vector<u8>
+B0:
+	0: MoveLoc[1](deny_cap#0#0: &mut DenyCapV2<T>)
+	1: ImmBorrowFieldGeneric[2](DenyCapV2.allow_global_pause: bool)
+	2: ReadRef
+	3: BrFalse(5)
+B1:
+	4: Branch(11)
+B2:
+	5: MoveLoc[0](deny_list#0#0: &mut DenyList)
+	6: Pop
+	7: MoveLoc[2](ctx#0#0: &mut TxContext)
+	8: Pop
+	9: LdConst[3](u64: 3)
+	10: Abort
+B3:
+	11: Call type_name::with_original_ids<T>(): TypeName
+	12: Call type_name::into_string(TypeName): String
+	13: Call ascii::into_bytes(String): vector<u8>
+	14: StLoc[3](ty#1#0: vector<u8>)
+	15: MoveLoc[0](deny_list#0#0: &mut DenyList)
+	16: LdConst[0](u64: 0)
+	17: MoveLoc[3](ty#1#0: vector<u8>)
+	18: MoveLoc[2](ctx#0#0: &mut TxContext)
+	19: Call deny_list::v2_disable_global_pause(&mut DenyList, u64, vector<u8>, &mut TxContext)
+	20: Ret
+}
+
+public deny_list_v2_is_global_pause_enabled_current_epoch<T>(deny_list#0#0: &DenyList, ctx#0#0: &TxContext): bool {
+L2:	ty#1#0: vector<u8>
+B0:
+	0: Call type_name::with_original_ids<T>(): TypeName
+	1: Call type_name::into_string(TypeName): String
+	2: Call ascii::into_bytes(String): vector<u8>
+	3: StLoc[2](ty#1#0: vector<u8>)
+	4: MoveLoc[0](deny_list#0#0: &DenyList)
+	5: LdConst[0](u64: 0)
+	6: MoveLoc[2](ty#1#0: vector<u8>)
+	7: MoveLoc[1](ctx#0#0: &TxContext)
+	8: Call deny_list::v2_is_global_pause_enabled_current_epoch(&DenyList, u64, vector<u8>, &TxContext): bool
+	9: Ret
+}
+
+public deny_list_v2_is_global_pause_enabled_next_epoch<T>(deny_list#0#0: &DenyList): bool {
+L1:	ty#1#0: vector<u8>
+B0:
+	0: Call type_name::with_original_ids<T>(): TypeName
+	1: Call type_name::into_string(TypeName): String
+	2: Call ascii::into_bytes(String): vector<u8>
+	3: StLoc[1](ty#1#0: vector<u8>)
+	4: MoveLoc[0](deny_list#0#0: &DenyList)
+	5: LdConst[0](u64: 0)
+	6: MoveLoc[1](ty#1#0: vector<u8>)
+	7: Call deny_list::v2_is_global_pause_enabled_next_epoch(&DenyList, u64, vector<u8>): bool
+	8: Ret
+}
+
+entry public mint_and_transfer<T>(c#0#0: &mut TreasuryCap<T>, amount#0#0: u64, recipient#0#0: address, ctx#0#0: &mut TxContext) {
+B0:
+	0: MoveLoc[0](c#0#0: &mut TreasuryCap<T>)
+	1: MoveLoc[1](amount#0#0: u64)
+	2: MoveLoc[3](ctx#0#0: &mut TxContext)
+	3: Call mint<T>(&mut TreasuryCap<T>, u64, &mut TxContext): Coin<T>
+	4: MoveLoc[2](recipient#0#0: address)
+	5: Call transfer::public_transfer<Coin<T>>(Coin<T>, address)
+	6: Ret
+}
+
+entry public update_name<T>(_treasury#0#0: &TreasuryCap<T>, metadata#0#0: &mut CoinMetadata<T>, name#0#0: String) {
+B0:
+	0: MoveLoc[2](name#0#0: String)
+	1: MoveLoc[1](metadata#0#0: &mut CoinMetadata<T>)
+	2: MutBorrowFieldGeneric[3](CoinMetadata.name: String)
+	3: WriteRef
+	4: Ret
+}
+
+entry public update_symbol<T>(_treasury#0#0: &TreasuryCap<T>, metadata#0#0: &mut CoinMetadata<T>, symbol#0#0: String) {
+B0:
+	0: MoveLoc[2](symbol#0#0: String)
+	1: MoveLoc[1](metadata#0#0: &mut CoinMetadata<T>)
+	2: MutBorrowFieldGeneric[4](CoinMetadata.symbol: String)
+	3: WriteRef
+	4: Ret
+}
+
+entry public update_description<T>(_treasury#0#0: &TreasuryCap<T>, metadata#0#0: &mut CoinMetadata<T>, description#0#0: String) {
+B0:
+	0: MoveLoc[2](description#0#0: String)
+	1: MoveLoc[1](metadata#0#0: &mut CoinMetadata<T>)
+	2: MutBorrowFieldGeneric[5](CoinMetadata.description: String)
+	3: WriteRef
+	4: Ret
+}
+
+entry public update_icon_url<T>(_treasury#0#0: &TreasuryCap<T>, metadata#0#0: &mut CoinMetadata<T>, url#0#0: String) {
+B0:
+	0: MoveLoc[2](url#0#0: String)
+	1: Call url::new_unsafe(String): Url
+	2: Call option::some<Url>(Url): Option<Url>
+	3: MoveLoc[1](metadata#0#0: &mut CoinMetadata<T>)
+	4: MutBorrowFieldGeneric[6](CoinMetadata.icon_url: Option<Url>)
+	5: WriteRef
+	6: Ret
+}
+
+public get_decimals<T>(metadata#0#0: &CoinMetadata<T>): u8 {
+B0:
+	0: MoveLoc[0](metadata#0#0: &CoinMetadata<T>)
+	1: ImmBorrowFieldGeneric[7](CoinMetadata.decimals: u8)
+	2: ReadRef
+	3: Ret
+}
+
+public get_name<T>(metadata#0#0: &CoinMetadata<T>): String {
+B0:
+	0: MoveLoc[0](metadata#0#0: &CoinMetadata<T>)
+	1: ImmBorrowFieldGeneric[3](CoinMetadata.name: String)
+	2: ReadRef
+	3: Ret
+}
+
+public get_symbol<T>(metadata#0#0: &CoinMetadata<T>): String {
+B0:
+	0: MoveLoc[0](metadata#0#0: &CoinMetadata<T>)
+	1: ImmBorrowFieldGeneric[4](CoinMetadata.symbol: String)
+	2: ReadRef
+	3: Ret
+}
+
+public get_description<T>(metadata#0#0: &CoinMetadata<T>): String {
+B0:
+	0: MoveLoc[0](metadata#0#0: &CoinMetadata<T>)
+	1: ImmBorrowFieldGeneric[5](CoinMetadata.description: String)
+	2: ReadRef
+	3: Ret
+}
+
+public get_icon_url<T>(metadata#0#0: &CoinMetadata<T>): Option<Url> {
+B0:
+	0: MoveLoc[0](metadata#0#0: &CoinMetadata<T>)
+	1: ImmBorrowFieldGeneric[6](CoinMetadata.icon_url: Option<Url>)
+	2: ReadRef
+	3: Ret
+}
+
+public(friend) destroy_metadata<T>(metadata#0#0: CoinMetadata<T>) {
+B0:
+	0: MoveLoc[0](metadata#0#0: CoinMetadata<T>)
+	1: UnpackGeneric[2](CoinMetadata<T>)
+	2: Pop
+	3: Pop
+	4: Pop
+	5: Pop
+	6: Pop
+	7: Call object::delete(UID)
+	8: Ret
+}
+
+public(friend) deny_cap_id<T>(metadata#0#0: &RegulatedCoinMetadata<T>): ID {
+B0:
+	0: MoveLoc[0](metadata#0#0: &RegulatedCoinMetadata<T>)
+	1: ImmBorrowFieldGeneric[8](RegulatedCoinMetadata.deny_cap_object: ID)
+	2: ReadRef
+	3: Ret
+}
+
+public(friend) new_deny_cap_v2<T>(allow_global_pause#0#0: bool, ctx#0#0: &mut TxContext): DenyCapV2<T> {
+B0:
+	0: MoveLoc[1](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: MoveLoc[0](allow_global_pause#0#0: bool)
+	3: PackGeneric[3](DenyCapV2<T>)
+	4: Ret
+}
+
+public(friend) new_treasury_cap<T>(ctx#0#0: &mut TxContext): TreasuryCap<T> {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: Call balance::create_supply_internal<T>(): Supply<T>
+	3: PackGeneric[0](TreasuryCap<T>)
+	4: Ret
+}
+
+public(friend) allow_global_pause<T>(cap#0#0: &DenyCapV2<T>): bool {
+B0:
+	0: MoveLoc[0](cap#0#0: &DenyCapV2<T>)
+	1: ImmBorrowFieldGeneric[2](DenyCapV2.allow_global_pause: bool)
+	2: ReadRef
+	3: Ret
+}
+
+public(friend) new_coin_metadata<T>(decimals#0#0: u8, name#0#0: String, symbol#0#0: String, description#0#0: String, icon_url#0#0: String, ctx#0#0: &mut TxContext): CoinMetadata<T> {
+B0:
+	0: MoveLoc[5](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: MoveLoc[0](decimals#0#0: u8)
+	3: MoveLoc[1](name#0#0: String)
+	4: MoveLoc[2](symbol#0#0: String)
+	5: MoveLoc[3](description#0#0: String)
+	6: MoveLoc[4](icon_url#0#0: String)
+	7: Call url::new_unsafe(String): Url
+	8: Call option::some<Url>(Url): Option<Url>
+	9: PackGeneric[2](CoinMetadata<T>)
+	10: Ret
+}
+
+public(friend) update_coin_metadata<T>(metadata#0#0: &mut CoinMetadata<T>, name#0#0: String, symbol#0#0: String, description#0#0: String, icon_url#0#0: String) {
+B0:
+	0: MoveLoc[1](name#0#0: String)
+	1: CopyLoc[0](metadata#0#0: &mut CoinMetadata<T>)
+	2: MutBorrowFieldGeneric[3](CoinMetadata.name: String)
+	3: WriteRef
+	4: MoveLoc[2](symbol#0#0: String)
+	5: CopyLoc[0](metadata#0#0: &mut CoinMetadata<T>)
+	6: MutBorrowFieldGeneric[4](CoinMetadata.symbol: String)
+	7: WriteRef
+	8: MoveLoc[3](description#0#0: String)
+	9: CopyLoc[0](metadata#0#0: &mut CoinMetadata<T>)
+	10: MutBorrowFieldGeneric[5](CoinMetadata.description: String)
+	11: WriteRef
+	12: MoveLoc[4](icon_url#0#0: String)
+	13: Call url::new_unsafe(String): Url
+	14: Call option::some<Url>(Url): Option<Url>
+	15: MoveLoc[0](metadata#0#0: &mut CoinMetadata<T>)
+	16: MutBorrowFieldGeneric[6](CoinMetadata.icon_url: Option<Url>)
+	17: WriteRef
+	18: Ret
+}
+
+public mint_for_testing<T>(value#0#0: u64, ctx#0#0: &mut TxContext): Coin<T> {
+B0:
+	0: MoveLoc[1](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: MoveLoc[0](value#0#0: u64)
+	3: Call balance::create_for_testing<T>(u64): Balance<T>
+	4: PackGeneric[1](Coin<T>)
+	5: Ret
+}
+
+public burn_for_testing<T>(coin#0#0: Coin<T>): u64 {
+L1:	balance#1#0: Balance<T>
+B0:
+	0: MoveLoc[0](coin#0#0: Coin<T>)
+	1: UnpackGeneric[1](Coin<T>)
+	2: StLoc[1](balance#1#0: Balance<T>)
+	3: Call object::delete(UID)
+	4: MoveLoc[1](balance#1#0: Balance<T>)
+	5: Call balance::destroy_for_testing<T>(Balance<T>): u64
+	6: Ret
+}
+
+public create_treasury_cap_for_testing<T>(ctx#0#0: &mut TxContext): TreasuryCap<T> {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: Call balance::create_supply_for_testing<T>(): Supply<T>
+	3: PackGeneric[0](TreasuryCap<T>)
+	4: Ret
+}
+
+public(friend) regulated_coin_metadata_for_testing<T>(coin_metadata_id#0#0: ID, deny_cap_id#0#0: ID, ctx#0#0: &mut TxContext): RegulatedCoinMetadata<T> {
+B0:
+	0: MoveLoc[2](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: MoveLoc[0](coin_metadata_id#0#0: ID)
+	3: MoveLoc[1](deny_cap_id#0#0: ID)
+	4: PackGeneric[4](RegulatedCoinMetadata<T>)
+	5: Ret
+}
+
+public supply<T>(treasury#0#0: &mut TreasuryCap<T>): &Supply<T> {
+B0:
+	0: MoveLoc[0](treasury#0#0: &mut TreasuryCap<T>)
+	1: ImmBorrowFieldGeneric[0](TreasuryCap.total_supply: Supply<T>)
+	2: Ret
+}
+
+public create_regulated_currency<T: drop>(witness#0#0: T, decimals#0#0: u8, symbol#0#0: vector<u8>, name#0#0: vector<u8>, description#0#0: vector<u8>, icon_url#0#0: Option<Url>, ctx#0#0: &mut TxContext): TreasuryCap<T> * DenyCap<T> * CoinMetadata<T> {
+L7:	deny_cap#1#0: DenyCap<T>
+L8:	metadata#1#0: CoinMetadata<T>
+L9:	treasury_cap#1#0: TreasuryCap<T>
+B0:
+	0: MoveLoc[0](witness#0#0: T)
+	1: MoveLoc[1](decimals#0#0: u8)
+	2: MoveLoc[2](symbol#0#0: vector<u8>)
+	3: MoveLoc[3](name#0#0: vector<u8>)
+	4: MoveLoc[4](description#0#0: vector<u8>)
+	5: MoveLoc[5](icon_url#0#0: Option<Url>)
+	6: CopyLoc[6](ctx#0#0: &mut TxContext)
+	7: Call create_currency<T>(T, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, &mut TxContext): TreasuryCap<T> * CoinMetadata<T>
+	8: StLoc[8](metadata#1#0: CoinMetadata<T>)
+	9: StLoc[9](treasury_cap#1#0: TreasuryCap<T>)
+	10: CopyLoc[6](ctx#0#0: &mut TxContext)
+	11: Call object::new(&mut TxContext): UID
+	12: PackGeneric[5](DenyCap<T>)
+	13: StLoc[7](deny_cap#1#0: DenyCap<T>)
+	14: MoveLoc[6](ctx#0#0: &mut TxContext)
+	15: Call object::new(&mut TxContext): UID
+	16: ImmBorrowLoc[8](metadata#1#0: CoinMetadata<T>)
+	17: Call object::id<CoinMetadata<T>>(&CoinMetadata<T>): ID
+	18: ImmBorrowLoc[7](deny_cap#1#0: DenyCap<T>)
+	19: Call object::id<DenyCap<T>>(&DenyCap<T>): ID
+	20: PackGeneric[4](RegulatedCoinMetadata<T>)
+	21: Call transfer::freeze_object<RegulatedCoinMetadata<T>>(RegulatedCoinMetadata<T>)
+	22: MoveLoc[9](treasury_cap#1#0: TreasuryCap<T>)
+	23: MoveLoc[7](deny_cap#1#0: DenyCap<T>)
+	24: MoveLoc[8](metadata#1#0: CoinMetadata<T>)
+	25: Ret
+}
+
+public deny_list_add<T>(deny_list#0#0: &mut DenyList, _deny_cap#0#0: &mut DenyCap<T>, addr#0#0: address, _ctx#0#0: &mut TxContext) {
+L4:	type#1#0: vector<u8>
+B0:
+	0: Call type_name::get_with_original_ids<T>(): TypeName
+	1: Call type_name::into_string(TypeName): String
+	2: Call ascii::into_bytes(String): vector<u8>
+	3: StLoc[4](type#1#0: vector<u8>)
+	4: MoveLoc[0](deny_list#0#0: &mut DenyList)
+	5: LdConst[0](u64: 0)
+	6: MoveLoc[4](type#1#0: vector<u8>)
+	7: MoveLoc[2](addr#0#0: address)
+	8: Call deny_list::v1_add(&mut DenyList, u64, vector<u8>, address)
+	9: Ret
+}
+
+public deny_list_remove<T>(deny_list#0#0: &mut DenyList, _deny_cap#0#0: &mut DenyCap<T>, addr#0#0: address, _ctx#0#0: &mut TxContext) {
+L4:	type#1#0: vector<u8>
+B0:
+	0: Call type_name::get_with_original_ids<T>(): TypeName
+	1: Call type_name::into_string(TypeName): String
+	2: Call ascii::into_bytes(String): vector<u8>
+	3: StLoc[4](type#1#0: vector<u8>)
+	4: MoveLoc[0](deny_list#0#0: &mut DenyList)
+	5: LdConst[0](u64: 0)
+	6: MoveLoc[4](type#1#0: vector<u8>)
+	7: MoveLoc[2](addr#0#0: address)
+	8: Call deny_list::v1_remove(&mut DenyList, u64, vector<u8>, address)
+	9: Ret
+}
+
+public deny_list_contains<T>(deny_list#0#0: &DenyList, addr#0#0: address): bool {
+L2:	name#1#0: TypeName
+L3:	type#1#0: vector<u8>
+B0:
+	0: Call type_name::get_with_original_ids<T>(): TypeName
+	1: StLoc[2](name#1#0: TypeName)
+	2: ImmBorrowLoc[2](name#1#0: TypeName)
+	3: Call type_name::is_primitive(&TypeName): bool
+	4: BrFalse(9)
+B1:
+	5: MoveLoc[0](deny_list#0#0: &DenyList)
+	6: Pop
+	7: LdFalse
+	8: Ret
+B2:
+	9: MoveLoc[2](name#1#0: TypeName)
+	10: Call type_name::into_string(TypeName): String
+	11: Call ascii::into_bytes(String): vector<u8>
+	12: StLoc[3](type#1#0: vector<u8>)
+	13: MoveLoc[0](deny_list#0#0: &DenyList)
+	14: LdConst[0](u64: 0)
+	15: MoveLoc[3](type#1#0: vector<u8>)
+	16: MoveLoc[1](addr#0#0: address)
+	17: Call deny_list::v1_contains(&DenyList, u64, vector<u8>, address): bool
+	18: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => u64: 3
+]
+}

@@ -1,0 +1,912 @@
+// Move bytecode v6
+module 2.accumulator_settlement {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+use 0000000000000000000000000000000000000000000000000000000000000002::accumulator;
+use 0000000000000000000000000000000000000000000000000000000000000002::bcs;
+use 0000000000000000000000000000000000000000000000000000000000000002::hash;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct EventStreamHead has store {
+	mmr: vector<u256>,
+	checkpoint_seq: u64,
+	num_events: u64
+}
+
+settlement_prologue(_accumulator_root#0#0: &mut AccumulatorRoot, _epoch#0#0: u64, _checkpoint_height#0#0: u64, _idx#0#0: u64, input_sui#0#0: u64, output_sui#0#0: u64, ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[6](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[2](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdConst[0](u64: 0)
+	7: Abort
+B3:
+	8: MoveLoc[4](input_sui#0#0: u64)
+	9: MoveLoc[5](output_sui#0#0: u64)
+	10: Call record_settlement_sui_conservation(u64, u64)
+	11: Ret
+}
+
+settle_u128<T>(accumulator_root#0#0: &mut AccumulatorRoot, owner#0#0: address, merge#0#0: u128, split#0#0: u128, ctx#0#0: &TxContext) {
+L5:	name#1#0: Key<T>
+L6:	value#1#0: &mut U128
+L7:	value#3#0: U128
+B0:
+	0: MoveLoc[4](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[2](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	7: Pop
+	8: LdConst[0](u64: 0)
+	9: Abort
+B3:
+	10: CopyLoc[2](merge#0#0: u128)
+	11: LdU128(0)
+	12: Eq
+	13: CopyLoc[3](split#0#0: u128)
+	14: LdU128(0)
+	15: Eq
+	16: Neq
+	17: BrFalse(19)
+B4:
+	18: Branch(23)
+B5:
+	19: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	20: Pop
+	21: LdConst[1](u64: 1)
+	22: Abort
+B6:
+	23: MoveLoc[1](owner#0#0: address)
+	24: Call accumulator::accumulator_key<T>(address): Key<T>
+	25: StLoc[5](name#1#0: Key<T>)
+	26: CopyLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	27: FreezeRef
+	28: CopyLoc[5](name#1#0: Key<T>)
+	29: Call accumulator::root_has_accumulator<T, U128>(&AccumulatorRoot, Key<T>): bool
+	30: BrFalse(51)
+B7:
+	31: CopyLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	32: CopyLoc[5](name#1#0: Key<T>)
+	33: Call accumulator::root_borrow_accumulator_mut<T, U128>(&mut AccumulatorRoot, Key<T>): &mut U128
+	34: StLoc[6](value#1#0: &mut U128)
+	35: CopyLoc[6](value#1#0: &mut U128)
+	36: MoveLoc[2](merge#0#0: u128)
+	37: MoveLoc[3](split#0#0: u128)
+	38: Call accumulator::update_u128(&mut U128, u128, u128)
+	39: MoveLoc[6](value#1#0: &mut U128)
+	40: FreezeRef
+	41: Call accumulator::is_zero_u128(&U128): bool
+	42: BrFalse(48)
+B8:
+	43: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	44: MoveLoc[5](name#1#0: Key<T>)
+	45: Call accumulator::root_remove_accumulator<T, U128>(&mut AccumulatorRoot, Key<T>): U128
+	46: Call accumulator::destroy_u128(U128)
+	47: Branch(67)
+B9:
+	48: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	49: Pop
+	50: Branch(67)
+B10:
+	51: MoveLoc[3](split#0#0: u128)
+	52: LdU128(0)
+	53: Eq
+	54: BrFalse(56)
+B11:
+	55: Branch(60)
+B12:
+	56: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	57: Pop
+	58: LdConst[1](u64: 1)
+	59: Abort
+B13:
+	60: MoveLoc[2](merge#0#0: u128)
+	61: Call accumulator::create_u128(u128): U128
+	62: StLoc[7](value#3#0: U128)
+	63: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	64: MoveLoc[5](name#1#0: Key<T>)
+	65: MoveLoc[7](value#3#0: U128)
+	66: Call accumulator::root_add_accumulator<T, U128>(&mut AccumulatorRoot, Key<T>, U128)
+B14:
+	67: Ret
+}
+
+native record_settlement_sui_conservation(input_sui#0#0: u64, output_sui#0#0: u64);
+
+add_to_mmr(new_val#0#0: u256, mmr#0#0: &mut vector<u256>) {
+L2:	cur#1#0: u256
+L3:	i#1#0: u64
+L4:	r#1#0: &mut u256
+B0:
+	0: LdU64(0)
+	1: StLoc[3](i#1#0: u64)
+	2: MoveLoc[0](new_val#0#0: u256)
+	3: StLoc[2](cur#1#0: u256)
+B1:
+	4: CopyLoc[3](i#1#0: u64)
+	5: CopyLoc[1](mmr#0#0: &mut vector<u256>)
+	6: FreezeRef
+	7: VecLen(6)
+	8: Lt
+	9: BrFalse(39)
+B2:
+	10: Branch(11)
+B3:
+	11: CopyLoc[1](mmr#0#0: &mut vector<u256>)
+	12: CopyLoc[3](i#1#0: u64)
+	13: VecMutBorrow(6)
+	14: StLoc[4](r#1#0: &mut u256)
+	15: CopyLoc[4](r#1#0: &mut u256)
+	16: ReadRef
+	17: LdU256(0)
+	18: Eq
+	19: BrFalse(26)
+B4:
+	20: MoveLoc[1](mmr#0#0: &mut vector<u256>)
+	21: Pop
+	22: MoveLoc[2](cur#1#0: u256)
+	23: MoveLoc[4](r#1#0: &mut u256)
+	24: WriteRef
+	25: Ret
+B5:
+	26: CopyLoc[4](r#1#0: &mut u256)
+	27: ReadRef
+	28: MoveLoc[2](cur#1#0: u256)
+	29: Call hash_two_to_one_u256(u256, u256): u256
+	30: StLoc[2](cur#1#0: u256)
+	31: LdU256(0)
+	32: MoveLoc[4](r#1#0: &mut u256)
+	33: WriteRef
+	34: MoveLoc[3](i#1#0: u64)
+	35: LdU64(1)
+	36: Add
+	37: StLoc[3](i#1#0: u64)
+	38: Branch(4)
+B6:
+	39: MoveLoc[1](mmr#0#0: &mut vector<u256>)
+	40: MoveLoc[2](cur#1#0: u256)
+	41: VecPushBack(6)
+	42: Ret
+}
+
+u256_from_bytes(bytes#0#0: vector<u8>): u256 {
+L1:	%#1: BCS
+B0:
+	0: MoveLoc[0](bytes#0#0: vector<u8>)
+	1: Call bcs::new(vector<u8>): BCS
+	2: StLoc[1](%#1: BCS)
+	3: MutBorrowLoc[1](%#1: BCS)
+	4: Call bcs::peel_u256(&mut BCS): u256
+	5: Ret
+}
+
+hash_two_to_one_u256(left#0#0: u256, right#0#0: u256): u256 {
+L2:	concatenated#1#0: vector<u8>
+L3:	left_bytes#1#0: vector<u8>
+L4:	right_bytes#1#0: vector<u8>
+B0:
+	0: ImmBorrowLoc[0](left#0#0: u256)
+	1: Call bcs::to_bytes<u256>(&u256): vector<u8>
+	2: StLoc[3](left_bytes#1#0: vector<u8>)
+	3: ImmBorrowLoc[1](right#0#0: u256)
+	4: Call bcs::to_bytes<u256>(&u256): vector<u8>
+	5: StLoc[4](right_bytes#1#0: vector<u8>)
+	6: MoveLoc[3](left_bytes#1#0: vector<u8>)
+	7: StLoc[2](concatenated#1#0: vector<u8>)
+	8: MutBorrowLoc[2](concatenated#1#0: vector<u8>)
+	9: MoveLoc[4](right_bytes#1#0: vector<u8>)
+	10: Call vector::append<u8>(&mut vector<u8>, vector<u8>)
+	11: ImmBorrowLoc[2](concatenated#1#0: vector<u8>)
+	12: Call hash::blake2b256(&vector<u8>): vector<u8>
+	13: Call u256_from_bytes(vector<u8>): u256
+	14: Ret
+}
+
+new_stream_head(new_root#0#0: u256, event_count_delta#0#0: u64, checkpoint_seq#0#0: u64): EventStreamHead {
+L3:	initial_mmr#1#0: vector<u256>
+B0:
+	0: VecPack(6, 0)
+	1: StLoc[3](initial_mmr#1#0: vector<u256>)
+	2: MoveLoc[0](new_root#0#0: u256)
+	3: MutBorrowLoc[3](initial_mmr#1#0: vector<u256>)
+	4: Call add_to_mmr(u256, &mut vector<u256>)
+	5: MoveLoc[3](initial_mmr#1#0: vector<u256>)
+	6: MoveLoc[2](checkpoint_seq#0#0: u64)
+	7: MoveLoc[1](event_count_delta#0#0: u64)
+	8: Pack[0](EventStreamHead)
+	9: Ret
+}
+
+settle_events(accumulator_root#0#0: &mut AccumulatorRoot, stream_id#0#0: address, new_root#0#0: u256, event_count_delta#0#0: u64, checkpoint_seq#0#0: u64, ctx#0#0: &TxContext) {
+L6:	head#1#0: &mut EventStreamHead
+L7:	head#2#0: EventStreamHead
+L8:	name#1#0: Key<EventStreamHead>
+B0:
+	0: MoveLoc[5](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[2](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	7: Pop
+	8: LdConst[0](u64: 0)
+	9: Abort
+B3:
+	10: MoveLoc[1](stream_id#0#0: address)
+	11: Call accumulator::accumulator_key<EventStreamHead>(address): Key<EventStreamHead>
+	12: StLoc[8](name#1#0: Key<EventStreamHead>)
+	13: CopyLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	14: FreezeRef
+	15: CopyLoc[8](name#1#0: Key<EventStreamHead>)
+	16: Call accumulator::root_has_accumulator<EventStreamHead, EventStreamHead>(&AccumulatorRoot, Key<EventStreamHead>): bool
+	17: BrFalse(39)
+B4:
+	18: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	19: MoveLoc[8](name#1#0: Key<EventStreamHead>)
+	20: Call accumulator::root_borrow_accumulator_mut<EventStreamHead, EventStreamHead>(&mut AccumulatorRoot, Key<EventStreamHead>): &mut EventStreamHead
+	21: StLoc[6](head#1#0: &mut EventStreamHead)
+	22: MoveLoc[2](new_root#0#0: u256)
+	23: CopyLoc[6](head#1#0: &mut EventStreamHead)
+	24: MutBorrowField[0](EventStreamHead.mmr: vector<u256>)
+	25: Call add_to_mmr(u256, &mut vector<u256>)
+	26: CopyLoc[6](head#1#0: &mut EventStreamHead)
+	27: ImmBorrowField[1](EventStreamHead.num_events: u64)
+	28: ReadRef
+	29: MoveLoc[3](event_count_delta#0#0: u64)
+	30: Add
+	31: CopyLoc[6](head#1#0: &mut EventStreamHead)
+	32: MutBorrowField[1](EventStreamHead.num_events: u64)
+	33: WriteRef
+	34: MoveLoc[4](checkpoint_seq#0#0: u64)
+	35: MoveLoc[6](head#1#0: &mut EventStreamHead)
+	36: MutBorrowField[2](EventStreamHead.checkpoint_seq: u64)
+	37: WriteRef
+	38: Branch(48)
+B5:
+	39: MoveLoc[2](new_root#0#0: u256)
+	40: MoveLoc[3](event_count_delta#0#0: u64)
+	41: MoveLoc[4](checkpoint_seq#0#0: u64)
+	42: Call new_stream_head(u256, u64, u64): EventStreamHead
+	43: StLoc[7](head#2#0: EventStreamHead)
+	44: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	45: MoveLoc[8](name#1#0: Key<EventStreamHead>)
+	46: MoveLoc[7](head#2#0: EventStreamHead)
+	47: Call accumulator::root_add_accumulator<EventStreamHead, EventStreamHead>(&mut AccumulatorRoot, Key<EventStreamHead>, EventStreamHead)
+B6:
+	48: Ret
+}
+
+test_mmr_addition() {
+L0:	$stop#0#22: u64
+L1:	$stop#0#37: u64
+L2:	$stop#0#52: u64
+L3:	$stop#0#67: u64
+L4:	$stop#0#7: u64
+L5:	%#11: bool
+L6:	%#12: &mut vector<bool>
+L7:	%#14: bool
+L8:	%#15: &mut vector<bool>
+L9:	%#2: bool
+L10:	%#5: bool
+L11:	%#6: &mut vector<bool>
+L12:	%#8: bool
+L13:	%#9: &mut vector<bool>
+L14:	e#1#29: &u256
+L15:	e#1#44: &u256
+L16:	e#1#59: &u256
+L17:	e#1#74: &u256
+L18:	fixed_leaf#1#0: u256
+L19:	i#1#10: u64
+L20:	i#1#13: u64
+L21:	i#1#25: u64
+L22:	i#1#28: u64
+L23:	i#1#40: u64
+L24:	i#1#43: u64
+L25:	i#1#55: u64
+L26:	i#1#58: u64
+L27:	i#1#70: u64
+L28:	i#1#73: u64
+L29:	leaf#1#0: u256
+L30:	mmr#1#0: vector<u256>
+L31:	r#1#16: vector<bool>
+L32:	r#1#31: vector<bool>
+L33:	r#1#46: vector<bool>
+L34:	r#1#61: vector<bool>
+L35:	stop#1#10: u64
+L36:	stop#1#25: u64
+L37:	stop#1#40: u64
+L38:	stop#1#55: u64
+L39:	stop#1#70: u64
+L40:	v#1#16: &vector<u256>
+L41:	v#1#19: &vector<u256>
+L42:	v#1#31: &vector<u256>
+L43:	v#1#34: &vector<u256>
+L44:	v#1#4: &vector<u256>
+L45:	v#1#46: &vector<u256>
+L46:	v#1#49: &vector<u256>
+L47:	v#1#61: &vector<u256>
+L48:	v#1#64: &vector<u256>
+L49:	x#6#0: u256
+L50:	y#1#0: u256
+B0:
+	0: VecPack(6, 0)
+	1: StLoc[30](mmr#1#0: vector<u256>)
+	2: LdU256(2)
+	3: StLoc[18](fixed_leaf#1#0: u256)
+	4: ImmBorrowLoc[30](mmr#1#0: vector<u256>)
+	5: StLoc[44](v#1#4: &vector<u256>)
+	6: CopyLoc[44](v#1#4: &vector<u256>)
+	7: VecLen(6)
+	8: StLoc[4]($stop#0#7: u64)
+	9: LdU64(0)
+	10: StLoc[19](i#1#10: u64)
+	11: MoveLoc[4]($stop#0#7: u64)
+	12: StLoc[35](stop#1#10: u64)
+B1:
+	13: CopyLoc[19](i#1#10: u64)
+	14: CopyLoc[35](stop#1#10: u64)
+	15: Lt
+	16: BrFalse(37)
+B2:
+	17: CopyLoc[19](i#1#10: u64)
+	18: StLoc[20](i#1#13: u64)
+	19: CopyLoc[44](v#1#4: &vector<u256>)
+	20: MoveLoc[20](i#1#13: u64)
+	21: VecImmBorrow(6)
+	22: ReadRef
+	23: LdU256(0)
+	24: Eq
+	25: Not
+	26: BrFalse(32)
+B3:
+	27: MoveLoc[44](v#1#4: &vector<u256>)
+	28: Pop
+	29: LdFalse
+	30: StLoc[9](%#2: bool)
+	31: Branch(41)
+B4:
+	32: MoveLoc[19](i#1#10: u64)
+	33: LdU64(1)
+	34: Add
+	35: StLoc[19](i#1#10: u64)
+	36: Branch(13)
+B5:
+	37: MoveLoc[44](v#1#4: &vector<u256>)
+	38: Pop
+	39: LdTrue
+	40: StLoc[9](%#2: bool)
+B6:
+	41: MoveLoc[9](%#2: bool)
+	42: BrFalse(44)
+B7:
+	43: Branch(46)
+B8:
+	44: LdU64(13906834827178409983)
+	45: Abort
+B9:
+	46: CopyLoc[18](fixed_leaf#1#0: u256)
+	47: MutBorrowLoc[30](mmr#1#0: vector<u256>)
+	48: Call add_to_mmr(u256, &mut vector<u256>)
+	49: ImmBorrowLoc[30](mmr#1#0: vector<u256>)
+	50: StLoc[40](v#1#16: &vector<u256>)
+	51: LdConst[3](vector<bool>: 00)
+	52: StLoc[31](r#1#16: vector<bool>)
+	53: MoveLoc[40](v#1#16: &vector<u256>)
+	54: StLoc[41](v#1#19: &vector<u256>)
+	55: CopyLoc[41](v#1#19: &vector<u256>)
+	56: VecLen(6)
+	57: StLoc[0]($stop#0#22: u64)
+	58: LdU64(0)
+	59: StLoc[21](i#1#25: u64)
+	60: MoveLoc[0]($stop#0#22: u64)
+	61: StLoc[36](stop#1#25: u64)
+B10:
+	62: CopyLoc[21](i#1#25: u64)
+	63: CopyLoc[36](stop#1#25: u64)
+	64: Lt
+	65: BrFalse(87)
+B11:
+	66: CopyLoc[21](i#1#25: u64)
+	67: StLoc[22](i#1#28: u64)
+	68: CopyLoc[41](v#1#19: &vector<u256>)
+	69: MoveLoc[22](i#1#28: u64)
+	70: VecImmBorrow(6)
+	71: StLoc[14](e#1#29: &u256)
+	72: MutBorrowLoc[31](r#1#16: vector<bool>)
+	73: StLoc[11](%#6: &mut vector<bool>)
+	74: MoveLoc[14](e#1#29: &u256)
+	75: ReadRef
+	76: LdU256(0)
+	77: Eq
+	78: StLoc[10](%#5: bool)
+	79: MoveLoc[11](%#6: &mut vector<bool>)
+	80: MoveLoc[10](%#5: bool)
+	81: VecPushBack(18)
+	82: MoveLoc[21](i#1#25: u64)
+	83: LdU64(1)
+	84: Add
+	85: StLoc[21](i#1#25: u64)
+	86: Branch(62)
+B12:
+	87: MoveLoc[41](v#1#19: &vector<u256>)
+	88: Pop
+	89: MoveLoc[31](r#1#16: vector<bool>)
+	90: LdConst[4](vector<bool>: 0100)
+	91: Eq
+	92: BrFalse(94)
+B13:
+	93: Branch(96)
+B14:
+	94: LdU64(13906834844358279167)
+	95: Abort
+B15:
+	96: CopyLoc[18](fixed_leaf#1#0: u256)
+	97: MutBorrowLoc[30](mmr#1#0: vector<u256>)
+	98: Call add_to_mmr(u256, &mut vector<u256>)
+	99: ImmBorrowLoc[30](mmr#1#0: vector<u256>)
+	100: StLoc[42](v#1#31: &vector<u256>)
+	101: LdConst[3](vector<bool>: 00)
+	102: StLoc[32](r#1#31: vector<bool>)
+	103: MoveLoc[42](v#1#31: &vector<u256>)
+	104: StLoc[43](v#1#34: &vector<u256>)
+	105: CopyLoc[43](v#1#34: &vector<u256>)
+	106: VecLen(6)
+	107: StLoc[1]($stop#0#37: u64)
+	108: LdU64(0)
+	109: StLoc[23](i#1#40: u64)
+	110: MoveLoc[1]($stop#0#37: u64)
+	111: StLoc[37](stop#1#40: u64)
+B16:
+	112: CopyLoc[23](i#1#40: u64)
+	113: CopyLoc[37](stop#1#40: u64)
+	114: Lt
+	115: BrFalse(137)
+B17:
+	116: CopyLoc[23](i#1#40: u64)
+	117: StLoc[24](i#1#43: u64)
+	118: CopyLoc[43](v#1#34: &vector<u256>)
+	119: MoveLoc[24](i#1#43: u64)
+	120: VecImmBorrow(6)
+	121: StLoc[15](e#1#44: &u256)
+	122: MutBorrowLoc[32](r#1#31: vector<bool>)
+	123: StLoc[13](%#9: &mut vector<bool>)
+	124: MoveLoc[15](e#1#44: &u256)
+	125: ReadRef
+	126: LdU256(0)
+	127: Eq
+	128: StLoc[12](%#8: bool)
+	129: MoveLoc[13](%#9: &mut vector<bool>)
+	130: MoveLoc[12](%#8: bool)
+	131: VecPushBack(18)
+	132: MoveLoc[23](i#1#40: u64)
+	133: LdU64(1)
+	134: Add
+	135: StLoc[23](i#1#40: u64)
+	136: Branch(112)
+B18:
+	137: MoveLoc[43](v#1#34: &vector<u256>)
+	138: Pop
+	139: MoveLoc[32](r#1#31: vector<bool>)
+	140: LdConst[5](vector<bool>: 020100)
+	141: Eq
+	142: BrFalse(144)
+B19:
+	143: Branch(146)
+B20:
+	144: LdU64(13906834865833115647)
+	145: Abort
+B21:
+	146: CopyLoc[18](fixed_leaf#1#0: u256)
+	147: MutBorrowLoc[30](mmr#1#0: vector<u256>)
+	148: Call add_to_mmr(u256, &mut vector<u256>)
+	149: ImmBorrowLoc[30](mmr#1#0: vector<u256>)
+	150: StLoc[45](v#1#46: &vector<u256>)
+	151: LdConst[3](vector<bool>: 00)
+	152: StLoc[33](r#1#46: vector<bool>)
+	153: MoveLoc[45](v#1#46: &vector<u256>)
+	154: StLoc[46](v#1#49: &vector<u256>)
+	155: CopyLoc[46](v#1#49: &vector<u256>)
+	156: VecLen(6)
+	157: StLoc[2]($stop#0#52: u64)
+	158: LdU64(0)
+	159: StLoc[25](i#1#55: u64)
+	160: MoveLoc[2]($stop#0#52: u64)
+	161: StLoc[38](stop#1#55: u64)
+B22:
+	162: CopyLoc[25](i#1#55: u64)
+	163: CopyLoc[38](stop#1#55: u64)
+	164: Lt
+	165: BrFalse(187)
+B23:
+	166: CopyLoc[25](i#1#55: u64)
+	167: StLoc[26](i#1#58: u64)
+	168: CopyLoc[46](v#1#49: &vector<u256>)
+	169: MoveLoc[26](i#1#58: u64)
+	170: VecImmBorrow(6)
+	171: StLoc[16](e#1#59: &u256)
+	172: MutBorrowLoc[33](r#1#46: vector<bool>)
+	173: StLoc[6](%#12: &mut vector<bool>)
+	174: MoveLoc[16](e#1#59: &u256)
+	175: ReadRef
+	176: LdU256(0)
+	177: Eq
+	178: StLoc[5](%#11: bool)
+	179: MoveLoc[6](%#12: &mut vector<bool>)
+	180: MoveLoc[5](%#11: bool)
+	181: VecPushBack(18)
+	182: MoveLoc[25](i#1#55: u64)
+	183: LdU64(1)
+	184: Add
+	185: StLoc[25](i#1#55: u64)
+	186: Branch(162)
+B24:
+	187: MoveLoc[46](v#1#49: &vector<u256>)
+	188: Pop
+	189: MoveLoc[33](r#1#46: vector<bool>)
+	190: LdConst[6](vector<bool>: 020000)
+	191: Eq
+	192: BrFalse(194)
+B25:
+	193: Branch(196)
+B26:
+	194: LdU64(13906834887307952127)
+	195: Abort
+B27:
+	196: CopyLoc[18](fixed_leaf#1#0: u256)
+	197: MutBorrowLoc[30](mmr#1#0: vector<u256>)
+	198: Call add_to_mmr(u256, &mut vector<u256>)
+	199: ImmBorrowLoc[30](mmr#1#0: vector<u256>)
+	200: StLoc[47](v#1#61: &vector<u256>)
+	201: LdConst[3](vector<bool>: 00)
+	202: StLoc[34](r#1#61: vector<bool>)
+	203: MoveLoc[47](v#1#61: &vector<u256>)
+	204: StLoc[48](v#1#64: &vector<u256>)
+	205: CopyLoc[48](v#1#64: &vector<u256>)
+	206: VecLen(6)
+	207: StLoc[3]($stop#0#67: u64)
+	208: LdU64(0)
+	209: StLoc[27](i#1#70: u64)
+	210: MoveLoc[3]($stop#0#67: u64)
+	211: StLoc[39](stop#1#70: u64)
+B28:
+	212: CopyLoc[27](i#1#70: u64)
+	213: CopyLoc[39](stop#1#70: u64)
+	214: Lt
+	215: BrFalse(237)
+B29:
+	216: CopyLoc[27](i#1#70: u64)
+	217: StLoc[28](i#1#73: u64)
+	218: CopyLoc[48](v#1#64: &vector<u256>)
+	219: MoveLoc[28](i#1#73: u64)
+	220: VecImmBorrow(6)
+	221: StLoc[17](e#1#74: &u256)
+	222: MutBorrowLoc[34](r#1#61: vector<bool>)
+	223: StLoc[8](%#15: &mut vector<bool>)
+	224: MoveLoc[17](e#1#74: &u256)
+	225: ReadRef
+	226: LdU256(0)
+	227: Eq
+	228: StLoc[7](%#14: bool)
+	229: MoveLoc[8](%#15: &mut vector<bool>)
+	230: MoveLoc[7](%#14: bool)
+	231: VecPushBack(18)
+	232: MoveLoc[27](i#1#70: u64)
+	233: LdU64(1)
+	234: Add
+	235: StLoc[27](i#1#70: u64)
+	236: Branch(212)
+B30:
+	237: MoveLoc[48](v#1#64: &vector<u256>)
+	238: Pop
+	239: MoveLoc[34](r#1#61: vector<bool>)
+	240: LdConst[7](vector<bool>: 0301..)
+	241: Eq
+	242: BrFalse(244)
+B31:
+	243: Branch(246)
+B32:
+	244: LdU64(13906834908782788607)
+	245: Abort
+B33:
+	246: MoveLoc[18](fixed_leaf#1#0: u256)
+	247: StLoc[29](leaf#1#0: u256)
+	248: CopyLoc[29](leaf#1#0: u256)
+	249: MoveLoc[29](leaf#1#0: u256)
+	250: Call hash_two_to_one_u256(u256, u256): u256
+	251: StLoc[49](x#6#0: u256)
+	252: CopyLoc[49](x#6#0: u256)
+	253: MoveLoc[49](x#6#0: u256)
+	254: Call hash_two_to_one_u256(u256, u256): u256
+	255: StLoc[50](y#1#0: u256)
+	256: ImmBorrowLoc[30](mmr#1#0: vector<u256>)
+	257: LdU64(2)
+	258: VecImmBorrow(6)
+	259: ReadRef
+	260: MoveLoc[50](y#1#0: u256)
+	261: Eq
+	262: BrFalse(264)
+B34:
+	263: Branch(266)
+B35:
+	264: LdU64(13906834938847559679)
+	265: Abort
+B36:
+	266: Ret
+}
+
+test_mmr_with_different_values() {
+L0:	mmr#1#0: vector<u256>
+L1:	val1#1#0: u256
+L2:	val2#1#0: u256
+L3:	val3#1#0: u256
+L4:	val4#1#0: u256
+B0:
+	0: VecPack(6, 0)
+	1: StLoc[0](mmr#1#0: vector<u256>)
+	2: LdU256(1)
+	3: StLoc[1](val1#1#0: u256)
+	4: LdU256(2)
+	5: StLoc[2](val2#1#0: u256)
+	6: LdU256(3)
+	7: StLoc[3](val3#1#0: u256)
+	8: LdU256(4)
+	9: StLoc[4](val4#1#0: u256)
+	10: CopyLoc[1](val1#1#0: u256)
+	11: CopyLoc[2](val2#1#0: u256)
+	12: Neq
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834998977101823)
+	16: Abort
+B3:
+	17: CopyLoc[2](val2#1#0: u256)
+	18: CopyLoc[3](val3#1#0: u256)
+	19: Neq
+	20: BrFalse(22)
+B4:
+	21: Branch(24)
+B5:
+	22: LdU64(13906835003272069119)
+	23: Abort
+B6:
+	24: CopyLoc[3](val3#1#0: u256)
+	25: CopyLoc[4](val4#1#0: u256)
+	26: Neq
+	27: BrFalse(29)
+B7:
+	28: Branch(31)
+B8:
+	29: LdU64(13906835007567036415)
+	30: Abort
+B9:
+	31: MoveLoc[1](val1#1#0: u256)
+	32: MutBorrowLoc[0](mmr#1#0: vector<u256>)
+	33: Call add_to_mmr(u256, &mut vector<u256>)
+	34: MoveLoc[2](val2#1#0: u256)
+	35: MutBorrowLoc[0](mmr#1#0: vector<u256>)
+	36: Call add_to_mmr(u256, &mut vector<u256>)
+	37: ImmBorrowLoc[0](mmr#1#0: vector<u256>)
+	38: LdU64(0)
+	39: VecImmBorrow(6)
+	40: ReadRef
+	41: LdU256(0)
+	42: Eq
+	43: BrFalse(45)
+B10:
+	44: Branch(47)
+B11:
+	45: LdU64(13906835033336840191)
+	46: Abort
+B12:
+	47: ImmBorrowLoc[0](mmr#1#0: vector<u256>)
+	48: LdU64(1)
+	49: VecImmBorrow(6)
+	50: ReadRef
+	51: LdU256(0)
+	52: Neq
+	53: BrFalse(55)
+B13:
+	54: Branch(57)
+B14:
+	55: LdU64(13906835037631807487)
+	56: Abort
+B15:
+	57: MoveLoc[3](val3#1#0: u256)
+	58: MutBorrowLoc[0](mmr#1#0: vector<u256>)
+	59: Call add_to_mmr(u256, &mut vector<u256>)
+	60: ImmBorrowLoc[0](mmr#1#0: vector<u256>)
+	61: LdU64(0)
+	62: VecImmBorrow(6)
+	63: ReadRef
+	64: LdU256(0)
+	65: Neq
+	66: BrFalse(68)
+B16:
+	67: Branch(70)
+B17:
+	68: LdU64(13906835054811676671)
+	69: Abort
+B18:
+	70: ImmBorrowLoc[0](mmr#1#0: vector<u256>)
+	71: LdU64(1)
+	72: VecImmBorrow(6)
+	73: ReadRef
+	74: LdU256(0)
+	75: Neq
+	76: BrFalse(78)
+B19:
+	77: Branch(80)
+B20:
+	78: LdU64(13906835059106643967)
+	79: Abort
+B21:
+	80: MoveLoc[4](val4#1#0: u256)
+	81: MutBorrowLoc[0](mmr#1#0: vector<u256>)
+	82: Call add_to_mmr(u256, &mut vector<u256>)
+	83: ImmBorrowLoc[0](mmr#1#0: vector<u256>)
+	84: LdU64(0)
+	85: VecImmBorrow(6)
+	86: ReadRef
+	87: LdU256(0)
+	88: Eq
+	89: BrFalse(91)
+B22:
+	90: Branch(93)
+B23:
+	91: LdU64(13906835076286513151)
+	92: Abort
+B24:
+	93: ImmBorrowLoc[0](mmr#1#0: vector<u256>)
+	94: LdU64(1)
+	95: VecImmBorrow(6)
+	96: ReadRef
+	97: LdU256(0)
+	98: Eq
+	99: BrFalse(101)
+B25:
+	100: Branch(103)
+B26:
+	101: LdU64(13906835080581480447)
+	102: Abort
+B27:
+	103: ImmBorrowLoc[0](mmr#1#0: vector<u256>)
+	104: LdU64(2)
+	105: VecImmBorrow(6)
+	106: ReadRef
+	107: LdU256(0)
+	108: Neq
+	109: BrFalse(111)
+B28:
+	110: Branch(113)
+B29:
+	111: LdU64(13906835084876447743)
+	112: Abort
+B30:
+	113: Ret
+}
+
+test_mmr_digest_compat_with_rust() {
+L0:	i#1#0: u256
+L1:	mmr#1#0: vector<u256>
+B0:
+	0: VecPack(6, 0)
+	1: StLoc[1](mmr#1#0: vector<u256>)
+	2: LdU256(0)
+	3: StLoc[0](i#1#0: u256)
+B1:
+	4: CopyLoc[0](i#1#0: u256)
+	5: LdU256(8)
+	6: Lt
+	7: BrFalse(19)
+B2:
+	8: Branch(9)
+B3:
+	9: LdU256(50)
+	10: CopyLoc[0](i#1#0: u256)
+	11: Add
+	12: MutBorrowLoc[1](mmr#1#0: vector<u256>)
+	13: Call add_to_mmr(u256, &mut vector<u256>)
+	14: MoveLoc[0](i#1#0: u256)
+	15: LdU256(1)
+	16: Add
+	17: StLoc[0](i#1#0: u256)
+	18: Branch(4)
+B4:
+	19: ImmBorrowLoc[1](mmr#1#0: vector<u256>)
+	20: VecLen(6)
+	21: LdU64(4)
+	22: Eq
+	23: BrFalse(25)
+B5:
+	24: Branch(27)
+B6:
+	25: LdU64(13906835149300957183)
+	26: Abort
+B7:
+	27: ImmBorrowLoc[1](mmr#1#0: vector<u256>)
+	28: LdU64(0)
+	29: VecImmBorrow(6)
+	30: ReadRef
+	31: LdU256(0)
+	32: Eq
+	33: BrFalse(35)
+B8:
+	34: Branch(37)
+B9:
+	35: LdU64(13906835153595924479)
+	36: Abort
+B10:
+	37: ImmBorrowLoc[1](mmr#1#0: vector<u256>)
+	38: LdU64(1)
+	39: VecImmBorrow(6)
+	40: ReadRef
+	41: LdU256(0)
+	42: Eq
+	43: BrFalse(45)
+B11:
+	44: Branch(47)
+B12:
+	45: LdU64(13906835157890891775)
+	46: Abort
+B13:
+	47: ImmBorrowLoc[1](mmr#1#0: vector<u256>)
+	48: LdU64(2)
+	49: VecImmBorrow(6)
+	50: ReadRef
+	51: LdU256(0)
+	52: Eq
+	53: BrFalse(55)
+B14:
+	54: Branch(57)
+B15:
+	55: LdU64(13906835162185859071)
+	56: Abort
+B16:
+	57: ImmBorrowLoc[1](mmr#1#0: vector<u256>)
+	58: LdU64(3)
+	59: VecImmBorrow(6)
+	60: ReadRef
+	61: LdU256(69725770072863840208899320192042305265295220676851872214494910464384102654361)
+	62: Eq
+	63: BrFalse(65)
+B17:
+	64: Branch(67)
+B18:
+	65: LdU64(13906835166480826367)
+	66: Abort
+B19:
+	67: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	3 => vector<bool>: 00
+	4 => vector<bool>: 0100
+	5 => vector<bool>: 020100
+	6 => vector<bool>: 020000
+	7 => vector<bool>: 03010100
+]
+}

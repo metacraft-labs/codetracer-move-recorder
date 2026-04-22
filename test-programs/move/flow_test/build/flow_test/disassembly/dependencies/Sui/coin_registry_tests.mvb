@@ -1,0 +1,3168 @@
+// Move bytecode v6
+module 2.coin_registry_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::ascii;
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::balance;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin_registry;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::url;
+
+struct COIN_REGISTRY_TESTS has drop {
+	dummy_field: bool
+}
+
+struct TestDynamic has key {
+	id: UID
+}
+
+struct MetadataBuilder has drop {
+	decimals: u8,
+	symbol: String,
+	name: String,
+	description: String,
+	icon_url: String
+}
+
+default_scenario() {
+L0:	%#1: TxContext
+L1:	%#10: bool
+L2:	%#12: ID
+L3:	%#13: &ID
+L4:	%#14: Option<u64>
+L5:	%#15: String
+L6:	%#16: String
+L7:	%#17: String
+L8:	%#18: String
+L9:	%#19: String
+L10:	%#2: Option<ID>
+L11:	%#20: String
+L12:	%#21: String
+L13:	%#22: String
+L14:	%#23: String
+L15:	%#24: String
+L16:	%#4: bool
+L17:	%#6: ID
+L18:	%#7: &ID
+L19:	%#8: Option<ID>
+L20:	ctx#1#0: &mut TxContext
+L21:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L22:	metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L23:	o#1#1: &Option<ID>
+L24:	o#1#3: &Option<ID>
+L25:	t1#1#11: String
+L26:	t1#1#14: &String
+L27:	t1#1#17: String
+L28:	t1#1#20: &String
+L29:	t1#1#23: String
+L30:	t1#1#26: &String
+L31:	t1#1#29: String
+L32:	t1#1#32: &String
+L33:	t1#1#5: u8
+L34:	t1#1#8: &u8
+L35:	t2#1#11: String
+L36:	t2#1#14: &String
+L37:	t2#1#17: String
+L38:	t2#1#20: &String
+L39:	t2#1#23: String
+L40:	t2#1#26: &String
+L41:	t2#1#29: String
+L42:	t2#1#32: &String
+L43:	t2#1#5: u8
+L44:	t2#1#8: &u8
+L45:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[20](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[20](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[45](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: MoveLoc[20](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[22](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	15: Call coin_registry::treasury_cap_id<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<ID>
+	16: StLoc[10](%#2: Option<ID>)
+	17: ImmBorrowLoc[10](%#2: Option<ID>)
+	18: StLoc[23](o#1#1: &Option<ID>)
+	19: CopyLoc[23](o#1#1: &Option<ID>)
+	20: Call option::is_some<ID>(&Option<ID>): bool
+	21: BrFalse(33)
+B1:
+	22: MoveLoc[23](o#1#1: &Option<ID>)
+	23: Call option::borrow<ID>(&Option<ID>): &ID
+	24: StLoc[18](%#7: &ID)
+	25: ImmBorrowLoc[45](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	26: Call object::id<TreasuryCap<COIN_REGISTRY_TESTS>>(&TreasuryCap<COIN_REGISTRY_TESTS>): ID
+	27: StLoc[17](%#6: ID)
+	28: MoveLoc[18](%#7: &ID)
+	29: ImmBorrowLoc[17](%#6: ID)
+	30: Eq
+	31: StLoc[16](%#4: bool)
+	32: Branch(37)
+B2:
+	33: MoveLoc[23](o#1#1: &Option<ID>)
+	34: Pop
+	35: LdFalse
+	36: StLoc[16](%#4: bool)
+B3:
+	37: MoveLoc[16](%#4: bool)
+	38: BrFalse(40)
+B4:
+	39: Branch(42)
+B5:
+	40: LdU64(13906834294602465279)
+	41: Abort
+B6:
+	42: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	43: Call coin_registry::metadata_cap_id<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<ID>
+	44: StLoc[19](%#8: Option<ID>)
+	45: ImmBorrowLoc[19](%#8: Option<ID>)
+	46: StLoc[24](o#1#3: &Option<ID>)
+	47: CopyLoc[24](o#1#3: &Option<ID>)
+	48: Call option::is_some<ID>(&Option<ID>): bool
+	49: BrFalse(61)
+B7:
+	50: MoveLoc[24](o#1#3: &Option<ID>)
+	51: Call option::borrow<ID>(&Option<ID>): &ID
+	52: StLoc[3](%#13: &ID)
+	53: ImmBorrowLoc[22](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	54: Call object::id<MetadataCap<COIN_REGISTRY_TESTS>>(&MetadataCap<COIN_REGISTRY_TESTS>): ID
+	55: StLoc[2](%#12: ID)
+	56: MoveLoc[3](%#13: &ID)
+	57: ImmBorrowLoc[2](%#12: ID)
+	58: Eq
+	59: StLoc[1](%#10: bool)
+	60: Branch(65)
+B8:
+	61: MoveLoc[24](o#1#3: &Option<ID>)
+	62: Pop
+	63: LdFalse
+	64: StLoc[1](%#10: bool)
+B9:
+	65: MoveLoc[1](%#10: bool)
+	66: BrFalse(68)
+B10:
+	67: Branch(70)
+B11:
+	68: LdU64(13906834298897432575)
+	69: Abort
+B12:
+	70: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	71: Call coin_registry::is_metadata_cap_claimed<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	72: BrFalse(74)
+B13:
+	73: Branch(76)
+B14:
+	74: LdU64(13906834303192399871)
+	75: Abort
+B15:
+	76: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	77: Call coin_registry::total_supply<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<u64>
+	78: StLoc[4](%#14: Option<u64>)
+	79: ImmBorrowLoc[4](%#14: Option<u64>)
+	80: Call option::is_none<u64>(&Option<u64>): bool
+	81: BrFalse(83)
+B16:
+	82: Branch(85)
+B17:
+	83: LdU64(13906834307487367167)
+	84: Abort
+B18:
+	85: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	86: Call coin_registry::decimals<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): u8
+	87: StLoc[33](t1#1#5: u8)
+	88: LdConst[0](u8: 6)
+	89: StLoc[43](t2#1#5: u8)
+	90: ImmBorrowLoc[33](t1#1#5: u8)
+	91: StLoc[34](t1#1#8: &u8)
+	92: ImmBorrowLoc[43](t2#1#5: u8)
+	93: StLoc[44](t2#1#8: &u8)
+	94: CopyLoc[34](t1#1#8: &u8)
+	95: CopyLoc[44](t2#1#8: &u8)
+	96: Eq
+	97: Not
+	98: BrFalse(115)
+B19:
+	99: LdConst[4](vector<u8>: "Ass..)
+	100: Call string::utf8(vector<u8>): String
+	101: StLoc[5](%#15: String)
+	102: ImmBorrowLoc[5](%#15: String)
+	103: Call debug::print<String>(&String)
+	104: MoveLoc[34](t1#1#8: &u8)
+	105: Call debug::print<u8>(&u8)
+	106: LdConst[5](vector<u8>: "!="..)
+	107: Call string::utf8(vector<u8>): String
+	108: StLoc[6](%#16: String)
+	109: ImmBorrowLoc[6](%#16: String)
+	110: Call debug::print<String>(&String)
+	111: MoveLoc[44](t2#1#8: &u8)
+	112: Call debug::print<u8>(&u8)
+	113: LdU64(13906834320372269055)
+	114: Abort
+B20:
+	115: MoveLoc[44](t2#1#8: &u8)
+	116: Pop
+	117: MoveLoc[34](t1#1#8: &u8)
+	118: Pop
+	119: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	120: Call coin_registry::symbol<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	121: StLoc[25](t1#1#11: String)
+	122: LdConst[1](vector<u8>: "TES..)
+	123: Call string::utf8(vector<u8>): String
+	124: StLoc[35](t2#1#11: String)
+	125: ImmBorrowLoc[25](t1#1#11: String)
+	126: StLoc[26](t1#1#14: &String)
+	127: ImmBorrowLoc[35](t2#1#11: String)
+	128: StLoc[36](t2#1#14: &String)
+	129: CopyLoc[26](t1#1#14: &String)
+	130: CopyLoc[36](t2#1#14: &String)
+	131: Eq
+	132: Not
+	133: BrFalse(150)
+B21:
+	134: LdConst[4](vector<u8>: "Ass..)
+	135: Call string::utf8(vector<u8>): String
+	136: StLoc[7](%#17: String)
+	137: ImmBorrowLoc[7](%#17: String)
+	138: Call debug::print<String>(&String)
+	139: MoveLoc[26](t1#1#14: &String)
+	140: Call debug::print<String>(&String)
+	141: LdConst[5](vector<u8>: "!="..)
+	142: Call string::utf8(vector<u8>): String
+	143: StLoc[8](%#18: String)
+	144: ImmBorrowLoc[8](%#18: String)
+	145: Call debug::print<String>(&String)
+	146: MoveLoc[36](t2#1#14: &String)
+	147: Call debug::print<String>(&String)
+	148: LdU64(13906834324667236351)
+	149: Abort
+B22:
+	150: MoveLoc[36](t2#1#14: &String)
+	151: Pop
+	152: MoveLoc[26](t1#1#14: &String)
+	153: Pop
+	154: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	155: Call coin_registry::name<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	156: StLoc[27](t1#1#17: String)
+	157: LdConst[2](vector<u8>: "Tes..)
+	158: Call string::utf8(vector<u8>): String
+	159: StLoc[37](t2#1#17: String)
+	160: ImmBorrowLoc[27](t1#1#17: String)
+	161: StLoc[28](t1#1#20: &String)
+	162: ImmBorrowLoc[37](t2#1#17: String)
+	163: StLoc[38](t2#1#20: &String)
+	164: CopyLoc[28](t1#1#20: &String)
+	165: CopyLoc[38](t2#1#20: &String)
+	166: Eq
+	167: Not
+	168: BrFalse(185)
+B23:
+	169: LdConst[4](vector<u8>: "Ass..)
+	170: Call string::utf8(vector<u8>): String
+	171: StLoc[9](%#19: String)
+	172: ImmBorrowLoc[9](%#19: String)
+	173: Call debug::print<String>(&String)
+	174: MoveLoc[28](t1#1#20: &String)
+	175: Call debug::print<String>(&String)
+	176: LdConst[5](vector<u8>: "!="..)
+	177: Call string::utf8(vector<u8>): String
+	178: StLoc[11](%#20: String)
+	179: ImmBorrowLoc[11](%#20: String)
+	180: Call debug::print<String>(&String)
+	181: MoveLoc[38](t2#1#20: &String)
+	182: Call debug::print<String>(&String)
+	183: LdU64(13906834328962203647)
+	184: Abort
+B24:
+	185: MoveLoc[38](t2#1#20: &String)
+	186: Pop
+	187: MoveLoc[28](t1#1#20: &String)
+	188: Pop
+	189: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	190: Call coin_registry::description<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	191: StLoc[29](t1#1#23: String)
+	192: LdConst[2](vector<u8>: "Tes..)
+	193: Call string::utf8(vector<u8>): String
+	194: StLoc[39](t2#1#23: String)
+	195: ImmBorrowLoc[29](t1#1#23: String)
+	196: StLoc[30](t1#1#26: &String)
+	197: ImmBorrowLoc[39](t2#1#23: String)
+	198: StLoc[40](t2#1#26: &String)
+	199: CopyLoc[30](t1#1#26: &String)
+	200: CopyLoc[40](t2#1#26: &String)
+	201: Eq
+	202: Not
+	203: BrFalse(220)
+B25:
+	204: LdConst[4](vector<u8>: "Ass..)
+	205: Call string::utf8(vector<u8>): String
+	206: StLoc[12](%#21: String)
+	207: ImmBorrowLoc[12](%#21: String)
+	208: Call debug::print<String>(&String)
+	209: MoveLoc[30](t1#1#26: &String)
+	210: Call debug::print<String>(&String)
+	211: LdConst[5](vector<u8>: "!="..)
+	212: Call string::utf8(vector<u8>): String
+	213: StLoc[13](%#22: String)
+	214: ImmBorrowLoc[13](%#22: String)
+	215: Call debug::print<String>(&String)
+	216: MoveLoc[40](t2#1#26: &String)
+	217: Call debug::print<String>(&String)
+	218: LdU64(13906834333257170943)
+	219: Abort
+B26:
+	220: MoveLoc[40](t2#1#26: &String)
+	221: Pop
+	222: MoveLoc[30](t1#1#26: &String)
+	223: Pop
+	224: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	225: Call coin_registry::icon_url<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	226: StLoc[31](t1#1#29: String)
+	227: LdConst[3](vector<u8>: "htt..)
+	228: Call string::utf8(vector<u8>): String
+	229: StLoc[41](t2#1#29: String)
+	230: ImmBorrowLoc[31](t1#1#29: String)
+	231: StLoc[32](t1#1#32: &String)
+	232: ImmBorrowLoc[41](t2#1#29: String)
+	233: StLoc[42](t2#1#32: &String)
+	234: CopyLoc[32](t1#1#32: &String)
+	235: CopyLoc[42](t2#1#32: &String)
+	236: Eq
+	237: Not
+	238: BrFalse(255)
+B27:
+	239: LdConst[4](vector<u8>: "Ass..)
+	240: Call string::utf8(vector<u8>): String
+	241: StLoc[14](%#23: String)
+	242: ImmBorrowLoc[14](%#23: String)
+	243: Call debug::print<String>(&String)
+	244: MoveLoc[32](t1#1#32: &String)
+	245: Call debug::print<String>(&String)
+	246: LdConst[5](vector<u8>: "!="..)
+	247: Call string::utf8(vector<u8>): String
+	248: StLoc[15](%#24: String)
+	249: ImmBorrowLoc[15](%#24: String)
+	250: Call debug::print<String>(&String)
+	251: MoveLoc[42](t2#1#32: &String)
+	252: Call debug::print<String>(&String)
+	253: LdU64(13906834337552138239)
+	254: Abort
+B28:
+	255: MoveLoc[42](t2#1#32: &String)
+	256: Pop
+	257: MoveLoc[32](t1#1#32: &String)
+	258: Pop
+	259: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	260: Call coin_registry::is_supply_fixed<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	261: Not
+	262: BrFalse(264)
+B29:
+	263: Branch(266)
+B30:
+	264: LdU64(13906834350437040127)
+	265: Abort
+B31:
+	266: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	267: Call coin_registry::is_supply_burn_only<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	268: Not
+	269: BrFalse(271)
+B32:
+	270: Branch(273)
+B33:
+	271: LdU64(13906834354732007423)
+	272: Abort
+B34:
+	273: ImmBorrowLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	274: Call coin_registry::is_regulated<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	275: Not
+	276: BrFalse(278)
+B35:
+	277: Branch(280)
+B36:
+	278: LdU64(13906834359026974719)
+	279: Abort
+B37:
+	280: MoveLoc[22](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	281: Call unit_test::destroy<MetadataCap<COIN_REGISTRY_TESTS>>(MetadataCap<COIN_REGISTRY_TESTS>)
+	282: MoveLoc[21](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	283: Call unit_test::destroy<Currency<COIN_REGISTRY_TESTS>>(Currency<COIN_REGISTRY_TESTS>)
+	284: MoveLoc[45](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	285: Call unit_test::destroy<TreasuryCap<COIN_REGISTRY_TESTS>>(TreasuryCap<COIN_REGISTRY_TESTS>)
+	286: Ret
+}
+
+regulated_default() {
+L0:	%#1: TxContext
+L1:	%#2: Option<ID>
+L2:	%#4: bool
+L3:	%#6: ID
+L4:	%#7: &ID
+L5:	builder#1#0: CurrencyInitializer<COIN_REGISTRY_TESTS>
+L6:	ctx#1#0: &mut TxContext
+L7:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L8:	deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>
+L9:	metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L10:	o#1#1: &Option<ID>
+L11:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[6](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[6](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[11](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: StLoc[5](builder#1#0: CurrencyInitializer<COIN_REGISTRY_TESTS>)
+	11: MutBorrowLoc[5](builder#1#0: CurrencyInitializer<COIN_REGISTRY_TESTS>)
+	12: LdTrue
+	13: CopyLoc[6](ctx#1#0: &mut TxContext)
+	14: Call coin_registry::make_regulated<COIN_REGISTRY_TESTS>(&mut CurrencyInitializer<COIN_REGISTRY_TESTS>, bool, &mut TxContext): DenyCapV2<COIN_REGISTRY_TESTS>
+	15: StLoc[8](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	16: MoveLoc[5](builder#1#0: CurrencyInitializer<COIN_REGISTRY_TESTS>)
+	17: MoveLoc[6](ctx#1#0: &mut TxContext)
+	18: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	19: StLoc[9](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	20: StLoc[7](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	21: ImmBorrowLoc[7](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	22: Call coin_registry::is_regulated<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	23: BrFalse(25)
+B1:
+	24: Branch(27)
+B2:
+	25: LdU64(13906834427746451455)
+	26: Abort
+B3:
+	27: ImmBorrowLoc[7](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	28: Call coin_registry::deny_cap_id<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<ID>
+	29: StLoc[1](%#2: Option<ID>)
+	30: ImmBorrowLoc[1](%#2: Option<ID>)
+	31: StLoc[10](o#1#1: &Option<ID>)
+	32: CopyLoc[10](o#1#1: &Option<ID>)
+	33: Call option::is_some<ID>(&Option<ID>): bool
+	34: BrFalse(46)
+B4:
+	35: MoveLoc[10](o#1#1: &Option<ID>)
+	36: Call option::borrow<ID>(&Option<ID>): &ID
+	37: StLoc[4](%#7: &ID)
+	38: ImmBorrowLoc[8](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	39: Call object::id<DenyCapV2<COIN_REGISTRY_TESTS>>(&DenyCapV2<COIN_REGISTRY_TESTS>): ID
+	40: StLoc[3](%#6: ID)
+	41: MoveLoc[4](%#7: &ID)
+	42: ImmBorrowLoc[3](%#6: ID)
+	43: Eq
+	44: StLoc[2](%#4: bool)
+	45: Branch(50)
+B5:
+	46: MoveLoc[10](o#1#1: &Option<ID>)
+	47: Pop
+	48: LdFalse
+	49: StLoc[2](%#4: bool)
+B6:
+	50: MoveLoc[2](%#4: bool)
+	51: BrFalse(53)
+B7:
+	52: Branch(55)
+B8:
+	53: LdU64(13906834432041418751)
+	54: Abort
+B9:
+	55: MoveLoc[9](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	56: Call unit_test::destroy<MetadataCap<COIN_REGISTRY_TESTS>>(MetadataCap<COIN_REGISTRY_TESTS>)
+	57: MoveLoc[8](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	58: Call unit_test::destroy<DenyCapV2<COIN_REGISTRY_TESTS>>(DenyCapV2<COIN_REGISTRY_TESTS>)
+	59: MoveLoc[7](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	60: Call unit_test::destroy<Currency<COIN_REGISTRY_TESTS>>(Currency<COIN_REGISTRY_TESTS>)
+	61: MoveLoc[11](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	62: Call unit_test::destroy<TreasuryCap<COIN_REGISTRY_TESTS>>(TreasuryCap<COIN_REGISTRY_TESTS>)
+	63: Ret
+}
+
+regulated_twice_fail() {
+L0:	%#1: TxContext
+L1:	_deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>
+L2:	_deny_cap2#1#0: DenyCapV2<COIN_REGISTRY_TESTS>
+L3:	_t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+L4:	builder#1#0: CurrencyInitializer<COIN_REGISTRY_TESTS>
+L5:	ctx#1#0: &mut TxContext
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[5](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[5](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[3](_t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: StLoc[4](builder#1#0: CurrencyInitializer<COIN_REGISTRY_TESTS>)
+	11: MutBorrowLoc[4](builder#1#0: CurrencyInitializer<COIN_REGISTRY_TESTS>)
+	12: LdTrue
+	13: CopyLoc[5](ctx#1#0: &mut TxContext)
+	14: Call coin_registry::make_regulated<COIN_REGISTRY_TESTS>(&mut CurrencyInitializer<COIN_REGISTRY_TESTS>, bool, &mut TxContext): DenyCapV2<COIN_REGISTRY_TESTS>
+	15: StLoc[1](_deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	16: MutBorrowLoc[4](builder#1#0: CurrencyInitializer<COIN_REGISTRY_TESTS>)
+	17: LdTrue
+	18: MoveLoc[5](ctx#1#0: &mut TxContext)
+	19: Call coin_registry::make_regulated<COIN_REGISTRY_TESTS>(&mut CurrencyInitializer<COIN_REGISTRY_TESTS>, bool, &mut TxContext): DenyCapV2<COIN_REGISTRY_TESTS>
+	20: StLoc[2](_deny_cap2#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	21: LdU64(13906834496465928191)
+	22: Abort
+}
+
+update_metadata() {
+L0:	%#1: TxContext
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	%#5: String
+L5:	%#6: String
+L6:	%#7: String
+L7:	ctx#1#0: &mut TxContext
+L8:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L9:	metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L10:	t1#1#1: String
+L11:	t1#1#10: &String
+L12:	t1#1#13: String
+L13:	t1#1#16: &String
+L14:	t1#1#4: &String
+L15:	t1#1#7: String
+L16:	t2#1#1: String
+L17:	t2#1#10: &String
+L18:	t2#1#13: String
+L19:	t2#1#16: &String
+L20:	t2#1#4: &String
+L21:	t2#1#7: String
+L22:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[7](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[7](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[22](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: MoveLoc[7](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[9](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[8](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: MutBorrowLoc[8](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	15: ImmBorrowLoc[9](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	16: LdConst[6](vector<u8>: "new..)
+	17: Call string::utf8(vector<u8>): String
+	18: Call coin_registry::set_name<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &MetadataCap<COIN_REGISTRY_TESTS>, String)
+	19: MutBorrowLoc[8](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	20: ImmBorrowLoc[9](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	21: LdConst[7](vector<u8>: "new..)
+	22: Call string::utf8(vector<u8>): String
+	23: Call coin_registry::set_description<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &MetadataCap<COIN_REGISTRY_TESTS>, String)
+	24: MutBorrowLoc[8](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	25: ImmBorrowLoc[9](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	26: LdConst[8](vector<u8>: "new..)
+	27: Call string::utf8(vector<u8>): String
+	28: Call coin_registry::set_icon_url<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &MetadataCap<COIN_REGISTRY_TESTS>, String)
+	29: ImmBorrowLoc[8](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	30: Call coin_registry::name<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	31: StLoc[10](t1#1#1: String)
+	32: LdConst[6](vector<u8>: "new..)
+	33: Call string::utf8(vector<u8>): String
+	34: StLoc[16](t2#1#1: String)
+	35: ImmBorrowLoc[10](t1#1#1: String)
+	36: StLoc[14](t1#1#4: &String)
+	37: ImmBorrowLoc[16](t2#1#1: String)
+	38: StLoc[20](t2#1#4: &String)
+	39: CopyLoc[14](t1#1#4: &String)
+	40: CopyLoc[20](t2#1#4: &String)
+	41: Eq
+	42: Not
+	43: BrFalse(60)
+B1:
+	44: LdConst[4](vector<u8>: "Ass..)
+	45: Call string::utf8(vector<u8>): String
+	46: StLoc[1](%#2: String)
+	47: ImmBorrowLoc[1](%#2: String)
+	48: Call debug::print<String>(&String)
+	49: MoveLoc[14](t1#1#4: &String)
+	50: Call debug::print<String>(&String)
+	51: LdConst[5](vector<u8>: "!="..)
+	52: Call string::utf8(vector<u8>): String
+	53: StLoc[2](%#3: String)
+	54: ImmBorrowLoc[2](%#3: String)
+	55: Call debug::print<String>(&String)
+	56: MoveLoc[20](t2#1#4: &String)
+	57: Call debug::print<String>(&String)
+	58: LdU64(13906834565185404927)
+	59: Abort
+B2:
+	60: MoveLoc[20](t2#1#4: &String)
+	61: Pop
+	62: MoveLoc[14](t1#1#4: &String)
+	63: Pop
+	64: ImmBorrowLoc[8](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	65: Call coin_registry::description<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	66: StLoc[15](t1#1#7: String)
+	67: LdConst[7](vector<u8>: "new..)
+	68: Call string::utf8(vector<u8>): String
+	69: StLoc[21](t2#1#7: String)
+	70: ImmBorrowLoc[15](t1#1#7: String)
+	71: StLoc[11](t1#1#10: &String)
+	72: ImmBorrowLoc[21](t2#1#7: String)
+	73: StLoc[17](t2#1#10: &String)
+	74: CopyLoc[11](t1#1#10: &String)
+	75: CopyLoc[17](t2#1#10: &String)
+	76: Eq
+	77: Not
+	78: BrFalse(95)
+B3:
+	79: LdConst[4](vector<u8>: "Ass..)
+	80: Call string::utf8(vector<u8>): String
+	81: StLoc[3](%#4: String)
+	82: ImmBorrowLoc[3](%#4: String)
+	83: Call debug::print<String>(&String)
+	84: MoveLoc[11](t1#1#10: &String)
+	85: Call debug::print<String>(&String)
+	86: LdConst[5](vector<u8>: "!="..)
+	87: Call string::utf8(vector<u8>): String
+	88: StLoc[4](%#5: String)
+	89: ImmBorrowLoc[4](%#5: String)
+	90: Call debug::print<String>(&String)
+	91: MoveLoc[17](t2#1#10: &String)
+	92: Call debug::print<String>(&String)
+	93: LdU64(13906834569480372223)
+	94: Abort
+B4:
+	95: MoveLoc[17](t2#1#10: &String)
+	96: Pop
+	97: MoveLoc[11](t1#1#10: &String)
+	98: Pop
+	99: ImmBorrowLoc[8](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	100: Call coin_registry::icon_url<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	101: StLoc[12](t1#1#13: String)
+	102: LdConst[8](vector<u8>: "new..)
+	103: Call string::utf8(vector<u8>): String
+	104: StLoc[18](t2#1#13: String)
+	105: ImmBorrowLoc[12](t1#1#13: String)
+	106: StLoc[13](t1#1#16: &String)
+	107: ImmBorrowLoc[18](t2#1#13: String)
+	108: StLoc[19](t2#1#16: &String)
+	109: CopyLoc[13](t1#1#16: &String)
+	110: CopyLoc[19](t2#1#16: &String)
+	111: Eq
+	112: Not
+	113: BrFalse(130)
+B5:
+	114: LdConst[4](vector<u8>: "Ass..)
+	115: Call string::utf8(vector<u8>): String
+	116: StLoc[5](%#6: String)
+	117: ImmBorrowLoc[5](%#6: String)
+	118: Call debug::print<String>(&String)
+	119: MoveLoc[13](t1#1#16: &String)
+	120: Call debug::print<String>(&String)
+	121: LdConst[5](vector<u8>: "!="..)
+	122: Call string::utf8(vector<u8>): String
+	123: StLoc[6](%#7: String)
+	124: ImmBorrowLoc[6](%#7: String)
+	125: Call debug::print<String>(&String)
+	126: MoveLoc[19](t2#1#16: &String)
+	127: Call debug::print<String>(&String)
+	128: LdU64(13906834573775339519)
+	129: Abort
+B6:
+	130: MoveLoc[19](t2#1#16: &String)
+	131: Pop
+	132: MoveLoc[13](t1#1#16: &String)
+	133: Pop
+	134: MoveLoc[9](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	135: Call unit_test::destroy<MetadataCap<COIN_REGISTRY_TESTS>>(MetadataCap<COIN_REGISTRY_TESTS>)
+	136: MoveLoc[8](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	137: Call unit_test::destroy<Currency<COIN_REGISTRY_TESTS>>(Currency<COIN_REGISTRY_TESTS>)
+	138: MoveLoc[22](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	139: Call unit_test::destroy<TreasuryCap<COIN_REGISTRY_TESTS>>(TreasuryCap<COIN_REGISTRY_TESTS>)
+	140: Ret
+}
+
+create_symbol_non_ascii() {
+L0:	%#1: TxContext
+L1:	_builder#1#0: CurrencyInitializer<COIN_REGISTRY_TESTS>
+L2:	_t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+L3:	ctx#1#0: &mut TxContext
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdConst[9](vector<u8>: " " ..)
+	6: Call string::utf8(vector<u8>): String
+	7: Call symbol(MetadataBuilder, String): MetadataBuilder
+	8: LdFalse
+	9: Pack[0](COIN_REGISTRY_TESTS)
+	10: MoveLoc[3](ctx#1#0: &mut TxContext)
+	11: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	12: StLoc[2](_t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[1](_builder#1#0: CurrencyInitializer<COIN_REGISTRY_TESTS>)
+	14: LdU64(13906834633904881663)
+	15: Abort
+}
+
+delete_metadata_cap() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+L2:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L3:	metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L4:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[1](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[1](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[4](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: MoveLoc[1](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[3](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[2](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: MutBorrowLoc[2](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	15: MoveLoc[3](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	16: Call coin_registry::delete_metadata_cap<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, MetadataCap<COIN_REGISTRY_TESTS>)
+	17: MoveLoc[2](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	18: Call unit_test::destroy<Currency<COIN_REGISTRY_TESTS>>(Currency<COIN_REGISTRY_TESTS>)
+	19: MoveLoc[4](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	20: Call unit_test::destroy<TreasuryCap<COIN_REGISTRY_TESTS>>(TreasuryCap<COIN_REGISTRY_TESTS>)
+	21: Ret
+}
+
+fixed_supply() {
+L0:	%#1: TxContext
+L1:	%#2: Option<u64>
+L2:	%#3: Option<u64>
+L3:	%#5: bool
+L4:	amount#1#0: u64
+L5:	ctx#1#0: &mut TxContext
+L6:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L7:	metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L8:	o#1#1: &Option<u64>
+L9:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[5](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[5](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[9](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: CopyLoc[5](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[7](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: ImmBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	15: Call coin_registry::total_supply<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<u64>
+	16: StLoc[1](%#2: Option<u64>)
+	17: ImmBorrowLoc[1](%#2: Option<u64>)
+	18: Call option::is_none<u64>(&Option<u64>): bool
+	19: BrFalse(21)
+B1:
+	20: Branch(25)
+B2:
+	21: MoveLoc[5](ctx#1#0: &mut TxContext)
+	22: Pop
+	23: LdU64(13906834749868998655)
+	24: Abort
+B3:
+	25: ImmBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	26: Call coin_registry::is_supply_fixed<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	27: Not
+	28: BrFalse(30)
+B4:
+	29: Branch(34)
+B5:
+	30: MoveLoc[5](ctx#1#0: &mut TxContext)
+	31: Pop
+	32: LdU64(13906834754163965951)
+	33: Abort
+B6:
+	34: ImmBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	35: Call coin_registry::is_supply_burn_only<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	36: Not
+	37: BrFalse(39)
+B7:
+	38: Branch(43)
+B8:
+	39: MoveLoc[5](ctx#1#0: &mut TxContext)
+	40: Pop
+	41: LdU64(13906834758458933247)
+	42: Abort
+B9:
+	43: LdU64(10000)
+	44: StLoc[4](amount#1#0: u64)
+	45: MutBorrowLoc[9](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	46: CopyLoc[4](amount#1#0: u64)
+	47: MoveLoc[5](ctx#1#0: &mut TxContext)
+	48: Call coin::mint<COIN_REGISTRY_TESTS>(&mut TreasuryCap<COIN_REGISTRY_TESTS>, u64, &mut TxContext): Coin<COIN_REGISTRY_TESTS>
+	49: Call coin::burn_for_testing<COIN_REGISTRY_TESTS>(Coin<COIN_REGISTRY_TESTS>): u64
+	50: Pop
+	51: MutBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	52: MoveLoc[9](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	53: Call coin_registry::make_supply_fixed<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, TreasuryCap<COIN_REGISTRY_TESTS>)
+	54: ImmBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	55: Call coin_registry::is_supply_burn_only<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	56: Not
+	57: BrFalse(59)
+B10:
+	58: Branch(61)
+B11:
+	59: LdU64(13906834784228737023)
+	60: Abort
+B12:
+	61: ImmBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	62: Call coin_registry::total_supply<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<u64>
+	63: StLoc[2](%#3: Option<u64>)
+	64: ImmBorrowLoc[2](%#3: Option<u64>)
+	65: StLoc[8](o#1#1: &Option<u64>)
+	66: CopyLoc[8](o#1#1: &Option<u64>)
+	67: Call option::is_some<u64>(&Option<u64>): bool
+	68: BrFalse(75)
+B13:
+	69: MoveLoc[8](o#1#1: &Option<u64>)
+	70: Call option::borrow<u64>(&Option<u64>): &u64
+	71: ImmBorrowLoc[4](amount#1#0: u64)
+	72: Eq
+	73: StLoc[3](%#5: bool)
+	74: Branch(79)
+B14:
+	75: MoveLoc[8](o#1#1: &Option<u64>)
+	76: Pop
+	77: LdFalse
+	78: StLoc[3](%#5: bool)
+B15:
+	79: MoveLoc[3](%#5: bool)
+	80: BrFalse(82)
+B16:
+	81: Branch(84)
+B17:
+	82: LdU64(13906834788523704319)
+	83: Abort
+B18:
+	84: ImmBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	85: Call coin_registry::is_supply_fixed<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	86: BrFalse(88)
+B19:
+	87: Branch(90)
+B20:
+	88: LdU64(13906834792818671615)
+	89: Abort
+B21:
+	90: MoveLoc[7](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	91: Call unit_test::destroy<MetadataCap<COIN_REGISTRY_TESTS>>(MetadataCap<COIN_REGISTRY_TESTS>)
+	92: MoveLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	93: Call unit_test::destroy<Currency<COIN_REGISTRY_TESTS>>(Currency<COIN_REGISTRY_TESTS>)
+	94: Ret
+}
+
+burn_fixed_supply() {
+L0:	%#1: TxContext
+L1:	_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L2:	coins#1#0: Coin<COIN_REGISTRY_TESTS>
+L3:	ctx#1#0: &mut TxContext
+L4:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L5:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[3](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[5](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: CopyLoc[3](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[1](_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[4](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: MutBorrowLoc[5](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	15: LdU64(10000)
+	16: MoveLoc[3](ctx#1#0: &mut TxContext)
+	17: Call coin::mint<COIN_REGISTRY_TESTS>(&mut TreasuryCap<COIN_REGISTRY_TESTS>, u64, &mut TxContext): Coin<COIN_REGISTRY_TESTS>
+	18: StLoc[2](coins#1#0: Coin<COIN_REGISTRY_TESTS>)
+	19: MutBorrowLoc[4](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	20: MoveLoc[5](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	21: Call coin_registry::make_supply_fixed<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, TreasuryCap<COIN_REGISTRY_TESTS>)
+	22: MutBorrowLoc[4](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	23: MoveLoc[2](coins#1#0: Coin<COIN_REGISTRY_TESTS>)
+	24: Call coin_registry::burn<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, Coin<COIN_REGISTRY_TESTS>)
+	25: LdU64(13906834861538148351)
+	26: Abort
+}
+
+burn_unknown_supply() {
+L0:	%#1: TxContext
+L1:	_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L2:	ctx#1#0: &mut TxContext
+L3:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L4:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[2](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[4](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: CopyLoc[2](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[1](_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[3](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: MutBorrowLoc[3](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	15: MutBorrowLoc[4](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	16: LdU64(10000)
+	17: MoveLoc[2](ctx#1#0: &mut TxContext)
+	18: Call coin::mint<COIN_REGISTRY_TESTS>(&mut TreasuryCap<COIN_REGISTRY_TESTS>, u64, &mut TxContext): Coin<COIN_REGISTRY_TESTS>
+	19: Call coin_registry::burn<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, Coin<COIN_REGISTRY_TESTS>)
+	20: LdU64(13906834908782788607)
+	21: Abort
+}
+
+burn_balance_fixed_supply() {
+L0:	%#1: TxContext
+L1:	_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L2:	coins#1#0: Coin<COIN_REGISTRY_TESTS>
+L3:	ctx#1#0: &mut TxContext
+L4:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L5:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[3](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[5](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: CopyLoc[3](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[1](_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[4](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: MutBorrowLoc[5](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	15: LdU64(10000)
+	16: MoveLoc[3](ctx#1#0: &mut TxContext)
+	17: Call coin::mint<COIN_REGISTRY_TESTS>(&mut TreasuryCap<COIN_REGISTRY_TESTS>, u64, &mut TxContext): Coin<COIN_REGISTRY_TESTS>
+	18: StLoc[2](coins#1#0: Coin<COIN_REGISTRY_TESTS>)
+	19: MutBorrowLoc[4](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	20: MoveLoc[5](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	21: Call coin_registry::make_supply_fixed<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, TreasuryCap<COIN_REGISTRY_TESTS>)
+	22: MutBorrowLoc[4](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	23: MoveLoc[2](coins#1#0: Coin<COIN_REGISTRY_TESTS>)
+	24: Call coin::into_balance<COIN_REGISTRY_TESTS>(Coin<COIN_REGISTRY_TESTS>): Balance<COIN_REGISTRY_TESTS>
+	25: Call coin_registry::burn_balance<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, Balance<COIN_REGISTRY_TESTS>)
+	26: LdU64(13906834964617363455)
+	27: Abort
+}
+
+burn_balance_unknown_supply() {
+L0:	%#1: TxContext
+L1:	_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L2:	ctx#1#0: &mut TxContext
+L3:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L4:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[2](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[4](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: CopyLoc[2](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[1](_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[3](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: MutBorrowLoc[3](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	15: MutBorrowLoc[4](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	16: LdU64(10000)
+	17: MoveLoc[2](ctx#1#0: &mut TxContext)
+	18: Call coin::mint<COIN_REGISTRY_TESTS>(&mut TreasuryCap<COIN_REGISTRY_TESTS>, u64, &mut TxContext): Coin<COIN_REGISTRY_TESTS>
+	19: Call coin::into_balance<COIN_REGISTRY_TESTS>(Coin<COIN_REGISTRY_TESTS>): Balance<COIN_REGISTRY_TESTS>
+	20: Call coin_registry::burn_balance<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, Balance<COIN_REGISTRY_TESTS>)
+	21: LdU64(13906835011862003711)
+	22: Abort
+}
+
+burn_only_supply() {
+L0:	%#1: TxContext
+L1:	%#11: u64
+L2:	%#12: &u64
+L3:	%#2: Option<u64>
+L4:	%#3: Option<u64>
+L5:	%#5: bool
+L6:	%#7: Option<u64>
+L7:	%#9: bool
+L8:	amount#1#0: u64
+L9:	coins#1#0: Coin<COIN_REGISTRY_TESTS>
+L10:	ctx#1#0: &mut TxContext
+L11:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L12:	metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L13:	o#1#1: &Option<u64>
+L14:	o#1#3: &Option<u64>
+L15:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[10](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[10](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[15](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: CopyLoc[10](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[12](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: ImmBorrowLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	15: Call coin_registry::total_supply<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<u64>
+	16: StLoc[3](%#2: Option<u64>)
+	17: ImmBorrowLoc[3](%#2: Option<u64>)
+	18: Call option::is_none<u64>(&Option<u64>): bool
+	19: BrFalse(21)
+B1:
+	20: Branch(25)
+B2:
+	21: MoveLoc[10](ctx#1#0: &mut TxContext)
+	22: Pop
+	23: LdU64(13906835067696578559)
+	24: Abort
+B3:
+	25: ImmBorrowLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	26: Call coin_registry::is_supply_fixed<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	27: Not
+	28: BrFalse(30)
+B4:
+	29: Branch(34)
+B5:
+	30: MoveLoc[10](ctx#1#0: &mut TxContext)
+	31: Pop
+	32: LdU64(13906835071991545855)
+	33: Abort
+B6:
+	34: ImmBorrowLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	35: Call coin_registry::is_supply_burn_only<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	36: Not
+	37: BrFalse(39)
+B7:
+	38: Branch(43)
+B8:
+	39: MoveLoc[10](ctx#1#0: &mut TxContext)
+	40: Pop
+	41: LdU64(13906835076286513151)
+	42: Abort
+B9:
+	43: LdU64(10000)
+	44: StLoc[8](amount#1#0: u64)
+	45: MutBorrowLoc[15](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	46: CopyLoc[8](amount#1#0: u64)
+	47: CopyLoc[10](ctx#1#0: &mut TxContext)
+	48: Call coin::mint<COIN_REGISTRY_TESTS>(&mut TreasuryCap<COIN_REGISTRY_TESTS>, u64, &mut TxContext): Coin<COIN_REGISTRY_TESTS>
+	49: StLoc[9](coins#1#0: Coin<COIN_REGISTRY_TESTS>)
+	50: MutBorrowLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	51: MoveLoc[15](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	52: Call coin_registry::make_supply_burn_only<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, TreasuryCap<COIN_REGISTRY_TESTS>)
+	53: ImmBorrowLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	54: Call coin_registry::is_supply_fixed<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	55: Not
+	56: BrFalse(58)
+B10:
+	57: Branch(62)
+B11:
+	58: MoveLoc[10](ctx#1#0: &mut TxContext)
+	59: Pop
+	60: LdU64(13906835102056316927)
+	61: Abort
+B12:
+	62: ImmBorrowLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	63: Call coin_registry::total_supply<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<u64>
+	64: StLoc[4](%#3: Option<u64>)
+	65: ImmBorrowLoc[4](%#3: Option<u64>)
+	66: StLoc[13](o#1#1: &Option<u64>)
+	67: CopyLoc[13](o#1#1: &Option<u64>)
+	68: Call option::is_some<u64>(&Option<u64>): bool
+	69: BrFalse(76)
+B13:
+	70: MoveLoc[13](o#1#1: &Option<u64>)
+	71: Call option::borrow<u64>(&Option<u64>): &u64
+	72: ImmBorrowLoc[8](amount#1#0: u64)
+	73: Eq
+	74: StLoc[5](%#5: bool)
+	75: Branch(80)
+B14:
+	76: MoveLoc[13](o#1#1: &Option<u64>)
+	77: Pop
+	78: LdFalse
+	79: StLoc[5](%#5: bool)
+B15:
+	80: MoveLoc[5](%#5: bool)
+	81: BrFalse(83)
+B16:
+	82: Branch(87)
+B17:
+	83: MoveLoc[10](ctx#1#0: &mut TxContext)
+	84: Pop
+	85: LdU64(13906835106351284223)
+	86: Abort
+B18:
+	87: ImmBorrowLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	88: Call coin_registry::is_supply_burn_only<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	89: BrFalse(91)
+B19:
+	90: Branch(95)
+B20:
+	91: MoveLoc[10](ctx#1#0: &mut TxContext)
+	92: Pop
+	93: LdU64(13906835110646251519)
+	94: Abort
+B21:
+	95: MutBorrowLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	96: MutBorrowLoc[9](coins#1#0: Coin<COIN_REGISTRY_TESTS>)
+	97: LdU64(5000)
+	98: MoveLoc[10](ctx#1#0: &mut TxContext)
+	99: Call coin::split<COIN_REGISTRY_TESTS>(&mut Coin<COIN_REGISTRY_TESTS>, u64, &mut TxContext): Coin<COIN_REGISTRY_TESTS>
+	100: Call coin_registry::burn<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, Coin<COIN_REGISTRY_TESTS>)
+	101: MutBorrowLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	102: MoveLoc[9](coins#1#0: Coin<COIN_REGISTRY_TESTS>)
+	103: Call coin::into_balance<COIN_REGISTRY_TESTS>(Coin<COIN_REGISTRY_TESTS>): Balance<COIN_REGISTRY_TESTS>
+	104: Call coin_registry::burn_balance<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, Balance<COIN_REGISTRY_TESTS>)
+	105: ImmBorrowLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	106: Call coin_registry::total_supply<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<u64>
+	107: StLoc[6](%#7: Option<u64>)
+	108: ImmBorrowLoc[6](%#7: Option<u64>)
+	109: StLoc[14](o#1#3: &Option<u64>)
+	110: CopyLoc[14](o#1#3: &Option<u64>)
+	111: Call option::is_some<u64>(&Option<u64>): bool
+	112: BrFalse(123)
+B22:
+	113: MoveLoc[14](o#1#3: &Option<u64>)
+	114: Call option::borrow<u64>(&Option<u64>): &u64
+	115: StLoc[2](%#12: &u64)
+	116: LdU64(0)
+	117: StLoc[1](%#11: u64)
+	118: MoveLoc[2](%#12: &u64)
+	119: ImmBorrowLoc[1](%#11: u64)
+	120: Eq
+	121: StLoc[7](%#9: bool)
+	122: Branch(127)
+B23:
+	123: MoveLoc[14](o#1#3: &Option<u64>)
+	124: Pop
+	125: LdFalse
+	126: StLoc[7](%#9: bool)
+B24:
+	127: MoveLoc[7](%#9: bool)
+	128: BrFalse(130)
+B25:
+	129: Branch(132)
+B26:
+	130: LdU64(13906835136416055295)
+	131: Abort
+B27:
+	132: MoveLoc[12](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	133: Call unit_test::destroy<MetadataCap<COIN_REGISTRY_TESTS>>(MetadataCap<COIN_REGISTRY_TESTS>)
+	134: MoveLoc[11](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	135: Call unit_test::destroy<Currency<COIN_REGISTRY_TESTS>>(Currency<COIN_REGISTRY_TESTS>)
+	136: Ret
+}
+
+dynamic_currency_default() {
+L0:	%#1: TxContext
+L1:	%#10: String
+L2:	%#11: String
+L3:	%#2: String
+L4:	%#3: String
+L5:	%#4: String
+L6:	%#5: String
+L7:	%#6: String
+L8:	%#7: String
+L9:	%#8: String
+L10:	%#9: String
+L11:	ctx#1#0: &mut TxContext
+L12:	currency#1#0: Currency<TestDynamic>
+L13:	metadata_cap#1#0: MetadataCap<TestDynamic>
+L14:	registry#1#0: CoinRegistry
+L15:	t1#1#1: u8
+L16:	t1#1#10: &String
+L17:	t1#1#13: String
+L18:	t1#1#16: &String
+L19:	t1#1#19: String
+L20:	t1#1#22: &String
+L21:	t1#1#25: String
+L22:	t1#1#28: &String
+L23:	t1#1#4: &u8
+L24:	t1#1#7: String
+L25:	t2#1#1: u8
+L26:	t2#1#10: &String
+L27:	t2#1#13: String
+L28:	t2#1#16: &String
+L29:	t2#1#19: String
+L30:	t2#1#22: &String
+L31:	t2#1#25: String
+L32:	t2#1#28: &String
+L33:	t2#1#4: &u8
+L34:	t2#1#7: String
+L35:	t_cap#1#0: TreasuryCap<TestDynamic>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[11](ctx#1#0: &mut TxContext)
+	4: CopyLoc[11](ctx#1#0: &mut TxContext)
+	5: Call coin_registry::create_coin_data_registry_for_testing(&mut TxContext): CoinRegistry
+	6: StLoc[14](registry#1#0: CoinRegistry)
+	7: Call new_builder(): MetadataBuilder
+	8: MutBorrowLoc[14](registry#1#0: CoinRegistry)
+	9: CopyLoc[11](ctx#1#0: &mut TxContext)
+	10: Call build_dynamic(MetadataBuilder, &mut CoinRegistry, &mut TxContext): CurrencyInitializer<TestDynamic> * TreasuryCap<TestDynamic>
+	11: StLoc[35](t_cap#1#0: TreasuryCap<TestDynamic>)
+	12: MoveLoc[11](ctx#1#0: &mut TxContext)
+	13: Call coin_registry::finalize_unwrap_for_testing<TestDynamic>(CurrencyInitializer<TestDynamic>, &mut TxContext): Currency<TestDynamic> * MetadataCap<TestDynamic>
+	14: StLoc[13](metadata_cap#1#0: MetadataCap<TestDynamic>)
+	15: StLoc[12](currency#1#0: Currency<TestDynamic>)
+	16: ImmBorrowLoc[14](registry#1#0: CoinRegistry)
+	17: Call coin_registry::exists<TestDynamic>(&CoinRegistry): bool
+	18: BrFalse(20)
+B1:
+	19: Branch(22)
+B2:
+	20: LdU64(13906835200840564735)
+	21: Abort
+B3:
+	22: ImmBorrowLoc[12](currency#1#0: Currency<TestDynamic>)
+	23: Call coin_registry::is_metadata_cap_claimed<TestDynamic>(&Currency<TestDynamic>): bool
+	24: BrFalse(26)
+B4:
+	25: Branch(28)
+B5:
+	26: LdU64(13906835205135532031)
+	27: Abort
+B6:
+	28: ImmBorrowLoc[12](currency#1#0: Currency<TestDynamic>)
+	29: Call coin_registry::is_supply_fixed<TestDynamic>(&Currency<TestDynamic>): bool
+	30: Not
+	31: BrFalse(33)
+B7:
+	32: Branch(35)
+B8:
+	33: LdU64(13906835209430499327)
+	34: Abort
+B9:
+	35: ImmBorrowLoc[12](currency#1#0: Currency<TestDynamic>)
+	36: Call coin_registry::is_supply_burn_only<TestDynamic>(&Currency<TestDynamic>): bool
+	37: Not
+	38: BrFalse(40)
+B10:
+	39: Branch(42)
+B11:
+	40: LdU64(13906835213725466623)
+	41: Abort
+B12:
+	42: ImmBorrowLoc[12](currency#1#0: Currency<TestDynamic>)
+	43: Call coin_registry::is_regulated<TestDynamic>(&Currency<TestDynamic>): bool
+	44: Not
+	45: BrFalse(47)
+B13:
+	46: Branch(49)
+B14:
+	47: LdU64(13906835218020433919)
+	48: Abort
+B15:
+	49: ImmBorrowLoc[12](currency#1#0: Currency<TestDynamic>)
+	50: Call coin_registry::decimals<TestDynamic>(&Currency<TestDynamic>): u8
+	51: StLoc[15](t1#1#1: u8)
+	52: LdConst[0](u8: 6)
+	53: StLoc[25](t2#1#1: u8)
+	54: ImmBorrowLoc[15](t1#1#1: u8)
+	55: StLoc[23](t1#1#4: &u8)
+	56: ImmBorrowLoc[25](t2#1#1: u8)
+	57: StLoc[33](t2#1#4: &u8)
+	58: CopyLoc[23](t1#1#4: &u8)
+	59: CopyLoc[33](t2#1#4: &u8)
+	60: Eq
+	61: Not
+	62: BrFalse(79)
+B16:
+	63: LdConst[4](vector<u8>: "Ass..)
+	64: Call string::utf8(vector<u8>): String
+	65: StLoc[3](%#2: String)
+	66: ImmBorrowLoc[3](%#2: String)
+	67: Call debug::print<String>(&String)
+	68: MoveLoc[23](t1#1#4: &u8)
+	69: Call debug::print<u8>(&u8)
+	70: LdConst[5](vector<u8>: "!="..)
+	71: Call string::utf8(vector<u8>): String
+	72: StLoc[4](%#3: String)
+	73: ImmBorrowLoc[4](%#3: String)
+	74: Call debug::print<String>(&String)
+	75: MoveLoc[33](t2#1#4: &u8)
+	76: Call debug::print<u8>(&u8)
+	77: LdU64(13906835230905335807)
+	78: Abort
+B17:
+	79: MoveLoc[33](t2#1#4: &u8)
+	80: Pop
+	81: MoveLoc[23](t1#1#4: &u8)
+	82: Pop
+	83: ImmBorrowLoc[12](currency#1#0: Currency<TestDynamic>)
+	84: Call coin_registry::symbol<TestDynamic>(&Currency<TestDynamic>): String
+	85: StLoc[24](t1#1#7: String)
+	86: LdConst[1](vector<u8>: "TES..)
+	87: Call string::utf8(vector<u8>): String
+	88: StLoc[34](t2#1#7: String)
+	89: ImmBorrowLoc[24](t1#1#7: String)
+	90: StLoc[16](t1#1#10: &String)
+	91: ImmBorrowLoc[34](t2#1#7: String)
+	92: StLoc[26](t2#1#10: &String)
+	93: CopyLoc[16](t1#1#10: &String)
+	94: CopyLoc[26](t2#1#10: &String)
+	95: Eq
+	96: Not
+	97: BrFalse(114)
+B18:
+	98: LdConst[4](vector<u8>: "Ass..)
+	99: Call string::utf8(vector<u8>): String
+	100: StLoc[5](%#4: String)
+	101: ImmBorrowLoc[5](%#4: String)
+	102: Call debug::print<String>(&String)
+	103: MoveLoc[16](t1#1#10: &String)
+	104: Call debug::print<String>(&String)
+	105: LdConst[5](vector<u8>: "!="..)
+	106: Call string::utf8(vector<u8>): String
+	107: StLoc[6](%#5: String)
+	108: ImmBorrowLoc[6](%#5: String)
+	109: Call debug::print<String>(&String)
+	110: MoveLoc[26](t2#1#10: &String)
+	111: Call debug::print<String>(&String)
+	112: LdU64(13906835235200303103)
+	113: Abort
+B19:
+	114: MoveLoc[26](t2#1#10: &String)
+	115: Pop
+	116: MoveLoc[16](t1#1#10: &String)
+	117: Pop
+	118: ImmBorrowLoc[12](currency#1#0: Currency<TestDynamic>)
+	119: Call coin_registry::name<TestDynamic>(&Currency<TestDynamic>): String
+	120: StLoc[17](t1#1#13: String)
+	121: LdConst[2](vector<u8>: "Tes..)
+	122: Call string::utf8(vector<u8>): String
+	123: StLoc[27](t2#1#13: String)
+	124: ImmBorrowLoc[17](t1#1#13: String)
+	125: StLoc[18](t1#1#16: &String)
+	126: ImmBorrowLoc[27](t2#1#13: String)
+	127: StLoc[28](t2#1#16: &String)
+	128: CopyLoc[18](t1#1#16: &String)
+	129: CopyLoc[28](t2#1#16: &String)
+	130: Eq
+	131: Not
+	132: BrFalse(149)
+B20:
+	133: LdConst[4](vector<u8>: "Ass..)
+	134: Call string::utf8(vector<u8>): String
+	135: StLoc[7](%#6: String)
+	136: ImmBorrowLoc[7](%#6: String)
+	137: Call debug::print<String>(&String)
+	138: MoveLoc[18](t1#1#16: &String)
+	139: Call debug::print<String>(&String)
+	140: LdConst[5](vector<u8>: "!="..)
+	141: Call string::utf8(vector<u8>): String
+	142: StLoc[8](%#7: String)
+	143: ImmBorrowLoc[8](%#7: String)
+	144: Call debug::print<String>(&String)
+	145: MoveLoc[28](t2#1#16: &String)
+	146: Call debug::print<String>(&String)
+	147: LdU64(13906835239495270399)
+	148: Abort
+B21:
+	149: MoveLoc[28](t2#1#16: &String)
+	150: Pop
+	151: MoveLoc[18](t1#1#16: &String)
+	152: Pop
+	153: ImmBorrowLoc[12](currency#1#0: Currency<TestDynamic>)
+	154: Call coin_registry::description<TestDynamic>(&Currency<TestDynamic>): String
+	155: StLoc[19](t1#1#19: String)
+	156: LdConst[2](vector<u8>: "Tes..)
+	157: Call string::utf8(vector<u8>): String
+	158: StLoc[29](t2#1#19: String)
+	159: ImmBorrowLoc[19](t1#1#19: String)
+	160: StLoc[20](t1#1#22: &String)
+	161: ImmBorrowLoc[29](t2#1#19: String)
+	162: StLoc[30](t2#1#22: &String)
+	163: CopyLoc[20](t1#1#22: &String)
+	164: CopyLoc[30](t2#1#22: &String)
+	165: Eq
+	166: Not
+	167: BrFalse(184)
+B22:
+	168: LdConst[4](vector<u8>: "Ass..)
+	169: Call string::utf8(vector<u8>): String
+	170: StLoc[9](%#8: String)
+	171: ImmBorrowLoc[9](%#8: String)
+	172: Call debug::print<String>(&String)
+	173: MoveLoc[20](t1#1#22: &String)
+	174: Call debug::print<String>(&String)
+	175: LdConst[5](vector<u8>: "!="..)
+	176: Call string::utf8(vector<u8>): String
+	177: StLoc[10](%#9: String)
+	178: ImmBorrowLoc[10](%#9: String)
+	179: Call debug::print<String>(&String)
+	180: MoveLoc[30](t2#1#22: &String)
+	181: Call debug::print<String>(&String)
+	182: LdU64(13906835243790237695)
+	183: Abort
+B23:
+	184: MoveLoc[30](t2#1#22: &String)
+	185: Pop
+	186: MoveLoc[20](t1#1#22: &String)
+	187: Pop
+	188: ImmBorrowLoc[12](currency#1#0: Currency<TestDynamic>)
+	189: Call coin_registry::icon_url<TestDynamic>(&Currency<TestDynamic>): String
+	190: StLoc[21](t1#1#25: String)
+	191: LdConst[3](vector<u8>: "htt..)
+	192: Call string::utf8(vector<u8>): String
+	193: StLoc[31](t2#1#25: String)
+	194: ImmBorrowLoc[21](t1#1#25: String)
+	195: StLoc[22](t1#1#28: &String)
+	196: ImmBorrowLoc[31](t2#1#25: String)
+	197: StLoc[32](t2#1#28: &String)
+	198: CopyLoc[22](t1#1#28: &String)
+	199: CopyLoc[32](t2#1#28: &String)
+	200: Eq
+	201: Not
+	202: BrFalse(219)
+B24:
+	203: LdConst[4](vector<u8>: "Ass..)
+	204: Call string::utf8(vector<u8>): String
+	205: StLoc[1](%#10: String)
+	206: ImmBorrowLoc[1](%#10: String)
+	207: Call debug::print<String>(&String)
+	208: MoveLoc[22](t1#1#28: &String)
+	209: Call debug::print<String>(&String)
+	210: LdConst[5](vector<u8>: "!="..)
+	211: Call string::utf8(vector<u8>): String
+	212: StLoc[2](%#11: String)
+	213: ImmBorrowLoc[2](%#11: String)
+	214: Call debug::print<String>(&String)
+	215: MoveLoc[32](t2#1#28: &String)
+	216: Call debug::print<String>(&String)
+	217: LdU64(13906835248085204991)
+	218: Abort
+B25:
+	219: MoveLoc[32](t2#1#28: &String)
+	220: Pop
+	221: MoveLoc[22](t1#1#28: &String)
+	222: Pop
+	223: MoveLoc[13](metadata_cap#1#0: MetadataCap<TestDynamic>)
+	224: Call unit_test::destroy<MetadataCap<TestDynamic>>(MetadataCap<TestDynamic>)
+	225: MoveLoc[14](registry#1#0: CoinRegistry)
+	226: Call unit_test::destroy<CoinRegistry>(CoinRegistry)
+	227: MoveLoc[12](currency#1#0: Currency<TestDynamic>)
+	228: Call unit_test::destroy<Currency<TestDynamic>>(Currency<TestDynamic>)
+	229: MoveLoc[35](t_cap#1#0: TreasuryCap<TestDynamic>)
+	230: Call unit_test::destroy<TreasuryCap<TestDynamic>>(TreasuryCap<TestDynamic>)
+	231: Ret
+}
+
+dynamic_currency_duplicate() {
+L0:	%#1: TxContext
+L1:	_builder#1#0: CurrencyInitializer<TestDynamic>
+L2:	_builder2#1#0: CurrencyInitializer<TestDynamic>
+L3:	_t_cap#1#0: TreasuryCap<TestDynamic>
+L4:	_t_cap2#1#0: TreasuryCap<TestDynamic>
+L5:	ctx#1#0: &mut TxContext
+L6:	registry#1#0: CoinRegistry
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[5](ctx#1#0: &mut TxContext)
+	4: CopyLoc[5](ctx#1#0: &mut TxContext)
+	5: Call coin_registry::create_coin_data_registry_for_testing(&mut TxContext): CoinRegistry
+	6: StLoc[6](registry#1#0: CoinRegistry)
+	7: Call new_builder(): MetadataBuilder
+	8: MutBorrowLoc[6](registry#1#0: CoinRegistry)
+	9: CopyLoc[5](ctx#1#0: &mut TxContext)
+	10: Call build_dynamic(MetadataBuilder, &mut CoinRegistry, &mut TxContext): CurrencyInitializer<TestDynamic> * TreasuryCap<TestDynamic>
+	11: StLoc[3](_t_cap#1#0: TreasuryCap<TestDynamic>)
+	12: StLoc[1](_builder#1#0: CurrencyInitializer<TestDynamic>)
+	13: Call new_builder(): MetadataBuilder
+	14: MutBorrowLoc[6](registry#1#0: CoinRegistry)
+	15: MoveLoc[5](ctx#1#0: &mut TxContext)
+	16: Call build_dynamic(MetadataBuilder, &mut CoinRegistry, &mut TxContext): CurrencyInitializer<TestDynamic> * TreasuryCap<TestDynamic>
+	17: StLoc[4](_t_cap2#1#0: TreasuryCap<TestDynamic>)
+	18: StLoc[2](_builder2#1#0: CurrencyInitializer<TestDynamic>)
+	19: LdU64(13906835312509714431)
+	20: Abort
+}
+
+perfect_migration_regulated() {
+L0:	%#1: TxContext
+L1:	%#10: String
+L2:	%#11: String
+L3:	%#12: Option<ID>
+L4:	%#14: bool
+L5:	%#16: ID
+L6:	%#17: &ID
+L7:	%#18: String
+L8:	%#19: String
+L9:	%#2: String
+L10:	%#20: String
+L11:	%#21: String
+L12:	%#22: String
+L13:	%#23: String
+L14:	%#24: String
+L15:	%#25: String
+L16:	%#26: String
+L17:	%#27: String
+L18:	%#28: Option<ID>
+L19:	%#3: String
+L20:	%#30: bool
+L21:	%#32: ID
+L22:	%#33: &ID
+L23:	%#4: String
+L24:	%#5: String
+L25:	%#6: String
+L26:	%#7: String
+L27:	%#8: String
+L28:	%#9: String
+L29:	ctx#1#0: &mut TxContext
+L30:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L31:	deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>
+L32:	metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>
+L33:	metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L34:	o#1#31: &Option<ID>
+L35:	o#1#63: &Option<ID>
+L36:	registry#1#0: CoinRegistry
+L37:	t1#1#1: u8
+L38:	t1#1#10: &String
+L39:	t1#1#13: String
+L40:	t1#1#16: &String
+L41:	t1#1#19: String
+L42:	t1#1#22: &String
+L43:	t1#1#25: String
+L44:	t1#1#28: &String
+L45:	t1#1#33: String
+L46:	t1#1#36: &String
+L47:	t1#1#39: String
+L48:	t1#1#4: &u8
+L49:	t1#1#42: &String
+L50:	t1#1#45: String
+L51:	t1#1#48: &String
+L52:	t1#1#51: String
+L53:	t1#1#54: &String
+L54:	t1#1#57: u8
+L55:	t1#1#60: &u8
+L56:	t1#1#7: String
+L57:	t2#1#1: u8
+L58:	t2#1#10: &String
+L59:	t2#1#13: String
+L60:	t2#1#16: &String
+L61:	t2#1#19: String
+L62:	t2#1#22: &String
+L63:	t2#1#25: String
+L64:	t2#1#28: &String
+L65:	t2#1#33: String
+L66:	t2#1#36: &String
+L67:	t2#1#39: String
+L68:	t2#1#4: &u8
+L69:	t2#1#42: &String
+L70:	t2#1#45: String
+L71:	t2#1#48: &String
+L72:	t2#1#51: String
+L73:	t2#1#54: &String
+L74:	t2#1#57: u8
+L75:	t2#1#60: &u8
+L76:	t2#1#7: String
+L77:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[29](ctx#1#0: &mut TxContext)
+	4: CopyLoc[29](ctx#1#0: &mut TxContext)
+	5: Call coin_registry::create_coin_data_registry_for_testing(&mut TxContext): CoinRegistry
+	6: StLoc[36](registry#1#0: CoinRegistry)
+	7: Call new_builder(): MetadataBuilder
+	8: LdFalse
+	9: Pack[0](COIN_REGISTRY_TESTS)
+	10: CopyLoc[29](ctx#1#0: &mut TxContext)
+	11: Call build_legacy_regulated<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): TreasuryCap<COIN_REGISTRY_TESTS> * DenyCapV2<COIN_REGISTRY_TESTS> * CoinMetadata<COIN_REGISTRY_TESTS>
+	12: StLoc[32](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	13: StLoc[31](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	14: StLoc[77](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	15: MutBorrowLoc[36](registry#1#0: CoinRegistry)
+	16: ImmBorrowLoc[32](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	17: CopyLoc[29](ctx#1#0: &mut TxContext)
+	18: Call coin_registry::migrate_legacy_metadata_for_testing<COIN_REGISTRY_TESTS>(&mut CoinRegistry, &CoinMetadata<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS>
+	19: StLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	20: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	21: Call coin_registry::decimals<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): u8
+	22: StLoc[37](t1#1#1: u8)
+	23: LdConst[0](u8: 6)
+	24: StLoc[57](t2#1#1: u8)
+	25: ImmBorrowLoc[37](t1#1#1: u8)
+	26: StLoc[48](t1#1#4: &u8)
+	27: ImmBorrowLoc[57](t2#1#1: u8)
+	28: StLoc[68](t2#1#4: &u8)
+	29: CopyLoc[48](t1#1#4: &u8)
+	30: CopyLoc[68](t2#1#4: &u8)
+	31: Eq
+	32: Not
+	33: BrFalse(52)
+B1:
+	34: LdConst[4](vector<u8>: "Ass..)
+	35: Call string::utf8(vector<u8>): String
+	36: StLoc[9](%#2: String)
+	37: ImmBorrowLoc[9](%#2: String)
+	38: Call debug::print<String>(&String)
+	39: MoveLoc[48](t1#1#4: &u8)
+	40: Call debug::print<u8>(&u8)
+	41: LdConst[5](vector<u8>: "!="..)
+	42: Call string::utf8(vector<u8>): String
+	43: StLoc[19](%#3: String)
+	44: ImmBorrowLoc[19](%#3: String)
+	45: Call debug::print<String>(&String)
+	46: MoveLoc[68](t2#1#4: &u8)
+	47: Call debug::print<u8>(&u8)
+	48: MoveLoc[29](ctx#1#0: &mut TxContext)
+	49: Pop
+	50: LdU64(13906835398409060351)
+	51: Abort
+B2:
+	52: MoveLoc[68](t2#1#4: &u8)
+	53: Pop
+	54: MoveLoc[48](t1#1#4: &u8)
+	55: Pop
+	56: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	57: Call coin_registry::symbol<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	58: StLoc[56](t1#1#7: String)
+	59: LdConst[1](vector<u8>: "TES..)
+	60: Call string::utf8(vector<u8>): String
+	61: StLoc[76](t2#1#7: String)
+	62: ImmBorrowLoc[56](t1#1#7: String)
+	63: StLoc[38](t1#1#10: &String)
+	64: ImmBorrowLoc[76](t2#1#7: String)
+	65: StLoc[58](t2#1#10: &String)
+	66: CopyLoc[38](t1#1#10: &String)
+	67: CopyLoc[58](t2#1#10: &String)
+	68: Eq
+	69: Not
+	70: BrFalse(89)
+B3:
+	71: LdConst[4](vector<u8>: "Ass..)
+	72: Call string::utf8(vector<u8>): String
+	73: StLoc[23](%#4: String)
+	74: ImmBorrowLoc[23](%#4: String)
+	75: Call debug::print<String>(&String)
+	76: MoveLoc[38](t1#1#10: &String)
+	77: Call debug::print<String>(&String)
+	78: LdConst[5](vector<u8>: "!="..)
+	79: Call string::utf8(vector<u8>): String
+	80: StLoc[24](%#5: String)
+	81: ImmBorrowLoc[24](%#5: String)
+	82: Call debug::print<String>(&String)
+	83: MoveLoc[58](t2#1#10: &String)
+	84: Call debug::print<String>(&String)
+	85: MoveLoc[29](ctx#1#0: &mut TxContext)
+	86: Pop
+	87: LdU64(13906835402704027647)
+	88: Abort
+B4:
+	89: MoveLoc[58](t2#1#10: &String)
+	90: Pop
+	91: MoveLoc[38](t1#1#10: &String)
+	92: Pop
+	93: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	94: Call coin_registry::name<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	95: StLoc[39](t1#1#13: String)
+	96: LdConst[2](vector<u8>: "Tes..)
+	97: Call string::utf8(vector<u8>): String
+	98: StLoc[59](t2#1#13: String)
+	99: ImmBorrowLoc[39](t1#1#13: String)
+	100: StLoc[40](t1#1#16: &String)
+	101: ImmBorrowLoc[59](t2#1#13: String)
+	102: StLoc[60](t2#1#16: &String)
+	103: CopyLoc[40](t1#1#16: &String)
+	104: CopyLoc[60](t2#1#16: &String)
+	105: Eq
+	106: Not
+	107: BrFalse(126)
+B5:
+	108: LdConst[4](vector<u8>: "Ass..)
+	109: Call string::utf8(vector<u8>): String
+	110: StLoc[25](%#6: String)
+	111: ImmBorrowLoc[25](%#6: String)
+	112: Call debug::print<String>(&String)
+	113: MoveLoc[40](t1#1#16: &String)
+	114: Call debug::print<String>(&String)
+	115: LdConst[5](vector<u8>: "!="..)
+	116: Call string::utf8(vector<u8>): String
+	117: StLoc[26](%#7: String)
+	118: ImmBorrowLoc[26](%#7: String)
+	119: Call debug::print<String>(&String)
+	120: MoveLoc[60](t2#1#16: &String)
+	121: Call debug::print<String>(&String)
+	122: MoveLoc[29](ctx#1#0: &mut TxContext)
+	123: Pop
+	124: LdU64(13906835406998994943)
+	125: Abort
+B6:
+	126: MoveLoc[60](t2#1#16: &String)
+	127: Pop
+	128: MoveLoc[40](t1#1#16: &String)
+	129: Pop
+	130: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	131: Call coin_registry::description<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	132: StLoc[41](t1#1#19: String)
+	133: LdConst[2](vector<u8>: "Tes..)
+	134: Call string::utf8(vector<u8>): String
+	135: StLoc[61](t2#1#19: String)
+	136: ImmBorrowLoc[41](t1#1#19: String)
+	137: StLoc[42](t1#1#22: &String)
+	138: ImmBorrowLoc[61](t2#1#19: String)
+	139: StLoc[62](t2#1#22: &String)
+	140: CopyLoc[42](t1#1#22: &String)
+	141: CopyLoc[62](t2#1#22: &String)
+	142: Eq
+	143: Not
+	144: BrFalse(163)
+B7:
+	145: LdConst[4](vector<u8>: "Ass..)
+	146: Call string::utf8(vector<u8>): String
+	147: StLoc[27](%#8: String)
+	148: ImmBorrowLoc[27](%#8: String)
+	149: Call debug::print<String>(&String)
+	150: MoveLoc[42](t1#1#22: &String)
+	151: Call debug::print<String>(&String)
+	152: LdConst[5](vector<u8>: "!="..)
+	153: Call string::utf8(vector<u8>): String
+	154: StLoc[28](%#9: String)
+	155: ImmBorrowLoc[28](%#9: String)
+	156: Call debug::print<String>(&String)
+	157: MoveLoc[62](t2#1#22: &String)
+	158: Call debug::print<String>(&String)
+	159: MoveLoc[29](ctx#1#0: &mut TxContext)
+	160: Pop
+	161: LdU64(13906835411293962239)
+	162: Abort
+B8:
+	163: MoveLoc[62](t2#1#22: &String)
+	164: Pop
+	165: MoveLoc[42](t1#1#22: &String)
+	166: Pop
+	167: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	168: Call coin_registry::icon_url<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	169: StLoc[43](t1#1#25: String)
+	170: LdConst[3](vector<u8>: "htt..)
+	171: Call string::utf8(vector<u8>): String
+	172: StLoc[63](t2#1#25: String)
+	173: ImmBorrowLoc[43](t1#1#25: String)
+	174: StLoc[44](t1#1#28: &String)
+	175: ImmBorrowLoc[63](t2#1#25: String)
+	176: StLoc[64](t2#1#28: &String)
+	177: CopyLoc[44](t1#1#28: &String)
+	178: CopyLoc[64](t2#1#28: &String)
+	179: Eq
+	180: Not
+	181: BrFalse(200)
+B9:
+	182: LdConst[4](vector<u8>: "Ass..)
+	183: Call string::utf8(vector<u8>): String
+	184: StLoc[1](%#10: String)
+	185: ImmBorrowLoc[1](%#10: String)
+	186: Call debug::print<String>(&String)
+	187: MoveLoc[44](t1#1#28: &String)
+	188: Call debug::print<String>(&String)
+	189: LdConst[5](vector<u8>: "!="..)
+	190: Call string::utf8(vector<u8>): String
+	191: StLoc[2](%#11: String)
+	192: ImmBorrowLoc[2](%#11: String)
+	193: Call debug::print<String>(&String)
+	194: MoveLoc[64](t2#1#28: &String)
+	195: Call debug::print<String>(&String)
+	196: MoveLoc[29](ctx#1#0: &mut TxContext)
+	197: Pop
+	198: LdU64(13906835415588929535)
+	199: Abort
+B10:
+	200: MoveLoc[64](t2#1#28: &String)
+	201: Pop
+	202: MoveLoc[44](t1#1#28: &String)
+	203: Pop
+	204: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	205: Call coin_registry::is_metadata_cap_claimed<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	206: Not
+	207: BrFalse(209)
+B11:
+	208: Branch(213)
+B12:
+	209: MoveLoc[29](ctx#1#0: &mut TxContext)
+	210: Pop
+	211: LdU64(13906835424178864127)
+	212: Abort
+B13:
+	213: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	214: Call coin_registry::is_regulated<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	215: Not
+	216: BrFalse(218)
+B14:
+	217: Branch(222)
+B15:
+	218: MoveLoc[29](ctx#1#0: &mut TxContext)
+	219: Pop
+	220: LdU64(13906835428473831423)
+	221: Abort
+B16:
+	222: MutBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	223: ImmBorrowLoc[31](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	224: Call coin_registry::migrate_regulated_state_by_cap<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &DenyCapV2<COIN_REGISTRY_TESTS>)
+	225: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	226: Call coin_registry::is_regulated<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	227: BrFalse(229)
+B17:
+	228: Branch(233)
+B18:
+	229: MoveLoc[29](ctx#1#0: &mut TxContext)
+	230: Pop
+	231: LdU64(13906835445653700607)
+	232: Abort
+B19:
+	233: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	234: Call coin_registry::deny_cap_id<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<ID>
+	235: StLoc[3](%#12: Option<ID>)
+	236: ImmBorrowLoc[3](%#12: Option<ID>)
+	237: StLoc[34](o#1#31: &Option<ID>)
+	238: CopyLoc[34](o#1#31: &Option<ID>)
+	239: Call option::is_some<ID>(&Option<ID>): bool
+	240: BrFalse(252)
+B20:
+	241: MoveLoc[34](o#1#31: &Option<ID>)
+	242: Call option::borrow<ID>(&Option<ID>): &ID
+	243: StLoc[6](%#17: &ID)
+	244: ImmBorrowLoc[31](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	245: Call object::id<DenyCapV2<COIN_REGISTRY_TESTS>>(&DenyCapV2<COIN_REGISTRY_TESTS>): ID
+	246: StLoc[5](%#16: ID)
+	247: MoveLoc[6](%#17: &ID)
+	248: ImmBorrowLoc[5](%#16: ID)
+	249: Eq
+	250: StLoc[4](%#14: bool)
+	251: Branch(256)
+B21:
+	252: MoveLoc[34](o#1#31: &Option<ID>)
+	253: Pop
+	254: LdFalse
+	255: StLoc[4](%#14: bool)
+B22:
+	256: MoveLoc[4](%#14: bool)
+	257: BrFalse(259)
+B23:
+	258: Branch(263)
+B24:
+	259: MoveLoc[29](ctx#1#0: &mut TxContext)
+	260: Pop
+	261: LdU64(13906835449948667903)
+	262: Abort
+B25:
+	263: ImmBorrowLoc[77](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	264: MutBorrowLoc[32](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	265: LdConst[10](vector<u8>: "New..)
+	266: Call string::utf8(vector<u8>): String
+	267: Call coin::update_description<COIN_REGISTRY_TESTS>(&TreasuryCap<COIN_REGISTRY_TESTS>, &mut CoinMetadata<COIN_REGISTRY_TESTS>, String)
+	268: ImmBorrowLoc[77](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	269: MutBorrowLoc[32](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	270: LdConst[11](vector<u8>: "htt..)
+	271: Call ascii::string(vector<u8>): String
+	272: Call coin::update_icon_url<COIN_REGISTRY_TESTS>(&TreasuryCap<COIN_REGISTRY_TESTS>, &mut CoinMetadata<COIN_REGISTRY_TESTS>, String)
+	273: ImmBorrowLoc[77](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	274: MutBorrowLoc[32](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	275: LdConst[12](vector<u8>: "New..)
+	276: Call string::utf8(vector<u8>): String
+	277: Call coin::update_name<COIN_REGISTRY_TESTS>(&TreasuryCap<COIN_REGISTRY_TESTS>, &mut CoinMetadata<COIN_REGISTRY_TESTS>, String)
+	278: ImmBorrowLoc[77](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	279: MutBorrowLoc[32](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	280: LdConst[13](vector<u8>: "NEW..)
+	281: Call ascii::string(vector<u8>): String
+	282: Call coin::update_symbol<COIN_REGISTRY_TESTS>(&TreasuryCap<COIN_REGISTRY_TESTS>, &mut CoinMetadata<COIN_REGISTRY_TESTS>, String)
+	283: MutBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	284: ImmBorrowLoc[32](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	285: Call coin_registry::update_from_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &CoinMetadata<COIN_REGISTRY_TESTS>)
+	286: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	287: Call coin_registry::description<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	288: StLoc[45](t1#1#33: String)
+	289: LdConst[10](vector<u8>: "New..)
+	290: Call string::utf8(vector<u8>): String
+	291: StLoc[65](t2#1#33: String)
+	292: ImmBorrowLoc[45](t1#1#33: String)
+	293: StLoc[46](t1#1#36: &String)
+	294: ImmBorrowLoc[65](t2#1#33: String)
+	295: StLoc[66](t2#1#36: &String)
+	296: CopyLoc[46](t1#1#36: &String)
+	297: CopyLoc[66](t2#1#36: &String)
+	298: Eq
+	299: Not
+	300: BrFalse(319)
+B26:
+	301: LdConst[4](vector<u8>: "Ass..)
+	302: Call string::utf8(vector<u8>): String
+	303: StLoc[7](%#18: String)
+	304: ImmBorrowLoc[7](%#18: String)
+	305: Call debug::print<String>(&String)
+	306: MoveLoc[46](t1#1#36: &String)
+	307: Call debug::print<String>(&String)
+	308: LdConst[5](vector<u8>: "!="..)
+	309: Call string::utf8(vector<u8>): String
+	310: StLoc[8](%#19: String)
+	311: ImmBorrowLoc[8](%#19: String)
+	312: Call debug::print<String>(&String)
+	313: MoveLoc[66](t2#1#36: &String)
+	314: Call debug::print<String>(&String)
+	315: MoveLoc[29](ctx#1#0: &mut TxContext)
+	316: Pop
+	317: LdU64(13906835505783242751)
+	318: Abort
+B27:
+	319: MoveLoc[66](t2#1#36: &String)
+	320: Pop
+	321: MoveLoc[46](t1#1#36: &String)
+	322: Pop
+	323: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	324: Call coin_registry::icon_url<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	325: StLoc[47](t1#1#39: String)
+	326: LdConst[11](vector<u8>: "htt..)
+	327: Call string::utf8(vector<u8>): String
+	328: StLoc[67](t2#1#39: String)
+	329: ImmBorrowLoc[47](t1#1#39: String)
+	330: StLoc[49](t1#1#42: &String)
+	331: ImmBorrowLoc[67](t2#1#39: String)
+	332: StLoc[69](t2#1#42: &String)
+	333: CopyLoc[49](t1#1#42: &String)
+	334: CopyLoc[69](t2#1#42: &String)
+	335: Eq
+	336: Not
+	337: BrFalse(356)
+B28:
+	338: LdConst[4](vector<u8>: "Ass..)
+	339: Call string::utf8(vector<u8>): String
+	340: StLoc[10](%#20: String)
+	341: ImmBorrowLoc[10](%#20: String)
+	342: Call debug::print<String>(&String)
+	343: MoveLoc[49](t1#1#42: &String)
+	344: Call debug::print<String>(&String)
+	345: LdConst[5](vector<u8>: "!="..)
+	346: Call string::utf8(vector<u8>): String
+	347: StLoc[11](%#21: String)
+	348: ImmBorrowLoc[11](%#21: String)
+	349: Call debug::print<String>(&String)
+	350: MoveLoc[69](t2#1#42: &String)
+	351: Call debug::print<String>(&String)
+	352: MoveLoc[29](ctx#1#0: &mut TxContext)
+	353: Pop
+	354: LdU64(13906835510078210047)
+	355: Abort
+B29:
+	356: MoveLoc[69](t2#1#42: &String)
+	357: Pop
+	358: MoveLoc[49](t1#1#42: &String)
+	359: Pop
+	360: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	361: Call coin_registry::name<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	362: StLoc[50](t1#1#45: String)
+	363: LdConst[12](vector<u8>: "New..)
+	364: Call string::utf8(vector<u8>): String
+	365: StLoc[70](t2#1#45: String)
+	366: ImmBorrowLoc[50](t1#1#45: String)
+	367: StLoc[51](t1#1#48: &String)
+	368: ImmBorrowLoc[70](t2#1#45: String)
+	369: StLoc[71](t2#1#48: &String)
+	370: CopyLoc[51](t1#1#48: &String)
+	371: CopyLoc[71](t2#1#48: &String)
+	372: Eq
+	373: Not
+	374: BrFalse(393)
+B30:
+	375: LdConst[4](vector<u8>: "Ass..)
+	376: Call string::utf8(vector<u8>): String
+	377: StLoc[12](%#22: String)
+	378: ImmBorrowLoc[12](%#22: String)
+	379: Call debug::print<String>(&String)
+	380: MoveLoc[51](t1#1#48: &String)
+	381: Call debug::print<String>(&String)
+	382: LdConst[5](vector<u8>: "!="..)
+	383: Call string::utf8(vector<u8>): String
+	384: StLoc[13](%#23: String)
+	385: ImmBorrowLoc[13](%#23: String)
+	386: Call debug::print<String>(&String)
+	387: MoveLoc[71](t2#1#48: &String)
+	388: Call debug::print<String>(&String)
+	389: MoveLoc[29](ctx#1#0: &mut TxContext)
+	390: Pop
+	391: LdU64(13906835514373177343)
+	392: Abort
+B31:
+	393: MoveLoc[71](t2#1#48: &String)
+	394: Pop
+	395: MoveLoc[51](t1#1#48: &String)
+	396: Pop
+	397: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	398: Call coin_registry::symbol<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	399: StLoc[52](t1#1#51: String)
+	400: LdConst[13](vector<u8>: "NEW..)
+	401: Call string::utf8(vector<u8>): String
+	402: StLoc[72](t2#1#51: String)
+	403: ImmBorrowLoc[52](t1#1#51: String)
+	404: StLoc[53](t1#1#54: &String)
+	405: ImmBorrowLoc[72](t2#1#51: String)
+	406: StLoc[73](t2#1#54: &String)
+	407: CopyLoc[53](t1#1#54: &String)
+	408: CopyLoc[73](t2#1#54: &String)
+	409: Eq
+	410: Not
+	411: BrFalse(430)
+B32:
+	412: LdConst[4](vector<u8>: "Ass..)
+	413: Call string::utf8(vector<u8>): String
+	414: StLoc[14](%#24: String)
+	415: ImmBorrowLoc[14](%#24: String)
+	416: Call debug::print<String>(&String)
+	417: MoveLoc[53](t1#1#54: &String)
+	418: Call debug::print<String>(&String)
+	419: LdConst[5](vector<u8>: "!="..)
+	420: Call string::utf8(vector<u8>): String
+	421: StLoc[15](%#25: String)
+	422: ImmBorrowLoc[15](%#25: String)
+	423: Call debug::print<String>(&String)
+	424: MoveLoc[73](t2#1#54: &String)
+	425: Call debug::print<String>(&String)
+	426: MoveLoc[29](ctx#1#0: &mut TxContext)
+	427: Pop
+	428: LdU64(13906835518668144639)
+	429: Abort
+B33:
+	430: MoveLoc[73](t2#1#54: &String)
+	431: Pop
+	432: MoveLoc[53](t1#1#54: &String)
+	433: Pop
+	434: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	435: Call coin_registry::decimals<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): u8
+	436: StLoc[54](t1#1#57: u8)
+	437: LdConst[0](u8: 6)
+	438: StLoc[74](t2#1#57: u8)
+	439: ImmBorrowLoc[54](t1#1#57: u8)
+	440: StLoc[55](t1#1#60: &u8)
+	441: ImmBorrowLoc[74](t2#1#57: u8)
+	442: StLoc[75](t2#1#60: &u8)
+	443: CopyLoc[55](t1#1#60: &u8)
+	444: CopyLoc[75](t2#1#60: &u8)
+	445: Eq
+	446: Not
+	447: BrFalse(466)
+B34:
+	448: LdConst[4](vector<u8>: "Ass..)
+	449: Call string::utf8(vector<u8>): String
+	450: StLoc[16](%#26: String)
+	451: ImmBorrowLoc[16](%#26: String)
+	452: Call debug::print<String>(&String)
+	453: MoveLoc[55](t1#1#60: &u8)
+	454: Call debug::print<u8>(&u8)
+	455: LdConst[5](vector<u8>: "!="..)
+	456: Call string::utf8(vector<u8>): String
+	457: StLoc[17](%#27: String)
+	458: ImmBorrowLoc[17](%#27: String)
+	459: Call debug::print<String>(&String)
+	460: MoveLoc[75](t2#1#60: &u8)
+	461: Call debug::print<u8>(&u8)
+	462: MoveLoc[29](ctx#1#0: &mut TxContext)
+	463: Pop
+	464: LdU64(13906835522963111935)
+	465: Abort
+B35:
+	466: MoveLoc[75](t2#1#60: &u8)
+	467: Pop
+	468: MoveLoc[55](t1#1#60: &u8)
+	469: Pop
+	470: MutBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	471: ImmBorrowLoc[77](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	472: MoveLoc[29](ctx#1#0: &mut TxContext)
+	473: Call coin_registry::claim_metadata_cap<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &TreasuryCap<COIN_REGISTRY_TESTS>, &mut TxContext): MetadataCap<COIN_REGISTRY_TESTS>
+	474: StLoc[33](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	475: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	476: Call coin_registry::is_metadata_cap_claimed<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	477: BrFalse(479)
+B36:
+	478: Branch(481)
+B37:
+	479: LdU64(13906835540142981119)
+	480: Abort
+B38:
+	481: ImmBorrowLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	482: Call coin_registry::metadata_cap_id<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<ID>
+	483: StLoc[18](%#28: Option<ID>)
+	484: ImmBorrowLoc[18](%#28: Option<ID>)
+	485: StLoc[35](o#1#63: &Option<ID>)
+	486: CopyLoc[35](o#1#63: &Option<ID>)
+	487: Call option::is_some<ID>(&Option<ID>): bool
+	488: BrFalse(500)
+B39:
+	489: MoveLoc[35](o#1#63: &Option<ID>)
+	490: Call option::borrow<ID>(&Option<ID>): &ID
+	491: StLoc[22](%#33: &ID)
+	492: ImmBorrowLoc[33](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	493: Call object::id<MetadataCap<COIN_REGISTRY_TESTS>>(&MetadataCap<COIN_REGISTRY_TESTS>): ID
+	494: StLoc[21](%#32: ID)
+	495: MoveLoc[22](%#33: &ID)
+	496: ImmBorrowLoc[21](%#32: ID)
+	497: Eq
+	498: StLoc[20](%#30: bool)
+	499: Branch(504)
+B40:
+	500: MoveLoc[35](o#1#63: &Option<ID>)
+	501: Pop
+	502: LdFalse
+	503: StLoc[20](%#30: bool)
+B41:
+	504: MoveLoc[20](%#30: bool)
+	505: BrFalse(507)
+B42:
+	506: Branch(509)
+B43:
+	507: LdU64(13906835544437948415)
+	508: Abort
+B44:
+	509: MoveLoc[33](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	510: Call unit_test::destroy<MetadataCap<COIN_REGISTRY_TESTS>>(MetadataCap<COIN_REGISTRY_TESTS>)
+	511: MoveLoc[36](registry#1#0: CoinRegistry)
+	512: Call unit_test::destroy<CoinRegistry>(CoinRegistry)
+	513: MoveLoc[30](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	514: Call unit_test::destroy<Currency<COIN_REGISTRY_TESTS>>(Currency<COIN_REGISTRY_TESTS>)
+	515: MoveLoc[31](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	516: Call unit_test::destroy<DenyCapV2<COIN_REGISTRY_TESTS>>(DenyCapV2<COIN_REGISTRY_TESTS>)
+	517: MoveLoc[32](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	518: Call unit_test::destroy<CoinMetadata<COIN_REGISTRY_TESTS>>(CoinMetadata<COIN_REGISTRY_TESTS>)
+	519: MoveLoc[77](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	520: Call unit_test::destroy<TreasuryCap<COIN_REGISTRY_TESTS>>(TreasuryCap<COIN_REGISTRY_TESTS>)
+	521: Ret
+}
+
+perfect_migration_with_regulated_coin_metadata() {
+L0:	%#1: TxContext
+L1:	%#2: Option<ID>
+L2:	%#4: bool
+L3:	%#6: ID
+L4:	%#7: &ID
+L5:	ctx#1#0: &mut TxContext
+L6:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L7:	deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>
+L8:	metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>
+L9:	o#1#1: &Option<ID>
+L10:	registry#1#0: CoinRegistry
+L11:	regulated_coin_metadata#1#0: RegulatedCoinMetadata<COIN_REGISTRY_TESTS>
+L12:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[5](ctx#1#0: &mut TxContext)
+	4: CopyLoc[5](ctx#1#0: &mut TxContext)
+	5: Call coin_registry::create_coin_data_registry_for_testing(&mut TxContext): CoinRegistry
+	6: StLoc[10](registry#1#0: CoinRegistry)
+	7: Call new_builder(): MetadataBuilder
+	8: LdFalse
+	9: Pack[0](COIN_REGISTRY_TESTS)
+	10: CopyLoc[5](ctx#1#0: &mut TxContext)
+	11: Call build_legacy_regulated<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): TreasuryCap<COIN_REGISTRY_TESTS> * DenyCapV2<COIN_REGISTRY_TESTS> * CoinMetadata<COIN_REGISTRY_TESTS>
+	12: StLoc[8](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	13: StLoc[7](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	14: StLoc[12](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	15: MutBorrowLoc[10](registry#1#0: CoinRegistry)
+	16: ImmBorrowLoc[8](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	17: CopyLoc[5](ctx#1#0: &mut TxContext)
+	18: Call coin_registry::migrate_legacy_metadata_for_testing<COIN_REGISTRY_TESTS>(&mut CoinRegistry, &CoinMetadata<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS>
+	19: StLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	20: ImmBorrowLoc[8](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	21: Call object::id<CoinMetadata<COIN_REGISTRY_TESTS>>(&CoinMetadata<COIN_REGISTRY_TESTS>): ID
+	22: ImmBorrowLoc[7](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	23: Call object::id<DenyCapV2<COIN_REGISTRY_TESTS>>(&DenyCapV2<COIN_REGISTRY_TESTS>): ID
+	24: MoveLoc[5](ctx#1#0: &mut TxContext)
+	25: Call coin::regulated_coin_metadata_for_testing<COIN_REGISTRY_TESTS>(ID, ID, &mut TxContext): RegulatedCoinMetadata<COIN_REGISTRY_TESTS>
+	26: StLoc[11](regulated_coin_metadata#1#0: RegulatedCoinMetadata<COIN_REGISTRY_TESTS>)
+	27: MutBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	28: ImmBorrowLoc[11](regulated_coin_metadata#1#0: RegulatedCoinMetadata<COIN_REGISTRY_TESTS>)
+	29: Call coin_registry::migrate_regulated_state_by_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &RegulatedCoinMetadata<COIN_REGISTRY_TESTS>)
+	30: ImmBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	31: Call coin_registry::is_regulated<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): bool
+	32: BrFalse(34)
+B1:
+	33: Branch(36)
+B2:
+	34: LdU64(13906835681876901887)
+	35: Abort
+B3:
+	36: ImmBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	37: Call coin_registry::deny_cap_id<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): Option<ID>
+	38: StLoc[1](%#2: Option<ID>)
+	39: ImmBorrowLoc[1](%#2: Option<ID>)
+	40: StLoc[9](o#1#1: &Option<ID>)
+	41: CopyLoc[9](o#1#1: &Option<ID>)
+	42: Call option::is_some<ID>(&Option<ID>): bool
+	43: BrFalse(55)
+B4:
+	44: MoveLoc[9](o#1#1: &Option<ID>)
+	45: Call option::borrow<ID>(&Option<ID>): &ID
+	46: StLoc[4](%#7: &ID)
+	47: ImmBorrowLoc[7](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	48: Call object::id<DenyCapV2<COIN_REGISTRY_TESTS>>(&DenyCapV2<COIN_REGISTRY_TESTS>): ID
+	49: StLoc[3](%#6: ID)
+	50: MoveLoc[4](%#7: &ID)
+	51: ImmBorrowLoc[3](%#6: ID)
+	52: Eq
+	53: StLoc[2](%#4: bool)
+	54: Branch(59)
+B5:
+	55: MoveLoc[9](o#1#1: &Option<ID>)
+	56: Pop
+	57: LdFalse
+	58: StLoc[2](%#4: bool)
+B6:
+	59: MoveLoc[2](%#4: bool)
+	60: BrFalse(62)
+B7:
+	61: Branch(64)
+B8:
+	62: LdU64(13906835686171869183)
+	63: Abort
+B9:
+	64: MoveLoc[11](regulated_coin_metadata#1#0: RegulatedCoinMetadata<COIN_REGISTRY_TESTS>)
+	65: Call unit_test::destroy<RegulatedCoinMetadata<COIN_REGISTRY_TESTS>>(RegulatedCoinMetadata<COIN_REGISTRY_TESTS>)
+	66: MoveLoc[10](registry#1#0: CoinRegistry)
+	67: Call unit_test::destroy<CoinRegistry>(CoinRegistry)
+	68: MoveLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	69: Call unit_test::destroy<Currency<COIN_REGISTRY_TESTS>>(Currency<COIN_REGISTRY_TESTS>)
+	70: MoveLoc[7](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	71: Call unit_test::destroy<DenyCapV2<COIN_REGISTRY_TESTS>>(DenyCapV2<COIN_REGISTRY_TESTS>)
+	72: MoveLoc[8](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	73: Call unit_test::destroy<CoinMetadata<COIN_REGISTRY_TESTS>>(CoinMetadata<COIN_REGISTRY_TESTS>)
+	74: MoveLoc[12](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	75: Call unit_test::destroy<TreasuryCap<COIN_REGISTRY_TESTS>>(TreasuryCap<COIN_REGISTRY_TESTS>)
+	76: Ret
+}
+
+migrate_regulated_state_by_metadata_twice() {
+L0:	%#1: TxContext
+L1:	_t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+L2:	ctx#1#0: &mut TxContext
+L3:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L4:	deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>
+L5:	metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>
+L6:	registry#1#0: CoinRegistry
+L7:	regulated_coin_metadata#1#0: RegulatedCoinMetadata<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call coin_registry::create_coin_data_registry_for_testing(&mut TxContext): CoinRegistry
+	6: StLoc[6](registry#1#0: CoinRegistry)
+	7: Call new_builder(): MetadataBuilder
+	8: LdFalse
+	9: Pack[0](COIN_REGISTRY_TESTS)
+	10: CopyLoc[2](ctx#1#0: &mut TxContext)
+	11: Call build_legacy_regulated<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): TreasuryCap<COIN_REGISTRY_TESTS> * DenyCapV2<COIN_REGISTRY_TESTS> * CoinMetadata<COIN_REGISTRY_TESTS>
+	12: StLoc[5](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	13: StLoc[4](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	14: StLoc[1](_t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	15: MutBorrowLoc[6](registry#1#0: CoinRegistry)
+	16: ImmBorrowLoc[5](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	17: CopyLoc[2](ctx#1#0: &mut TxContext)
+	18: Call coin_registry::migrate_legacy_metadata_for_testing<COIN_REGISTRY_TESTS>(&mut CoinRegistry, &CoinMetadata<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS>
+	19: StLoc[3](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	20: ImmBorrowLoc[5](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	21: Call object::id<CoinMetadata<COIN_REGISTRY_TESTS>>(&CoinMetadata<COIN_REGISTRY_TESTS>): ID
+	22: ImmBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	23: Call object::id<DenyCapV2<COIN_REGISTRY_TESTS>>(&DenyCapV2<COIN_REGISTRY_TESTS>): ID
+	24: MoveLoc[2](ctx#1#0: &mut TxContext)
+	25: Call coin::regulated_coin_metadata_for_testing<COIN_REGISTRY_TESTS>(ID, ID, &mut TxContext): RegulatedCoinMetadata<COIN_REGISTRY_TESTS>
+	26: StLoc[7](regulated_coin_metadata#1#0: RegulatedCoinMetadata<COIN_REGISTRY_TESTS>)
+	27: MutBorrowLoc[3](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	28: ImmBorrowLoc[7](regulated_coin_metadata#1#0: RegulatedCoinMetadata<COIN_REGISTRY_TESTS>)
+	29: Call coin_registry::migrate_regulated_state_by_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &RegulatedCoinMetadata<COIN_REGISTRY_TESTS>)
+	30: MutBorrowLoc[3](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	31: ImmBorrowLoc[7](regulated_coin_metadata#1#0: RegulatedCoinMetadata<COIN_REGISTRY_TESTS>)
+	32: Call coin_registry::migrate_regulated_state_by_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &RegulatedCoinMetadata<COIN_REGISTRY_TESTS>)
+	33: LdU64(13906835832200757247)
+	34: Abort
+}
+
+update_legacy_fail() {
+L0:	%#1: TxContext
+L1:	_deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>
+L2:	_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L3:	ctx#1#0: &mut TxContext
+L4:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L5:	metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>
+L6:	registry#1#0: CoinRegistry
+L7:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call coin_registry::create_coin_data_registry_for_testing(&mut TxContext): CoinRegistry
+	6: StLoc[6](registry#1#0: CoinRegistry)
+	7: Call new_builder(): MetadataBuilder
+	8: LdFalse
+	9: Pack[0](COIN_REGISTRY_TESTS)
+	10: CopyLoc[3](ctx#1#0: &mut TxContext)
+	11: Call build_legacy_regulated<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): TreasuryCap<COIN_REGISTRY_TESTS> * DenyCapV2<COIN_REGISTRY_TESTS> * CoinMetadata<COIN_REGISTRY_TESTS>
+	12: StLoc[5](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	13: StLoc[1](_deny_cap#1#0: DenyCapV2<COIN_REGISTRY_TESTS>)
+	14: StLoc[7](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	15: MutBorrowLoc[6](registry#1#0: CoinRegistry)
+	16: ImmBorrowLoc[5](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	17: CopyLoc[3](ctx#1#0: &mut TxContext)
+	18: Call coin_registry::migrate_legacy_metadata_for_testing<COIN_REGISTRY_TESTS>(&mut CoinRegistry, &CoinMetadata<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS>
+	19: StLoc[4](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	20: MutBorrowLoc[4](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	21: ImmBorrowLoc[7](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	22: MoveLoc[3](ctx#1#0: &mut TxContext)
+	23: Call coin_registry::claim_metadata_cap<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &TreasuryCap<COIN_REGISTRY_TESTS>, &mut TxContext): MetadataCap<COIN_REGISTRY_TESTS>
+	24: StLoc[2](_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	25: MutBorrowLoc[4](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	26: ImmBorrowLoc[5](metadata#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	27: Call coin_registry::update_from_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &CoinMetadata<COIN_REGISTRY_TESTS>)
+	28: LdU64(13906835918100103167)
+	29: Abort
+}
+
+borrow_legacy_coin_metadata() {
+L0:	%#1: TxContext
+L1:	%#12: Url
+L2:	%#13: String
+L3:	%#14: String
+L4:	%#15: String
+L5:	%#16: String
+L6:	%#17: String
+L7:	%#18: String
+L8:	%#2: String
+L9:	%#3: String
+L10:	%#4: String
+L11:	%#5: String
+L12:	%#6: String
+L13:	%#7: String
+L14:	%#8: String
+L15:	%#9: String
+L16:	borrow#1#0: Borrow<COIN_REGISTRY_TESTS>
+L17:	borrow#2#0: Borrow<COIN_REGISTRY_TESTS>
+L18:	ctx#1#0: &mut TxContext
+L19:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L20:	legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>
+L21:	legacy#2#0: CoinMetadata<COIN_REGISTRY_TESTS>
+L22:	legacy_id#1#0: ID
+L23:	metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L24:	o#1#28: Option<Url>
+L25:	t1#1#1: u8
+L26:	t1#1#10: &String
+L27:	t1#1#13: String
+L28:	t1#1#16: &String
+L29:	t1#1#19: String
+L30:	t1#1#22: &String
+L31:	t1#1#25: String
+L32:	t1#1#30: &String
+L33:	t1#1#33: String
+L34:	t1#1#36: &String
+L35:	t1#1#39: ID
+L36:	t1#1#4: &u8
+L37:	t1#1#42: &ID
+L38:	t1#1#7: String
+L39:	t2#1#1: u8
+L40:	t2#1#10: &String
+L41:	t2#1#13: String
+L42:	t2#1#16: &String
+L43:	t2#1#19: String
+L44:	t2#1#22: &String
+L45:	t2#1#25: String
+L46:	t2#1#30: &String
+L47:	t2#1#33: String
+L48:	t2#1#36: &String
+L49:	t2#1#39: ID
+L50:	t2#1#4: &u8
+L51:	t2#1#42: &ID
+L52:	t2#1#7: String
+L53:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[18](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[18](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[53](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: CopyLoc[18](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[23](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: MutBorrowLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	15: CopyLoc[18](ctx#1#0: &mut TxContext)
+	16: Call coin_registry::borrow_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &mut TxContext): CoinMetadata<COIN_REGISTRY_TESTS> * Borrow<COIN_REGISTRY_TESTS>
+	17: StLoc[16](borrow#1#0: Borrow<COIN_REGISTRY_TESTS>)
+	18: StLoc[20](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	19: ImmBorrowLoc[20](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	20: Call object::id<CoinMetadata<COIN_REGISTRY_TESTS>>(&CoinMetadata<COIN_REGISTRY_TESTS>): ID
+	21: StLoc[22](legacy_id#1#0: ID)
+	22: ImmBorrowLoc[20](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	23: Call coin::get_decimals<COIN_REGISTRY_TESTS>(&CoinMetadata<COIN_REGISTRY_TESTS>): u8
+	24: StLoc[25](t1#1#1: u8)
+	25: ImmBorrowLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	26: Call coin_registry::decimals<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): u8
+	27: StLoc[39](t2#1#1: u8)
+	28: ImmBorrowLoc[25](t1#1#1: u8)
+	29: StLoc[36](t1#1#4: &u8)
+	30: ImmBorrowLoc[39](t2#1#1: u8)
+	31: StLoc[50](t2#1#4: &u8)
+	32: CopyLoc[36](t1#1#4: &u8)
+	33: CopyLoc[50](t2#1#4: &u8)
+	34: Eq
+	35: Not
+	36: BrFalse(55)
+B1:
+	37: LdConst[4](vector<u8>: "Ass..)
+	38: Call string::utf8(vector<u8>): String
+	39: StLoc[8](%#2: String)
+	40: ImmBorrowLoc[8](%#2: String)
+	41: Call debug::print<String>(&String)
+	42: MoveLoc[36](t1#1#4: &u8)
+	43: Call debug::print<u8>(&u8)
+	44: LdConst[5](vector<u8>: "!="..)
+	45: Call string::utf8(vector<u8>): String
+	46: StLoc[9](%#3: String)
+	47: ImmBorrowLoc[9](%#3: String)
+	48: Call debug::print<String>(&String)
+	49: MoveLoc[50](t2#1#4: &u8)
+	50: Call debug::print<u8>(&u8)
+	51: MoveLoc[18](ctx#1#0: &mut TxContext)
+	52: Pop
+	53: LdU64(13906836008294416383)
+	54: Abort
+B2:
+	55: MoveLoc[50](t2#1#4: &u8)
+	56: Pop
+	57: MoveLoc[36](t1#1#4: &u8)
+	58: Pop
+	59: ImmBorrowLoc[20](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	60: Call coin::get_symbol<COIN_REGISTRY_TESTS>(&CoinMetadata<COIN_REGISTRY_TESTS>): String
+	61: StLoc[38](t1#1#7: String)
+	62: ImmBorrowLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	63: Call coin_registry::symbol<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	64: Call string::to_ascii(String): String
+	65: StLoc[52](t2#1#7: String)
+	66: ImmBorrowLoc[38](t1#1#7: String)
+	67: StLoc[26](t1#1#10: &String)
+	68: ImmBorrowLoc[52](t2#1#7: String)
+	69: StLoc[40](t2#1#10: &String)
+	70: CopyLoc[26](t1#1#10: &String)
+	71: CopyLoc[40](t2#1#10: &String)
+	72: Eq
+	73: Not
+	74: BrFalse(93)
+B3:
+	75: LdConst[4](vector<u8>: "Ass..)
+	76: Call string::utf8(vector<u8>): String
+	77: StLoc[10](%#4: String)
+	78: ImmBorrowLoc[10](%#4: String)
+	79: Call debug::print<String>(&String)
+	80: MoveLoc[26](t1#1#10: &String)
+	81: Call debug::print<String>(&String)
+	82: LdConst[5](vector<u8>: "!="..)
+	83: Call string::utf8(vector<u8>): String
+	84: StLoc[11](%#5: String)
+	85: ImmBorrowLoc[11](%#5: String)
+	86: Call debug::print<String>(&String)
+	87: MoveLoc[40](t2#1#10: &String)
+	88: Call debug::print<String>(&String)
+	89: MoveLoc[18](ctx#1#0: &mut TxContext)
+	90: Pop
+	91: LdU64(13906836012589383679)
+	92: Abort
+B4:
+	93: MoveLoc[40](t2#1#10: &String)
+	94: Pop
+	95: MoveLoc[26](t1#1#10: &String)
+	96: Pop
+	97: ImmBorrowLoc[20](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	98: Call coin::get_name<COIN_REGISTRY_TESTS>(&CoinMetadata<COIN_REGISTRY_TESTS>): String
+	99: StLoc[27](t1#1#13: String)
+	100: ImmBorrowLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	101: Call coin_registry::name<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	102: StLoc[41](t2#1#13: String)
+	103: ImmBorrowLoc[27](t1#1#13: String)
+	104: StLoc[28](t1#1#16: &String)
+	105: ImmBorrowLoc[41](t2#1#13: String)
+	106: StLoc[42](t2#1#16: &String)
+	107: CopyLoc[28](t1#1#16: &String)
+	108: CopyLoc[42](t2#1#16: &String)
+	109: Eq
+	110: Not
+	111: BrFalse(130)
+B5:
+	112: LdConst[4](vector<u8>: "Ass..)
+	113: Call string::utf8(vector<u8>): String
+	114: StLoc[12](%#6: String)
+	115: ImmBorrowLoc[12](%#6: String)
+	116: Call debug::print<String>(&String)
+	117: MoveLoc[28](t1#1#16: &String)
+	118: Call debug::print<String>(&String)
+	119: LdConst[5](vector<u8>: "!="..)
+	120: Call string::utf8(vector<u8>): String
+	121: StLoc[13](%#7: String)
+	122: ImmBorrowLoc[13](%#7: String)
+	123: Call debug::print<String>(&String)
+	124: MoveLoc[42](t2#1#16: &String)
+	125: Call debug::print<String>(&String)
+	126: MoveLoc[18](ctx#1#0: &mut TxContext)
+	127: Pop
+	128: LdU64(13906836016884350975)
+	129: Abort
+B6:
+	130: MoveLoc[42](t2#1#16: &String)
+	131: Pop
+	132: MoveLoc[28](t1#1#16: &String)
+	133: Pop
+	134: ImmBorrowLoc[20](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	135: Call coin::get_description<COIN_REGISTRY_TESTS>(&CoinMetadata<COIN_REGISTRY_TESTS>): String
+	136: StLoc[29](t1#1#19: String)
+	137: ImmBorrowLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	138: Call coin_registry::description<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	139: StLoc[43](t2#1#19: String)
+	140: ImmBorrowLoc[29](t1#1#19: String)
+	141: StLoc[30](t1#1#22: &String)
+	142: ImmBorrowLoc[43](t2#1#19: String)
+	143: StLoc[44](t2#1#22: &String)
+	144: CopyLoc[30](t1#1#22: &String)
+	145: CopyLoc[44](t2#1#22: &String)
+	146: Eq
+	147: Not
+	148: BrFalse(167)
+B7:
+	149: LdConst[4](vector<u8>: "Ass..)
+	150: Call string::utf8(vector<u8>): String
+	151: StLoc[14](%#8: String)
+	152: ImmBorrowLoc[14](%#8: String)
+	153: Call debug::print<String>(&String)
+	154: MoveLoc[30](t1#1#22: &String)
+	155: Call debug::print<String>(&String)
+	156: LdConst[5](vector<u8>: "!="..)
+	157: Call string::utf8(vector<u8>): String
+	158: StLoc[15](%#9: String)
+	159: ImmBorrowLoc[15](%#9: String)
+	160: Call debug::print<String>(&String)
+	161: MoveLoc[44](t2#1#22: &String)
+	162: Call debug::print<String>(&String)
+	163: MoveLoc[18](ctx#1#0: &mut TxContext)
+	164: Pop
+	165: LdU64(13906836021179318271)
+	166: Abort
+B8:
+	167: MoveLoc[44](t2#1#22: &String)
+	168: Pop
+	169: MoveLoc[30](t1#1#22: &String)
+	170: Pop
+	171: ImmBorrowLoc[20](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	172: Call coin::get_icon_url<COIN_REGISTRY_TESTS>(&CoinMetadata<COIN_REGISTRY_TESTS>): Option<Url>
+	173: StLoc[24](o#1#28: Option<Url>)
+	174: ImmBorrowLoc[24](o#1#28: Option<Url>)
+	175: Call option::is_some<Url>(&Option<Url>): bool
+	176: BrFalse(178)
+B9:
+	177: Branch(184)
+B10:
+	178: MoveLoc[18](ctx#1#0: &mut TxContext)
+	179: Pop
+	180: MoveLoc[24](o#1#28: Option<Url>)
+	181: Call option::destroy_none<Url>(Option<Url>)
+	182: LdU64(13906836029769252863)
+	183: Abort
+B11:
+	184: MoveLoc[24](o#1#28: Option<Url>)
+	185: Call option::destroy_some<Url>(Option<Url>): Url
+	186: StLoc[1](%#12: Url)
+	187: ImmBorrowLoc[1](%#12: Url)
+	188: Call url::inner_url(&Url): String
+	189: StLoc[31](t1#1#25: String)
+	190: ImmBorrowLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	191: Call coin_registry::icon_url<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	192: Call string::to_ascii(String): String
+	193: StLoc[45](t2#1#25: String)
+	194: ImmBorrowLoc[31](t1#1#25: String)
+	195: StLoc[32](t1#1#30: &String)
+	196: ImmBorrowLoc[45](t2#1#25: String)
+	197: StLoc[46](t2#1#30: &String)
+	198: CopyLoc[32](t1#1#30: &String)
+	199: CopyLoc[46](t2#1#30: &String)
+	200: Eq
+	201: Not
+	202: BrFalse(221)
+B12:
+	203: LdConst[4](vector<u8>: "Ass..)
+	204: Call string::utf8(vector<u8>): String
+	205: StLoc[2](%#13: String)
+	206: ImmBorrowLoc[2](%#13: String)
+	207: Call debug::print<String>(&String)
+	208: MoveLoc[32](t1#1#30: &String)
+	209: Call debug::print<String>(&String)
+	210: LdConst[5](vector<u8>: "!="..)
+	211: Call string::utf8(vector<u8>): String
+	212: StLoc[3](%#14: String)
+	213: ImmBorrowLoc[3](%#14: String)
+	214: Call debug::print<String>(&String)
+	215: MoveLoc[46](t2#1#30: &String)
+	216: Call debug::print<String>(&String)
+	217: MoveLoc[18](ctx#1#0: &mut TxContext)
+	218: Pop
+	219: LdU64(13906836025474285567)
+	220: Abort
+B13:
+	221: MoveLoc[46](t2#1#30: &String)
+	222: Pop
+	223: MoveLoc[32](t1#1#30: &String)
+	224: Pop
+	225: ImmBorrowLoc[53](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	226: MutBorrowLoc[20](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	227: LdConst[12](vector<u8>: "New..)
+	228: Call string::utf8(vector<u8>): String
+	229: Call coin::update_name<COIN_REGISTRY_TESTS>(&TreasuryCap<COIN_REGISTRY_TESTS>, &mut CoinMetadata<COIN_REGISTRY_TESTS>, String)
+	230: MutBorrowLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	231: MoveLoc[20](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	232: MoveLoc[16](borrow#1#0: Borrow<COIN_REGISTRY_TESTS>)
+	233: CopyLoc[18](ctx#1#0: &mut TxContext)
+	234: Call coin_registry::return_borrowed_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, CoinMetadata<COIN_REGISTRY_TESTS>, Borrow<COIN_REGISTRY_TESTS>, &mut TxContext)
+	235: MutBorrowLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	236: CopyLoc[18](ctx#1#0: &mut TxContext)
+	237: Call coin_registry::borrow_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &mut TxContext): CoinMetadata<COIN_REGISTRY_TESTS> * Borrow<COIN_REGISTRY_TESTS>
+	238: StLoc[17](borrow#2#0: Borrow<COIN_REGISTRY_TESTS>)
+	239: StLoc[21](legacy#2#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	240: ImmBorrowLoc[21](legacy#2#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	241: Call coin::get_name<COIN_REGISTRY_TESTS>(&CoinMetadata<COIN_REGISTRY_TESTS>): String
+	242: StLoc[33](t1#1#33: String)
+	243: ImmBorrowLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	244: Call coin_registry::name<COIN_REGISTRY_TESTS>(&Currency<COIN_REGISTRY_TESTS>): String
+	245: StLoc[47](t2#1#33: String)
+	246: ImmBorrowLoc[33](t1#1#33: String)
+	247: StLoc[34](t1#1#36: &String)
+	248: ImmBorrowLoc[47](t2#1#33: String)
+	249: StLoc[48](t2#1#36: &String)
+	250: CopyLoc[34](t1#1#36: &String)
+	251: CopyLoc[48](t2#1#36: &String)
+	252: Eq
+	253: Not
+	254: BrFalse(273)
+B14:
+	255: LdConst[4](vector<u8>: "Ass..)
+	256: Call string::utf8(vector<u8>): String
+	257: StLoc[4](%#15: String)
+	258: ImmBorrowLoc[4](%#15: String)
+	259: Call debug::print<String>(&String)
+	260: MoveLoc[34](t1#1#36: &String)
+	261: Call debug::print<String>(&String)
+	262: LdConst[5](vector<u8>: "!="..)
+	263: Call string::utf8(vector<u8>): String
+	264: StLoc[5](%#16: String)
+	265: ImmBorrowLoc[5](%#16: String)
+	266: Call debug::print<String>(&String)
+	267: MoveLoc[48](t2#1#36: &String)
+	268: Call debug::print<String>(&String)
+	269: MoveLoc[18](ctx#1#0: &mut TxContext)
+	270: Pop
+	271: LdU64(13906836081308860415)
+	272: Abort
+B15:
+	273: MoveLoc[48](t2#1#36: &String)
+	274: Pop
+	275: MoveLoc[34](t1#1#36: &String)
+	276: Pop
+	277: ImmBorrowLoc[21](legacy#2#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	278: Call object::id<CoinMetadata<COIN_REGISTRY_TESTS>>(&CoinMetadata<COIN_REGISTRY_TESTS>): ID
+	279: StLoc[35](t1#1#39: ID)
+	280: MoveLoc[22](legacy_id#1#0: ID)
+	281: StLoc[49](t2#1#39: ID)
+	282: ImmBorrowLoc[35](t1#1#39: ID)
+	283: StLoc[37](t1#1#42: &ID)
+	284: ImmBorrowLoc[49](t2#1#39: ID)
+	285: StLoc[51](t2#1#42: &ID)
+	286: CopyLoc[37](t1#1#42: &ID)
+	287: CopyLoc[51](t2#1#42: &ID)
+	288: Eq
+	289: Not
+	290: BrFalse(309)
+B16:
+	291: LdConst[4](vector<u8>: "Ass..)
+	292: Call string::utf8(vector<u8>): String
+	293: StLoc[6](%#17: String)
+	294: ImmBorrowLoc[6](%#17: String)
+	295: Call debug::print<String>(&String)
+	296: MoveLoc[37](t1#1#42: &ID)
+	297: Call debug::print<ID>(&ID)
+	298: LdConst[5](vector<u8>: "!="..)
+	299: Call string::utf8(vector<u8>): String
+	300: StLoc[7](%#18: String)
+	301: ImmBorrowLoc[7](%#18: String)
+	302: Call debug::print<String>(&String)
+	303: MoveLoc[51](t2#1#42: &ID)
+	304: Call debug::print<ID>(&ID)
+	305: MoveLoc[18](ctx#1#0: &mut TxContext)
+	306: Pop
+	307: LdU64(13906836085603827711)
+	308: Abort
+B17:
+	309: MoveLoc[51](t2#1#42: &ID)
+	310: Pop
+	311: MoveLoc[37](t1#1#42: &ID)
+	312: Pop
+	313: MutBorrowLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	314: MoveLoc[21](legacy#2#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	315: MoveLoc[17](borrow#2#0: Borrow<COIN_REGISTRY_TESTS>)
+	316: MoveLoc[18](ctx#1#0: &mut TxContext)
+	317: Call coin_registry::return_borrowed_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, CoinMetadata<COIN_REGISTRY_TESTS>, Borrow<COIN_REGISTRY_TESTS>, &mut TxContext)
+	318: MoveLoc[53](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	319: Call unit_test::destroy<TreasuryCap<COIN_REGISTRY_TESTS>>(TreasuryCap<COIN_REGISTRY_TESTS>)
+	320: MoveLoc[19](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	321: Call unit_test::destroy<Currency<COIN_REGISTRY_TESTS>>(Currency<COIN_REGISTRY_TESTS>)
+	322: MoveLoc[23](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	323: Call unit_test::destroy<MetadataCap<COIN_REGISTRY_TESTS>>(MetadataCap<COIN_REGISTRY_TESTS>)
+	324: Ret
+}
+
+try_borrowing_from_migrated_currency_fail() {
+L0:	%#1: TxContext
+L1:	_borrow#1#0: Borrow<COIN_REGISTRY_TESTS>
+L2:	_borrowed_legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>
+L3:	_t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+L4:	ctx#1#0: &mut TxContext
+L5:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L6:	legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>
+L7:	registry#1#0: CoinRegistry
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[4](ctx#1#0: &mut TxContext)
+	4: CopyLoc[4](ctx#1#0: &mut TxContext)
+	5: Call coin_registry::create_coin_data_registry_for_testing(&mut TxContext): CoinRegistry
+	6: StLoc[7](registry#1#0: CoinRegistry)
+	7: Call new_builder(): MetadataBuilder
+	8: LdFalse
+	9: Pack[0](COIN_REGISTRY_TESTS)
+	10: CopyLoc[4](ctx#1#0: &mut TxContext)
+	11: Call build_legacy<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): TreasuryCap<COIN_REGISTRY_TESTS> * CoinMetadata<COIN_REGISTRY_TESTS>
+	12: StLoc[6](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	13: StLoc[3](_t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	14: MutBorrowLoc[7](registry#1#0: CoinRegistry)
+	15: ImmBorrowLoc[6](legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	16: CopyLoc[4](ctx#1#0: &mut TxContext)
+	17: Call coin_registry::migrate_legacy_metadata_for_testing<COIN_REGISTRY_TESTS>(&mut CoinRegistry, &CoinMetadata<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS>
+	18: StLoc[5](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	19: MutBorrowLoc[5](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	20: MoveLoc[4](ctx#1#0: &mut TxContext)
+	21: Call coin_registry::borrow_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &mut TxContext): CoinMetadata<COIN_REGISTRY_TESTS> * Borrow<COIN_REGISTRY_TESTS>
+	22: StLoc[1](_borrow#1#0: Borrow<COIN_REGISTRY_TESTS>)
+	23: StLoc[2](_borrowed_legacy#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	24: LdU64(13906836162913239039)
+	25: Abort
+}
+
+borrow_legacy_coin_metadata_twice() {
+L0:	%#1: TxContext
+L1:	_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L2:	_t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+L3:	borrow_1#1#0: Borrow<COIN_REGISTRY_TESTS>
+L4:	borrow_2#1#0: Borrow<COIN_REGISTRY_TESTS>
+L5:	ctx#1#0: &mut TxContext
+L6:	currency#1#0: Currency<COIN_REGISTRY_TESTS>
+L7:	legacy_1#1#0: CoinMetadata<COIN_REGISTRY_TESTS>
+L8:	legacy_2#1#0: CoinMetadata<COIN_REGISTRY_TESTS>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[5](ctx#1#0: &mut TxContext)
+	4: Call new_builder(): MetadataBuilder
+	5: LdFalse
+	6: Pack[0](COIN_REGISTRY_TESTS)
+	7: CopyLoc[5](ctx#1#0: &mut TxContext)
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[2](_t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: CopyLoc[5](ctx#1#0: &mut TxContext)
+	11: Call coin_registry::finalize_unwrap_for_testing<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): Currency<COIN_REGISTRY_TESTS> * MetadataCap<COIN_REGISTRY_TESTS>
+	12: StLoc[1](_metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	13: StLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	14: MutBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	15: CopyLoc[5](ctx#1#0: &mut TxContext)
+	16: Call coin_registry::borrow_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &mut TxContext): CoinMetadata<COIN_REGISTRY_TESTS> * Borrow<COIN_REGISTRY_TESTS>
+	17: StLoc[3](borrow_1#1#0: Borrow<COIN_REGISTRY_TESTS>)
+	18: StLoc[7](legacy_1#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	19: MutBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	20: CopyLoc[5](ctx#1#0: &mut TxContext)
+	21: Call coin_registry::borrow_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, &mut TxContext): CoinMetadata<COIN_REGISTRY_TESTS> * Borrow<COIN_REGISTRY_TESTS>
+	22: StLoc[4](borrow_2#1#0: Borrow<COIN_REGISTRY_TESTS>)
+	23: StLoc[8](legacy_2#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	24: MutBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	25: MoveLoc[7](legacy_1#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	26: MoveLoc[3](borrow_1#1#0: Borrow<COIN_REGISTRY_TESTS>)
+	27: CopyLoc[5](ctx#1#0: &mut TxContext)
+	28: Call coin_registry::return_borrowed_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, CoinMetadata<COIN_REGISTRY_TESTS>, Borrow<COIN_REGISTRY_TESTS>, &mut TxContext)
+	29: MutBorrowLoc[6](currency#1#0: Currency<COIN_REGISTRY_TESTS>)
+	30: MoveLoc[8](legacy_2#1#0: CoinMetadata<COIN_REGISTRY_TESTS>)
+	31: MoveLoc[4](borrow_2#1#0: Borrow<COIN_REGISTRY_TESTS>)
+	32: MoveLoc[5](ctx#1#0: &mut TxContext)
+	33: Call coin_registry::return_borrowed_legacy_metadata<COIN_REGISTRY_TESTS>(&mut Currency<COIN_REGISTRY_TESTS>, CoinMetadata<COIN_REGISTRY_TESTS>, Borrow<COIN_REGISTRY_TESTS>, &mut TxContext)
+	34: LdU64(13906836227337748479)
+	35: Abort
+}
+
+otw_currency_promotion() {
+L0:	%#1: ID
+L1:	currency#1#0: Receiving<Currency<COIN_REGISTRY_TESTS>>
+L2:	metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>
+L3:	t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>
+L4:	test#1#0: Scenario
+B0:
+	0: LdConst[14](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[4](test#1#0: Scenario)
+	3: Call new_builder(): MetadataBuilder
+	4: LdFalse
+	5: Pack[0](COIN_REGISTRY_TESTS)
+	6: MutBorrowLoc[4](test#1#0: Scenario)
+	7: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	8: Call build_otw<COIN_REGISTRY_TESTS>(MetadataBuilder, COIN_REGISTRY_TESTS, &mut TxContext): CurrencyInitializer<COIN_REGISTRY_TESTS> * TreasuryCap<COIN_REGISTRY_TESTS>
+	9: StLoc[3](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	10: MutBorrowLoc[4](test#1#0: Scenario)
+	11: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	12: Call coin_registry::finalize<COIN_REGISTRY_TESTS>(CurrencyInitializer<COIN_REGISTRY_TESTS>, &mut TxContext): MetadataCap<COIN_REGISTRY_TESTS>
+	13: StLoc[2](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	14: MutBorrowLoc[4](test#1#0: Scenario)
+	15: LdConst[15](address: 0x00..)
+	16: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	17: Pop
+	18: Call object::sui_coin_registry_address(): address
+	19: Call object::id_from_address(address): ID
+	20: StLoc[0](%#1: ID)
+	21: ImmBorrowLoc[0](%#1: ID)
+	22: Call test_scenario::most_recent_receiving_ticket<Currency<COIN_REGISTRY_TESTS>>(&ID): Receiving<Currency<COIN_REGISTRY_TESTS>>
+	23: StLoc[1](currency#1#0: Receiving<Currency<COIN_REGISTRY_TESTS>>)
+	24: MoveLoc[2](metadata_cap#1#0: MetadataCap<COIN_REGISTRY_TESTS>)
+	25: Call unit_test::destroy<MetadataCap<COIN_REGISTRY_TESTS>>(MetadataCap<COIN_REGISTRY_TESTS>)
+	26: MoveLoc[1](currency#1#0: Receiving<Currency<COIN_REGISTRY_TESTS>>)
+	27: Call unit_test::destroy<Receiving<Currency<COIN_REGISTRY_TESTS>>>(Receiving<Currency<COIN_REGISTRY_TESTS>>)
+	28: MoveLoc[3](t_cap#1#0: TreasuryCap<COIN_REGISTRY_TESTS>)
+	29: Call unit_test::destroy<TreasuryCap<COIN_REGISTRY_TESTS>>(TreasuryCap<COIN_REGISTRY_TESTS>)
+	30: MoveLoc[4](test#1#0: Scenario)
+	31: Call test_scenario::end(Scenario): TransactionEffects
+	32: Pop
+	33: Ret
+}
+
+new_currency_is_shared() {
+L0:	currency#1#0: Currency<TestDynamic>
+L1:	metadata_cap#1#0: MetadataCap<TestDynamic>
+L2:	registry#1#0: CoinRegistry
+L3:	t_cap#1#0: TreasuryCap<TestDynamic>
+L4:	test#1#0: Scenario
+B0:
+	0: LdConst[14](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[4](test#1#0: Scenario)
+	3: MutBorrowLoc[4](test#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call coin_registry::create_coin_data_registry_for_testing(&mut TxContext): CoinRegistry
+	6: StLoc[2](registry#1#0: CoinRegistry)
+	7: Call new_builder(): MetadataBuilder
+	8: MutBorrowLoc[2](registry#1#0: CoinRegistry)
+	9: MutBorrowLoc[4](test#1#0: Scenario)
+	10: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	11: Call build_dynamic(MetadataBuilder, &mut CoinRegistry, &mut TxContext): CurrencyInitializer<TestDynamic> * TreasuryCap<TestDynamic>
+	12: StLoc[3](t_cap#1#0: TreasuryCap<TestDynamic>)
+	13: MutBorrowLoc[4](test#1#0: Scenario)
+	14: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	15: Call coin_registry::finalize<TestDynamic>(CurrencyInitializer<TestDynamic>, &mut TxContext): MetadataCap<TestDynamic>
+	16: StLoc[1](metadata_cap#1#0: MetadataCap<TestDynamic>)
+	17: MutBorrowLoc[4](test#1#0: Scenario)
+	18: LdConst[14](address: 0x00..)
+	19: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	20: Pop
+	21: ImmBorrowLoc[4](test#1#0: Scenario)
+	22: Call test_scenario::take_shared<Currency<TestDynamic>>(&Scenario): Currency<TestDynamic>
+	23: StLoc[0](currency#1#0: Currency<TestDynamic>)
+	24: MutBorrowLoc[0](currency#1#0: Currency<TestDynamic>)
+	25: MoveLoc[1](metadata_cap#1#0: MetadataCap<TestDynamic>)
+	26: Call coin_registry::delete_metadata_cap<TestDynamic>(&mut Currency<TestDynamic>, MetadataCap<TestDynamic>)
+	27: MoveLoc[0](currency#1#0: Currency<TestDynamic>)
+	28: Call test_scenario::return_shared<Currency<TestDynamic>>(Currency<TestDynamic>)
+	29: MoveLoc[2](registry#1#0: CoinRegistry)
+	30: Call unit_test::destroy<CoinRegistry>(CoinRegistry)
+	31: MoveLoc[3](t_cap#1#0: TreasuryCap<TestDynamic>)
+	32: Call unit_test::destroy<TreasuryCap<TestDynamic>>(TreasuryCap<TestDynamic>)
+	33: MoveLoc[4](test#1#0: Scenario)
+	34: Call test_scenario::end(Scenario): TransactionEffects
+	35: Pop
+	36: Ret
+}
+
+new_currency_is_shared_and_metadata_cap_is_deleted() {
+L0:	currency#1#0: Currency<TestDynamic>
+L1:	registry#1#0: CoinRegistry
+L2:	t_cap#1#0: TreasuryCap<TestDynamic>
+L3:	test#1#0: Scenario
+B0:
+	0: LdConst[14](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[3](test#1#0: Scenario)
+	3: MutBorrowLoc[3](test#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call coin_registry::create_coin_data_registry_for_testing(&mut TxContext): CoinRegistry
+	6: StLoc[1](registry#1#0: CoinRegistry)
+	7: Call new_builder(): MetadataBuilder
+	8: MutBorrowLoc[1](registry#1#0: CoinRegistry)
+	9: MutBorrowLoc[3](test#1#0: Scenario)
+	10: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	11: Call build_dynamic(MetadataBuilder, &mut CoinRegistry, &mut TxContext): CurrencyInitializer<TestDynamic> * TreasuryCap<TestDynamic>
+	12: StLoc[2](t_cap#1#0: TreasuryCap<TestDynamic>)
+	13: MutBorrowLoc[3](test#1#0: Scenario)
+	14: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	15: Call coin_registry::finalize_and_delete_metadata_cap<TestDynamic>(CurrencyInitializer<TestDynamic>, &mut TxContext)
+	16: MutBorrowLoc[3](test#1#0: Scenario)
+	17: LdConst[14](address: 0x00..)
+	18: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	19: Pop
+	20: ImmBorrowLoc[3](test#1#0: Scenario)
+	21: Call test_scenario::take_shared<Currency<TestDynamic>>(&Scenario): Currency<TestDynamic>
+	22: StLoc[0](currency#1#0: Currency<TestDynamic>)
+	23: ImmBorrowLoc[0](currency#1#0: Currency<TestDynamic>)
+	24: Call coin_registry::is_metadata_cap_claimed<TestDynamic>(&Currency<TestDynamic>): bool
+	25: BrFalse(27)
+B1:
+	26: Branch(29)
+B2:
+	27: LdU64(13906836454971015167)
+	28: Abort
+B3:
+	29: ImmBorrowLoc[0](currency#1#0: Currency<TestDynamic>)
+	30: Call coin_registry::is_metadata_cap_deleted<TestDynamic>(&Currency<TestDynamic>): bool
+	31: BrFalse(33)
+B4:
+	32: Branch(35)
+B5:
+	33: LdU64(13906836459265982463)
+	34: Abort
+B6:
+	35: MoveLoc[0](currency#1#0: Currency<TestDynamic>)
+	36: Call test_scenario::return_shared<Currency<TestDynamic>>(Currency<TestDynamic>)
+	37: MoveLoc[1](registry#1#0: CoinRegistry)
+	38: Call unit_test::destroy<CoinRegistry>(CoinRegistry)
+	39: MoveLoc[2](t_cap#1#0: TreasuryCap<TestDynamic>)
+	40: Call unit_test::destroy<TreasuryCap<TestDynamic>>(TreasuryCap<TestDynamic>)
+	41: MoveLoc[3](test#1#0: Scenario)
+	42: Call test_scenario::end(Scenario): TransactionEffects
+	43: Pop
+	44: Ret
+}
+
+public new_builder(): MetadataBuilder {
+B0:
+	0: LdConst[0](u8: 6)
+	1: LdConst[1](vector<u8>: "TES..)
+	2: Call string::utf8(vector<u8>): String
+	3: LdConst[2](vector<u8>: "Tes..)
+	4: Call string::utf8(vector<u8>): String
+	5: LdConst[2](vector<u8>: "Tes..)
+	6: Call string::utf8(vector<u8>): String
+	7: LdConst[3](vector<u8>: "htt..)
+	8: Call string::utf8(vector<u8>): String
+	9: Pack[2](MetadataBuilder)
+	10: Ret
+}
+
+public symbol(b#0#0: MetadataBuilder, symbol#0#0: String): MetadataBuilder {
+B0:
+	0: MoveLoc[1](symbol#0#0: String)
+	1: MutBorrowLoc[0](b#0#0: MetadataBuilder)
+	2: MutBorrowField[0](MetadataBuilder.symbol: String)
+	3: WriteRef
+	4: MoveLoc[0](b#0#0: MetadataBuilder)
+	5: Ret
+}
+
+public build_dynamic(b#0#0: MetadataBuilder, registry#0#0: &mut CoinRegistry, ctx#0#0: &mut TxContext): CurrencyInitializer<TestDynamic> * TreasuryCap<TestDynamic> {
+B0:
+	0: MoveLoc[1](registry#0#0: &mut CoinRegistry)
+	1: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	2: ImmBorrowField[1](MetadataBuilder.decimals: u8)
+	3: ReadRef
+	4: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	5: ImmBorrowField[0](MetadataBuilder.symbol: String)
+	6: ReadRef
+	7: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	8: ImmBorrowField[2](MetadataBuilder.name: String)
+	9: ReadRef
+	10: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	11: ImmBorrowField[3](MetadataBuilder.description: String)
+	12: ReadRef
+	13: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	14: ImmBorrowField[4](MetadataBuilder.icon_url: String)
+	15: ReadRef
+	16: MoveLoc[2](ctx#0#0: &mut TxContext)
+	17: Call coin_registry::new_currency<TestDynamic>(&mut CoinRegistry, u8, String, String, String, String, &mut TxContext): CurrencyInitializer<TestDynamic> * TreasuryCap<TestDynamic>
+	18: Ret
+}
+
+public build_otw<T: drop>(b#0#0: MetadataBuilder, otw#0#0: T, ctx#0#0: &mut TxContext): CurrencyInitializer<T> * TreasuryCap<T> {
+B0:
+	0: MoveLoc[1](otw#0#0: T)
+	1: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	2: ImmBorrowField[1](MetadataBuilder.decimals: u8)
+	3: ReadRef
+	4: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	5: ImmBorrowField[0](MetadataBuilder.symbol: String)
+	6: ReadRef
+	7: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	8: ImmBorrowField[2](MetadataBuilder.name: String)
+	9: ReadRef
+	10: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	11: ImmBorrowField[3](MetadataBuilder.description: String)
+	12: ReadRef
+	13: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	14: ImmBorrowField[4](MetadataBuilder.icon_url: String)
+	15: ReadRef
+	16: MoveLoc[2](ctx#0#0: &mut TxContext)
+	17: Call coin_registry::new_currency_with_otw<T>(T, u8, String, String, String, String, &mut TxContext): CurrencyInitializer<T> * TreasuryCap<T>
+	18: Ret
+}
+
+public build_legacy<T: drop>(b#0#0: MetadataBuilder, otw#0#0: T, ctx#0#0: &mut TxContext): TreasuryCap<T> * CoinMetadata<T> {
+B0:
+	0: MoveLoc[1](otw#0#0: T)
+	1: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	2: ImmBorrowField[1](MetadataBuilder.decimals: u8)
+	3: ReadRef
+	4: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	5: ImmBorrowField[0](MetadataBuilder.symbol: String)
+	6: ReadRef
+	7: Call string::into_bytes(String): vector<u8>
+	8: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	9: ImmBorrowField[2](MetadataBuilder.name: String)
+	10: ReadRef
+	11: Call string::into_bytes(String): vector<u8>
+	12: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	13: ImmBorrowField[3](MetadataBuilder.description: String)
+	14: ReadRef
+	15: Call string::into_bytes(String): vector<u8>
+	16: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	17: ImmBorrowField[4](MetadataBuilder.icon_url: String)
+	18: ReadRef
+	19: Call string::to_ascii(String): String
+	20: Call url::new_unsafe(String): Url
+	21: Call option::some<Url>(Url): Option<Url>
+	22: MoveLoc[2](ctx#0#0: &mut TxContext)
+	23: Call coin::create_currency<T>(T, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, &mut TxContext): TreasuryCap<T> * CoinMetadata<T>
+	24: Ret
+}
+
+public build_legacy_regulated<T: drop>(b#0#0: MetadataBuilder, otw#0#0: T, ctx#0#0: &mut TxContext): TreasuryCap<T> * DenyCapV2<T> * CoinMetadata<T> {
+B0:
+	0: MoveLoc[1](otw#0#0: T)
+	1: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	2: ImmBorrowField[1](MetadataBuilder.decimals: u8)
+	3: ReadRef
+	4: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	5: ImmBorrowField[0](MetadataBuilder.symbol: String)
+	6: ReadRef
+	7: Call string::into_bytes(String): vector<u8>
+	8: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	9: ImmBorrowField[2](MetadataBuilder.name: String)
+	10: ReadRef
+	11: Call string::into_bytes(String): vector<u8>
+	12: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	13: ImmBorrowField[3](MetadataBuilder.description: String)
+	14: ReadRef
+	15: Call string::into_bytes(String): vector<u8>
+	16: ImmBorrowLoc[0](b#0#0: MetadataBuilder)
+	17: ImmBorrowField[4](MetadataBuilder.icon_url: String)
+	18: ReadRef
+	19: Call string::to_ascii(String): String
+	20: Call url::new_unsafe(String): Url
+	21: Call option::some<Url>(Url): Option<Url>
+	22: LdFalse
+	23: MoveLoc[2](ctx#0#0: &mut TxContext)
+	24: Call coin::create_regulated_currency_v2<T>(T, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, bool, &mut TxContext): TreasuryCap<T> * DenyCapV2<T> * CoinMetadata<T>
+	25: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u8: 6
+	1 => vector<u8>: "TEST" // interpreted as UTF8 string
+	2 => vector<u8>: "Test" // interpreted as UTF8 string
+	3 => vector<u8>: "https://test.com/img.png" // interpreted as UTF8 string
+	4 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	5 => vector<u8>: "!=" // interpreted as UTF8 string
+	6 => vector<u8>: "new_name" // interpreted as UTF8 string
+	7 => vector<u8>: "new_description" // interpreted as UTF8 string
+	8 => vector<u8>: "new_icon_url" // interpreted as UTF8 string
+	9 => vector<u8>: " " // interpreted as UTF8 string
+	10 => vector<u8>: "New description" // interpreted as UTF8 string
+	11 => vector<u8>: "https://new.test.com/img.png" // interpreted as UTF8 string
+	12 => vector<u8>: "New name" // interpreted as UTF8 string
+	13 => vector<u8>: "NEW_TEST" // interpreted as UTF8 string
+	14 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	15 => address: 0x000000000000000000000000000000000000000000000000000000000000000a
+]
+}

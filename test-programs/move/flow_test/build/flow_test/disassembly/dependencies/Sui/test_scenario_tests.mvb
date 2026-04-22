@@ -1,0 +1,6249 @@
+// Move bytecode v6
+module 2.test_scenario_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::clock;
+use 0000000000000000000000000000000000000000000000000000000000000002::deny_list;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_object_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::event;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::random;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Object has store, key {
+	id: UID,
+	value: u64
+}
+
+struct Wrapper has key {
+	id: UID,
+	child: Object
+}
+
+struct E1 has copy, drop {
+	pos0: u64
+}
+
+wrap_unwrap() {
+L0:	child#1#0: Object
+L1:	id#2#0: UID
+L2:	scenario#1#0: Scenario
+L3:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[3](sender#1#0: address)
+	2: CopyLoc[3](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[2](scenario#1#0: Scenario)
+	5: MutBorrowLoc[2](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: CopyLoc[3](sender#1#0: address)
+	10: Call transfer::transfer<Object>(Object, address)
+	11: MutBorrowLoc[2](scenario#1#0: Scenario)
+	12: CopyLoc[3](sender#1#0: address)
+	13: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	14: Pop
+	15: MutBorrowLoc[2](scenario#1#0: Scenario)
+	16: Call test_scenario::new_object(&mut Scenario): UID
+	17: StLoc[1](id#2#0: UID)
+	18: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	19: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	20: StLoc[0](child#1#0: Object)
+	21: MoveLoc[1](id#2#0: UID)
+	22: MoveLoc[0](child#1#0: Object)
+	23: Pack[1](Wrapper)
+	24: CopyLoc[3](sender#1#0: address)
+	25: Call transfer::transfer<Wrapper>(Wrapper, address)
+	26: MutBorrowLoc[2](scenario#1#0: Scenario)
+	27: MoveLoc[3](sender#1#0: address)
+	28: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	29: Pop
+	30: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	31: Call test_scenario::has_most_recent_for_sender<Object>(&Scenario): bool
+	32: Not
+	33: BrFalse(35)
+B1:
+	34: Branch(37)
+B2:
+	35: LdU64(13906834359026974719)
+	36: Abort
+B3:
+	37: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	38: Call test_scenario::has_most_recent_for_sender<Wrapper>(&Scenario): bool
+	39: BrFalse(41)
+B4:
+	40: Branch(43)
+B5:
+	41: LdU64(13906834363321942015)
+	42: Abort
+B6:
+	43: MoveLoc[2](scenario#1#0: Scenario)
+	44: Call test_scenario::end(Scenario): TransactionEffects
+	45: Pop
+	46: Ret
+}
+
+remove_then_return() {
+L0:	object#1#0: Object
+L1:	scenario#1#0: Scenario
+L2:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[2](sender#1#0: address)
+	2: CopyLoc[2](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[1](scenario#1#0: Scenario)
+	5: MutBorrowLoc[1](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: CopyLoc[2](sender#1#0: address)
+	10: Call transfer::public_transfer<Object>(Object, address)
+	11: MutBorrowLoc[1](scenario#1#0: Scenario)
+	12: CopyLoc[2](sender#1#0: address)
+	13: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	14: Pop
+	15: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	16: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	17: StLoc[0](object#1#0: Object)
+	18: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	19: MoveLoc[0](object#1#0: Object)
+	20: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	21: MutBorrowLoc[1](scenario#1#0: Scenario)
+	22: MoveLoc[2](sender#1#0: address)
+	23: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	24: Pop
+	25: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	26: Call test_scenario::has_most_recent_for_sender<Object>(&Scenario): bool
+	27: BrFalse(29)
+B1:
+	28: Branch(31)
+B2:
+	29: LdU64(13906834462106189823)
+	30: Abort
+B3:
+	31: MoveLoc[1](scenario#1#0: Scenario)
+	32: Call test_scenario::end(Scenario): TransactionEffects
+	33: Pop
+	34: Ret
+}
+
+return_and_update() {
+L0:	obj#2#0: Object
+L1:	obj#3#0: Object
+L2:	scenario#1#0: Scenario
+L3:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[3](sender#1#0: address)
+	2: CopyLoc[3](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[2](scenario#1#0: Scenario)
+	5: MutBorrowLoc[2](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: CopyLoc[3](sender#1#0: address)
+	10: Call transfer::public_transfer<Object>(Object, address)
+	11: MutBorrowLoc[2](scenario#1#0: Scenario)
+	12: CopyLoc[3](sender#1#0: address)
+	13: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	14: Pop
+	15: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	16: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	17: StLoc[0](obj#2#0: Object)
+	18: ImmBorrowLoc[0](obj#2#0: Object)
+	19: ImmBorrowField[0](Object.value: u64)
+	20: ReadRef
+	21: LdU64(10)
+	22: Eq
+	23: BrFalse(25)
+B1:
+	24: Branch(27)
+B2:
+	25: LdU64(13906834535120633855)
+	26: Abort
+B3:
+	27: LdU64(100)
+	28: MutBorrowLoc[0](obj#2#0: Object)
+	29: MutBorrowField[0](Object.value: u64)
+	30: WriteRef
+	31: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	32: MoveLoc[0](obj#2#0: Object)
+	33: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	34: MutBorrowLoc[2](scenario#1#0: Scenario)
+	35: MoveLoc[3](sender#1#0: address)
+	36: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	37: Pop
+	38: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	39: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	40: StLoc[1](obj#3#0: Object)
+	41: ImmBorrowLoc[1](obj#3#0: Object)
+	42: ImmBorrowField[0](Object.value: u64)
+	43: ReadRef
+	44: LdU64(100)
+	45: Eq
+	46: BrFalse(48)
+B4:
+	47: Branch(50)
+B5:
+	48: LdU64(13906834565185404927)
+	49: Abort
+B6:
+	50: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	51: MoveLoc[1](obj#3#0: Object)
+	52: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	53: MoveLoc[2](scenario#1#0: Scenario)
+	54: Call test_scenario::end(Scenario): TransactionEffects
+	55: Pop
+	56: Ret
+}
+
+remove_during_tx() {
+L0:	scenario#1#0: Scenario
+L1:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[1](sender#1#0: address)
+	2: CopyLoc[1](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[0](scenario#1#0: Scenario)
+	5: MutBorrowLoc[0](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: CopyLoc[1](sender#1#0: address)
+	10: Call transfer::public_transfer<Object>(Object, address)
+	11: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	12: Call test_scenario::has_most_recent_for_sender<Object>(&Scenario): bool
+	13: Not
+	14: BrFalse(16)
+B1:
+	15: Branch(18)
+B2:
+	16: LdU64(13906834629609914367)
+	17: Abort
+B3:
+	18: MoveLoc[0](scenario#1#0: Scenario)
+	19: Call test_scenario::end(Scenario): TransactionEffects
+	20: Pop
+	21: Ret
+}
+
+double_remove() {
+L0:	obj1#1#0: Object
+L1:	obj2#1#0: Object
+L2:	scenario#1#0: Scenario
+L3:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[3](sender#1#0: address)
+	2: CopyLoc[3](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[2](scenario#1#0: Scenario)
+	5: MutBorrowLoc[2](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: CopyLoc[3](sender#1#0: address)
+	10: Call transfer::public_transfer<Object>(Object, address)
+	11: MutBorrowLoc[2](scenario#1#0: Scenario)
+	12: MoveLoc[3](sender#1#0: address)
+	13: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	14: Pop
+	15: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	16: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	17: StLoc[0](obj1#1#0: Object)
+	18: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	19: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	20: StLoc[1](obj2#1#0: Object)
+	21: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	22: MoveLoc[0](obj1#1#0: Object)
+	23: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	24: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	25: MoveLoc[1](obj2#1#0: Object)
+	26: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	27: MoveLoc[2](scenario#1#0: Scenario)
+	28: Call test_scenario::end(Scenario): TransactionEffects
+	29: Pop
+	30: Ret
+}
+
+three_owners() {
+L0:	addr1#1#0: address
+L1:	addr2#1#0: address
+L2:	addr3#1#0: address
+L3:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[0](addr1#1#0: address)
+	2: LdConst[1](address: 0x00..)
+	3: StLoc[1](addr2#1#0: address)
+	4: LdConst[2](address: 0x00..)
+	5: StLoc[2](addr3#1#0: address)
+	6: CopyLoc[0](addr1#1#0: address)
+	7: Call test_scenario::begin(address): Scenario
+	8: StLoc[3](scenario#1#0: Scenario)
+	9: MutBorrowLoc[3](scenario#1#0: Scenario)
+	10: Call test_scenario::new_object(&mut Scenario): UID
+	11: LdU64(10)
+	12: Pack[0](Object)
+	13: CopyLoc[0](addr1#1#0: address)
+	14: Call transfer::public_transfer<Object>(Object, address)
+	15: MutBorrowLoc[3](scenario#1#0: Scenario)
+	16: CopyLoc[0](addr1#1#0: address)
+	17: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	18: Pop
+	19: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	20: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	21: CopyLoc[1](addr2#1#0: address)
+	22: Call transfer::public_transfer<Object>(Object, address)
+	23: MutBorrowLoc[3](scenario#1#0: Scenario)
+	24: CopyLoc[0](addr1#1#0: address)
+	25: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	26: Pop
+	27: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	28: Call test_scenario::has_most_recent_for_sender<Object>(&Scenario): bool
+	29: Not
+	30: BrFalse(32)
+B1:
+	31: Branch(34)
+B2:
+	32: LdU64(13906834831473377279)
+	33: Abort
+B3:
+	34: MutBorrowLoc[3](scenario#1#0: Scenario)
+	35: CopyLoc[1](addr2#1#0: address)
+	36: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	37: Pop
+	38: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	39: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	40: CopyLoc[2](addr3#1#0: address)
+	41: Call transfer::public_transfer<Object>(Object, address)
+	42: MutBorrowLoc[3](scenario#1#0: Scenario)
+	43: MoveLoc[0](addr1#1#0: address)
+	44: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	45: Pop
+	46: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	47: Call test_scenario::has_most_recent_for_sender<Object>(&Scenario): bool
+	48: Not
+	49: BrFalse(51)
+B4:
+	50: Branch(53)
+B5:
+	51: LdU64(13906834878718017535)
+	52: Abort
+B6:
+	53: MutBorrowLoc[3](scenario#1#0: Scenario)
+	54: MoveLoc[1](addr2#1#0: address)
+	55: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	56: Pop
+	57: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	58: Call test_scenario::has_most_recent_for_sender<Object>(&Scenario): bool
+	59: Not
+	60: BrFalse(62)
+B7:
+	61: Branch(64)
+B8:
+	62: LdU64(13906834900192854015)
+	63: Abort
+B9:
+	64: MutBorrowLoc[3](scenario#1#0: Scenario)
+	65: MoveLoc[2](addr3#1#0: address)
+	66: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	67: Pop
+	68: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	69: Call test_scenario::has_most_recent_for_sender<Object>(&Scenario): bool
+	70: BrFalse(72)
+B10:
+	71: Branch(74)
+B11:
+	72: LdU64(13906834921667690495)
+	73: Abort
+B12:
+	74: MoveLoc[3](scenario#1#0: Scenario)
+	75: Call test_scenario::end(Scenario): TransactionEffects
+	76: Pop
+	77: Ret
+}
+
+transfer_then_delete() {
+L0:	id#1#0: UID
+L1:	id_bytes#1#0: ID
+L2:	received_id#1#0: UID
+L3:	scenario#1#0: Scenario
+L4:	tx2_sender#1#0: address
+L5:	value#1#0: u64
+B0:
+	0: LdConst[1](address: 0x00..)
+	1: StLoc[4](tx2_sender#1#0: address)
+	2: LdConst[0](address: 0x00..)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[3](scenario#1#0: Scenario)
+	5: MutBorrowLoc[3](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[0](id#1#0: UID)
+	8: ImmBorrowLoc[0](id#1#0: UID)
+	9: Call object::uid_to_inner(&UID): ID
+	10: StLoc[1](id_bytes#1#0: ID)
+	11: MoveLoc[0](id#1#0: UID)
+	12: LdU64(100)
+	13: Pack[0](Object)
+	14: CopyLoc[4](tx2_sender#1#0: address)
+	15: Call transfer::public_transfer<Object>(Object, address)
+	16: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	17: Call test_scenario::has_most_recent_for_sender<Object>(&Scenario): bool
+	18: Not
+	19: BrFalse(21)
+B1:
+	20: Branch(23)
+B2:
+	21: LdU64(13906834998977101823)
+	22: Abort
+B3:
+	23: MutBorrowLoc[3](scenario#1#0: Scenario)
+	24: CopyLoc[4](tx2_sender#1#0: address)
+	25: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	26: Pop
+	27: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	28: Call test_scenario::has_most_recent_for_sender<Object>(&Scenario): bool
+	29: BrFalse(31)
+B4:
+	30: Branch(33)
+B5:
+	31: LdU64(13906835020451938303)
+	32: Abort
+B6:
+	33: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	34: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	35: Unpack[0](Object)
+	36: StLoc[5](value#1#0: u64)
+	37: StLoc[2](received_id#1#0: UID)
+	38: ImmBorrowLoc[2](received_id#1#0: UID)
+	39: Call object::uid_to_inner(&UID): ID
+	40: MoveLoc[1](id_bytes#1#0: ID)
+	41: Eq
+	42: BrFalse(44)
+B7:
+	43: Branch(46)
+B8:
+	44: LdU64(13906835033336840191)
+	45: Abort
+B9:
+	46: MoveLoc[5](value#1#0: u64)
+	47: LdU64(100)
+	48: Eq
+	49: BrFalse(51)
+B10:
+	50: Branch(53)
+B11:
+	51: LdU64(13906835037631807487)
+	52: Abort
+B12:
+	53: MoveLoc[2](received_id#1#0: UID)
+	54: Call object::delete(UID)
+	55: MutBorrowLoc[3](scenario#1#0: Scenario)
+	56: MoveLoc[4](tx2_sender#1#0: address)
+	57: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	58: Pop
+	59: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	60: Call test_scenario::has_most_recent_for_sender<Object>(&Scenario): bool
+	61: Not
+	62: BrFalse(64)
+B13:
+	63: Branch(66)
+B14:
+	64: LdU64(13906835063401611263)
+	65: Abort
+B15:
+	66: MoveLoc[3](scenario#1#0: Scenario)
+	67: Call test_scenario::end(Scenario): TransactionEffects
+	68: Pop
+	69: Ret
+}
+
+get_owned_obj_ids() {
+L0:	id1#1#0: ID
+L1:	id2#1#0: ID
+L2:	id3#1#0: ID
+L3:	obj1#1#0: Object
+L4:	obj2#1#0: Object
+L5:	obj3#1#0: Object
+L6:	scenario#1#0: Scenario
+L7:	sender#1#0: address
+L8:	uid1#1#0: UID
+L9:	uid2#1#0: UID
+L10:	uid3#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[7](sender#1#0: address)
+	2: CopyLoc[7](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[6](scenario#1#0: Scenario)
+	5: MutBorrowLoc[6](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[8](uid1#1#0: UID)
+	8: MutBorrowLoc[6](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[9](uid2#1#0: UID)
+	11: MutBorrowLoc[6](scenario#1#0: Scenario)
+	12: Call test_scenario::new_object(&mut Scenario): UID
+	13: StLoc[10](uid3#1#0: UID)
+	14: ImmBorrowLoc[8](uid1#1#0: UID)
+	15: Call object::uid_to_inner(&UID): ID
+	16: StLoc[0](id1#1#0: ID)
+	17: ImmBorrowLoc[9](uid2#1#0: UID)
+	18: Call object::uid_to_inner(&UID): ID
+	19: StLoc[1](id2#1#0: ID)
+	20: ImmBorrowLoc[10](uid3#1#0: UID)
+	21: Call object::uid_to_inner(&UID): ID
+	22: StLoc[2](id3#1#0: ID)
+	23: MoveLoc[8](uid1#1#0: UID)
+	24: LdU64(10)
+	25: Pack[0](Object)
+	26: StLoc[3](obj1#1#0: Object)
+	27: MoveLoc[9](uid2#1#0: UID)
+	28: LdU64(20)
+	29: Pack[0](Object)
+	30: StLoc[4](obj2#1#0: Object)
+	31: MoveLoc[10](uid3#1#0: UID)
+	32: LdU64(30)
+	33: Pack[0](Object)
+	34: StLoc[5](obj3#1#0: Object)
+	35: MoveLoc[3](obj1#1#0: Object)
+	36: CopyLoc[7](sender#1#0: address)
+	37: Call transfer::public_transfer<Object>(Object, address)
+	38: MoveLoc[4](obj2#1#0: Object)
+	39: CopyLoc[7](sender#1#0: address)
+	40: Call transfer::public_transfer<Object>(Object, address)
+	41: MoveLoc[5](obj3#1#0: Object)
+	42: CopyLoc[7](sender#1#0: address)
+	43: Call transfer::public_transfer<Object>(Object, address)
+	44: MutBorrowLoc[6](scenario#1#0: Scenario)
+	45: MoveLoc[7](sender#1#0: address)
+	46: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	47: Pop
+	48: ImmBorrowLoc[6](scenario#1#0: Scenario)
+	49: Call test_scenario::ids_for_sender<Object>(&Scenario): vector<ID>
+	50: MoveLoc[0](id1#1#0: ID)
+	51: MoveLoc[1](id2#1#0: ID)
+	52: MoveLoc[2](id3#1#0: ID)
+	53: VecPack(21, 3)
+	54: Eq
+	55: BrFalse(57)
+B1:
+	56: Branch(59)
+B2:
+	57: LdU64(13906835170775793663)
+	58: Abort
+B3:
+	59: MoveLoc[6](scenario#1#0: Scenario)
+	60: Call test_scenario::end(Scenario): TransactionEffects
+	61: Pop
+	62: Ret
+}
+
+take_owned_by_id() {
+L0:	id1#1#0: ID
+L1:	id2#1#0: ID
+L2:	id3#1#0: ID
+L3:	obj1#1#0: Object
+L4:	obj1#2#0: Object
+L5:	obj2#1#0: Object
+L6:	obj2#2#0: Object
+L7:	obj3#1#0: Object
+L8:	obj3#2#0: Object
+L9:	scenario#1#0: Scenario
+L10:	sender#1#0: address
+L11:	uid1#1#0: UID
+L12:	uid2#1#0: UID
+L13:	uid3#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[10](sender#1#0: address)
+	2: CopyLoc[10](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[9](scenario#1#0: Scenario)
+	5: MutBorrowLoc[9](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[11](uid1#1#0: UID)
+	8: MutBorrowLoc[9](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[12](uid2#1#0: UID)
+	11: MutBorrowLoc[9](scenario#1#0: Scenario)
+	12: Call test_scenario::new_object(&mut Scenario): UID
+	13: StLoc[13](uid3#1#0: UID)
+	14: ImmBorrowLoc[11](uid1#1#0: UID)
+	15: Call object::uid_to_inner(&UID): ID
+	16: StLoc[0](id1#1#0: ID)
+	17: ImmBorrowLoc[12](uid2#1#0: UID)
+	18: Call object::uid_to_inner(&UID): ID
+	19: StLoc[1](id2#1#0: ID)
+	20: ImmBorrowLoc[13](uid3#1#0: UID)
+	21: Call object::uid_to_inner(&UID): ID
+	22: StLoc[2](id3#1#0: ID)
+	23: MoveLoc[11](uid1#1#0: UID)
+	24: LdU64(10)
+	25: Pack[0](Object)
+	26: StLoc[3](obj1#1#0: Object)
+	27: MoveLoc[12](uid2#1#0: UID)
+	28: LdU64(20)
+	29: Pack[0](Object)
+	30: StLoc[5](obj2#1#0: Object)
+	31: MoveLoc[13](uid3#1#0: UID)
+	32: LdU64(30)
+	33: Pack[0](Object)
+	34: StLoc[7](obj3#1#0: Object)
+	35: MoveLoc[3](obj1#1#0: Object)
+	36: CopyLoc[10](sender#1#0: address)
+	37: Call transfer::public_transfer<Object>(Object, address)
+	38: MoveLoc[5](obj2#1#0: Object)
+	39: CopyLoc[10](sender#1#0: address)
+	40: Call transfer::public_transfer<Object>(Object, address)
+	41: MoveLoc[7](obj3#1#0: Object)
+	42: CopyLoc[10](sender#1#0: address)
+	43: Call transfer::public_transfer<Object>(Object, address)
+	44: MutBorrowLoc[9](scenario#1#0: Scenario)
+	45: MoveLoc[10](sender#1#0: address)
+	46: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	47: Pop
+	48: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	49: MoveLoc[0](id1#1#0: ID)
+	50: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	51: StLoc[4](obj1#2#0: Object)
+	52: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	53: MoveLoc[2](id3#1#0: ID)
+	54: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	55: StLoc[8](obj3#2#0: Object)
+	56: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	57: MoveLoc[1](id2#1#0: ID)
+	58: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	59: StLoc[6](obj2#2#0: Object)
+	60: ImmBorrowLoc[4](obj1#2#0: Object)
+	61: ImmBorrowField[0](Object.value: u64)
+	62: ReadRef
+	63: LdU64(10)
+	64: Eq
+	65: BrFalse(67)
+B1:
+	66: Branch(69)
+B2:
+	67: LdU64(13906835286739910655)
+	68: Abort
+B3:
+	69: ImmBorrowLoc[6](obj2#2#0: Object)
+	70: ImmBorrowField[0](Object.value: u64)
+	71: ReadRef
+	72: LdU64(20)
+	73: Eq
+	74: BrFalse(76)
+B4:
+	75: Branch(78)
+B5:
+	76: LdU64(13906835291034877951)
+	77: Abort
+B6:
+	78: ImmBorrowLoc[8](obj3#2#0: Object)
+	79: ImmBorrowField[0](Object.value: u64)
+	80: ReadRef
+	81: LdU64(30)
+	82: Eq
+	83: BrFalse(85)
+B7:
+	84: Branch(87)
+B8:
+	85: LdU64(13906835295329845247)
+	86: Abort
+B9:
+	87: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	88: MoveLoc[4](obj1#2#0: Object)
+	89: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	90: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	91: MoveLoc[6](obj2#2#0: Object)
+	92: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	93: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	94: MoveLoc[8](obj3#2#0: Object)
+	95: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	96: MoveLoc[9](scenario#1#0: Scenario)
+	97: Call test_scenario::end(Scenario): TransactionEffects
+	98: Pop
+	99: Ret
+}
+
+get_last_created_object_id() {
+L0:	ctx#1#0: &mut TxContext
+L1:	id#1#0: UID
+L2:	id_addr#1#0: address
+L3:	scenario#1#0: Scenario
+L4:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[4](sender#1#0: address)
+	2: CopyLoc[4](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[3](scenario#1#0: Scenario)
+	5: MutBorrowLoc[3](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[1](id#1#0: UID)
+	8: ImmBorrowLoc[1](id#1#0: UID)
+	9: Call object::uid_to_address(&UID): address
+	10: StLoc[2](id_addr#1#0: address)
+	11: MoveLoc[1](id#1#0: UID)
+	12: LdU64(10)
+	13: Pack[0](Object)
+	14: CopyLoc[4](sender#1#0: address)
+	15: Call transfer::public_transfer<Object>(Object, address)
+	16: MutBorrowLoc[3](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: StLoc[0](ctx#1#0: &mut TxContext)
+	19: MoveLoc[2](id_addr#1#0: address)
+	20: MoveLoc[0](ctx#1#0: &mut TxContext)
+	21: FreezeRef
+	22: Call tx_context::last_created_object_id(&TxContext): address
+	23: Eq
+	24: BrFalse(26)
+B1:
+	25: Branch(28)
+B2:
+	26: LdU64(13906835372639256575)
+	27: Abort
+B3:
+	28: MoveLoc[3](scenario#1#0: Scenario)
+	29: Call test_scenario::end(Scenario): TransactionEffects
+	30: Pop
+	31: Ret
+}
+
+take_shared_by_id() {
+L0:	id1#1#0: ID
+L1:	id2#1#0: ID
+L2:	id3#1#0: ID
+L3:	obj1#1#0: Object
+L4:	obj1#2#0: Object
+L5:	obj2#1#0: Object
+L6:	obj2#2#0: Object
+L7:	obj3#1#0: Object
+L8:	obj3#2#0: Object
+L9:	scenario#1#0: Scenario
+L10:	sender#1#0: address
+L11:	uid1#1#0: UID
+L12:	uid2#1#0: UID
+L13:	uid3#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[10](sender#1#0: address)
+	2: CopyLoc[10](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[9](scenario#1#0: Scenario)
+	5: MutBorrowLoc[9](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[11](uid1#1#0: UID)
+	8: MutBorrowLoc[9](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[12](uid2#1#0: UID)
+	11: MutBorrowLoc[9](scenario#1#0: Scenario)
+	12: Call test_scenario::new_object(&mut Scenario): UID
+	13: StLoc[13](uid3#1#0: UID)
+	14: ImmBorrowLoc[11](uid1#1#0: UID)
+	15: Call object::uid_to_inner(&UID): ID
+	16: StLoc[0](id1#1#0: ID)
+	17: ImmBorrowLoc[12](uid2#1#0: UID)
+	18: Call object::uid_to_inner(&UID): ID
+	19: StLoc[1](id2#1#0: ID)
+	20: ImmBorrowLoc[13](uid3#1#0: UID)
+	21: Call object::uid_to_inner(&UID): ID
+	22: StLoc[2](id3#1#0: ID)
+	23: MoveLoc[11](uid1#1#0: UID)
+	24: LdU64(10)
+	25: Pack[0](Object)
+	26: StLoc[3](obj1#1#0: Object)
+	27: MoveLoc[12](uid2#1#0: UID)
+	28: LdU64(20)
+	29: Pack[0](Object)
+	30: StLoc[5](obj2#1#0: Object)
+	31: MoveLoc[13](uid3#1#0: UID)
+	32: LdU64(30)
+	33: Pack[0](Object)
+	34: StLoc[7](obj3#1#0: Object)
+	35: MoveLoc[3](obj1#1#0: Object)
+	36: Call transfer::public_share_object<Object>(Object)
+	37: MoveLoc[5](obj2#1#0: Object)
+	38: Call transfer::public_share_object<Object>(Object)
+	39: MoveLoc[7](obj3#1#0: Object)
+	40: Call transfer::public_share_object<Object>(Object)
+	41: MutBorrowLoc[9](scenario#1#0: Scenario)
+	42: MoveLoc[10](sender#1#0: address)
+	43: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	44: Pop
+	45: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	46: MoveLoc[0](id1#1#0: ID)
+	47: Call test_scenario::take_shared_by_id<Object>(&Scenario, ID): Object
+	48: StLoc[4](obj1#2#0: Object)
+	49: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	50: MoveLoc[2](id3#1#0: ID)
+	51: Call test_scenario::take_shared_by_id<Object>(&Scenario, ID): Object
+	52: StLoc[8](obj3#2#0: Object)
+	53: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	54: MoveLoc[1](id2#1#0: ID)
+	55: Call test_scenario::take_shared_by_id<Object>(&Scenario, ID): Object
+	56: StLoc[6](obj2#2#0: Object)
+	57: ImmBorrowLoc[4](obj1#2#0: Object)
+	58: ImmBorrowField[0](Object.value: u64)
+	59: ReadRef
+	60: LdU64(10)
+	61: Eq
+	62: BrFalse(64)
+B1:
+	63: Branch(66)
+B2:
+	64: LdU64(13906835492898340863)
+	65: Abort
+B3:
+	66: ImmBorrowLoc[6](obj2#2#0: Object)
+	67: ImmBorrowField[0](Object.value: u64)
+	68: ReadRef
+	69: LdU64(20)
+	70: Eq
+	71: BrFalse(73)
+B4:
+	72: Branch(75)
+B5:
+	73: LdU64(13906835497193308159)
+	74: Abort
+B6:
+	75: ImmBorrowLoc[8](obj3#2#0: Object)
+	76: ImmBorrowField[0](Object.value: u64)
+	77: ReadRef
+	78: LdU64(30)
+	79: Eq
+	80: BrFalse(82)
+B7:
+	81: Branch(84)
+B8:
+	82: LdU64(13906835501488275455)
+	83: Abort
+B9:
+	84: MoveLoc[4](obj1#2#0: Object)
+	85: Call test_scenario::return_shared<Object>(Object)
+	86: MoveLoc[6](obj2#2#0: Object)
+	87: Call test_scenario::return_shared<Object>(Object)
+	88: MoveLoc[8](obj3#2#0: Object)
+	89: Call test_scenario::return_shared<Object>(Object)
+	90: MoveLoc[9](scenario#1#0: Scenario)
+	91: Call test_scenario::end(Scenario): TransactionEffects
+	92: Pop
+	93: Ret
+}
+
+take_shared() {
+L0:	obj1#2#0: Object
+L1:	scenario#1#0: Scenario
+L2:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[2](sender#1#0: address)
+	2: CopyLoc[2](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[1](scenario#1#0: Scenario)
+	5: MutBorrowLoc[1](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: Call transfer::public_share_object<Object>(Object)
+	10: MutBorrowLoc[1](scenario#1#0: Scenario)
+	11: MoveLoc[2](sender#1#0: address)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: Call test_scenario::has_most_recent_shared<Object>(): bool
+	15: BrFalse(17)
+B1:
+	16: Branch(19)
+B2:
+	17: LdU64(13906835583092654079)
+	18: Abort
+B3:
+	19: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	20: Call test_scenario::take_shared<Object>(&Scenario): Object
+	21: StLoc[0](obj1#2#0: Object)
+	22: ImmBorrowLoc[0](obj1#2#0: Object)
+	23: ImmBorrowField[0](Object.value: u64)
+	24: ReadRef
+	25: LdU64(10)
+	26: Eq
+	27: BrFalse(29)
+B4:
+	28: Branch(31)
+B5:
+	29: LdU64(13906835591682588671)
+	30: Abort
+B6:
+	31: MoveLoc[0](obj1#2#0: Object)
+	32: Call test_scenario::return_shared<Object>(Object)
+	33: MoveLoc[1](scenario#1#0: Scenario)
+	34: Call test_scenario::end(Scenario): TransactionEffects
+	35: Pop
+	36: Ret
+}
+
+delete_shared() {
+L0:	obj1#2#0: Object
+L1:	scenario#1#0: Scenario
+L2:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[2](sender#1#0: address)
+	2: CopyLoc[2](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[1](scenario#1#0: Scenario)
+	5: MutBorrowLoc[1](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: Call transfer::public_share_object<Object>(Object)
+	10: MutBorrowLoc[1](scenario#1#0: Scenario)
+	11: MoveLoc[2](sender#1#0: address)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: Call test_scenario::has_most_recent_shared<Object>(): bool
+	15: BrFalse(17)
+B1:
+	16: Branch(19)
+B2:
+	17: LdU64(13906835664697032703)
+	18: Abort
+B3:
+	19: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	20: Call test_scenario::take_shared<Object>(&Scenario): Object
+	21: StLoc[0](obj1#2#0: Object)
+	22: ImmBorrowLoc[0](obj1#2#0: Object)
+	23: ImmBorrowField[0](Object.value: u64)
+	24: ReadRef
+	25: LdU64(10)
+	26: Eq
+	27: BrFalse(29)
+B4:
+	28: Branch(31)
+B5:
+	29: LdU64(13906835673286967295)
+	30: Abort
+B6:
+	31: MoveLoc[0](obj1#2#0: Object)
+	32: Unpack[0](Object)
+	33: Pop
+	34: Call object::delete(UID)
+	35: MoveLoc[1](scenario#1#0: Scenario)
+	36: Call test_scenario::end(Scenario): TransactionEffects
+	37: Pop
+	38: Ret
+}
+
+take_immutable_by_id() {
+L0:	id1#1#0: ID
+L1:	id2#1#0: ID
+L2:	id3#1#0: ID
+L3:	obj1#1#0: Object
+L4:	obj1#2#0: Object
+L5:	obj2#1#0: Object
+L6:	obj2#2#0: Object
+L7:	obj3#1#0: Object
+L8:	obj3#2#0: Object
+L9:	scenario#1#0: Scenario
+L10:	sender#1#0: address
+L11:	uid1#1#0: UID
+L12:	uid2#1#0: UID
+L13:	uid3#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[10](sender#1#0: address)
+	2: CopyLoc[10](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[9](scenario#1#0: Scenario)
+	5: MutBorrowLoc[9](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[11](uid1#1#0: UID)
+	8: MutBorrowLoc[9](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[12](uid2#1#0: UID)
+	11: MutBorrowLoc[9](scenario#1#0: Scenario)
+	12: Call test_scenario::new_object(&mut Scenario): UID
+	13: StLoc[13](uid3#1#0: UID)
+	14: ImmBorrowLoc[11](uid1#1#0: UID)
+	15: Call object::uid_to_inner(&UID): ID
+	16: StLoc[0](id1#1#0: ID)
+	17: ImmBorrowLoc[12](uid2#1#0: UID)
+	18: Call object::uid_to_inner(&UID): ID
+	19: StLoc[1](id2#1#0: ID)
+	20: ImmBorrowLoc[13](uid3#1#0: UID)
+	21: Call object::uid_to_inner(&UID): ID
+	22: StLoc[2](id3#1#0: ID)
+	23: MoveLoc[11](uid1#1#0: UID)
+	24: LdU64(10)
+	25: Pack[0](Object)
+	26: StLoc[3](obj1#1#0: Object)
+	27: MoveLoc[12](uid2#1#0: UID)
+	28: LdU64(20)
+	29: Pack[0](Object)
+	30: StLoc[5](obj2#1#0: Object)
+	31: MoveLoc[13](uid3#1#0: UID)
+	32: LdU64(30)
+	33: Pack[0](Object)
+	34: StLoc[7](obj3#1#0: Object)
+	35: MoveLoc[3](obj1#1#0: Object)
+	36: Call transfer::public_freeze_object<Object>(Object)
+	37: MoveLoc[5](obj2#1#0: Object)
+	38: Call transfer::public_freeze_object<Object>(Object)
+	39: MoveLoc[7](obj3#1#0: Object)
+	40: Call transfer::public_freeze_object<Object>(Object)
+	41: MutBorrowLoc[9](scenario#1#0: Scenario)
+	42: MoveLoc[10](sender#1#0: address)
+	43: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	44: Pop
+	45: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	46: MoveLoc[0](id1#1#0: ID)
+	47: Call test_scenario::take_immutable_by_id<Object>(&Scenario, ID): Object
+	48: StLoc[4](obj1#2#0: Object)
+	49: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	50: MoveLoc[2](id3#1#0: ID)
+	51: Call test_scenario::take_immutable_by_id<Object>(&Scenario, ID): Object
+	52: StLoc[8](obj3#2#0: Object)
+	53: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	54: MoveLoc[1](id2#1#0: ID)
+	55: Call test_scenario::take_immutable_by_id<Object>(&Scenario, ID): Object
+	56: StLoc[6](obj2#2#0: Object)
+	57: ImmBorrowLoc[4](obj1#2#0: Object)
+	58: ImmBorrowField[0](Object.value: u64)
+	59: ReadRef
+	60: LdU64(10)
+	61: Eq
+	62: BrFalse(64)
+B1:
+	63: Branch(66)
+B2:
+	64: LdU64(13906835802135986175)
+	65: Abort
+B3:
+	66: ImmBorrowLoc[6](obj2#2#0: Object)
+	67: ImmBorrowField[0](Object.value: u64)
+	68: ReadRef
+	69: LdU64(20)
+	70: Eq
+	71: BrFalse(73)
+B4:
+	72: Branch(75)
+B5:
+	73: LdU64(13906835806430953471)
+	74: Abort
+B6:
+	75: ImmBorrowLoc[8](obj3#2#0: Object)
+	76: ImmBorrowField[0](Object.value: u64)
+	77: ReadRef
+	78: LdU64(30)
+	79: Eq
+	80: BrFalse(82)
+B7:
+	81: Branch(84)
+B8:
+	82: LdU64(13906835810725920767)
+	83: Abort
+B9:
+	84: MoveLoc[4](obj1#2#0: Object)
+	85: Call test_scenario::return_immutable<Object>(Object)
+	86: MoveLoc[6](obj2#2#0: Object)
+	87: Call test_scenario::return_immutable<Object>(Object)
+	88: MoveLoc[8](obj3#2#0: Object)
+	89: Call test_scenario::return_immutable<Object>(Object)
+	90: MoveLoc[9](scenario#1#0: Scenario)
+	91: Call test_scenario::end(Scenario): TransactionEffects
+	92: Pop
+	93: Ret
+}
+
+take_immutable() {
+L0:	obj1#2#0: Object
+L1:	scenario#1#0: Scenario
+L2:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[2](sender#1#0: address)
+	2: CopyLoc[2](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[1](scenario#1#0: Scenario)
+	5: MutBorrowLoc[1](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: Call transfer::public_freeze_object<Object>(Object)
+	10: MutBorrowLoc[1](scenario#1#0: Scenario)
+	11: MoveLoc[2](sender#1#0: address)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: Call test_scenario::has_most_recent_immutable<Object>(): bool
+	15: BrFalse(17)
+B1:
+	16: Branch(19)
+B2:
+	17: LdU64(13906835892330299391)
+	18: Abort
+B3:
+	19: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	20: Call test_scenario::take_immutable<Object>(&Scenario): Object
+	21: StLoc[0](obj1#2#0: Object)
+	22: ImmBorrowLoc[0](obj1#2#0: Object)
+	23: ImmBorrowField[0](Object.value: u64)
+	24: ReadRef
+	25: LdU64(10)
+	26: Eq
+	27: BrFalse(29)
+B4:
+	28: Branch(31)
+B5:
+	29: LdU64(13906835900920233983)
+	30: Abort
+B6:
+	31: MoveLoc[0](obj1#2#0: Object)
+	32: Call test_scenario::return_immutable<Object>(Object)
+	33: MoveLoc[1](scenario#1#0: Scenario)
+	34: Call test_scenario::end(Scenario): TransactionEffects
+	35: Pop
+	36: Ret
+}
+
+receive_object() {
+L0:	id1#1#0: ID
+L1:	id1_addr#1#0: address
+L2:	id2#1#0: ID
+L3:	id3#1#0: ID
+L4:	obj1#1#0: Object
+L5:	obj2#1#0: Object
+L6:	obj2#2#0: Object
+L7:	obj3#1#0: Object
+L8:	obj3#2#0: Object
+L9:	parent#1#0: Object
+L10:	scenario#1#0: Scenario
+L11:	sender#1#0: address
+L12:	t2#1#0: Receiving<Object>
+L13:	t3#1#0: Receiving<Object>
+L14:	uid1#1#0: UID
+L15:	uid2#1#0: UID
+L16:	uid3#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[11](sender#1#0: address)
+	2: CopyLoc[11](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[10](scenario#1#0: Scenario)
+	5: MutBorrowLoc[10](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[14](uid1#1#0: UID)
+	8: MutBorrowLoc[10](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[15](uid2#1#0: UID)
+	11: MutBorrowLoc[10](scenario#1#0: Scenario)
+	12: Call test_scenario::new_object(&mut Scenario): UID
+	13: StLoc[16](uid3#1#0: UID)
+	14: ImmBorrowLoc[14](uid1#1#0: UID)
+	15: Call object::uid_to_inner(&UID): ID
+	16: StLoc[0](id1#1#0: ID)
+	17: ImmBorrowLoc[15](uid2#1#0: UID)
+	18: Call object::uid_to_inner(&UID): ID
+	19: StLoc[2](id2#1#0: ID)
+	20: ImmBorrowLoc[16](uid3#1#0: UID)
+	21: Call object::uid_to_inner(&UID): ID
+	22: StLoc[3](id3#1#0: ID)
+	23: ImmBorrowLoc[14](uid1#1#0: UID)
+	24: Call object::uid_to_address(&UID): address
+	25: StLoc[1](id1_addr#1#0: address)
+	26: MoveLoc[14](uid1#1#0: UID)
+	27: LdU64(10)
+	28: Pack[0](Object)
+	29: StLoc[4](obj1#1#0: Object)
+	30: MoveLoc[15](uid2#1#0: UID)
+	31: LdU64(20)
+	32: Pack[0](Object)
+	33: StLoc[5](obj2#1#0: Object)
+	34: MoveLoc[16](uid3#1#0: UID)
+	35: LdU64(30)
+	36: Pack[0](Object)
+	37: StLoc[7](obj3#1#0: Object)
+	38: MoveLoc[4](obj1#1#0: Object)
+	39: CopyLoc[11](sender#1#0: address)
+	40: Call transfer::public_transfer<Object>(Object, address)
+	41: MoveLoc[5](obj2#1#0: Object)
+	42: CopyLoc[1](id1_addr#1#0: address)
+	43: Call transfer::public_transfer<Object>(Object, address)
+	44: MoveLoc[7](obj3#1#0: Object)
+	45: CopyLoc[1](id1_addr#1#0: address)
+	46: Call transfer::public_transfer<Object>(Object, address)
+	47: MutBorrowLoc[10](scenario#1#0: Scenario)
+	48: MoveLoc[11](sender#1#0: address)
+	49: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	50: Pop
+	51: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	52: MoveLoc[0](id1#1#0: ID)
+	53: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	54: StLoc[9](parent#1#0: Object)
+	55: MoveLoc[2](id2#1#0: ID)
+	56: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	57: StLoc[12](t2#1#0: Receiving<Object>)
+	58: MoveLoc[3](id3#1#0: ID)
+	59: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	60: StLoc[13](t3#1#0: Receiving<Object>)
+	61: MutBorrowLoc[9](parent#1#0: Object)
+	62: MutBorrowField[1](Object.id: UID)
+	63: MoveLoc[12](t2#1#0: Receiving<Object>)
+	64: Call transfer::receive<Object>(&mut UID, Receiving<Object>): Object
+	65: StLoc[6](obj2#2#0: Object)
+	66: MutBorrowLoc[9](parent#1#0: Object)
+	67: MutBorrowField[1](Object.id: UID)
+	68: MoveLoc[13](t3#1#0: Receiving<Object>)
+	69: Call transfer::receive<Object>(&mut UID, Receiving<Object>): Object
+	70: StLoc[8](obj3#2#0: Object)
+	71: ImmBorrowLoc[9](parent#1#0: Object)
+	72: ImmBorrowField[0](Object.value: u64)
+	73: ReadRef
+	74: LdU64(10)
+	75: Eq
+	76: BrFalse(78)
+B1:
+	77: Branch(80)
+B2:
+	78: LdU64(13906836046949122047)
+	79: Abort
+B3:
+	80: ImmBorrowLoc[6](obj2#2#0: Object)
+	81: ImmBorrowField[0](Object.value: u64)
+	82: ReadRef
+	83: LdU64(20)
+	84: Eq
+	85: BrFalse(87)
+B4:
+	86: Branch(89)
+B5:
+	87: LdU64(13906836051244089343)
+	88: Abort
+B6:
+	89: ImmBorrowLoc[8](obj3#2#0: Object)
+	90: ImmBorrowField[0](Object.value: u64)
+	91: ReadRef
+	92: LdU64(30)
+	93: Eq
+	94: BrFalse(96)
+B7:
+	95: Branch(98)
+B8:
+	96: LdU64(13906836055539056639)
+	97: Abort
+B9:
+	98: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	99: MoveLoc[9](parent#1#0: Object)
+	100: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	101: MoveLoc[6](obj2#2#0: Object)
+	102: CopyLoc[1](id1_addr#1#0: address)
+	103: Call transfer::public_transfer<Object>(Object, address)
+	104: MoveLoc[8](obj3#2#0: Object)
+	105: MoveLoc[1](id1_addr#1#0: address)
+	106: Call transfer::public_transfer<Object>(Object, address)
+	107: MoveLoc[10](scenario#1#0: Scenario)
+	108: Call test_scenario::end(Scenario): TransactionEffects
+	109: Pop
+	110: Ret
+}
+
+receive_for_object() {
+L0:	id1#1#0: ID
+L1:	id1_addr#1#0: address
+L2:	obj1#1#0: Object
+L3:	obj2#1#0: Object
+L4:	obj2#2#0: Object
+L5:	parent#1#0: Object
+L6:	scenario#1#0: Scenario
+L7:	sender#1#0: address
+L8:	t2#1#0: Receiving<Object>
+L9:	uid1#1#0: UID
+L10:	uid2#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[7](sender#1#0: address)
+	2: CopyLoc[7](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[6](scenario#1#0: Scenario)
+	5: MutBorrowLoc[6](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[9](uid1#1#0: UID)
+	8: MutBorrowLoc[6](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[10](uid2#1#0: UID)
+	11: ImmBorrowLoc[9](uid1#1#0: UID)
+	12: Call object::uid_to_inner(&UID): ID
+	13: StLoc[0](id1#1#0: ID)
+	14: ImmBorrowLoc[9](uid1#1#0: UID)
+	15: Call object::uid_to_address(&UID): address
+	16: StLoc[1](id1_addr#1#0: address)
+	17: MoveLoc[9](uid1#1#0: UID)
+	18: LdU64(10)
+	19: Pack[0](Object)
+	20: StLoc[2](obj1#1#0: Object)
+	21: MoveLoc[10](uid2#1#0: UID)
+	22: LdU64(20)
+	23: Pack[0](Object)
+	24: StLoc[3](obj2#1#0: Object)
+	25: MoveLoc[2](obj1#1#0: Object)
+	26: CopyLoc[7](sender#1#0: address)
+	27: Call transfer::public_transfer<Object>(Object, address)
+	28: MoveLoc[3](obj2#1#0: Object)
+	29: CopyLoc[1](id1_addr#1#0: address)
+	30: Call transfer::public_transfer<Object>(Object, address)
+	31: MutBorrowLoc[6](scenario#1#0: Scenario)
+	32: MoveLoc[7](sender#1#0: address)
+	33: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	34: Pop
+	35: ImmBorrowLoc[6](scenario#1#0: Scenario)
+	36: CopyLoc[0](id1#1#0: ID)
+	37: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	38: StLoc[5](parent#1#0: Object)
+	39: ImmBorrowLoc[0](id1#1#0: ID)
+	40: Call test_scenario::most_recent_receiving_ticket<Object>(&ID): Receiving<Object>
+	41: StLoc[8](t2#1#0: Receiving<Object>)
+	42: MutBorrowLoc[5](parent#1#0: Object)
+	43: MutBorrowField[1](Object.id: UID)
+	44: MoveLoc[8](t2#1#0: Receiving<Object>)
+	45: Call transfer::receive<Object>(&mut UID, Receiving<Object>): Object
+	46: StLoc[4](obj2#2#0: Object)
+	47: ImmBorrowLoc[5](parent#1#0: Object)
+	48: ImmBorrowField[0](Object.value: u64)
+	49: ReadRef
+	50: LdU64(10)
+	51: Eq
+	52: BrFalse(54)
+B1:
+	53: Branch(56)
+B2:
+	54: LdU64(13906836175798140927)
+	55: Abort
+B3:
+	56: ImmBorrowLoc[4](obj2#2#0: Object)
+	57: ImmBorrowField[0](Object.value: u64)
+	58: ReadRef
+	59: LdU64(20)
+	60: Eq
+	61: BrFalse(63)
+B4:
+	62: Branch(65)
+B5:
+	63: LdU64(13906836180093108223)
+	64: Abort
+B6:
+	65: ImmBorrowLoc[6](scenario#1#0: Scenario)
+	66: MoveLoc[5](parent#1#0: Object)
+	67: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	68: MoveLoc[4](obj2#2#0: Object)
+	69: MoveLoc[1](id1_addr#1#0: address)
+	70: Call transfer::public_transfer<Object>(Object, address)
+	71: MoveLoc[6](scenario#1#0: Scenario)
+	72: Call test_scenario::end(Scenario): TransactionEffects
+	73: Pop
+	74: Ret
+}
+
+receive_object_multiple_in_row() {
+L0:	id1#1#0: ID
+L1:	id1_addr#1#0: address
+L2:	obj1#1#0: Object
+L3:	obj2#1#0: Object
+L4:	obj2#2#0: Object
+L5:	obj2#3#0: Object
+L6:	parent#1#0: Object
+L7:	parent#2#0: Object
+L8:	scenario#1#0: Scenario
+L9:	sender#1#0: address
+L10:	t2#1#0: Receiving<Object>
+L11:	t2#2#0: Receiving<Object>
+L12:	uid1#1#0: UID
+L13:	uid2#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[9](sender#1#0: address)
+	2: CopyLoc[9](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[8](scenario#1#0: Scenario)
+	5: MutBorrowLoc[8](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[12](uid1#1#0: UID)
+	8: MutBorrowLoc[8](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[13](uid2#1#0: UID)
+	11: ImmBorrowLoc[12](uid1#1#0: UID)
+	12: Call object::uid_to_inner(&UID): ID
+	13: StLoc[0](id1#1#0: ID)
+	14: ImmBorrowLoc[12](uid1#1#0: UID)
+	15: Call object::uid_to_address(&UID): address
+	16: StLoc[1](id1_addr#1#0: address)
+	17: MoveLoc[12](uid1#1#0: UID)
+	18: LdU64(10)
+	19: Pack[0](Object)
+	20: StLoc[2](obj1#1#0: Object)
+	21: MoveLoc[13](uid2#1#0: UID)
+	22: LdU64(20)
+	23: Pack[0](Object)
+	24: StLoc[3](obj2#1#0: Object)
+	25: MoveLoc[2](obj1#1#0: Object)
+	26: CopyLoc[9](sender#1#0: address)
+	27: Call transfer::public_transfer<Object>(Object, address)
+	28: MoveLoc[3](obj2#1#0: Object)
+	29: CopyLoc[1](id1_addr#1#0: address)
+	30: Call transfer::public_transfer<Object>(Object, address)
+	31: MutBorrowLoc[8](scenario#1#0: Scenario)
+	32: CopyLoc[9](sender#1#0: address)
+	33: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	34: Pop
+	35: ImmBorrowLoc[8](scenario#1#0: Scenario)
+	36: CopyLoc[0](id1#1#0: ID)
+	37: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	38: StLoc[6](parent#1#0: Object)
+	39: ImmBorrowLoc[0](id1#1#0: ID)
+	40: Call test_scenario::most_recent_receiving_ticket<Object>(&ID): Receiving<Object>
+	41: StLoc[10](t2#1#0: Receiving<Object>)
+	42: MutBorrowLoc[6](parent#1#0: Object)
+	43: MutBorrowField[1](Object.id: UID)
+	44: MoveLoc[10](t2#1#0: Receiving<Object>)
+	45: Call transfer::receive<Object>(&mut UID, Receiving<Object>): Object
+	46: StLoc[4](obj2#2#0: Object)
+	47: ImmBorrowLoc[6](parent#1#0: Object)
+	48: ImmBorrowField[0](Object.value: u64)
+	49: ReadRef
+	50: LdU64(10)
+	51: Eq
+	52: BrFalse(54)
+B1:
+	53: Branch(56)
+B2:
+	54: LdU64(13906836304647159807)
+	55: Abort
+B3:
+	56: ImmBorrowLoc[4](obj2#2#0: Object)
+	57: ImmBorrowField[0](Object.value: u64)
+	58: ReadRef
+	59: LdU64(20)
+	60: Eq
+	61: BrFalse(63)
+B4:
+	62: Branch(65)
+B5:
+	63: LdU64(13906836308942127103)
+	64: Abort
+B6:
+	65: ImmBorrowLoc[8](scenario#1#0: Scenario)
+	66: MoveLoc[6](parent#1#0: Object)
+	67: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	68: MoveLoc[4](obj2#2#0: Object)
+	69: CopyLoc[1](id1_addr#1#0: address)
+	70: Call transfer::public_transfer<Object>(Object, address)
+	71: MutBorrowLoc[8](scenario#1#0: Scenario)
+	72: MoveLoc[9](sender#1#0: address)
+	73: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	74: Pop
+	75: ImmBorrowLoc[8](scenario#1#0: Scenario)
+	76: CopyLoc[0](id1#1#0: ID)
+	77: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	78: StLoc[7](parent#2#0: Object)
+	79: ImmBorrowLoc[0](id1#1#0: ID)
+	80: Call test_scenario::most_recent_receiving_ticket<Object>(&ID): Receiving<Object>
+	81: StLoc[11](t2#2#0: Receiving<Object>)
+	82: MutBorrowLoc[7](parent#2#0: Object)
+	83: MutBorrowField[1](Object.id: UID)
+	84: MoveLoc[11](t2#2#0: Receiving<Object>)
+	85: Call transfer::receive<Object>(&mut UID, Receiving<Object>): Object
+	86: StLoc[5](obj2#3#0: Object)
+	87: ImmBorrowLoc[7](parent#2#0: Object)
+	88: ImmBorrowField[0](Object.value: u64)
+	89: ReadRef
+	90: LdU64(10)
+	91: Eq
+	92: BrFalse(94)
+B7:
+	93: Branch(96)
+B8:
+	94: LdU64(13906836347596832767)
+	95: Abort
+B9:
+	96: ImmBorrowLoc[5](obj2#3#0: Object)
+	97: ImmBorrowField[0](Object.value: u64)
+	98: ReadRef
+	99: LdU64(20)
+	100: Eq
+	101: BrFalse(103)
+B10:
+	102: Branch(105)
+B11:
+	103: LdU64(13906836351891800063)
+	104: Abort
+B12:
+	105: ImmBorrowLoc[8](scenario#1#0: Scenario)
+	106: MoveLoc[7](parent#2#0: Object)
+	107: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	108: MoveLoc[5](obj2#3#0: Object)
+	109: MoveLoc[1](id1_addr#1#0: address)
+	110: Call transfer::public_transfer<Object>(Object, address)
+	111: MoveLoc[8](scenario#1#0: Scenario)
+	112: Call test_scenario::end(Scenario): TransactionEffects
+	113: Pop
+	114: Ret
+}
+
+no_receive_object_then_use_next_tx() {
+L0:	id1#1#0: ID
+L1:	id1_addr#1#0: address
+L2:	obj1#1#0: Object
+L3:	obj2#1#0: Object
+L4:	obj2#2#0: Object
+L5:	parent#1#0: Object
+L6:	scenario#1#0: Scenario
+L7:	sender#1#0: address
+L8:	t2#1#0: Receiving<Object>
+L9:	uid1#1#0: UID
+L10:	uid2#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[7](sender#1#0: address)
+	2: CopyLoc[7](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[6](scenario#1#0: Scenario)
+	5: MutBorrowLoc[6](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[9](uid1#1#0: UID)
+	8: MutBorrowLoc[6](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[10](uid2#1#0: UID)
+	11: ImmBorrowLoc[9](uid1#1#0: UID)
+	12: Call object::uid_to_inner(&UID): ID
+	13: StLoc[0](id1#1#0: ID)
+	14: ImmBorrowLoc[9](uid1#1#0: UID)
+	15: Call object::uid_to_address(&UID): address
+	16: StLoc[1](id1_addr#1#0: address)
+	17: MoveLoc[9](uid1#1#0: UID)
+	18: LdU64(10)
+	19: Pack[0](Object)
+	20: StLoc[2](obj1#1#0: Object)
+	21: MoveLoc[10](uid2#1#0: UID)
+	22: LdU64(20)
+	23: Pack[0](Object)
+	24: StLoc[3](obj2#1#0: Object)
+	25: MoveLoc[2](obj1#1#0: Object)
+	26: CopyLoc[7](sender#1#0: address)
+	27: Call transfer::public_transfer<Object>(Object, address)
+	28: MoveLoc[3](obj2#1#0: Object)
+	29: CopyLoc[1](id1_addr#1#0: address)
+	30: Call transfer::public_transfer<Object>(Object, address)
+	31: MutBorrowLoc[6](scenario#1#0: Scenario)
+	32: CopyLoc[7](sender#1#0: address)
+	33: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	34: Pop
+	35: ImmBorrowLoc[0](id1#1#0: ID)
+	36: Call test_scenario::most_recent_receiving_ticket<Object>(&ID): Receiving<Object>
+	37: Pop
+	38: MutBorrowLoc[6](scenario#1#0: Scenario)
+	39: MoveLoc[7](sender#1#0: address)
+	40: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	41: Pop
+	42: ImmBorrowLoc[6](scenario#1#0: Scenario)
+	43: CopyLoc[0](id1#1#0: ID)
+	44: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	45: StLoc[5](parent#1#0: Object)
+	46: ImmBorrowLoc[0](id1#1#0: ID)
+	47: Call test_scenario::most_recent_receiving_ticket<Object>(&ID): Receiving<Object>
+	48: StLoc[8](t2#1#0: Receiving<Object>)
+	49: MutBorrowLoc[5](parent#1#0: Object)
+	50: MutBorrowField[1](Object.id: UID)
+	51: MoveLoc[8](t2#1#0: Receiving<Object>)
+	52: Call transfer::receive<Object>(&mut UID, Receiving<Object>): Object
+	53: StLoc[4](obj2#2#0: Object)
+	54: ImmBorrowLoc[5](parent#1#0: Object)
+	55: ImmBorrowField[0](Object.value: u64)
+	56: ReadRef
+	57: LdU64(10)
+	58: Eq
+	59: BrFalse(61)
+B1:
+	60: Branch(63)
+B2:
+	61: LdU64(13906836510805590015)
+	62: Abort
+B3:
+	63: ImmBorrowLoc[4](obj2#2#0: Object)
+	64: ImmBorrowField[0](Object.value: u64)
+	65: ReadRef
+	66: LdU64(20)
+	67: Eq
+	68: BrFalse(70)
+B4:
+	69: Branch(72)
+B5:
+	70: LdU64(13906836515100557311)
+	71: Abort
+B6:
+	72: ImmBorrowLoc[6](scenario#1#0: Scenario)
+	73: MoveLoc[5](parent#1#0: Object)
+	74: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	75: MoveLoc[4](obj2#2#0: Object)
+	76: MoveLoc[1](id1_addr#1#0: address)
+	77: Call transfer::public_transfer<Object>(Object, address)
+	78: MoveLoc[6](scenario#1#0: Scenario)
+	79: Call test_scenario::end(Scenario): TransactionEffects
+	80: Pop
+	81: Ret
+}
+
+receive_object_shared() {
+L0:	id1#1#0: ID
+L1:	scenario#1#0: Scenario
+L2:	sender#1#0: address
+L3:	uid1#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[2](sender#1#0: address)
+	2: CopyLoc[2](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[1](scenario#1#0: Scenario)
+	5: MutBorrowLoc[1](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[3](uid1#1#0: UID)
+	8: ImmBorrowLoc[3](uid1#1#0: UID)
+	9: Call object::uid_to_inner(&UID): ID
+	10: StLoc[0](id1#1#0: ID)
+	11: MoveLoc[3](uid1#1#0: UID)
+	12: LdU64(20)
+	13: Pack[0](Object)
+	14: Call transfer::public_share_object<Object>(Object)
+	15: MutBorrowLoc[1](scenario#1#0: Scenario)
+	16: MoveLoc[2](sender#1#0: address)
+	17: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	18: Pop
+	19: MoveLoc[0](id1#1#0: ID)
+	20: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	21: Pop
+	22: MoveLoc[1](scenario#1#0: Scenario)
+	23: Call test_scenario::end(Scenario): TransactionEffects
+	24: Pop
+	25: Ret
+}
+
+receive_object_double_allocate_ticket() {
+L0:	id1#1#0: ID
+L1:	scenario#1#0: Scenario
+L2:	sender#1#0: address
+L3:	uid1#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[2](sender#1#0: address)
+	2: CopyLoc[2](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[1](scenario#1#0: Scenario)
+	5: MutBorrowLoc[1](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[3](uid1#1#0: UID)
+	8: ImmBorrowLoc[3](uid1#1#0: UID)
+	9: Call object::uid_to_inner(&UID): ID
+	10: StLoc[0](id1#1#0: ID)
+	11: MoveLoc[3](uid1#1#0: UID)
+	12: LdU64(20)
+	13: Pack[0](Object)
+	14: CopyLoc[2](sender#1#0: address)
+	15: Call transfer::public_transfer<Object>(Object, address)
+	16: MutBorrowLoc[1](scenario#1#0: Scenario)
+	17: MoveLoc[2](sender#1#0: address)
+	18: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	19: Pop
+	20: CopyLoc[0](id1#1#0: ID)
+	21: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	22: Pop
+	23: MoveLoc[0](id1#1#0: ID)
+	24: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	25: Pop
+	26: MoveLoc[1](scenario#1#0: Scenario)
+	27: Call test_scenario::end(Scenario): TransactionEffects
+	28: Pop
+	29: Ret
+}
+
+receive_double_allocate_ticket_return_between() {
+L0:	id1#1#0: ID
+L1:	scenario#1#0: Scenario
+L2:	sender#1#0: address
+L3:	uid1#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[2](sender#1#0: address)
+	2: CopyLoc[2](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[1](scenario#1#0: Scenario)
+	5: MutBorrowLoc[1](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[3](uid1#1#0: UID)
+	8: ImmBorrowLoc[3](uid1#1#0: UID)
+	9: Call object::uid_to_inner(&UID): ID
+	10: StLoc[0](id1#1#0: ID)
+	11: MoveLoc[3](uid1#1#0: UID)
+	12: LdU64(20)
+	13: Pack[0](Object)
+	14: CopyLoc[2](sender#1#0: address)
+	15: Call transfer::public_transfer<Object>(Object, address)
+	16: MutBorrowLoc[1](scenario#1#0: Scenario)
+	17: MoveLoc[2](sender#1#0: address)
+	18: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	19: Pop
+	20: CopyLoc[0](id1#1#0: ID)
+	21: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	22: Call test_scenario::return_receiving_ticket<Object>(Receiving<Object>)
+	23: MoveLoc[0](id1#1#0: ID)
+	24: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	25: Pop
+	26: MoveLoc[1](scenario#1#0: Scenario)
+	27: Call test_scenario::end(Scenario): TransactionEffects
+	28: Pop
+	29: Ret
+}
+
+receive_double_allocate_ticket_return_between_then_use() {
+L0:	id1#1#0: ID
+L1:	id1_addr#1#0: address
+L2:	id2#1#0: ID
+L3:	id3#1#0: ID
+L4:	obj1#1#0: Object
+L5:	obj2#1#0: Object
+L6:	obj2#2#0: Object
+L7:	obj3#1#0: Object
+L8:	obj3#2#0: Object
+L9:	parent#1#0: Object
+L10:	scenario#1#0: Scenario
+L11:	sender#1#0: address
+L12:	t2#2#0: Receiving<Object>
+L13:	t3#1#0: Receiving<Object>
+L14:	uid1#1#0: UID
+L15:	uid2#1#0: UID
+L16:	uid3#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[11](sender#1#0: address)
+	2: CopyLoc[11](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[10](scenario#1#0: Scenario)
+	5: MutBorrowLoc[10](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[14](uid1#1#0: UID)
+	8: MutBorrowLoc[10](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[15](uid2#1#0: UID)
+	11: MutBorrowLoc[10](scenario#1#0: Scenario)
+	12: Call test_scenario::new_object(&mut Scenario): UID
+	13: StLoc[16](uid3#1#0: UID)
+	14: ImmBorrowLoc[14](uid1#1#0: UID)
+	15: Call object::uid_to_inner(&UID): ID
+	16: StLoc[0](id1#1#0: ID)
+	17: ImmBorrowLoc[15](uid2#1#0: UID)
+	18: Call object::uid_to_inner(&UID): ID
+	19: StLoc[2](id2#1#0: ID)
+	20: ImmBorrowLoc[16](uid3#1#0: UID)
+	21: Call object::uid_to_inner(&UID): ID
+	22: StLoc[3](id3#1#0: ID)
+	23: ImmBorrowLoc[14](uid1#1#0: UID)
+	24: Call object::uid_to_address(&UID): address
+	25: StLoc[1](id1_addr#1#0: address)
+	26: MoveLoc[14](uid1#1#0: UID)
+	27: LdU64(10)
+	28: Pack[0](Object)
+	29: StLoc[4](obj1#1#0: Object)
+	30: MoveLoc[15](uid2#1#0: UID)
+	31: LdU64(20)
+	32: Pack[0](Object)
+	33: StLoc[5](obj2#1#0: Object)
+	34: MoveLoc[16](uid3#1#0: UID)
+	35: LdU64(30)
+	36: Pack[0](Object)
+	37: StLoc[7](obj3#1#0: Object)
+	38: MoveLoc[4](obj1#1#0: Object)
+	39: CopyLoc[11](sender#1#0: address)
+	40: Call transfer::public_transfer<Object>(Object, address)
+	41: MoveLoc[5](obj2#1#0: Object)
+	42: CopyLoc[1](id1_addr#1#0: address)
+	43: Call transfer::public_transfer<Object>(Object, address)
+	44: MoveLoc[7](obj3#1#0: Object)
+	45: CopyLoc[1](id1_addr#1#0: address)
+	46: Call transfer::public_transfer<Object>(Object, address)
+	47: MutBorrowLoc[10](scenario#1#0: Scenario)
+	48: MoveLoc[11](sender#1#0: address)
+	49: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	50: Pop
+	51: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	52: MoveLoc[0](id1#1#0: ID)
+	53: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	54: StLoc[9](parent#1#0: Object)
+	55: CopyLoc[2](id2#1#0: ID)
+	56: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	57: Call test_scenario::return_receiving_ticket<Object>(Receiving<Object>)
+	58: MoveLoc[2](id2#1#0: ID)
+	59: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	60: StLoc[12](t2#2#0: Receiving<Object>)
+	61: MoveLoc[3](id3#1#0: ID)
+	62: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	63: StLoc[13](t3#1#0: Receiving<Object>)
+	64: MutBorrowLoc[9](parent#1#0: Object)
+	65: MutBorrowField[1](Object.id: UID)
+	66: MoveLoc[12](t2#2#0: Receiving<Object>)
+	67: Call transfer::receive<Object>(&mut UID, Receiving<Object>): Object
+	68: StLoc[6](obj2#2#0: Object)
+	69: MutBorrowLoc[9](parent#1#0: Object)
+	70: MutBorrowField[1](Object.id: UID)
+	71: MoveLoc[13](t3#1#0: Receiving<Object>)
+	72: Call transfer::receive<Object>(&mut UID, Receiving<Object>): Object
+	73: StLoc[8](obj3#2#0: Object)
+	74: ImmBorrowLoc[9](parent#1#0: Object)
+	75: ImmBorrowField[0](Object.value: u64)
+	76: ReadRef
+	77: LdU64(10)
+	78: Eq
+	79: BrFalse(81)
+B1:
+	80: Branch(83)
+B2:
+	81: LdU64(13906836936007352319)
+	82: Abort
+B3:
+	83: ImmBorrowLoc[6](obj2#2#0: Object)
+	84: ImmBorrowField[0](Object.value: u64)
+	85: ReadRef
+	86: LdU64(20)
+	87: Eq
+	88: BrFalse(90)
+B4:
+	89: Branch(92)
+B5:
+	90: LdU64(13906836940302319615)
+	91: Abort
+B6:
+	92: ImmBorrowLoc[8](obj3#2#0: Object)
+	93: ImmBorrowField[0](Object.value: u64)
+	94: ReadRef
+	95: LdU64(30)
+	96: Eq
+	97: BrFalse(99)
+B7:
+	98: Branch(101)
+B8:
+	99: LdU64(13906836944597286911)
+	100: Abort
+B9:
+	101: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	102: MoveLoc[9](parent#1#0: Object)
+	103: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	104: MoveLoc[6](obj2#2#0: Object)
+	105: CopyLoc[1](id1_addr#1#0: address)
+	106: Call transfer::public_transfer<Object>(Object, address)
+	107: MoveLoc[8](obj3#2#0: Object)
+	108: MoveLoc[1](id1_addr#1#0: address)
+	109: Call transfer::public_transfer<Object>(Object, address)
+	110: MoveLoc[10](scenario#1#0: Scenario)
+	111: Call test_scenario::end(Scenario): TransactionEffects
+	112: Pop
+	113: Ret
+}
+
+receive_double_allocate_ticket_return_between_then_use_then_check() {
+L0:	id1#1#0: ID
+L1:	id1_addr#1#0: address
+L2:	id2#1#0: ID
+L3:	id3#1#0: ID
+L4:	obj#1#0: Object
+L5:	obj1#1#0: Object
+L6:	obj2#1#0: Object
+L7:	obj2#2#0: Object
+L8:	obj3#1#0: Object
+L9:	obj3#2#0: Object
+L10:	parent#1#0: Object
+L11:	scenario#1#0: Scenario
+L12:	sender#1#0: address
+L13:	t2#2#0: Receiving<Object>
+L14:	t3#1#0: Receiving<Object>
+L15:	uid1#1#0: UID
+L16:	uid2#1#0: UID
+L17:	uid3#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[12](sender#1#0: address)
+	2: CopyLoc[12](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[11](scenario#1#0: Scenario)
+	5: MutBorrowLoc[11](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[15](uid1#1#0: UID)
+	8: MutBorrowLoc[11](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[16](uid2#1#0: UID)
+	11: MutBorrowLoc[11](scenario#1#0: Scenario)
+	12: Call test_scenario::new_object(&mut Scenario): UID
+	13: StLoc[17](uid3#1#0: UID)
+	14: ImmBorrowLoc[15](uid1#1#0: UID)
+	15: Call object::uid_to_inner(&UID): ID
+	16: StLoc[0](id1#1#0: ID)
+	17: ImmBorrowLoc[16](uid2#1#0: UID)
+	18: Call object::uid_to_inner(&UID): ID
+	19: StLoc[2](id2#1#0: ID)
+	20: ImmBorrowLoc[17](uid3#1#0: UID)
+	21: Call object::uid_to_inner(&UID): ID
+	22: StLoc[3](id3#1#0: ID)
+	23: ImmBorrowLoc[15](uid1#1#0: UID)
+	24: Call object::uid_to_address(&UID): address
+	25: StLoc[1](id1_addr#1#0: address)
+	26: MoveLoc[15](uid1#1#0: UID)
+	27: LdU64(10)
+	28: Pack[0](Object)
+	29: StLoc[5](obj1#1#0: Object)
+	30: MoveLoc[16](uid2#1#0: UID)
+	31: LdU64(20)
+	32: Pack[0](Object)
+	33: StLoc[6](obj2#1#0: Object)
+	34: MoveLoc[17](uid3#1#0: UID)
+	35: LdU64(30)
+	36: Pack[0](Object)
+	37: StLoc[8](obj3#1#0: Object)
+	38: MoveLoc[5](obj1#1#0: Object)
+	39: CopyLoc[12](sender#1#0: address)
+	40: Call transfer::public_transfer<Object>(Object, address)
+	41: MoveLoc[6](obj2#1#0: Object)
+	42: CopyLoc[1](id1_addr#1#0: address)
+	43: Call transfer::public_transfer<Object>(Object, address)
+	44: MoveLoc[8](obj3#1#0: Object)
+	45: MoveLoc[1](id1_addr#1#0: address)
+	46: Call transfer::public_transfer<Object>(Object, address)
+	47: MutBorrowLoc[11](scenario#1#0: Scenario)
+	48: CopyLoc[12](sender#1#0: address)
+	49: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	50: Pop
+	51: ImmBorrowLoc[11](scenario#1#0: Scenario)
+	52: MoveLoc[0](id1#1#0: ID)
+	53: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	54: StLoc[10](parent#1#0: Object)
+	55: CopyLoc[2](id2#1#0: ID)
+	56: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	57: Call test_scenario::return_receiving_ticket<Object>(Receiving<Object>)
+	58: CopyLoc[2](id2#1#0: ID)
+	59: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	60: StLoc[13](t2#2#0: Receiving<Object>)
+	61: MoveLoc[3](id3#1#0: ID)
+	62: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	63: StLoc[14](t3#1#0: Receiving<Object>)
+	64: MutBorrowLoc[10](parent#1#0: Object)
+	65: MutBorrowField[1](Object.id: UID)
+	66: MoveLoc[13](t2#2#0: Receiving<Object>)
+	67: Call transfer::receive<Object>(&mut UID, Receiving<Object>): Object
+	68: StLoc[7](obj2#2#0: Object)
+	69: MutBorrowLoc[10](parent#1#0: Object)
+	70: MutBorrowField[1](Object.id: UID)
+	71: MoveLoc[14](t3#1#0: Receiving<Object>)
+	72: Call transfer::receive<Object>(&mut UID, Receiving<Object>): Object
+	73: StLoc[9](obj3#2#0: Object)
+	74: ImmBorrowLoc[10](parent#1#0: Object)
+	75: ImmBorrowField[0](Object.value: u64)
+	76: ReadRef
+	77: LdU64(10)
+	78: Eq
+	79: BrFalse(81)
+B1:
+	80: Branch(83)
+B2:
+	81: LdU64(13906837116395978751)
+	82: Abort
+B3:
+	83: ImmBorrowLoc[7](obj2#2#0: Object)
+	84: ImmBorrowField[0](Object.value: u64)
+	85: ReadRef
+	86: LdU64(20)
+	87: Eq
+	88: BrFalse(90)
+B4:
+	89: Branch(92)
+B5:
+	90: LdU64(13906837120690946047)
+	91: Abort
+B6:
+	92: ImmBorrowLoc[9](obj3#2#0: Object)
+	93: ImmBorrowField[0](Object.value: u64)
+	94: ReadRef
+	95: LdU64(30)
+	96: Eq
+	97: BrFalse(99)
+B7:
+	98: Branch(101)
+B8:
+	99: LdU64(13906837124985913343)
+	100: Abort
+B9:
+	101: LdU64(42)
+	102: MutBorrowLoc[7](obj2#2#0: Object)
+	103: MutBorrowField[0](Object.value: u64)
+	104: WriteRef
+	105: ImmBorrowLoc[11](scenario#1#0: Scenario)
+	106: MoveLoc[10](parent#1#0: Object)
+	107: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	108: MoveLoc[7](obj2#2#0: Object)
+	109: CopyLoc[12](sender#1#0: address)
+	110: Call transfer::public_transfer<Object>(Object, address)
+	111: MoveLoc[9](obj3#2#0: Object)
+	112: CopyLoc[12](sender#1#0: address)
+	113: Call transfer::public_transfer<Object>(Object, address)
+	114: MutBorrowLoc[11](scenario#1#0: Scenario)
+	115: MoveLoc[12](sender#1#0: address)
+	116: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	117: Pop
+	118: ImmBorrowLoc[11](scenario#1#0: Scenario)
+	119: MoveLoc[2](id2#1#0: ID)
+	120: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	121: StLoc[4](obj#1#0: Object)
+	122: ImmBorrowLoc[4](obj#1#0: Object)
+	123: ImmBorrowField[0](Object.value: u64)
+	124: ReadRef
+	125: LdU64(42)
+	126: Eq
+	127: BrFalse(129)
+B10:
+	128: Branch(131)
+B11:
+	129: LdU64(13906837163640619007)
+	130: Abort
+B12:
+	131: ImmBorrowLoc[11](scenario#1#0: Scenario)
+	132: MoveLoc[4](obj#1#0: Object)
+	133: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	134: MoveLoc[11](scenario#1#0: Scenario)
+	135: Call test_scenario::end(Scenario): TransactionEffects
+	136: Pop
+	137: Ret
+}
+
+unused_receive_ticket() {
+L0:	id1_addr#1#0: address
+L1:	id2#1#0: ID
+L2:	id3#1#0: ID
+L3:	obj1#1#0: Object
+L4:	obj2#1#0: Object
+L5:	obj3#1#0: Object
+L6:	scenario#1#0: Scenario
+L7:	sender#1#0: address
+L8:	uid1#1#0: UID
+L9:	uid2#1#0: UID
+L10:	uid3#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[7](sender#1#0: address)
+	2: CopyLoc[7](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[6](scenario#1#0: Scenario)
+	5: MutBorrowLoc[6](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[8](uid1#1#0: UID)
+	8: MutBorrowLoc[6](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[9](uid2#1#0: UID)
+	11: MutBorrowLoc[6](scenario#1#0: Scenario)
+	12: Call test_scenario::new_object(&mut Scenario): UID
+	13: StLoc[10](uid3#1#0: UID)
+	14: ImmBorrowLoc[9](uid2#1#0: UID)
+	15: Call object::uid_to_inner(&UID): ID
+	16: StLoc[1](id2#1#0: ID)
+	17: ImmBorrowLoc[10](uid3#1#0: UID)
+	18: Call object::uid_to_inner(&UID): ID
+	19: StLoc[2](id3#1#0: ID)
+	20: ImmBorrowLoc[8](uid1#1#0: UID)
+	21: Call object::uid_to_address(&UID): address
+	22: StLoc[0](id1_addr#1#0: address)
+	23: MoveLoc[8](uid1#1#0: UID)
+	24: LdU64(10)
+	25: Pack[0](Object)
+	26: StLoc[3](obj1#1#0: Object)
+	27: MoveLoc[9](uid2#1#0: UID)
+	28: LdU64(20)
+	29: Pack[0](Object)
+	30: StLoc[4](obj2#1#0: Object)
+	31: MoveLoc[10](uid3#1#0: UID)
+	32: LdU64(30)
+	33: Pack[0](Object)
+	34: StLoc[5](obj3#1#0: Object)
+	35: MoveLoc[3](obj1#1#0: Object)
+	36: CopyLoc[7](sender#1#0: address)
+	37: Call transfer::public_transfer<Object>(Object, address)
+	38: MoveLoc[4](obj2#1#0: Object)
+	39: CopyLoc[0](id1_addr#1#0: address)
+	40: Call transfer::public_transfer<Object>(Object, address)
+	41: MoveLoc[5](obj3#1#0: Object)
+	42: MoveLoc[0](id1_addr#1#0: address)
+	43: Call transfer::public_transfer<Object>(Object, address)
+	44: MutBorrowLoc[6](scenario#1#0: Scenario)
+	45: MoveLoc[7](sender#1#0: address)
+	46: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	47: Pop
+	48: MoveLoc[1](id2#1#0: ID)
+	49: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	50: Pop
+	51: MoveLoc[2](id3#1#0: ID)
+	52: Call test_scenario::receiving_ticket_by_id<Object>(ID): Receiving<Object>
+	53: Pop
+	54: MoveLoc[6](scenario#1#0: Scenario)
+	55: Call test_scenario::end(Scenario): TransactionEffects
+	56: Pop
+	57: Ret
+}
+
+unreturned_objects() {
+L0:	imm#1#0: Object
+L1:	owned#1#0: Object
+L2:	scenario#1#0: Scenario
+L3:	sender#1#0: address
+L4:	shared#1#0: Object
+L5:	uid1#1#0: UID
+L6:	uid2#1#0: UID
+L7:	uid3#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[3](sender#1#0: address)
+	2: CopyLoc[3](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[2](scenario#1#0: Scenario)
+	5: MutBorrowLoc[2](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[5](uid1#1#0: UID)
+	8: MutBorrowLoc[2](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: StLoc[6](uid2#1#0: UID)
+	11: MutBorrowLoc[2](scenario#1#0: Scenario)
+	12: Call test_scenario::new_object(&mut Scenario): UID
+	13: StLoc[7](uid3#1#0: UID)
+	14: MoveLoc[5](uid1#1#0: UID)
+	15: LdU64(10)
+	16: Pack[0](Object)
+	17: Call transfer::public_share_object<Object>(Object)
+	18: MoveLoc[6](uid2#1#0: UID)
+	19: LdU64(10)
+	20: Pack[0](Object)
+	21: Call transfer::public_freeze_object<Object>(Object)
+	22: MoveLoc[7](uid3#1#0: UID)
+	23: LdU64(10)
+	24: Pack[0](Object)
+	25: CopyLoc[3](sender#1#0: address)
+	26: Call transfer::public_transfer<Object>(Object, address)
+	27: MutBorrowLoc[2](scenario#1#0: Scenario)
+	28: CopyLoc[3](sender#1#0: address)
+	29: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	30: Pop
+	31: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	32: Call test_scenario::take_shared<Object>(&Scenario): Object
+	33: StLoc[4](shared#1#0: Object)
+	34: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	35: Call test_scenario::take_immutable<Object>(&Scenario): Object
+	36: StLoc[0](imm#1#0: Object)
+	37: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	38: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	39: StLoc[1](owned#1#0: Object)
+	40: MutBorrowLoc[2](scenario#1#0: Scenario)
+	41: CopyLoc[3](sender#1#0: address)
+	42: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	43: Pop
+	44: MutBorrowLoc[2](scenario#1#0: Scenario)
+	45: CopyLoc[3](sender#1#0: address)
+	46: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	47: Pop
+	48: MutBorrowLoc[2](scenario#1#0: Scenario)
+	49: CopyLoc[3](sender#1#0: address)
+	50: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	51: Pop
+	52: MutBorrowLoc[2](scenario#1#0: Scenario)
+	53: CopyLoc[3](sender#1#0: address)
+	54: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	55: Pop
+	56: MoveLoc[2](scenario#1#0: Scenario)
+	57: Call test_scenario::end(Scenario): TransactionEffects
+	58: Pop
+	59: MoveLoc[4](shared#1#0: Object)
+	60: Call transfer::public_share_object<Object>(Object)
+	61: MoveLoc[0](imm#1#0: Object)
+	62: Call transfer::public_freeze_object<Object>(Object)
+	63: MoveLoc[1](owned#1#0: Object)
+	64: MoveLoc[3](sender#1#0: address)
+	65: Call transfer::public_transfer<Object>(Object, address)
+	66: Ret
+}
+
+later_epoch() {
+L0:	scenario#1#0: Scenario
+L1:	sender#1#0: address
+L2:	ts0#1#0: u64
+L3:	ts1#1#0: u64
+L4:	ts2#1#0: u64
+L5:	ts3#1#0: u64
+L6:	ts4#1#0: u64
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[1](sender#1#0: address)
+	2: CopyLoc[1](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[0](scenario#1#0: Scenario)
+	5: MutBorrowLoc[0](scenario#1#0: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: FreezeRef
+	8: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	9: StLoc[2](ts0#1#0: u64)
+	10: MutBorrowLoc[0](scenario#1#0: Scenario)
+	11: CopyLoc[1](sender#1#0: address)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: MutBorrowLoc[0](scenario#1#0: Scenario)
+	15: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	16: FreezeRef
+	17: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	18: StLoc[3](ts1#1#0: u64)
+	19: CopyLoc[3](ts1#1#0: u64)
+	20: MoveLoc[2](ts0#1#0: u64)
+	21: Eq
+	22: BrFalse(24)
+B1:
+	23: Branch(26)
+B2:
+	24: LdU64(13906837459993362431)
+	25: Abort
+B3:
+	26: MutBorrowLoc[0](scenario#1#0: Scenario)
+	27: CopyLoc[1](sender#1#0: address)
+	28: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	29: Pop
+	30: MutBorrowLoc[0](scenario#1#0: Scenario)
+	31: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	32: FreezeRef
+	33: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	34: StLoc[4](ts2#1#0: u64)
+	35: CopyLoc[4](ts2#1#0: u64)
+	36: MoveLoc[3](ts1#1#0: u64)
+	37: Eq
+	38: BrFalse(40)
+B4:
+	39: Branch(42)
+B5:
+	40: LdU64(13906837481468198911)
+	41: Abort
+B6:
+	42: MutBorrowLoc[0](scenario#1#0: Scenario)
+	43: LdU64(42)
+	44: CopyLoc[1](sender#1#0: address)
+	45: Call test_scenario::later_epoch(&mut Scenario, u64, address): TransactionEffects
+	46: Pop
+	47: MutBorrowLoc[0](scenario#1#0: Scenario)
+	48: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	49: FreezeRef
+	50: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	51: StLoc[5](ts3#1#0: u64)
+	52: CopyLoc[5](ts3#1#0: u64)
+	53: MoveLoc[4](ts2#1#0: u64)
+	54: LdU64(42)
+	55: Add
+	56: Eq
+	57: BrFalse(59)
+B7:
+	58: Branch(61)
+B8:
+	59: LdU64(13906837502943035391)
+	60: Abort
+B9:
+	61: MutBorrowLoc[0](scenario#1#0: Scenario)
+	62: CopyLoc[1](sender#1#0: address)
+	63: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	64: Pop
+	65: MutBorrowLoc[0](scenario#1#0: Scenario)
+	66: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	67: FreezeRef
+	68: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	69: StLoc[6](ts4#1#0: u64)
+	70: CopyLoc[6](ts4#1#0: u64)
+	71: MoveLoc[5](ts3#1#0: u64)
+	72: Eq
+	73: BrFalse(75)
+B10:
+	74: Branch(77)
+B11:
+	75: LdU64(13906837524417871871)
+	76: Abort
+B12:
+	77: MutBorrowLoc[0](scenario#1#0: Scenario)
+	78: MoveLoc[1](sender#1#0: address)
+	79: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	80: Pop
+	81: MutBorrowLoc[0](scenario#1#0: Scenario)
+	82: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	83: FreezeRef
+	84: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	85: MoveLoc[6](ts4#1#0: u64)
+	86: Eq
+	87: BrFalse(89)
+B13:
+	88: Branch(91)
+B14:
+	89: LdU64(13906837545892708351)
+	90: Abort
+B15:
+	91: MoveLoc[0](scenario#1#0: Scenario)
+	92: Call test_scenario::end(Scenario): TransactionEffects
+	93: Pop
+	94: Ret
+}
+
+invalid_shared_usage() {
+L0:	scenario#1#0: Scenario
+L1:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[1](sender#1#0: address)
+	2: CopyLoc[1](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[0](scenario#1#0: Scenario)
+	5: MutBorrowLoc[0](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: Call transfer::public_share_object<Object>(Object)
+	10: MutBorrowLoc[0](scenario#1#0: Scenario)
+	11: CopyLoc[1](sender#1#0: address)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	15: Call test_scenario::take_shared<Object>(&Scenario): Object
+	16: Call transfer::public_freeze_object<Object>(Object)
+	17: MutBorrowLoc[0](scenario#1#0: Scenario)
+	18: MoveLoc[1](sender#1#0: address)
+	19: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	20: Pop
+	21: LdU64(13906837631792054271)
+	22: Abort
+}
+
+invalid_immutable_usage() {
+L0:	scenario#1#0: Scenario
+L1:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[1](sender#1#0: address)
+	2: CopyLoc[1](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[0](scenario#1#0: Scenario)
+	5: MutBorrowLoc[0](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: Call transfer::public_freeze_object<Object>(Object)
+	10: MutBorrowLoc[0](scenario#1#0: Scenario)
+	11: CopyLoc[1](sender#1#0: address)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	15: Call test_scenario::take_immutable<Object>(&Scenario): Object
+	16: LdConst[0](address: 0x00..)
+	17: Call transfer::public_transfer<Object>(Object, address)
+	18: MutBorrowLoc[0](scenario#1#0: Scenario)
+	19: MoveLoc[1](sender#1#0: address)
+	20: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	21: Pop
+	22: LdU64(13906837709101465599)
+	23: Abort
+}
+
+modify_immutable() {
+L0:	obj1#2#0: Object
+L1:	scenario#1#0: Scenario
+L2:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[2](sender#1#0: address)
+	2: CopyLoc[2](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[1](scenario#1#0: Scenario)
+	5: MutBorrowLoc[1](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: LdU64(10)
+	8: Pack[0](Object)
+	9: Call transfer::public_freeze_object<Object>(Object)
+	10: MutBorrowLoc[1](scenario#1#0: Scenario)
+	11: CopyLoc[2](sender#1#0: address)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	15: Call test_scenario::take_immutable<Object>(&Scenario): Object
+	16: StLoc[0](obj1#2#0: Object)
+	17: MutBorrowLoc[1](scenario#1#0: Scenario)
+	18: CopyLoc[2](sender#1#0: address)
+	19: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	20: Pop
+	21: LdU64(100)
+	22: MutBorrowLoc[0](obj1#2#0: Object)
+	23: MutBorrowField[0](Object.value: u64)
+	24: WriteRef
+	25: MutBorrowLoc[1](scenario#1#0: Scenario)
+	26: CopyLoc[2](sender#1#0: address)
+	27: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	28: Pop
+	29: MoveLoc[0](obj1#2#0: Object)
+	30: Call test_scenario::return_immutable<Object>(Object)
+	31: MutBorrowLoc[1](scenario#1#0: Scenario)
+	32: MoveLoc[2](sender#1#0: address)
+	33: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	34: Pop
+	35: LdU64(13906837790705844223)
+	36: Abort
+}
+
+invalid_address_return() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	7: MoveLoc[0](id#1#0: UID)
+	8: LdU64(10)
+	9: Pack[0](Object)
+	10: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	11: LdU64(13906837829360549887)
+	12: Abort
+}
+
+invalid_shared_return() {
+L0:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: LdU64(10)
+	6: Pack[0](Object)
+	7: Call test_scenario::return_shared<Object>(Object)
+	8: LdU64(13906837868015255551)
+	9: Abort
+}
+
+invalid_immutable_return() {
+L0:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: LdU64(10)
+	6: Pack[0](Object)
+	7: Call test_scenario::return_immutable<Object>(Object)
+	8: LdU64(13906837906669961215)
+	9: Abort
+}
+
+empty_inventory() {
+L0:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	4: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	5: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	6: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	7: LdU64(13906837941029699583)
+	8: Abort
+}
+
+empty_inventory_shared() {
+L0:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	4: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	5: Call test_scenario::take_shared<Object>(&Scenario): Object
+	6: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	7: LdU64(13906837975389437951)
+	8: Abort
+}
+
+empty_inventory_immutable() {
+L0:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	4: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	5: Call test_scenario::take_immutable<Object>(&Scenario): Object
+	6: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	7: LdU64(13906838009749176319)
+	8: Abort
+}
+
+object_not_found() {
+L0:	id#1#0: ID
+L1:	scenario#1#0: Scenario
+L2:	uid#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[2](uid#1#0: UID)
+	6: ImmBorrowLoc[2](uid#1#0: UID)
+	7: Call object::uid_to_inner(&UID): ID
+	8: StLoc[0](id#1#0: ID)
+	9: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	10: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	11: MoveLoc[0](id#1#0: ID)
+	12: Call test_scenario::take_from_sender_by_id<Object>(&Scenario, ID): Object
+	13: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	14: LdU64(13906838052698849279)
+	15: Abort
+}
+
+object_not_found_shared() {
+L0:	id#1#0: ID
+L1:	scenario#1#0: Scenario
+L2:	uid#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[2](uid#1#0: UID)
+	6: ImmBorrowLoc[2](uid#1#0: UID)
+	7: Call object::uid_to_inner(&UID): ID
+	8: StLoc[0](id#1#0: ID)
+	9: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	10: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	11: MoveLoc[0](id#1#0: ID)
+	12: Call test_scenario::take_shared_by_id<Object>(&Scenario, ID): Object
+	13: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	14: LdU64(13906838095648522239)
+	15: Abort
+}
+
+object_not_found_immutable() {
+L0:	id#1#0: ID
+L1:	scenario#1#0: Scenario
+L2:	uid#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[2](uid#1#0: UID)
+	6: ImmBorrowLoc[2](uid#1#0: UID)
+	7: Call object::uid_to_inner(&UID): ID
+	8: StLoc[0](id#1#0: ID)
+	9: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	10: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	11: MoveLoc[0](id#1#0: ID)
+	12: Call test_scenario::take_immutable_by_id<Object>(&Scenario, ID): Object
+	13: Call test_scenario::return_to_sender<Object>(&Scenario, Object)
+	14: LdU64(13906838138598195199)
+	15: Abort
+}
+
+wrong_object_type() {
+L0:	id#1#0: ID
+L1:	scenario#1#0: Scenario
+L2:	sender#1#0: address
+L3:	uid#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[2](sender#1#0: address)
+	2: CopyLoc[2](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[1](scenario#1#0: Scenario)
+	5: MutBorrowLoc[1](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[3](uid#1#0: UID)
+	8: ImmBorrowLoc[3](uid#1#0: UID)
+	9: Call object::uid_to_inner(&UID): ID
+	10: StLoc[0](id#1#0: ID)
+	11: MoveLoc[3](uid#1#0: UID)
+	12: LdU64(10)
+	13: Pack[0](Object)
+	14: MoveLoc[2](sender#1#0: address)
+	15: Call transfer::public_transfer<Object>(Object, address)
+	16: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	17: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	18: MoveLoc[0](id#1#0: ID)
+	19: Call test_scenario::take_from_sender_by_id<Wrapper>(&Scenario, ID): Wrapper
+	20: Call test_scenario::return_to_sender<Wrapper>(&Scenario, Wrapper)
+	21: LdU64(13906838185842835455)
+	22: Abort
+}
+
+wrong_object_type_shared() {
+L0:	id#1#0: ID
+L1:	scenario#1#0: Scenario
+L2:	uid#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[2](uid#1#0: UID)
+	6: ImmBorrowLoc[2](uid#1#0: UID)
+	7: Call object::uid_to_inner(&UID): ID
+	8: StLoc[0](id#1#0: ID)
+	9: MoveLoc[2](uid#1#0: UID)
+	10: LdU64(10)
+	11: Pack[0](Object)
+	12: Call transfer::public_share_object<Object>(Object)
+	13: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	14: MoveLoc[0](id#1#0: ID)
+	15: Call test_scenario::take_shared_by_id<Wrapper>(&Scenario, ID): Wrapper
+	16: Call test_scenario::return_shared<Wrapper>(Wrapper)
+	17: LdU64(13906838233087475711)
+	18: Abort
+}
+
+wrong_object_type_immutable() {
+L0:	id#1#0: ID
+L1:	scenario#1#0: Scenario
+L2:	uid#1#0: UID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[2](uid#1#0: UID)
+	6: ImmBorrowLoc[2](uid#1#0: UID)
+	7: Call object::uid_to_inner(&UID): ID
+	8: StLoc[0](id#1#0: ID)
+	9: MoveLoc[2](uid#1#0: UID)
+	10: LdU64(10)
+	11: Pack[0](Object)
+	12: Call transfer::public_freeze_object<Object>(Object)
+	13: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	14: MoveLoc[0](id#1#0: ID)
+	15: Call test_scenario::take_immutable_by_id<Wrapper>(&Scenario, ID): Wrapper
+	16: Call test_scenario::return_immutable<Wrapper>(Wrapper)
+	17: LdU64(13906838280332115967)
+	18: Abort
+}
+
+dynamic_field_still_borrowed() {
+L0:	parent#1#0: UID
+L1:	r#1#0: &u64
+L2:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[2](scenario#1#0: Scenario)
+	3: MutBorrowLoc[2](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](parent#1#0: UID)
+	6: MutBorrowLoc[0](parent#1#0: UID)
+	7: LdConst[3](vector<u8>: "" /..)
+	8: LdU64(10)
+	9: Call dynamic_field::add<vector<u8>, u64>(&mut UID, vector<u8>, u64)
+	10: ImmBorrowLoc[0](parent#1#0: UID)
+	11: LdConst[3](vector<u8>: "" /..)
+	12: Call dynamic_field::borrow<vector<u8>, u64>(&UID, vector<u8>): &u64
+	13: StLoc[1](r#1#0: &u64)
+	14: MoveLoc[2](scenario#1#0: Scenario)
+	15: Call test_scenario::end(Scenario): TransactionEffects
+	16: Pop
+	17: MoveLoc[1](r#1#0: &u64)
+	18: ReadRef
+	19: LdU64(10)
+	20: Eq
+	21: BrFalse(23)
+B1:
+	22: Branch(25)
+B2:
+	23: LdU64(13906838327576756223)
+	24: Abort
+B3:
+	25: MoveLoc[0](parent#1#0: UID)
+	26: Call object::delete(UID)
+	27: Ret
+}
+
+dynamic_object_field_still_borrowed() {
+L0:	id#1#0: UID
+L1:	obj#1#0: &Object
+L2:	parent#1#0: UID
+L3:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[3](scenario#1#0: Scenario)
+	3: MutBorrowLoc[3](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[2](parent#1#0: UID)
+	6: MutBorrowLoc[3](scenario#1#0: Scenario)
+	7: Call test_scenario::new_object(&mut Scenario): UID
+	8: StLoc[0](id#1#0: UID)
+	9: MutBorrowLoc[2](parent#1#0: UID)
+	10: LdConst[3](vector<u8>: "" /..)
+	11: MoveLoc[0](id#1#0: UID)
+	12: LdU64(10)
+	13: Pack[0](Object)
+	14: Call dynamic_object_field::add<vector<u8>, Object>(&mut UID, vector<u8>, Object)
+	15: ImmBorrowLoc[2](parent#1#0: UID)
+	16: LdConst[3](vector<u8>: "" /..)
+	17: Call dynamic_object_field::borrow<vector<u8>, Object>(&UID, vector<u8>): &Object
+	18: StLoc[1](obj#1#0: &Object)
+	19: MoveLoc[3](scenario#1#0: Scenario)
+	20: Call test_scenario::end(Scenario): TransactionEffects
+	21: Pop
+	22: MoveLoc[1](obj#1#0: &Object)
+	23: ImmBorrowField[0](Object.value: u64)
+	24: ReadRef
+	25: LdU64(10)
+	26: Eq
+	27: BrFalse(29)
+B1:
+	28: Branch(31)
+B2:
+	29: LdU64(13906838383411331071)
+	30: Abort
+B3:
+	31: MoveLoc[2](parent#1#0: UID)
+	32: Call object::delete(UID)
+	33: Ret
+}
+
+dynamic_object_field_not_retrievable() {
+L0:	id#1#0: ID
+L1:	obj#1#0: Object
+L2:	obj#2#0: Object
+L3:	parent#1#0: UID
+L4:	scenario#1#0: Scenario
+L5:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[5](sender#1#0: address)
+	2: CopyLoc[5](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[4](scenario#1#0: Scenario)
+	5: MutBorrowLoc[4](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[3](parent#1#0: UID)
+	8: MutBorrowLoc[4](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: LdU64(10)
+	11: Pack[0](Object)
+	12: StLoc[1](obj#1#0: Object)
+	13: ImmBorrowLoc[1](obj#1#0: Object)
+	14: Call object::id<Object>(&Object): ID
+	15: StLoc[0](id#1#0: ID)
+	16: MoveLoc[1](obj#1#0: Object)
+	17: CopyLoc[5](sender#1#0: address)
+	18: Call transfer::public_transfer<Object>(Object, address)
+	19: MutBorrowLoc[4](scenario#1#0: Scenario)
+	20: CopyLoc[5](sender#1#0: address)
+	21: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	22: Pop
+	23: CopyLoc[5](sender#1#0: address)
+	24: Call test_scenario::has_most_recent_for_address<Object>(address): bool
+	25: BrFalse(27)
+B1:
+	26: Branch(29)
+B2:
+	27: LdU64(13906838443540873215)
+	28: Abort
+B3:
+	29: ImmBorrowLoc[4](scenario#1#0: Scenario)
+	30: Call test_scenario::take_from_sender<Object>(&Scenario): Object
+	31: StLoc[2](obj#2#0: Object)
+	32: ImmBorrowLoc[2](obj#2#0: Object)
+	33: Call object::id<Object>(&Object): ID
+	34: MoveLoc[0](id#1#0: ID)
+	35: Eq
+	36: BrFalse(38)
+B4:
+	37: Branch(40)
+B5:
+	38: LdU64(13906838452130807807)
+	39: Abort
+B6:
+	40: CopyLoc[5](sender#1#0: address)
+	41: Call test_scenario::has_most_recent_for_address<Object>(address): bool
+	42: Not
+	43: BrFalse(45)
+B7:
+	44: Branch(47)
+B8:
+	45: LdU64(13906838456425775103)
+	46: Abort
+B9:
+	47: MutBorrowLoc[3](parent#1#0: UID)
+	48: LdConst[3](vector<u8>: "" /..)
+	49: MoveLoc[2](obj#2#0: Object)
+	50: Call dynamic_object_field::add<vector<u8>, Object>(&mut UID, vector<u8>, Object)
+	51: MutBorrowLoc[4](scenario#1#0: Scenario)
+	52: CopyLoc[5](sender#1#0: address)
+	53: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	54: Pop
+	55: MoveLoc[5](sender#1#0: address)
+	56: Call test_scenario::has_most_recent_for_address<Object>(address): bool
+	57: Not
+	58: BrFalse(60)
+B10:
+	59: Branch(62)
+B11:
+	60: LdU64(13906838469310676991)
+	61: Abort
+B12:
+	62: MoveLoc[4](scenario#1#0: Scenario)
+	63: Call test_scenario::end(Scenario): TransactionEffects
+	64: Pop
+	65: MoveLoc[3](parent#1#0: UID)
+	66: Call object::delete(UID)
+	67: Ret
+}
+
+dynamic_field_shared_misuse() {
+L0:	id#1#0: ID
+L1:	obj#1#0: Object
+L2:	obj#2#0: Object
+L3:	parent#1#0: UID
+L4:	scenario#1#0: Scenario
+L5:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[5](sender#1#0: address)
+	2: CopyLoc[5](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[4](scenario#1#0: Scenario)
+	5: MutBorrowLoc[4](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[3](parent#1#0: UID)
+	8: MutBorrowLoc[4](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: LdU64(10)
+	11: Pack[0](Object)
+	12: StLoc[1](obj#1#0: Object)
+	13: ImmBorrowLoc[1](obj#1#0: Object)
+	14: Call object::id<Object>(&Object): ID
+	15: StLoc[0](id#1#0: ID)
+	16: MoveLoc[1](obj#1#0: Object)
+	17: Call transfer::public_share_object<Object>(Object)
+	18: MutBorrowLoc[4](scenario#1#0: Scenario)
+	19: CopyLoc[5](sender#1#0: address)
+	20: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	21: Pop
+	22: ImmBorrowLoc[4](scenario#1#0: Scenario)
+	23: Call test_scenario::take_shared<Object>(&Scenario): Object
+	24: StLoc[2](obj#2#0: Object)
+	25: ImmBorrowLoc[2](obj#2#0: Object)
+	26: Call object::id<Object>(&Object): ID
+	27: MoveLoc[0](id#1#0: ID)
+	28: Eq
+	29: BrFalse(31)
+B1:
+	30: Branch(33)
+B2:
+	31: LdU64(13906838538030153727)
+	32: Abort
+B3:
+	33: MutBorrowLoc[3](parent#1#0: UID)
+	34: LdConst[3](vector<u8>: "" /..)
+	35: MoveLoc[2](obj#2#0: Object)
+	36: Call dynamic_field::add<vector<u8>, Object>(&mut UID, vector<u8>, Object)
+	37: MutBorrowLoc[4](scenario#1#0: Scenario)
+	38: MoveLoc[5](sender#1#0: address)
+	39: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	40: Pop
+	41: LdU64(13906838555210022911)
+	42: Abort
+}
+
+dynamic_field_immutable_misuse() {
+L0:	id#1#0: ID
+L1:	obj#1#0: Object
+L2:	obj#2#0: Object
+L3:	parent#1#0: UID
+L4:	scenario#1#0: Scenario
+L5:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[5](sender#1#0: address)
+	2: CopyLoc[5](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[4](scenario#1#0: Scenario)
+	5: MutBorrowLoc[4](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[3](parent#1#0: UID)
+	8: MutBorrowLoc[4](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: LdU64(10)
+	11: Pack[0](Object)
+	12: StLoc[1](obj#1#0: Object)
+	13: ImmBorrowLoc[1](obj#1#0: Object)
+	14: Call object::id<Object>(&Object): ID
+	15: StLoc[0](id#1#0: ID)
+	16: MoveLoc[1](obj#1#0: Object)
+	17: Call transfer::public_freeze_object<Object>(Object)
+	18: MutBorrowLoc[4](scenario#1#0: Scenario)
+	19: CopyLoc[5](sender#1#0: address)
+	20: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	21: Pop
+	22: ImmBorrowLoc[4](scenario#1#0: Scenario)
+	23: Call test_scenario::take_immutable<Object>(&Scenario): Object
+	24: StLoc[2](obj#2#0: Object)
+	25: ImmBorrowLoc[2](obj#2#0: Object)
+	26: Call object::id<Object>(&Object): ID
+	27: MoveLoc[0](id#1#0: ID)
+	28: Eq
+	29: BrFalse(31)
+B1:
+	30: Branch(33)
+B2:
+	31: LdU64(13906838615339565055)
+	32: Abort
+B3:
+	33: MutBorrowLoc[3](parent#1#0: UID)
+	34: LdConst[3](vector<u8>: "" /..)
+	35: MoveLoc[2](obj#2#0: Object)
+	36: Call dynamic_field::add<vector<u8>, Object>(&mut UID, vector<u8>, Object)
+	37: MutBorrowLoc[4](scenario#1#0: Scenario)
+	38: MoveLoc[5](sender#1#0: address)
+	39: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	40: Pop
+	41: LdU64(13906838632519434239)
+	42: Abort
+}
+
+dynamic_object_field_shared_misuse() {
+L0:	id#1#0: ID
+L1:	obj#1#0: Object
+L2:	obj#2#0: Object
+L3:	parent#1#0: UID
+L4:	scenario#1#0: Scenario
+L5:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[5](sender#1#0: address)
+	2: CopyLoc[5](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[4](scenario#1#0: Scenario)
+	5: MutBorrowLoc[4](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[3](parent#1#0: UID)
+	8: MutBorrowLoc[4](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: LdU64(10)
+	11: Pack[0](Object)
+	12: StLoc[1](obj#1#0: Object)
+	13: ImmBorrowLoc[1](obj#1#0: Object)
+	14: Call object::id<Object>(&Object): ID
+	15: StLoc[0](id#1#0: ID)
+	16: MoveLoc[1](obj#1#0: Object)
+	17: Call transfer::public_share_object<Object>(Object)
+	18: MutBorrowLoc[4](scenario#1#0: Scenario)
+	19: CopyLoc[5](sender#1#0: address)
+	20: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	21: Pop
+	22: ImmBorrowLoc[4](scenario#1#0: Scenario)
+	23: Call test_scenario::take_shared<Object>(&Scenario): Object
+	24: StLoc[2](obj#2#0: Object)
+	25: ImmBorrowLoc[2](obj#2#0: Object)
+	26: Call object::id<Object>(&Object): ID
+	27: MoveLoc[0](id#1#0: ID)
+	28: Eq
+	29: BrFalse(31)
+B1:
+	30: Branch(33)
+B2:
+	31: LdU64(13906838692648976383)
+	32: Abort
+B3:
+	33: MutBorrowLoc[3](parent#1#0: UID)
+	34: LdConst[3](vector<u8>: "" /..)
+	35: MoveLoc[2](obj#2#0: Object)
+	36: Call dynamic_object_field::add<vector<u8>, Object>(&mut UID, vector<u8>, Object)
+	37: MutBorrowLoc[4](scenario#1#0: Scenario)
+	38: MoveLoc[5](sender#1#0: address)
+	39: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	40: Pop
+	41: LdU64(13906838705533878271)
+	42: Abort
+}
+
+dynamic_object_field_immutable_misuse() {
+L0:	id#1#0: ID
+L1:	obj#1#0: Object
+L2:	obj#2#0: Object
+L3:	parent#1#0: UID
+L4:	scenario#1#0: Scenario
+L5:	sender#1#0: address
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[5](sender#1#0: address)
+	2: CopyLoc[5](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[4](scenario#1#0: Scenario)
+	5: MutBorrowLoc[4](scenario#1#0: Scenario)
+	6: Call test_scenario::new_object(&mut Scenario): UID
+	7: StLoc[3](parent#1#0: UID)
+	8: MutBorrowLoc[4](scenario#1#0: Scenario)
+	9: Call test_scenario::new_object(&mut Scenario): UID
+	10: LdU64(10)
+	11: Pack[0](Object)
+	12: StLoc[1](obj#1#0: Object)
+	13: ImmBorrowLoc[1](obj#1#0: Object)
+	14: Call object::id<Object>(&Object): ID
+	15: StLoc[0](id#1#0: ID)
+	16: MoveLoc[1](obj#1#0: Object)
+	17: Call transfer::public_freeze_object<Object>(Object)
+	18: MutBorrowLoc[4](scenario#1#0: Scenario)
+	19: CopyLoc[5](sender#1#0: address)
+	20: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	21: Pop
+	22: ImmBorrowLoc[4](scenario#1#0: Scenario)
+	23: Call test_scenario::take_immutable<Object>(&Scenario): Object
+	24: StLoc[2](obj#2#0: Object)
+	25: ImmBorrowLoc[2](obj#2#0: Object)
+	26: Call object::id<Object>(&Object): ID
+	27: MoveLoc[0](id#1#0: ID)
+	28: Eq
+	29: BrFalse(31)
+B1:
+	30: Branch(33)
+B2:
+	31: LdU64(13906838765663420415)
+	32: Abort
+B3:
+	33: MutBorrowLoc[3](parent#1#0: UID)
+	34: LdConst[3](vector<u8>: "" /..)
+	35: MoveLoc[2](obj#2#0: Object)
+	36: Call dynamic_object_field::add<vector<u8>, Object>(&mut UID, vector<u8>, Object)
+	37: MutBorrowLoc[4](scenario#1#0: Scenario)
+	38: MoveLoc[5](sender#1#0: address)
+	39: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	40: Pop
+	41: LdU64(13906838778548322303)
+	42: Abort
+}
+
+events() {
+L0:	%#1: String
+L1:	%#10: String
+L2:	%#11: String
+L3:	%#12: String
+L4:	%#13: String
+L5:	%#14: String
+L6:	%#15: String
+L7:	%#2: String
+L8:	%#3: String
+L9:	%#4: String
+L10:	%#5: String
+L11:	%#6: String
+L12:	%#7: String
+L13:	%#8: String
+L14:	%#9: vector<E1>
+L15:	e0#1#0: E1
+L16:	e1#1#0: E1
+L17:	effects#1#0: TransactionEffects
+L18:	effects#2#0: TransactionEffects
+L19:	scenario#1#0: Scenario
+L20:	sender#1#0: address
+L21:	t1#1#1: u32
+L22:	t1#1#10: &u64
+L23:	t1#1#13: u32
+L24:	t1#1#16: &u32
+L25:	t1#1#19: u32
+L26:	t1#1#22: &u32
+L27:	t1#1#25: E1
+L28:	t1#1#28: &E1
+L29:	t1#1#31: u64
+L30:	t1#1#34: &u64
+L31:	t1#1#37: u32
+L32:	t1#1#4: &u32
+L33:	t1#1#40: &u32
+L34:	t1#1#7: u64
+L35:	t2#1#1: u32
+L36:	t2#1#10: &u64
+L37:	t2#1#13: u32
+L38:	t2#1#16: &u32
+L39:	t2#1#19: u32
+L40:	t2#1#22: &u32
+L41:	t2#1#25: E1
+L42:	t2#1#28: &E1
+L43:	t2#1#31: u64
+L44:	t2#1#34: &u64
+L45:	t2#1#37: u32
+L46:	t2#1#4: &u32
+L47:	t2#1#40: &u32
+L48:	t2#1#7: u64
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: StLoc[20](sender#1#0: address)
+	2: CopyLoc[20](sender#1#0: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[19](scenario#1#0: Scenario)
+	5: LdU64(0)
+	6: Pack[2](E1)
+	7: StLoc[15](e0#1#0: E1)
+	8: CopyLoc[15](e0#1#0: E1)
+	9: Call event::emit<E1>(E1)
+	10: MoveLoc[15](e0#1#0: E1)
+	11: Call event::emit<E1>(E1)
+	12: Call event::num_events(): u32
+	13: StLoc[21](t1#1#1: u32)
+	14: LdU32(2)
+	15: StLoc[35](t2#1#1: u32)
+	16: ImmBorrowLoc[21](t1#1#1: u32)
+	17: StLoc[32](t1#1#4: &u32)
+	18: ImmBorrowLoc[35](t2#1#1: u32)
+	19: StLoc[46](t2#1#4: &u32)
+	20: CopyLoc[32](t1#1#4: &u32)
+	21: CopyLoc[46](t2#1#4: &u32)
+	22: Eq
+	23: Not
+	24: BrFalse(41)
+B1:
+	25: LdConst[4](vector<u8>: "Ass..)
+	26: Call string::utf8(vector<u8>): String
+	27: StLoc[0](%#1: String)
+	28: ImmBorrowLoc[0](%#1: String)
+	29: Call debug::print<String>(&String)
+	30: MoveLoc[32](t1#1#4: &u32)
+	31: Call debug::print<u32>(&u32)
+	32: LdConst[5](vector<u8>: "!="..)
+	33: Call string::utf8(vector<u8>): String
+	34: StLoc[7](%#2: String)
+	35: ImmBorrowLoc[7](%#2: String)
+	36: Call debug::print<String>(&String)
+	37: MoveLoc[46](t2#1#4: &u32)
+	38: Call debug::print<u32>(&u32)
+	39: LdU64(13906838842972831743)
+	40: Abort
+B2:
+	41: MoveLoc[46](t2#1#4: &u32)
+	42: Pop
+	43: MoveLoc[32](t1#1#4: &u32)
+	44: Pop
+	45: MutBorrowLoc[19](scenario#1#0: Scenario)
+	46: MoveLoc[20](sender#1#0: address)
+	47: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	48: StLoc[17](effects#1#0: TransactionEffects)
+	49: ImmBorrowLoc[17](effects#1#0: TransactionEffects)
+	50: Call test_scenario::num_user_events(&TransactionEffects): u64
+	51: StLoc[34](t1#1#7: u64)
+	52: LdU64(2)
+	53: StLoc[48](t2#1#7: u64)
+	54: ImmBorrowLoc[34](t1#1#7: u64)
+	55: StLoc[22](t1#1#10: &u64)
+	56: ImmBorrowLoc[48](t2#1#7: u64)
+	57: StLoc[36](t2#1#10: &u64)
+	58: CopyLoc[22](t1#1#10: &u64)
+	59: CopyLoc[36](t2#1#10: &u64)
+	60: Eq
+	61: Not
+	62: BrFalse(79)
+B3:
+	63: LdConst[4](vector<u8>: "Ass..)
+	64: Call string::utf8(vector<u8>): String
+	65: StLoc[8](%#3: String)
+	66: ImmBorrowLoc[8](%#3: String)
+	67: Call debug::print<String>(&String)
+	68: MoveLoc[22](t1#1#10: &u64)
+	69: Call debug::print<u64>(&u64)
+	70: LdConst[5](vector<u8>: "!="..)
+	71: Call string::utf8(vector<u8>): String
+	72: StLoc[9](%#4: String)
+	73: ImmBorrowLoc[9](%#4: String)
+	74: Call debug::print<String>(&String)
+	75: MoveLoc[36](t2#1#10: &u64)
+	76: Call debug::print<u64>(&u64)
+	77: LdU64(13906838864447668223)
+	78: Abort
+B4:
+	79: MoveLoc[36](t2#1#10: &u64)
+	80: Pop
+	81: MoveLoc[22](t1#1#10: &u64)
+	82: Pop
+	83: Call event::num_events(): u32
+	84: StLoc[23](t1#1#13: u32)
+	85: LdU32(0)
+	86: StLoc[37](t2#1#13: u32)
+	87: ImmBorrowLoc[23](t1#1#13: u32)
+	88: StLoc[24](t1#1#16: &u32)
+	89: ImmBorrowLoc[37](t2#1#13: u32)
+	90: StLoc[38](t2#1#16: &u32)
+	91: CopyLoc[24](t1#1#16: &u32)
+	92: CopyLoc[38](t2#1#16: &u32)
+	93: Eq
+	94: Not
+	95: BrFalse(112)
+B5:
+	96: LdConst[4](vector<u8>: "Ass..)
+	97: Call string::utf8(vector<u8>): String
+	98: StLoc[10](%#5: String)
+	99: ImmBorrowLoc[10](%#5: String)
+	100: Call debug::print<String>(&String)
+	101: MoveLoc[24](t1#1#16: &u32)
+	102: Call debug::print<u32>(&u32)
+	103: LdConst[5](vector<u8>: "!="..)
+	104: Call string::utf8(vector<u8>): String
+	105: StLoc[11](%#6: String)
+	106: ImmBorrowLoc[11](%#6: String)
+	107: Call debug::print<String>(&String)
+	108: MoveLoc[38](t2#1#16: &u32)
+	109: Call debug::print<u32>(&u32)
+	110: LdU64(13906838868742635519)
+	111: Abort
+B6:
+	112: MoveLoc[38](t2#1#16: &u32)
+	113: Pop
+	114: MoveLoc[24](t1#1#16: &u32)
+	115: Pop
+	116: LdU64(1)
+	117: Pack[2](E1)
+	118: StLoc[16](e1#1#0: E1)
+	119: CopyLoc[16](e1#1#0: E1)
+	120: Call event::emit<E1>(E1)
+	121: Call event::num_events(): u32
+	122: StLoc[25](t1#1#19: u32)
+	123: LdU32(1)
+	124: StLoc[39](t2#1#19: u32)
+	125: ImmBorrowLoc[25](t1#1#19: u32)
+	126: StLoc[26](t1#1#22: &u32)
+	127: ImmBorrowLoc[39](t2#1#19: u32)
+	128: StLoc[40](t2#1#22: &u32)
+	129: CopyLoc[26](t1#1#22: &u32)
+	130: CopyLoc[40](t2#1#22: &u32)
+	131: Eq
+	132: Not
+	133: BrFalse(150)
+B7:
+	134: LdConst[4](vector<u8>: "Ass..)
+	135: Call string::utf8(vector<u8>): String
+	136: StLoc[12](%#7: String)
+	137: ImmBorrowLoc[12](%#7: String)
+	138: Call debug::print<String>(&String)
+	139: MoveLoc[26](t1#1#22: &u32)
+	140: Call debug::print<u32>(&u32)
+	141: LdConst[5](vector<u8>: "!="..)
+	142: Call string::utf8(vector<u8>): String
+	143: StLoc[13](%#8: String)
+	144: ImmBorrowLoc[13](%#8: String)
+	145: Call debug::print<String>(&String)
+	146: MoveLoc[40](t2#1#22: &u32)
+	147: Call debug::print<u32>(&u32)
+	148: LdU64(13906838885922504703)
+	149: Abort
+B8:
+	150: MoveLoc[40](t2#1#22: &u32)
+	151: Pop
+	152: MoveLoc[26](t1#1#22: &u32)
+	153: Pop
+	154: Call event::events_by_type<E1>(): vector<E1>
+	155: StLoc[14](%#9: vector<E1>)
+	156: ImmBorrowLoc[14](%#9: vector<E1>)
+	157: LdU64(0)
+	158: VecImmBorrow(54)
+	159: ReadRef
+	160: StLoc[27](t1#1#25: E1)
+	161: MoveLoc[16](e1#1#0: E1)
+	162: StLoc[41](t2#1#25: E1)
+	163: ImmBorrowLoc[27](t1#1#25: E1)
+	164: StLoc[28](t1#1#28: &E1)
+	165: ImmBorrowLoc[41](t2#1#25: E1)
+	166: StLoc[42](t2#1#28: &E1)
+	167: CopyLoc[28](t1#1#28: &E1)
+	168: CopyLoc[42](t2#1#28: &E1)
+	169: Eq
+	170: Not
+	171: BrFalse(188)
+B9:
+	172: LdConst[4](vector<u8>: "Ass..)
+	173: Call string::utf8(vector<u8>): String
+	174: StLoc[1](%#10: String)
+	175: ImmBorrowLoc[1](%#10: String)
+	176: Call debug::print<String>(&String)
+	177: MoveLoc[28](t1#1#28: &E1)
+	178: Call debug::print<E1>(&E1)
+	179: LdConst[5](vector<u8>: "!="..)
+	180: Call string::utf8(vector<u8>): String
+	181: StLoc[2](%#11: String)
+	182: ImmBorrowLoc[2](%#11: String)
+	183: Call debug::print<String>(&String)
+	184: MoveLoc[42](t2#1#28: &E1)
+	185: Call debug::print<E1>(&E1)
+	186: LdU64(13906838890217471999)
+	187: Abort
+B10:
+	188: MoveLoc[42](t2#1#28: &E1)
+	189: Pop
+	190: MoveLoc[28](t1#1#28: &E1)
+	191: Pop
+	192: MoveLoc[19](scenario#1#0: Scenario)
+	193: Call test_scenario::end(Scenario): TransactionEffects
+	194: StLoc[18](effects#2#0: TransactionEffects)
+	195: ImmBorrowLoc[18](effects#2#0: TransactionEffects)
+	196: Call test_scenario::num_user_events(&TransactionEffects): u64
+	197: StLoc[29](t1#1#31: u64)
+	198: LdU64(1)
+	199: StLoc[43](t2#1#31: u64)
+	200: ImmBorrowLoc[29](t1#1#31: u64)
+	201: StLoc[30](t1#1#34: &u64)
+	202: ImmBorrowLoc[43](t2#1#31: u64)
+	203: StLoc[44](t2#1#34: &u64)
+	204: CopyLoc[30](t1#1#34: &u64)
+	205: CopyLoc[44](t2#1#34: &u64)
+	206: Eq
+	207: Not
+	208: BrFalse(225)
+B11:
+	209: LdConst[4](vector<u8>: "Ass..)
+	210: Call string::utf8(vector<u8>): String
+	211: StLoc[3](%#12: String)
+	212: ImmBorrowLoc[3](%#12: String)
+	213: Call debug::print<String>(&String)
+	214: MoveLoc[30](t1#1#34: &u64)
+	215: Call debug::print<u64>(&u64)
+	216: LdConst[5](vector<u8>: "!="..)
+	217: Call string::utf8(vector<u8>): String
+	218: StLoc[4](%#13: String)
+	219: ImmBorrowLoc[4](%#13: String)
+	220: Call debug::print<String>(&String)
+	221: MoveLoc[44](t2#1#34: &u64)
+	222: Call debug::print<u64>(&u64)
+	223: LdU64(13906838903102373887)
+	224: Abort
+B12:
+	225: MoveLoc[44](t2#1#34: &u64)
+	226: Pop
+	227: MoveLoc[30](t1#1#34: &u64)
+	228: Pop
+	229: Call event::num_events(): u32
+	230: StLoc[31](t1#1#37: u32)
+	231: LdU32(0)
+	232: StLoc[45](t2#1#37: u32)
+	233: ImmBorrowLoc[31](t1#1#37: u32)
+	234: StLoc[33](t1#1#40: &u32)
+	235: ImmBorrowLoc[45](t2#1#37: u32)
+	236: StLoc[47](t2#1#40: &u32)
+	237: CopyLoc[33](t1#1#40: &u32)
+	238: CopyLoc[47](t2#1#40: &u32)
+	239: Eq
+	240: Not
+	241: BrFalse(258)
+B13:
+	242: LdConst[4](vector<u8>: "Ass..)
+	243: Call string::utf8(vector<u8>): String
+	244: StLoc[5](%#14: String)
+	245: ImmBorrowLoc[5](%#14: String)
+	246: Call debug::print<String>(&String)
+	247: MoveLoc[33](t1#1#40: &u32)
+	248: Call debug::print<u32>(&u32)
+	249: LdConst[5](vector<u8>: "!="..)
+	250: Call string::utf8(vector<u8>): String
+	251: StLoc[6](%#15: String)
+	252: ImmBorrowLoc[6](%#15: String)
+	253: Call debug::print<String>(&String)
+	254: MoveLoc[47](t2#1#40: &u32)
+	255: Call debug::print<u32>(&u32)
+	256: LdU64(13906838907397341183)
+	257: Abort
+B14:
+	258: MoveLoc[47](t2#1#40: &u32)
+	259: Pop
+	260: MoveLoc[33](t1#1#40: &u32)
+	261: Pop
+	262: Ret
+}
+
+tx_context() {
+L0:	%#1: String
+L1:	%#10: String
+L2:	%#11: String
+L3:	%#12: String
+L4:	%#13: String
+L5:	%#14: String
+L6:	%#15: String
+L7:	%#16: String
+L8:	%#17: String
+L9:	%#18: String
+L10:	%#19: String
+L11:	%#2: String
+L12:	%#20: String
+L13:	%#21: String
+L14:	%#22: Option<address>
+L15:	%#23: String
+L16:	%#24: String
+L17:	%#25: String
+L18:	%#26: String
+L19:	%#27: String
+L20:	%#28: String
+L21:	%#29: String
+L22:	%#3: String
+L23:	%#30: String
+L24:	%#31: String
+L25:	%#32: String
+L26:	%#33: String
+L27:	%#34: String
+L28:	%#35: String
+L29:	%#36: String
+L30:	%#37: Option<address>
+L31:	%#38: String
+L32:	%#39: String
+L33:	%#4: String
+L34:	%#40: String
+L35:	%#41: String
+L36:	%#42: String
+L37:	%#43: String
+L38:	%#44: String
+L39:	%#45: String
+L40:	%#46: String
+L41:	%#47: String
+L42:	%#48: String
+L43:	%#49: String
+L44:	%#5: String
+L45:	%#50: String
+L46:	%#51: String
+L47:	%#52: Option<address>
+L48:	%#53: String
+L49:	%#54: String
+L50:	%#55: String
+L51:	%#56: String
+L52:	%#57: String
+L53:	%#58: String
+L54:	%#59: String
+L55:	%#6: String
+L56:	%#60: String
+L57:	%#61: String
+L58:	%#62: String
+L59:	%#63: String
+L60:	%#64: String
+L61:	%#65: String
+L62:	%#66: String
+L63:	%#67: Option<address>
+L64:	%#68: String
+L65:	%#69: String
+L66:	%#7: Option<address>
+L67:	%#70: String
+L68:	%#71: String
+L69:	%#72: String
+L70:	%#73: String
+L71:	%#74: String
+L72:	%#75: String
+L73:	%#76: String
+L74:	%#77: String
+L75:	%#78: Option<address>
+L76:	%#8: String
+L77:	%#9: String
+L78:	ctx#1#0: &mut TxContext
+L79:	ctx#2#0: &mut TxContext
+L80:	ctx#3#0: &mut TxContext
+L81:	ctx#4#0: &mut TxContext
+L82:	ctx#5#0: &mut TxContext
+L83:	ctx_builder#1#0: TxContextBuilder
+L84:	ctx_builder#2#0: TxContextBuilder
+L85:	ctx_builder#3#0: TxContextBuilder
+L86:	ctx_builder#4#0: TxContextBuilder
+L87:	scenario#1#0: Scenario
+L88:	t1#1#1: address
+L89:	t1#1#10: &u64
+L90:	t1#1#100: &u64
+L91:	t1#1#103: u64
+L92:	t1#1#106: &u64
+L93:	t1#1#109: u64
+L94:	t1#1#112: &u64
+L95:	t1#1#115: u64
+L96:	t1#1#118: &u64
+L97:	t1#1#121: u64
+L98:	t1#1#124: &u64
+L99:	t1#1#127: address
+L100:	t1#1#13: u64
+L101:	t1#1#130: &address
+L102:	t1#1#133: u64
+L103:	t1#1#136: &u64
+L104:	t1#1#139: u64
+L105:	t1#1#142: &u64
+L106:	t1#1#145: u64
+L107:	t1#1#148: &u64
+L108:	t1#1#151: u64
+L109:	t1#1#154: &u64
+L110:	t1#1#157: u64
+L111:	t1#1#16: &u64
+L112:	t1#1#160: &u64
+L113:	t1#1#163: u64
+L114:	t1#1#166: &u64
+L115:	t1#1#169: address
+L116:	t1#1#172: &address
+L117:	t1#1#175: u64
+L118:	t1#1#178: &u64
+L119:	t1#1#181: u64
+L120:	t1#1#184: &u64
+L121:	t1#1#187: address
+L122:	t1#1#19: u64
+L123:	t1#1#190: &address
+L124:	t1#1#193: u64
+L125:	t1#1#196: &u64
+L126:	t1#1#199: u64
+L127:	t1#1#202: &u64
+L128:	t1#1#205: u64
+L129:	t1#1#208: &u64
+L130:	t1#1#211: u64
+L131:	t1#1#214: &u64
+L132:	t1#1#22: &u64
+L133:	t1#1#25: u64
+L134:	t1#1#28: &u64
+L135:	t1#1#31: u64
+L136:	t1#1#34: &u64
+L137:	t1#1#37: u64
+L138:	t1#1#4: &address
+L139:	t1#1#40: &u64
+L140:	t1#1#43: address
+L141:	t1#1#46: &address
+L142:	t1#1#49: u64
+L143:	t1#1#52: &u64
+L144:	t1#1#55: u64
+L145:	t1#1#58: &u64
+L146:	t1#1#61: u64
+L147:	t1#1#64: &u64
+L148:	t1#1#67: u64
+L149:	t1#1#7: u64
+L150:	t1#1#70: &u64
+L151:	t1#1#73: u64
+L152:	t1#1#76: &u64
+L153:	t1#1#79: u64
+L154:	t1#1#82: &u64
+L155:	t1#1#85: address
+L156:	t1#1#88: &address
+L157:	t1#1#91: u64
+L158:	t1#1#94: &u64
+L159:	t1#1#97: u64
+L160:	t2#1#1: address
+L161:	t2#1#10: &u64
+L162:	t2#1#100: &u64
+L163:	t2#1#103: u64
+L164:	t2#1#106: &u64
+L165:	t2#1#109: u64
+L166:	t2#1#112: &u64
+L167:	t2#1#115: u64
+L168:	t2#1#118: &u64
+L169:	t2#1#121: u64
+L170:	t2#1#124: &u64
+L171:	t2#1#127: address
+L172:	t2#1#13: u64
+L173:	t2#1#130: &address
+L174:	t2#1#133: u64
+L175:	t2#1#136: &u64
+L176:	t2#1#139: u64
+L177:	t2#1#142: &u64
+L178:	t2#1#145: u64
+L179:	t2#1#148: &u64
+L180:	t2#1#151: u64
+L181:	t2#1#154: &u64
+L182:	t2#1#157: u64
+L183:	t2#1#16: &u64
+L184:	t2#1#160: &u64
+L185:	t2#1#163: u64
+L186:	t2#1#166: &u64
+L187:	t2#1#169: address
+L188:	t2#1#172: &address
+L189:	t2#1#175: u64
+L190:	t2#1#178: &u64
+L191:	t2#1#181: u64
+L192:	t2#1#184: &u64
+L193:	t2#1#187: address
+L194:	t2#1#19: u64
+L195:	t2#1#190: &address
+L196:	t2#1#193: u64
+L197:	t2#1#196: &u64
+L198:	t2#1#199: u64
+L199:	t2#1#202: &u64
+L200:	t2#1#205: u64
+L201:	t2#1#208: &u64
+L202:	t2#1#211: u64
+L203:	t2#1#214: &u64
+L204:	t2#1#22: &u64
+L205:	t2#1#25: u64
+L206:	t2#1#28: &u64
+L207:	t2#1#31: u64
+L208:	t2#1#34: &u64
+L209:	t2#1#37: u64
+L210:	t2#1#4: &address
+L211:	t2#1#40: &u64
+L212:	t2#1#43: address
+L213:	t2#1#46: &address
+L214:	t2#1#49: u64
+L215:	t2#1#52: &u64
+L216:	t2#1#55: u64
+L217:	t2#1#58: &u64
+L218:	t2#1#61: u64
+L219:	t2#1#64: &u64
+L220:	t2#1#67: u64
+L221:	t2#1#7: u64
+L222:	t2#1#70: &u64
+L223:	t2#1#73: u64
+L224:	t2#1#76: &u64
+L225:	t2#1#79: u64
+L226:	t2#1#82: &u64
+L227:	t2#1#85: address
+L228:	t2#1#88: &address
+L229:	t2#1#91: u64
+L230:	t2#1#94: &u64
+L231:	t2#1#97: u64
+B0:
+	0: LdConst[6](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[87](scenario#1#0: Scenario)
+	3: MutBorrowLoc[87](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: StLoc[78](ctx#1#0: &mut TxContext)
+	6: CopyLoc[78](ctx#1#0: &mut TxContext)
+	7: FreezeRef
+	8: Call tx_context::sender(&TxContext): address
+	9: StLoc[88](t1#1#1: address)
+	10: LdConst[6](address: 0x00..)
+	11: StLoc[160](t2#1#1: address)
+	12: ImmBorrowLoc[88](t1#1#1: address)
+	13: StLoc[138](t1#1#4: &address)
+	14: ImmBorrowLoc[160](t2#1#1: address)
+	15: StLoc[210](t2#1#4: &address)
+	16: CopyLoc[138](t1#1#4: &address)
+	17: CopyLoc[210](t2#1#4: &address)
+	18: Eq
+	19: Not
+	20: BrFalse(39)
+B1:
+	21: LdConst[4](vector<u8>: "Ass..)
+	22: Call string::utf8(vector<u8>): String
+	23: StLoc[0](%#1: String)
+	24: ImmBorrowLoc[0](%#1: String)
+	25: Call debug::print<String>(&String)
+	26: MoveLoc[138](t1#1#4: &address)
+	27: Call debug::print<address>(&address)
+	28: LdConst[5](vector<u8>: "!="..)
+	29: Call string::utf8(vector<u8>): String
+	30: StLoc[11](%#2: String)
+	31: ImmBorrowLoc[11](%#2: String)
+	32: Call debug::print<String>(&String)
+	33: MoveLoc[210](t2#1#4: &address)
+	34: Call debug::print<address>(&address)
+	35: MoveLoc[78](ctx#1#0: &mut TxContext)
+	36: Pop
+	37: LdU64(13906838941757079551)
+	38: Abort
+B2:
+	39: MoveLoc[210](t2#1#4: &address)
+	40: Pop
+	41: MoveLoc[138](t1#1#4: &address)
+	42: Pop
+	43: CopyLoc[78](ctx#1#0: &mut TxContext)
+	44: FreezeRef
+	45: Call tx_context::epoch(&TxContext): u64
+	46: StLoc[149](t1#1#7: u64)
+	47: LdU64(0)
+	48: StLoc[221](t2#1#7: u64)
+	49: ImmBorrowLoc[149](t1#1#7: u64)
+	50: StLoc[89](t1#1#10: &u64)
+	51: ImmBorrowLoc[221](t2#1#7: u64)
+	52: StLoc[161](t2#1#10: &u64)
+	53: CopyLoc[89](t1#1#10: &u64)
+	54: CopyLoc[161](t2#1#10: &u64)
+	55: Eq
+	56: Not
+	57: BrFalse(76)
+B3:
+	58: LdConst[4](vector<u8>: "Ass..)
+	59: Call string::utf8(vector<u8>): String
+	60: StLoc[22](%#3: String)
+	61: ImmBorrowLoc[22](%#3: String)
+	62: Call debug::print<String>(&String)
+	63: MoveLoc[89](t1#1#10: &u64)
+	64: Call debug::print<u64>(&u64)
+	65: LdConst[5](vector<u8>: "!="..)
+	66: Call string::utf8(vector<u8>): String
+	67: StLoc[33](%#4: String)
+	68: ImmBorrowLoc[33](%#4: String)
+	69: Call debug::print<String>(&String)
+	70: MoveLoc[161](t2#1#10: &u64)
+	71: Call debug::print<u64>(&u64)
+	72: MoveLoc[78](ctx#1#0: &mut TxContext)
+	73: Pop
+	74: LdU64(13906838946052046847)
+	75: Abort
+B4:
+	76: MoveLoc[161](t2#1#10: &u64)
+	77: Pop
+	78: MoveLoc[89](t1#1#10: &u64)
+	79: Pop
+	80: CopyLoc[78](ctx#1#0: &mut TxContext)
+	81: FreezeRef
+	82: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	83: StLoc[100](t1#1#13: u64)
+	84: LdU64(0)
+	85: StLoc[172](t2#1#13: u64)
+	86: ImmBorrowLoc[100](t1#1#13: u64)
+	87: StLoc[111](t1#1#16: &u64)
+	88: ImmBorrowLoc[172](t2#1#13: u64)
+	89: StLoc[183](t2#1#16: &u64)
+	90: CopyLoc[111](t1#1#16: &u64)
+	91: CopyLoc[183](t2#1#16: &u64)
+	92: Eq
+	93: Not
+	94: BrFalse(113)
+B5:
+	95: LdConst[4](vector<u8>: "Ass..)
+	96: Call string::utf8(vector<u8>): String
+	97: StLoc[44](%#5: String)
+	98: ImmBorrowLoc[44](%#5: String)
+	99: Call debug::print<String>(&String)
+	100: MoveLoc[111](t1#1#16: &u64)
+	101: Call debug::print<u64>(&u64)
+	102: LdConst[5](vector<u8>: "!="..)
+	103: Call string::utf8(vector<u8>): String
+	104: StLoc[55](%#6: String)
+	105: ImmBorrowLoc[55](%#6: String)
+	106: Call debug::print<String>(&String)
+	107: MoveLoc[183](t2#1#16: &u64)
+	108: Call debug::print<u64>(&u64)
+	109: MoveLoc[78](ctx#1#0: &mut TxContext)
+	110: Pop
+	111: LdU64(13906838950347014143)
+	112: Abort
+B6:
+	113: MoveLoc[183](t2#1#16: &u64)
+	114: Pop
+	115: MoveLoc[111](t1#1#16: &u64)
+	116: Pop
+	117: CopyLoc[78](ctx#1#0: &mut TxContext)
+	118: FreezeRef
+	119: Call tx_context::sponsor(&TxContext): Option<address>
+	120: StLoc[66](%#7: Option<address>)
+	121: ImmBorrowLoc[66](%#7: Option<address>)
+	122: Call option::is_none<address>(&Option<address>): bool
+	123: BrFalse(125)
+B7:
+	124: Branch(129)
+B8:
+	125: MoveLoc[78](ctx#1#0: &mut TxContext)
+	126: Pop
+	127: LdU64(13906838954641981439)
+	128: Abort
+B9:
+	129: CopyLoc[78](ctx#1#0: &mut TxContext)
+	130: FreezeRef
+	131: Call tx_context::reference_gas_price(&TxContext): u64
+	132: StLoc[122](t1#1#19: u64)
+	133: LdU64(0)
+	134: StLoc[194](t2#1#19: u64)
+	135: ImmBorrowLoc[122](t1#1#19: u64)
+	136: StLoc[132](t1#1#22: &u64)
+	137: ImmBorrowLoc[194](t2#1#19: u64)
+	138: StLoc[204](t2#1#22: &u64)
+	139: CopyLoc[132](t1#1#22: &u64)
+	140: CopyLoc[204](t2#1#22: &u64)
+	141: Eq
+	142: Not
+	143: BrFalse(162)
+B10:
+	144: LdConst[4](vector<u8>: "Ass..)
+	145: Call string::utf8(vector<u8>): String
+	146: StLoc[76](%#8: String)
+	147: ImmBorrowLoc[76](%#8: String)
+	148: Call debug::print<String>(&String)
+	149: MoveLoc[132](t1#1#22: &u64)
+	150: Call debug::print<u64>(&u64)
+	151: LdConst[5](vector<u8>: "!="..)
+	152: Call string::utf8(vector<u8>): String
+	153: StLoc[77](%#9: String)
+	154: ImmBorrowLoc[77](%#9: String)
+	155: Call debug::print<String>(&String)
+	156: MoveLoc[204](t2#1#22: &u64)
+	157: Call debug::print<u64>(&u64)
+	158: MoveLoc[78](ctx#1#0: &mut TxContext)
+	159: Pop
+	160: LdU64(13906838958936948735)
+	161: Abort
+B11:
+	162: MoveLoc[204](t2#1#22: &u64)
+	163: Pop
+	164: MoveLoc[132](t1#1#22: &u64)
+	165: Pop
+	166: CopyLoc[78](ctx#1#0: &mut TxContext)
+	167: FreezeRef
+	168: Call tx_context::gas_price(&TxContext): u64
+	169: StLoc[133](t1#1#25: u64)
+	170: LdU64(0)
+	171: StLoc[205](t2#1#25: u64)
+	172: ImmBorrowLoc[133](t1#1#25: u64)
+	173: StLoc[134](t1#1#28: &u64)
+	174: ImmBorrowLoc[205](t2#1#25: u64)
+	175: StLoc[206](t2#1#28: &u64)
+	176: CopyLoc[134](t1#1#28: &u64)
+	177: CopyLoc[206](t2#1#28: &u64)
+	178: Eq
+	179: Not
+	180: BrFalse(199)
+B12:
+	181: LdConst[4](vector<u8>: "Ass..)
+	182: Call string::utf8(vector<u8>): String
+	183: StLoc[1](%#10: String)
+	184: ImmBorrowLoc[1](%#10: String)
+	185: Call debug::print<String>(&String)
+	186: MoveLoc[134](t1#1#28: &u64)
+	187: Call debug::print<u64>(&u64)
+	188: LdConst[5](vector<u8>: "!="..)
+	189: Call string::utf8(vector<u8>): String
+	190: StLoc[2](%#11: String)
+	191: ImmBorrowLoc[2](%#11: String)
+	192: Call debug::print<String>(&String)
+	193: MoveLoc[206](t2#1#28: &u64)
+	194: Call debug::print<u64>(&u64)
+	195: MoveLoc[78](ctx#1#0: &mut TxContext)
+	196: Pop
+	197: LdU64(13906838963231916031)
+	198: Abort
+B13:
+	199: MoveLoc[206](t2#1#28: &u64)
+	200: Pop
+	201: MoveLoc[134](t1#1#28: &u64)
+	202: Pop
+	203: CopyLoc[78](ctx#1#0: &mut TxContext)
+	204: FreezeRef
+	205: Call tx_context::gas_budget(&TxContext): u64
+	206: StLoc[135](t1#1#31: u64)
+	207: LdU64(0)
+	208: StLoc[207](t2#1#31: u64)
+	209: ImmBorrowLoc[135](t1#1#31: u64)
+	210: StLoc[136](t1#1#34: &u64)
+	211: ImmBorrowLoc[207](t2#1#31: u64)
+	212: StLoc[208](t2#1#34: &u64)
+	213: CopyLoc[136](t1#1#34: &u64)
+	214: CopyLoc[208](t2#1#34: &u64)
+	215: Eq
+	216: Not
+	217: BrFalse(236)
+B14:
+	218: LdConst[4](vector<u8>: "Ass..)
+	219: Call string::utf8(vector<u8>): String
+	220: StLoc[3](%#12: String)
+	221: ImmBorrowLoc[3](%#12: String)
+	222: Call debug::print<String>(&String)
+	223: MoveLoc[136](t1#1#34: &u64)
+	224: Call debug::print<u64>(&u64)
+	225: LdConst[5](vector<u8>: "!="..)
+	226: Call string::utf8(vector<u8>): String
+	227: StLoc[4](%#13: String)
+	228: ImmBorrowLoc[4](%#13: String)
+	229: Call debug::print<String>(&String)
+	230: MoveLoc[208](t2#1#34: &u64)
+	231: Call debug::print<u64>(&u64)
+	232: MoveLoc[78](ctx#1#0: &mut TxContext)
+	233: Pop
+	234: LdU64(13906838967526883327)
+	235: Abort
+B15:
+	236: MoveLoc[208](t2#1#34: &u64)
+	237: Pop
+	238: MoveLoc[136](t1#1#34: &u64)
+	239: Pop
+	240: MoveLoc[78](ctx#1#0: &mut TxContext)
+	241: FreezeRef
+	242: Call tx_context::ids_created(&TxContext): u64
+	243: StLoc[137](t1#1#37: u64)
+	244: LdU64(0)
+	245: StLoc[209](t2#1#37: u64)
+	246: ImmBorrowLoc[137](t1#1#37: u64)
+	247: StLoc[139](t1#1#40: &u64)
+	248: ImmBorrowLoc[209](t2#1#37: u64)
+	249: StLoc[211](t2#1#40: &u64)
+	250: CopyLoc[139](t1#1#40: &u64)
+	251: CopyLoc[211](t2#1#40: &u64)
+	252: Eq
+	253: Not
+	254: BrFalse(271)
+B16:
+	255: LdConst[4](vector<u8>: "Ass..)
+	256: Call string::utf8(vector<u8>): String
+	257: StLoc[5](%#14: String)
+	258: ImmBorrowLoc[5](%#14: String)
+	259: Call debug::print<String>(&String)
+	260: MoveLoc[139](t1#1#40: &u64)
+	261: Call debug::print<u64>(&u64)
+	262: LdConst[5](vector<u8>: "!="..)
+	263: Call string::utf8(vector<u8>): String
+	264: StLoc[6](%#15: String)
+	265: ImmBorrowLoc[6](%#15: String)
+	266: Call debug::print<String>(&String)
+	267: MoveLoc[211](t2#1#40: &u64)
+	268: Call debug::print<u64>(&u64)
+	269: LdU64(13906838971821850623)
+	270: Abort
+B17:
+	271: MoveLoc[211](t2#1#40: &u64)
+	272: Pop
+	273: MoveLoc[139](t1#1#40: &u64)
+	274: Pop
+	275: LdConst[7](address: 0x00..)
+	276: Call test_scenario::ctx_builder_from_sender(address): TxContextBuilder
+	277: LdU64(42)
+	278: Call test_scenario::set_epoch(TxContextBuilder, u64): TxContextBuilder
+	279: LdU64(1000000000)
+	280: Call test_scenario::set_epoch_timestamp(TxContextBuilder, u64): TxContextBuilder
+	281: LdU64(3)
+	282: Call test_scenario::set_ids_created(TxContextBuilder, u64): TxContextBuilder
+	283: LdU64(1000)
+	284: Call test_scenario::set_reference_gas_price(TxContextBuilder, u64): TxContextBuilder
+	285: LdU64(700)
+	286: Call test_scenario::set_gas_price(TxContextBuilder, u64): TxContextBuilder
+	287: LdU64(100000)
+	288: Call test_scenario::set_gas_budget(TxContextBuilder, u64): TxContextBuilder
+	289: StLoc[83](ctx_builder#1#0: TxContextBuilder)
+	290: MutBorrowLoc[87](scenario#1#0: Scenario)
+	291: MoveLoc[83](ctx_builder#1#0: TxContextBuilder)
+	292: Call test_scenario::next_with_context(&mut Scenario, TxContextBuilder): TransactionEffects
+	293: Pop
+	294: MutBorrowLoc[87](scenario#1#0: Scenario)
+	295: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	296: StLoc[79](ctx#2#0: &mut TxContext)
+	297: CopyLoc[79](ctx#2#0: &mut TxContext)
+	298: FreezeRef
+	299: Call tx_context::sender(&TxContext): address
+	300: StLoc[140](t1#1#43: address)
+	301: LdConst[7](address: 0x00..)
+	302: StLoc[212](t2#1#43: address)
+	303: ImmBorrowLoc[140](t1#1#43: address)
+	304: StLoc[141](t1#1#46: &address)
+	305: ImmBorrowLoc[212](t2#1#43: address)
+	306: StLoc[213](t2#1#46: &address)
+	307: CopyLoc[141](t1#1#46: &address)
+	308: CopyLoc[213](t2#1#46: &address)
+	309: Eq
+	310: Not
+	311: BrFalse(330)
+B18:
+	312: LdConst[4](vector<u8>: "Ass..)
+	313: Call string::utf8(vector<u8>): String
+	314: StLoc[7](%#16: String)
+	315: ImmBorrowLoc[7](%#16: String)
+	316: Call debug::print<String>(&String)
+	317: MoveLoc[141](t1#1#46: &address)
+	318: Call debug::print<address>(&address)
+	319: LdConst[5](vector<u8>: "!="..)
+	320: Call string::utf8(vector<u8>): String
+	321: StLoc[8](%#17: String)
+	322: ImmBorrowLoc[8](%#17: String)
+	323: Call debug::print<String>(&String)
+	324: MoveLoc[213](t2#1#46: &address)
+	325: Call debug::print<address>(&address)
+	326: MoveLoc[79](ctx#2#0: &mut TxContext)
+	327: Pop
+	328: LdU64(13906839023361458175)
+	329: Abort
+B19:
+	330: MoveLoc[213](t2#1#46: &address)
+	331: Pop
+	332: MoveLoc[141](t1#1#46: &address)
+	333: Pop
+	334: CopyLoc[79](ctx#2#0: &mut TxContext)
+	335: FreezeRef
+	336: Call tx_context::epoch(&TxContext): u64
+	337: StLoc[142](t1#1#49: u64)
+	338: LdU64(42)
+	339: StLoc[214](t2#1#49: u64)
+	340: ImmBorrowLoc[142](t1#1#49: u64)
+	341: StLoc[143](t1#1#52: &u64)
+	342: ImmBorrowLoc[214](t2#1#49: u64)
+	343: StLoc[215](t2#1#52: &u64)
+	344: CopyLoc[143](t1#1#52: &u64)
+	345: CopyLoc[215](t2#1#52: &u64)
+	346: Eq
+	347: Not
+	348: BrFalse(367)
+B20:
+	349: LdConst[4](vector<u8>: "Ass..)
+	350: Call string::utf8(vector<u8>): String
+	351: StLoc[9](%#18: String)
+	352: ImmBorrowLoc[9](%#18: String)
+	353: Call debug::print<String>(&String)
+	354: MoveLoc[143](t1#1#52: &u64)
+	355: Call debug::print<u64>(&u64)
+	356: LdConst[5](vector<u8>: "!="..)
+	357: Call string::utf8(vector<u8>): String
+	358: StLoc[10](%#19: String)
+	359: ImmBorrowLoc[10](%#19: String)
+	360: Call debug::print<String>(&String)
+	361: MoveLoc[215](t2#1#52: &u64)
+	362: Call debug::print<u64>(&u64)
+	363: MoveLoc[79](ctx#2#0: &mut TxContext)
+	364: Pop
+	365: LdU64(13906839027656425471)
+	366: Abort
+B21:
+	367: MoveLoc[215](t2#1#52: &u64)
+	368: Pop
+	369: MoveLoc[143](t1#1#52: &u64)
+	370: Pop
+	371: CopyLoc[79](ctx#2#0: &mut TxContext)
+	372: FreezeRef
+	373: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	374: StLoc[144](t1#1#55: u64)
+	375: LdU64(1000000000)
+	376: StLoc[216](t2#1#55: u64)
+	377: ImmBorrowLoc[144](t1#1#55: u64)
+	378: StLoc[145](t1#1#58: &u64)
+	379: ImmBorrowLoc[216](t2#1#55: u64)
+	380: StLoc[217](t2#1#58: &u64)
+	381: CopyLoc[145](t1#1#58: &u64)
+	382: CopyLoc[217](t2#1#58: &u64)
+	383: Eq
+	384: Not
+	385: BrFalse(404)
+B22:
+	386: LdConst[4](vector<u8>: "Ass..)
+	387: Call string::utf8(vector<u8>): String
+	388: StLoc[12](%#20: String)
+	389: ImmBorrowLoc[12](%#20: String)
+	390: Call debug::print<String>(&String)
+	391: MoveLoc[145](t1#1#58: &u64)
+	392: Call debug::print<u64>(&u64)
+	393: LdConst[5](vector<u8>: "!="..)
+	394: Call string::utf8(vector<u8>): String
+	395: StLoc[13](%#21: String)
+	396: ImmBorrowLoc[13](%#21: String)
+	397: Call debug::print<String>(&String)
+	398: MoveLoc[217](t2#1#58: &u64)
+	399: Call debug::print<u64>(&u64)
+	400: MoveLoc[79](ctx#2#0: &mut TxContext)
+	401: Pop
+	402: LdU64(13906839031951392767)
+	403: Abort
+B23:
+	404: MoveLoc[217](t2#1#58: &u64)
+	405: Pop
+	406: MoveLoc[145](t1#1#58: &u64)
+	407: Pop
+	408: CopyLoc[79](ctx#2#0: &mut TxContext)
+	409: FreezeRef
+	410: Call tx_context::sponsor(&TxContext): Option<address>
+	411: StLoc[14](%#22: Option<address>)
+	412: ImmBorrowLoc[14](%#22: Option<address>)
+	413: Call option::is_none<address>(&Option<address>): bool
+	414: BrFalse(416)
+B24:
+	415: Branch(420)
+B25:
+	416: MoveLoc[79](ctx#2#0: &mut TxContext)
+	417: Pop
+	418: LdU64(13906839036246360063)
+	419: Abort
+B26:
+	420: CopyLoc[79](ctx#2#0: &mut TxContext)
+	421: FreezeRef
+	422: Call tx_context::reference_gas_price(&TxContext): u64
+	423: StLoc[146](t1#1#61: u64)
+	424: LdU64(1000)
+	425: StLoc[218](t2#1#61: u64)
+	426: ImmBorrowLoc[146](t1#1#61: u64)
+	427: StLoc[147](t1#1#64: &u64)
+	428: ImmBorrowLoc[218](t2#1#61: u64)
+	429: StLoc[219](t2#1#64: &u64)
+	430: CopyLoc[147](t1#1#64: &u64)
+	431: CopyLoc[219](t2#1#64: &u64)
+	432: Eq
+	433: Not
+	434: BrFalse(453)
+B27:
+	435: LdConst[4](vector<u8>: "Ass..)
+	436: Call string::utf8(vector<u8>): String
+	437: StLoc[15](%#23: String)
+	438: ImmBorrowLoc[15](%#23: String)
+	439: Call debug::print<String>(&String)
+	440: MoveLoc[147](t1#1#64: &u64)
+	441: Call debug::print<u64>(&u64)
+	442: LdConst[5](vector<u8>: "!="..)
+	443: Call string::utf8(vector<u8>): String
+	444: StLoc[16](%#24: String)
+	445: ImmBorrowLoc[16](%#24: String)
+	446: Call debug::print<String>(&String)
+	447: MoveLoc[219](t2#1#64: &u64)
+	448: Call debug::print<u64>(&u64)
+	449: MoveLoc[79](ctx#2#0: &mut TxContext)
+	450: Pop
+	451: LdU64(13906839040541327359)
+	452: Abort
+B28:
+	453: MoveLoc[219](t2#1#64: &u64)
+	454: Pop
+	455: MoveLoc[147](t1#1#64: &u64)
+	456: Pop
+	457: CopyLoc[79](ctx#2#0: &mut TxContext)
+	458: FreezeRef
+	459: Call tx_context::gas_price(&TxContext): u64
+	460: StLoc[148](t1#1#67: u64)
+	461: LdU64(700)
+	462: StLoc[220](t2#1#67: u64)
+	463: ImmBorrowLoc[148](t1#1#67: u64)
+	464: StLoc[150](t1#1#70: &u64)
+	465: ImmBorrowLoc[220](t2#1#67: u64)
+	466: StLoc[222](t2#1#70: &u64)
+	467: CopyLoc[150](t1#1#70: &u64)
+	468: CopyLoc[222](t2#1#70: &u64)
+	469: Eq
+	470: Not
+	471: BrFalse(490)
+B29:
+	472: LdConst[4](vector<u8>: "Ass..)
+	473: Call string::utf8(vector<u8>): String
+	474: StLoc[17](%#25: String)
+	475: ImmBorrowLoc[17](%#25: String)
+	476: Call debug::print<String>(&String)
+	477: MoveLoc[150](t1#1#70: &u64)
+	478: Call debug::print<u64>(&u64)
+	479: LdConst[5](vector<u8>: "!="..)
+	480: Call string::utf8(vector<u8>): String
+	481: StLoc[18](%#26: String)
+	482: ImmBorrowLoc[18](%#26: String)
+	483: Call debug::print<String>(&String)
+	484: MoveLoc[222](t2#1#70: &u64)
+	485: Call debug::print<u64>(&u64)
+	486: MoveLoc[79](ctx#2#0: &mut TxContext)
+	487: Pop
+	488: LdU64(13906839044836294655)
+	489: Abort
+B30:
+	490: MoveLoc[222](t2#1#70: &u64)
+	491: Pop
+	492: MoveLoc[150](t1#1#70: &u64)
+	493: Pop
+	494: CopyLoc[79](ctx#2#0: &mut TxContext)
+	495: FreezeRef
+	496: Call tx_context::gas_budget(&TxContext): u64
+	497: StLoc[151](t1#1#73: u64)
+	498: LdU64(100000)
+	499: StLoc[223](t2#1#73: u64)
+	500: ImmBorrowLoc[151](t1#1#73: u64)
+	501: StLoc[152](t1#1#76: &u64)
+	502: ImmBorrowLoc[223](t2#1#73: u64)
+	503: StLoc[224](t2#1#76: &u64)
+	504: CopyLoc[152](t1#1#76: &u64)
+	505: CopyLoc[224](t2#1#76: &u64)
+	506: Eq
+	507: Not
+	508: BrFalse(527)
+B31:
+	509: LdConst[4](vector<u8>: "Ass..)
+	510: Call string::utf8(vector<u8>): String
+	511: StLoc[19](%#27: String)
+	512: ImmBorrowLoc[19](%#27: String)
+	513: Call debug::print<String>(&String)
+	514: MoveLoc[152](t1#1#76: &u64)
+	515: Call debug::print<u64>(&u64)
+	516: LdConst[5](vector<u8>: "!="..)
+	517: Call string::utf8(vector<u8>): String
+	518: StLoc[20](%#28: String)
+	519: ImmBorrowLoc[20](%#28: String)
+	520: Call debug::print<String>(&String)
+	521: MoveLoc[224](t2#1#76: &u64)
+	522: Call debug::print<u64>(&u64)
+	523: MoveLoc[79](ctx#2#0: &mut TxContext)
+	524: Pop
+	525: LdU64(13906839049131261951)
+	526: Abort
+B32:
+	527: MoveLoc[224](t2#1#76: &u64)
+	528: Pop
+	529: MoveLoc[152](t1#1#76: &u64)
+	530: Pop
+	531: MoveLoc[79](ctx#2#0: &mut TxContext)
+	532: FreezeRef
+	533: Call tx_context::ids_created(&TxContext): u64
+	534: StLoc[153](t1#1#79: u64)
+	535: LdU64(3)
+	536: StLoc[225](t2#1#79: u64)
+	537: ImmBorrowLoc[153](t1#1#79: u64)
+	538: StLoc[154](t1#1#82: &u64)
+	539: ImmBorrowLoc[225](t2#1#79: u64)
+	540: StLoc[226](t2#1#82: &u64)
+	541: CopyLoc[154](t1#1#82: &u64)
+	542: CopyLoc[226](t2#1#82: &u64)
+	543: Eq
+	544: Not
+	545: BrFalse(562)
+B33:
+	546: LdConst[4](vector<u8>: "Ass..)
+	547: Call string::utf8(vector<u8>): String
+	548: StLoc[21](%#29: String)
+	549: ImmBorrowLoc[21](%#29: String)
+	550: Call debug::print<String>(&String)
+	551: MoveLoc[154](t1#1#82: &u64)
+	552: Call debug::print<u64>(&u64)
+	553: LdConst[5](vector<u8>: "!="..)
+	554: Call string::utf8(vector<u8>): String
+	555: StLoc[23](%#30: String)
+	556: ImmBorrowLoc[23](%#30: String)
+	557: Call debug::print<String>(&String)
+	558: MoveLoc[226](t2#1#82: &u64)
+	559: Call debug::print<u64>(&u64)
+	560: LdU64(13906839053426229247)
+	561: Abort
+B34:
+	562: MoveLoc[226](t2#1#82: &u64)
+	563: Pop
+	564: MoveLoc[154](t1#1#82: &u64)
+	565: Pop
+	566: MutBorrowLoc[87](scenario#1#0: Scenario)
+	567: LdConst[8](address: 0x00..)
+	568: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	569: Pop
+	570: MutBorrowLoc[87](scenario#1#0: Scenario)
+	571: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	572: StLoc[80](ctx#3#0: &mut TxContext)
+	573: CopyLoc[80](ctx#3#0: &mut TxContext)
+	574: FreezeRef
+	575: Call tx_context::sender(&TxContext): address
+	576: StLoc[155](t1#1#85: address)
+	577: LdConst[8](address: 0x00..)
+	578: StLoc[227](t2#1#85: address)
+	579: ImmBorrowLoc[155](t1#1#85: address)
+	580: StLoc[156](t1#1#88: &address)
+	581: ImmBorrowLoc[227](t2#1#85: address)
+	582: StLoc[228](t2#1#88: &address)
+	583: CopyLoc[156](t1#1#88: &address)
+	584: CopyLoc[228](t2#1#88: &address)
+	585: Eq
+	586: Not
+	587: BrFalse(606)
+B35:
+	588: LdConst[4](vector<u8>: "Ass..)
+	589: Call string::utf8(vector<u8>): String
+	590: StLoc[24](%#31: String)
+	591: ImmBorrowLoc[24](%#31: String)
+	592: Call debug::print<String>(&String)
+	593: MoveLoc[156](t1#1#88: &address)
+	594: Call debug::print<address>(&address)
+	595: LdConst[5](vector<u8>: "!="..)
+	596: Call string::utf8(vector<u8>): String
+	597: StLoc[25](%#32: String)
+	598: ImmBorrowLoc[25](%#32: String)
+	599: Call debug::print<String>(&String)
+	600: MoveLoc[228](t2#1#88: &address)
+	601: Call debug::print<address>(&address)
+	602: MoveLoc[80](ctx#3#0: &mut TxContext)
+	603: Pop
+	604: LdU64(13906839074901065727)
+	605: Abort
+B36:
+	606: MoveLoc[228](t2#1#88: &address)
+	607: Pop
+	608: MoveLoc[156](t1#1#88: &address)
+	609: Pop
+	610: CopyLoc[80](ctx#3#0: &mut TxContext)
+	611: FreezeRef
+	612: Call tx_context::epoch(&TxContext): u64
+	613: StLoc[157](t1#1#91: u64)
+	614: LdU64(42)
+	615: StLoc[229](t2#1#91: u64)
+	616: ImmBorrowLoc[157](t1#1#91: u64)
+	617: StLoc[158](t1#1#94: &u64)
+	618: ImmBorrowLoc[229](t2#1#91: u64)
+	619: StLoc[230](t2#1#94: &u64)
+	620: CopyLoc[158](t1#1#94: &u64)
+	621: CopyLoc[230](t2#1#94: &u64)
+	622: Eq
+	623: Not
+	624: BrFalse(643)
+B37:
+	625: LdConst[4](vector<u8>: "Ass..)
+	626: Call string::utf8(vector<u8>): String
+	627: StLoc[26](%#33: String)
+	628: ImmBorrowLoc[26](%#33: String)
+	629: Call debug::print<String>(&String)
+	630: MoveLoc[158](t1#1#94: &u64)
+	631: Call debug::print<u64>(&u64)
+	632: LdConst[5](vector<u8>: "!="..)
+	633: Call string::utf8(vector<u8>): String
+	634: StLoc[27](%#34: String)
+	635: ImmBorrowLoc[27](%#34: String)
+	636: Call debug::print<String>(&String)
+	637: MoveLoc[230](t2#1#94: &u64)
+	638: Call debug::print<u64>(&u64)
+	639: MoveLoc[80](ctx#3#0: &mut TxContext)
+	640: Pop
+	641: LdU64(13906839079196033023)
+	642: Abort
+B38:
+	643: MoveLoc[230](t2#1#94: &u64)
+	644: Pop
+	645: MoveLoc[158](t1#1#94: &u64)
+	646: Pop
+	647: CopyLoc[80](ctx#3#0: &mut TxContext)
+	648: FreezeRef
+	649: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	650: StLoc[159](t1#1#97: u64)
+	651: LdU64(1000000000)
+	652: StLoc[231](t2#1#97: u64)
+	653: ImmBorrowLoc[159](t1#1#97: u64)
+	654: StLoc[90](t1#1#100: &u64)
+	655: ImmBorrowLoc[231](t2#1#97: u64)
+	656: StLoc[162](t2#1#100: &u64)
+	657: CopyLoc[90](t1#1#100: &u64)
+	658: CopyLoc[162](t2#1#100: &u64)
+	659: Eq
+	660: Not
+	661: BrFalse(680)
+B39:
+	662: LdConst[4](vector<u8>: "Ass..)
+	663: Call string::utf8(vector<u8>): String
+	664: StLoc[28](%#35: String)
+	665: ImmBorrowLoc[28](%#35: String)
+	666: Call debug::print<String>(&String)
+	667: MoveLoc[90](t1#1#100: &u64)
+	668: Call debug::print<u64>(&u64)
+	669: LdConst[5](vector<u8>: "!="..)
+	670: Call string::utf8(vector<u8>): String
+	671: StLoc[29](%#36: String)
+	672: ImmBorrowLoc[29](%#36: String)
+	673: Call debug::print<String>(&String)
+	674: MoveLoc[162](t2#1#100: &u64)
+	675: Call debug::print<u64>(&u64)
+	676: MoveLoc[80](ctx#3#0: &mut TxContext)
+	677: Pop
+	678: LdU64(13906839083491000319)
+	679: Abort
+B40:
+	680: MoveLoc[162](t2#1#100: &u64)
+	681: Pop
+	682: MoveLoc[90](t1#1#100: &u64)
+	683: Pop
+	684: CopyLoc[80](ctx#3#0: &mut TxContext)
+	685: FreezeRef
+	686: Call tx_context::sponsor(&TxContext): Option<address>
+	687: StLoc[30](%#37: Option<address>)
+	688: ImmBorrowLoc[30](%#37: Option<address>)
+	689: Call option::is_none<address>(&Option<address>): bool
+	690: BrFalse(692)
+B41:
+	691: Branch(696)
+B42:
+	692: MoveLoc[80](ctx#3#0: &mut TxContext)
+	693: Pop
+	694: LdU64(13906839087785967615)
+	695: Abort
+B43:
+	696: CopyLoc[80](ctx#3#0: &mut TxContext)
+	697: FreezeRef
+	698: Call tx_context::reference_gas_price(&TxContext): u64
+	699: StLoc[91](t1#1#103: u64)
+	700: LdU64(1000)
+	701: StLoc[163](t2#1#103: u64)
+	702: ImmBorrowLoc[91](t1#1#103: u64)
+	703: StLoc[92](t1#1#106: &u64)
+	704: ImmBorrowLoc[163](t2#1#103: u64)
+	705: StLoc[164](t2#1#106: &u64)
+	706: CopyLoc[92](t1#1#106: &u64)
+	707: CopyLoc[164](t2#1#106: &u64)
+	708: Eq
+	709: Not
+	710: BrFalse(729)
+B44:
+	711: LdConst[4](vector<u8>: "Ass..)
+	712: Call string::utf8(vector<u8>): String
+	713: StLoc[31](%#38: String)
+	714: ImmBorrowLoc[31](%#38: String)
+	715: Call debug::print<String>(&String)
+	716: MoveLoc[92](t1#1#106: &u64)
+	717: Call debug::print<u64>(&u64)
+	718: LdConst[5](vector<u8>: "!="..)
+	719: Call string::utf8(vector<u8>): String
+	720: StLoc[32](%#39: String)
+	721: ImmBorrowLoc[32](%#39: String)
+	722: Call debug::print<String>(&String)
+	723: MoveLoc[164](t2#1#106: &u64)
+	724: Call debug::print<u64>(&u64)
+	725: MoveLoc[80](ctx#3#0: &mut TxContext)
+	726: Pop
+	727: LdU64(13906839092080934911)
+	728: Abort
+B45:
+	729: MoveLoc[164](t2#1#106: &u64)
+	730: Pop
+	731: MoveLoc[92](t1#1#106: &u64)
+	732: Pop
+	733: CopyLoc[80](ctx#3#0: &mut TxContext)
+	734: FreezeRef
+	735: Call tx_context::gas_price(&TxContext): u64
+	736: StLoc[93](t1#1#109: u64)
+	737: LdU64(700)
+	738: StLoc[165](t2#1#109: u64)
+	739: ImmBorrowLoc[93](t1#1#109: u64)
+	740: StLoc[94](t1#1#112: &u64)
+	741: ImmBorrowLoc[165](t2#1#109: u64)
+	742: StLoc[166](t2#1#112: &u64)
+	743: CopyLoc[94](t1#1#112: &u64)
+	744: CopyLoc[166](t2#1#112: &u64)
+	745: Eq
+	746: Not
+	747: BrFalse(766)
+B46:
+	748: LdConst[4](vector<u8>: "Ass..)
+	749: Call string::utf8(vector<u8>): String
+	750: StLoc[34](%#40: String)
+	751: ImmBorrowLoc[34](%#40: String)
+	752: Call debug::print<String>(&String)
+	753: MoveLoc[94](t1#1#112: &u64)
+	754: Call debug::print<u64>(&u64)
+	755: LdConst[5](vector<u8>: "!="..)
+	756: Call string::utf8(vector<u8>): String
+	757: StLoc[35](%#41: String)
+	758: ImmBorrowLoc[35](%#41: String)
+	759: Call debug::print<String>(&String)
+	760: MoveLoc[166](t2#1#112: &u64)
+	761: Call debug::print<u64>(&u64)
+	762: MoveLoc[80](ctx#3#0: &mut TxContext)
+	763: Pop
+	764: LdU64(13906839096375902207)
+	765: Abort
+B47:
+	766: MoveLoc[166](t2#1#112: &u64)
+	767: Pop
+	768: MoveLoc[94](t1#1#112: &u64)
+	769: Pop
+	770: CopyLoc[80](ctx#3#0: &mut TxContext)
+	771: FreezeRef
+	772: Call tx_context::gas_budget(&TxContext): u64
+	773: StLoc[95](t1#1#115: u64)
+	774: LdU64(100000)
+	775: StLoc[167](t2#1#115: u64)
+	776: ImmBorrowLoc[95](t1#1#115: u64)
+	777: StLoc[96](t1#1#118: &u64)
+	778: ImmBorrowLoc[167](t2#1#115: u64)
+	779: StLoc[168](t2#1#118: &u64)
+	780: CopyLoc[96](t1#1#118: &u64)
+	781: CopyLoc[168](t2#1#118: &u64)
+	782: Eq
+	783: Not
+	784: BrFalse(803)
+B48:
+	785: LdConst[4](vector<u8>: "Ass..)
+	786: Call string::utf8(vector<u8>): String
+	787: StLoc[36](%#42: String)
+	788: ImmBorrowLoc[36](%#42: String)
+	789: Call debug::print<String>(&String)
+	790: MoveLoc[96](t1#1#118: &u64)
+	791: Call debug::print<u64>(&u64)
+	792: LdConst[5](vector<u8>: "!="..)
+	793: Call string::utf8(vector<u8>): String
+	794: StLoc[37](%#43: String)
+	795: ImmBorrowLoc[37](%#43: String)
+	796: Call debug::print<String>(&String)
+	797: MoveLoc[168](t2#1#118: &u64)
+	798: Call debug::print<u64>(&u64)
+	799: MoveLoc[80](ctx#3#0: &mut TxContext)
+	800: Pop
+	801: LdU64(13906839100670869503)
+	802: Abort
+B49:
+	803: MoveLoc[168](t2#1#118: &u64)
+	804: Pop
+	805: MoveLoc[96](t1#1#118: &u64)
+	806: Pop
+	807: MoveLoc[80](ctx#3#0: &mut TxContext)
+	808: FreezeRef
+	809: Call tx_context::ids_created(&TxContext): u64
+	810: StLoc[97](t1#1#121: u64)
+	811: LdU64(0)
+	812: StLoc[169](t2#1#121: u64)
+	813: ImmBorrowLoc[97](t1#1#121: u64)
+	814: StLoc[98](t1#1#124: &u64)
+	815: ImmBorrowLoc[169](t2#1#121: u64)
+	816: StLoc[170](t2#1#124: &u64)
+	817: CopyLoc[98](t1#1#124: &u64)
+	818: CopyLoc[170](t2#1#124: &u64)
+	819: Eq
+	820: Not
+	821: BrFalse(838)
+B50:
+	822: LdConst[4](vector<u8>: "Ass..)
+	823: Call string::utf8(vector<u8>): String
+	824: StLoc[38](%#44: String)
+	825: ImmBorrowLoc[38](%#44: String)
+	826: Call debug::print<String>(&String)
+	827: MoveLoc[98](t1#1#124: &u64)
+	828: Call debug::print<u64>(&u64)
+	829: LdConst[5](vector<u8>: "!="..)
+	830: Call string::utf8(vector<u8>): String
+	831: StLoc[39](%#45: String)
+	832: ImmBorrowLoc[39](%#45: String)
+	833: Call debug::print<String>(&String)
+	834: MoveLoc[170](t2#1#124: &u64)
+	835: Call debug::print<u64>(&u64)
+	836: LdU64(13906839104965836799)
+	837: Abort
+B51:
+	838: MoveLoc[170](t2#1#124: &u64)
+	839: Pop
+	840: MoveLoc[98](t1#1#124: &u64)
+	841: Pop
+	842: ImmBorrowLoc[87](scenario#1#0: Scenario)
+	843: Call test_scenario::ctx_builder(&Scenario): TxContextBuilder
+	844: StLoc[84](ctx_builder#2#0: TxContextBuilder)
+	845: MutBorrowLoc[87](scenario#1#0: Scenario)
+	846: MoveLoc[84](ctx_builder#2#0: TxContextBuilder)
+	847: Call test_scenario::next_with_context(&mut Scenario, TxContextBuilder): TransactionEffects
+	848: Pop
+	849: MutBorrowLoc[87](scenario#1#0: Scenario)
+	850: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	851: StLoc[81](ctx#4#0: &mut TxContext)
+	852: CopyLoc[81](ctx#4#0: &mut TxContext)
+	853: FreezeRef
+	854: Call tx_context::sender(&TxContext): address
+	855: StLoc[99](t1#1#127: address)
+	856: LdConst[8](address: 0x00..)
+	857: StLoc[171](t2#1#127: address)
+	858: ImmBorrowLoc[99](t1#1#127: address)
+	859: StLoc[101](t1#1#130: &address)
+	860: ImmBorrowLoc[171](t2#1#127: address)
+	861: StLoc[173](t2#1#130: &address)
+	862: CopyLoc[101](t1#1#130: &address)
+	863: CopyLoc[173](t2#1#130: &address)
+	864: Eq
+	865: Not
+	866: BrFalse(885)
+B52:
+	867: LdConst[4](vector<u8>: "Ass..)
+	868: Call string::utf8(vector<u8>): String
+	869: StLoc[40](%#46: String)
+	870: ImmBorrowLoc[40](%#46: String)
+	871: Call debug::print<String>(&String)
+	872: MoveLoc[101](t1#1#130: &address)
+	873: Call debug::print<address>(&address)
+	874: LdConst[5](vector<u8>: "!="..)
+	875: Call string::utf8(vector<u8>): String
+	876: StLoc[41](%#47: String)
+	877: ImmBorrowLoc[41](%#47: String)
+	878: Call debug::print<String>(&String)
+	879: MoveLoc[173](t2#1#130: &address)
+	880: Call debug::print<address>(&address)
+	881: MoveLoc[81](ctx#4#0: &mut TxContext)
+	882: Pop
+	883: LdU64(13906839130735640575)
+	884: Abort
+B53:
+	885: MoveLoc[173](t2#1#130: &address)
+	886: Pop
+	887: MoveLoc[101](t1#1#130: &address)
+	888: Pop
+	889: CopyLoc[81](ctx#4#0: &mut TxContext)
+	890: FreezeRef
+	891: Call tx_context::epoch(&TxContext): u64
+	892: StLoc[102](t1#1#133: u64)
+	893: LdU64(42)
+	894: StLoc[174](t2#1#133: u64)
+	895: ImmBorrowLoc[102](t1#1#133: u64)
+	896: StLoc[103](t1#1#136: &u64)
+	897: ImmBorrowLoc[174](t2#1#133: u64)
+	898: StLoc[175](t2#1#136: &u64)
+	899: CopyLoc[103](t1#1#136: &u64)
+	900: CopyLoc[175](t2#1#136: &u64)
+	901: Eq
+	902: Not
+	903: BrFalse(922)
+B54:
+	904: LdConst[4](vector<u8>: "Ass..)
+	905: Call string::utf8(vector<u8>): String
+	906: StLoc[42](%#48: String)
+	907: ImmBorrowLoc[42](%#48: String)
+	908: Call debug::print<String>(&String)
+	909: MoveLoc[103](t1#1#136: &u64)
+	910: Call debug::print<u64>(&u64)
+	911: LdConst[5](vector<u8>: "!="..)
+	912: Call string::utf8(vector<u8>): String
+	913: StLoc[43](%#49: String)
+	914: ImmBorrowLoc[43](%#49: String)
+	915: Call debug::print<String>(&String)
+	916: MoveLoc[175](t2#1#136: &u64)
+	917: Call debug::print<u64>(&u64)
+	918: MoveLoc[81](ctx#4#0: &mut TxContext)
+	919: Pop
+	920: LdU64(13906839135030607871)
+	921: Abort
+B55:
+	922: MoveLoc[175](t2#1#136: &u64)
+	923: Pop
+	924: MoveLoc[103](t1#1#136: &u64)
+	925: Pop
+	926: CopyLoc[81](ctx#4#0: &mut TxContext)
+	927: FreezeRef
+	928: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	929: StLoc[104](t1#1#139: u64)
+	930: LdU64(1000000000)
+	931: StLoc[176](t2#1#139: u64)
+	932: ImmBorrowLoc[104](t1#1#139: u64)
+	933: StLoc[105](t1#1#142: &u64)
+	934: ImmBorrowLoc[176](t2#1#139: u64)
+	935: StLoc[177](t2#1#142: &u64)
+	936: CopyLoc[105](t1#1#142: &u64)
+	937: CopyLoc[177](t2#1#142: &u64)
+	938: Eq
+	939: Not
+	940: BrFalse(959)
+B56:
+	941: LdConst[4](vector<u8>: "Ass..)
+	942: Call string::utf8(vector<u8>): String
+	943: StLoc[45](%#50: String)
+	944: ImmBorrowLoc[45](%#50: String)
+	945: Call debug::print<String>(&String)
+	946: MoveLoc[105](t1#1#142: &u64)
+	947: Call debug::print<u64>(&u64)
+	948: LdConst[5](vector<u8>: "!="..)
+	949: Call string::utf8(vector<u8>): String
+	950: StLoc[46](%#51: String)
+	951: ImmBorrowLoc[46](%#51: String)
+	952: Call debug::print<String>(&String)
+	953: MoveLoc[177](t2#1#142: &u64)
+	954: Call debug::print<u64>(&u64)
+	955: MoveLoc[81](ctx#4#0: &mut TxContext)
+	956: Pop
+	957: LdU64(13906839139325575167)
+	958: Abort
+B57:
+	959: MoveLoc[177](t2#1#142: &u64)
+	960: Pop
+	961: MoveLoc[105](t1#1#142: &u64)
+	962: Pop
+	963: CopyLoc[81](ctx#4#0: &mut TxContext)
+	964: FreezeRef
+	965: Call tx_context::sponsor(&TxContext): Option<address>
+	966: StLoc[47](%#52: Option<address>)
+	967: ImmBorrowLoc[47](%#52: Option<address>)
+	968: Call option::is_none<address>(&Option<address>): bool
+	969: BrFalse(971)
+B58:
+	970: Branch(975)
+B59:
+	971: MoveLoc[81](ctx#4#0: &mut TxContext)
+	972: Pop
+	973: LdU64(13906839143620542463)
+	974: Abort
+B60:
+	975: CopyLoc[81](ctx#4#0: &mut TxContext)
+	976: FreezeRef
+	977: Call tx_context::reference_gas_price(&TxContext): u64
+	978: StLoc[106](t1#1#145: u64)
+	979: LdU64(1000)
+	980: StLoc[178](t2#1#145: u64)
+	981: ImmBorrowLoc[106](t1#1#145: u64)
+	982: StLoc[107](t1#1#148: &u64)
+	983: ImmBorrowLoc[178](t2#1#145: u64)
+	984: StLoc[179](t2#1#148: &u64)
+	985: CopyLoc[107](t1#1#148: &u64)
+	986: CopyLoc[179](t2#1#148: &u64)
+	987: Eq
+	988: Not
+	989: BrFalse(1008)
+B61:
+	990: LdConst[4](vector<u8>: "Ass..)
+	991: Call string::utf8(vector<u8>): String
+	992: StLoc[48](%#53: String)
+	993: ImmBorrowLoc[48](%#53: String)
+	994: Call debug::print<String>(&String)
+	995: MoveLoc[107](t1#1#148: &u64)
+	996: Call debug::print<u64>(&u64)
+	997: LdConst[5](vector<u8>: "!="..)
+	998: Call string::utf8(vector<u8>): String
+	999: StLoc[49](%#54: String)
+	1000: ImmBorrowLoc[49](%#54: String)
+	1001: Call debug::print<String>(&String)
+	1002: MoveLoc[179](t2#1#148: &u64)
+	1003: Call debug::print<u64>(&u64)
+	1004: MoveLoc[81](ctx#4#0: &mut TxContext)
+	1005: Pop
+	1006: LdU64(13906839147915509759)
+	1007: Abort
+B62:
+	1008: MoveLoc[179](t2#1#148: &u64)
+	1009: Pop
+	1010: MoveLoc[107](t1#1#148: &u64)
+	1011: Pop
+	1012: CopyLoc[81](ctx#4#0: &mut TxContext)
+	1013: FreezeRef
+	1014: Call tx_context::gas_price(&TxContext): u64
+	1015: StLoc[108](t1#1#151: u64)
+	1016: LdU64(700)
+	1017: StLoc[180](t2#1#151: u64)
+	1018: ImmBorrowLoc[108](t1#1#151: u64)
+	1019: StLoc[109](t1#1#154: &u64)
+	1020: ImmBorrowLoc[180](t2#1#151: u64)
+	1021: StLoc[181](t2#1#154: &u64)
+	1022: CopyLoc[109](t1#1#154: &u64)
+	1023: CopyLoc[181](t2#1#154: &u64)
+	1024: Eq
+	1025: Not
+	1026: BrFalse(1045)
+B63:
+	1027: LdConst[4](vector<u8>: "Ass..)
+	1028: Call string::utf8(vector<u8>): String
+	1029: StLoc[50](%#55: String)
+	1030: ImmBorrowLoc[50](%#55: String)
+	1031: Call debug::print<String>(&String)
+	1032: MoveLoc[109](t1#1#154: &u64)
+	1033: Call debug::print<u64>(&u64)
+	1034: LdConst[5](vector<u8>: "!="..)
+	1035: Call string::utf8(vector<u8>): String
+	1036: StLoc[51](%#56: String)
+	1037: ImmBorrowLoc[51](%#56: String)
+	1038: Call debug::print<String>(&String)
+	1039: MoveLoc[181](t2#1#154: &u64)
+	1040: Call debug::print<u64>(&u64)
+	1041: MoveLoc[81](ctx#4#0: &mut TxContext)
+	1042: Pop
+	1043: LdU64(13906839152210477055)
+	1044: Abort
+B64:
+	1045: MoveLoc[181](t2#1#154: &u64)
+	1046: Pop
+	1047: MoveLoc[109](t1#1#154: &u64)
+	1048: Pop
+	1049: CopyLoc[81](ctx#4#0: &mut TxContext)
+	1050: FreezeRef
+	1051: Call tx_context::gas_budget(&TxContext): u64
+	1052: StLoc[110](t1#1#157: u64)
+	1053: LdU64(100000)
+	1054: StLoc[182](t2#1#157: u64)
+	1055: ImmBorrowLoc[110](t1#1#157: u64)
+	1056: StLoc[112](t1#1#160: &u64)
+	1057: ImmBorrowLoc[182](t2#1#157: u64)
+	1058: StLoc[184](t2#1#160: &u64)
+	1059: CopyLoc[112](t1#1#160: &u64)
+	1060: CopyLoc[184](t2#1#160: &u64)
+	1061: Eq
+	1062: Not
+	1063: BrFalse(1082)
+B65:
+	1064: LdConst[4](vector<u8>: "Ass..)
+	1065: Call string::utf8(vector<u8>): String
+	1066: StLoc[52](%#57: String)
+	1067: ImmBorrowLoc[52](%#57: String)
+	1068: Call debug::print<String>(&String)
+	1069: MoveLoc[112](t1#1#160: &u64)
+	1070: Call debug::print<u64>(&u64)
+	1071: LdConst[5](vector<u8>: "!="..)
+	1072: Call string::utf8(vector<u8>): String
+	1073: StLoc[53](%#58: String)
+	1074: ImmBorrowLoc[53](%#58: String)
+	1075: Call debug::print<String>(&String)
+	1076: MoveLoc[184](t2#1#160: &u64)
+	1077: Call debug::print<u64>(&u64)
+	1078: MoveLoc[81](ctx#4#0: &mut TxContext)
+	1079: Pop
+	1080: LdU64(13906839156505444351)
+	1081: Abort
+B66:
+	1082: MoveLoc[184](t2#1#160: &u64)
+	1083: Pop
+	1084: MoveLoc[112](t1#1#160: &u64)
+	1085: Pop
+	1086: MoveLoc[81](ctx#4#0: &mut TxContext)
+	1087: FreezeRef
+	1088: Call tx_context::ids_created(&TxContext): u64
+	1089: StLoc[113](t1#1#163: u64)
+	1090: LdU64(0)
+	1091: StLoc[185](t2#1#163: u64)
+	1092: ImmBorrowLoc[113](t1#1#163: u64)
+	1093: StLoc[114](t1#1#166: &u64)
+	1094: ImmBorrowLoc[185](t2#1#163: u64)
+	1095: StLoc[186](t2#1#166: &u64)
+	1096: CopyLoc[114](t1#1#166: &u64)
+	1097: CopyLoc[186](t2#1#166: &u64)
+	1098: Eq
+	1099: Not
+	1100: BrFalse(1117)
+B67:
+	1101: LdConst[4](vector<u8>: "Ass..)
+	1102: Call string::utf8(vector<u8>): String
+	1103: StLoc[54](%#59: String)
+	1104: ImmBorrowLoc[54](%#59: String)
+	1105: Call debug::print<String>(&String)
+	1106: MoveLoc[114](t1#1#166: &u64)
+	1107: Call debug::print<u64>(&u64)
+	1108: LdConst[5](vector<u8>: "!="..)
+	1109: Call string::utf8(vector<u8>): String
+	1110: StLoc[56](%#60: String)
+	1111: ImmBorrowLoc[56](%#60: String)
+	1112: Call debug::print<String>(&String)
+	1113: MoveLoc[186](t2#1#166: &u64)
+	1114: Call debug::print<u64>(&u64)
+	1115: LdU64(13906839160800411647)
+	1116: Abort
+B68:
+	1117: MoveLoc[186](t2#1#166: &u64)
+	1118: Pop
+	1119: MoveLoc[114](t1#1#166: &u64)
+	1120: Pop
+	1121: ImmBorrowLoc[87](scenario#1#0: Scenario)
+	1122: Call test_scenario::ctx_builder(&Scenario): TxContextBuilder
+	1123: LdConst[9](address: 0x00..)
+	1124: Call test_scenario::set_sponsor(TxContextBuilder, address): TxContextBuilder
+	1125: LdU64(5)
+	1126: Call test_scenario::set_ids_created(TxContextBuilder, u64): TxContextBuilder
+	1127: LdU64(800)
+	1128: Call test_scenario::set_gas_price(TxContextBuilder, u64): TxContextBuilder
+	1129: LdU64(1000000100)
+	1130: Call test_scenario::set_epoch_timestamp(TxContextBuilder, u64): TxContextBuilder
+	1131: StLoc[85](ctx_builder#3#0: TxContextBuilder)
+	1132: MutBorrowLoc[87](scenario#1#0: Scenario)
+	1133: MoveLoc[85](ctx_builder#3#0: TxContextBuilder)
+	1134: Call test_scenario::next_with_context(&mut Scenario, TxContextBuilder): TransactionEffects
+	1135: Pop
+	1136: MutBorrowLoc[87](scenario#1#0: Scenario)
+	1137: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	1138: StLoc[82](ctx#5#0: &mut TxContext)
+	1139: CopyLoc[82](ctx#5#0: &mut TxContext)
+	1140: FreezeRef
+	1141: Call tx_context::sender(&TxContext): address
+	1142: StLoc[115](t1#1#169: address)
+	1143: LdConst[8](address: 0x00..)
+	1144: StLoc[187](t2#1#169: address)
+	1145: ImmBorrowLoc[115](t1#1#169: address)
+	1146: StLoc[116](t1#1#172: &address)
+	1147: ImmBorrowLoc[187](t2#1#169: address)
+	1148: StLoc[188](t2#1#172: &address)
+	1149: CopyLoc[116](t1#1#172: &address)
+	1150: CopyLoc[188](t2#1#172: &address)
+	1151: Eq
+	1152: Not
+	1153: BrFalse(1172)
+B69:
+	1154: LdConst[4](vector<u8>: "Ass..)
+	1155: Call string::utf8(vector<u8>): String
+	1156: StLoc[57](%#61: String)
+	1157: ImmBorrowLoc[57](%#61: String)
+	1158: Call debug::print<String>(&String)
+	1159: MoveLoc[116](t1#1#172: &address)
+	1160: Call debug::print<address>(&address)
+	1161: LdConst[5](vector<u8>: "!="..)
+	1162: Call string::utf8(vector<u8>): String
+	1163: StLoc[58](%#62: String)
+	1164: ImmBorrowLoc[58](%#62: String)
+	1165: Call debug::print<String>(&String)
+	1166: MoveLoc[188](t2#1#172: &address)
+	1167: Call debug::print<address>(&address)
+	1168: MoveLoc[82](ctx#5#0: &mut TxContext)
+	1169: Pop
+	1170: LdU64(13906839208045051903)
+	1171: Abort
+B70:
+	1172: MoveLoc[188](t2#1#172: &address)
+	1173: Pop
+	1174: MoveLoc[116](t1#1#172: &address)
+	1175: Pop
+	1176: CopyLoc[82](ctx#5#0: &mut TxContext)
+	1177: FreezeRef
+	1178: Call tx_context::epoch(&TxContext): u64
+	1179: StLoc[117](t1#1#175: u64)
+	1180: LdU64(42)
+	1181: StLoc[189](t2#1#175: u64)
+	1182: ImmBorrowLoc[117](t1#1#175: u64)
+	1183: StLoc[118](t1#1#178: &u64)
+	1184: ImmBorrowLoc[189](t2#1#175: u64)
+	1185: StLoc[190](t2#1#178: &u64)
+	1186: CopyLoc[118](t1#1#178: &u64)
+	1187: CopyLoc[190](t2#1#178: &u64)
+	1188: Eq
+	1189: Not
+	1190: BrFalse(1209)
+B71:
+	1191: LdConst[4](vector<u8>: "Ass..)
+	1192: Call string::utf8(vector<u8>): String
+	1193: StLoc[59](%#63: String)
+	1194: ImmBorrowLoc[59](%#63: String)
+	1195: Call debug::print<String>(&String)
+	1196: MoveLoc[118](t1#1#178: &u64)
+	1197: Call debug::print<u64>(&u64)
+	1198: LdConst[5](vector<u8>: "!="..)
+	1199: Call string::utf8(vector<u8>): String
+	1200: StLoc[60](%#64: String)
+	1201: ImmBorrowLoc[60](%#64: String)
+	1202: Call debug::print<String>(&String)
+	1203: MoveLoc[190](t2#1#178: &u64)
+	1204: Call debug::print<u64>(&u64)
+	1205: MoveLoc[82](ctx#5#0: &mut TxContext)
+	1206: Pop
+	1207: LdU64(13906839212340019199)
+	1208: Abort
+B72:
+	1209: MoveLoc[190](t2#1#178: &u64)
+	1210: Pop
+	1211: MoveLoc[118](t1#1#178: &u64)
+	1212: Pop
+	1213: CopyLoc[82](ctx#5#0: &mut TxContext)
+	1214: FreezeRef
+	1215: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	1216: StLoc[119](t1#1#181: u64)
+	1217: LdU64(1000000100)
+	1218: StLoc[191](t2#1#181: u64)
+	1219: ImmBorrowLoc[119](t1#1#181: u64)
+	1220: StLoc[120](t1#1#184: &u64)
+	1221: ImmBorrowLoc[191](t2#1#181: u64)
+	1222: StLoc[192](t2#1#184: &u64)
+	1223: CopyLoc[120](t1#1#184: &u64)
+	1224: CopyLoc[192](t2#1#184: &u64)
+	1225: Eq
+	1226: Not
+	1227: BrFalse(1246)
+B73:
+	1228: LdConst[4](vector<u8>: "Ass..)
+	1229: Call string::utf8(vector<u8>): String
+	1230: StLoc[61](%#65: String)
+	1231: ImmBorrowLoc[61](%#65: String)
+	1232: Call debug::print<String>(&String)
+	1233: MoveLoc[120](t1#1#184: &u64)
+	1234: Call debug::print<u64>(&u64)
+	1235: LdConst[5](vector<u8>: "!="..)
+	1236: Call string::utf8(vector<u8>): String
+	1237: StLoc[62](%#66: String)
+	1238: ImmBorrowLoc[62](%#66: String)
+	1239: Call debug::print<String>(&String)
+	1240: MoveLoc[192](t2#1#184: &u64)
+	1241: Call debug::print<u64>(&u64)
+	1242: MoveLoc[82](ctx#5#0: &mut TxContext)
+	1243: Pop
+	1244: LdU64(13906839216634986495)
+	1245: Abort
+B74:
+	1246: MoveLoc[192](t2#1#184: &u64)
+	1247: Pop
+	1248: MoveLoc[120](t1#1#184: &u64)
+	1249: Pop
+	1250: CopyLoc[82](ctx#5#0: &mut TxContext)
+	1251: FreezeRef
+	1252: Call tx_context::sponsor(&TxContext): Option<address>
+	1253: StLoc[63](%#67: Option<address>)
+	1254: MutBorrowLoc[63](%#67: Option<address>)
+	1255: Call option::extract<address>(&mut Option<address>): address
+	1256: StLoc[121](t1#1#187: address)
+	1257: LdConst[9](address: 0x00..)
+	1258: StLoc[193](t2#1#187: address)
+	1259: ImmBorrowLoc[121](t1#1#187: address)
+	1260: StLoc[123](t1#1#190: &address)
+	1261: ImmBorrowLoc[193](t2#1#187: address)
+	1262: StLoc[195](t2#1#190: &address)
+	1263: CopyLoc[123](t1#1#190: &address)
+	1264: CopyLoc[195](t2#1#190: &address)
+	1265: Eq
+	1266: Not
+	1267: BrFalse(1286)
+B75:
+	1268: LdConst[4](vector<u8>: "Ass..)
+	1269: Call string::utf8(vector<u8>): String
+	1270: StLoc[64](%#68: String)
+	1271: ImmBorrowLoc[64](%#68: String)
+	1272: Call debug::print<String>(&String)
+	1273: MoveLoc[123](t1#1#190: &address)
+	1274: Call debug::print<address>(&address)
+	1275: LdConst[5](vector<u8>: "!="..)
+	1276: Call string::utf8(vector<u8>): String
+	1277: StLoc[65](%#69: String)
+	1278: ImmBorrowLoc[65](%#69: String)
+	1279: Call debug::print<String>(&String)
+	1280: MoveLoc[195](t2#1#190: &address)
+	1281: Call debug::print<address>(&address)
+	1282: MoveLoc[82](ctx#5#0: &mut TxContext)
+	1283: Pop
+	1284: LdU64(13906839220929953791)
+	1285: Abort
+B76:
+	1286: MoveLoc[195](t2#1#190: &address)
+	1287: Pop
+	1288: MoveLoc[123](t1#1#190: &address)
+	1289: Pop
+	1290: CopyLoc[82](ctx#5#0: &mut TxContext)
+	1291: FreezeRef
+	1292: Call tx_context::reference_gas_price(&TxContext): u64
+	1293: StLoc[124](t1#1#193: u64)
+	1294: LdU64(1000)
+	1295: StLoc[196](t2#1#193: u64)
+	1296: ImmBorrowLoc[124](t1#1#193: u64)
+	1297: StLoc[125](t1#1#196: &u64)
+	1298: ImmBorrowLoc[196](t2#1#193: u64)
+	1299: StLoc[197](t2#1#196: &u64)
+	1300: CopyLoc[125](t1#1#196: &u64)
+	1301: CopyLoc[197](t2#1#196: &u64)
+	1302: Eq
+	1303: Not
+	1304: BrFalse(1323)
+B77:
+	1305: LdConst[4](vector<u8>: "Ass..)
+	1306: Call string::utf8(vector<u8>): String
+	1307: StLoc[67](%#70: String)
+	1308: ImmBorrowLoc[67](%#70: String)
+	1309: Call debug::print<String>(&String)
+	1310: MoveLoc[125](t1#1#196: &u64)
+	1311: Call debug::print<u64>(&u64)
+	1312: LdConst[5](vector<u8>: "!="..)
+	1313: Call string::utf8(vector<u8>): String
+	1314: StLoc[68](%#71: String)
+	1315: ImmBorrowLoc[68](%#71: String)
+	1316: Call debug::print<String>(&String)
+	1317: MoveLoc[197](t2#1#196: &u64)
+	1318: Call debug::print<u64>(&u64)
+	1319: MoveLoc[82](ctx#5#0: &mut TxContext)
+	1320: Pop
+	1321: LdU64(13906839225224921087)
+	1322: Abort
+B78:
+	1323: MoveLoc[197](t2#1#196: &u64)
+	1324: Pop
+	1325: MoveLoc[125](t1#1#196: &u64)
+	1326: Pop
+	1327: CopyLoc[82](ctx#5#0: &mut TxContext)
+	1328: FreezeRef
+	1329: Call tx_context::gas_price(&TxContext): u64
+	1330: StLoc[126](t1#1#199: u64)
+	1331: LdU64(800)
+	1332: StLoc[198](t2#1#199: u64)
+	1333: ImmBorrowLoc[126](t1#1#199: u64)
+	1334: StLoc[127](t1#1#202: &u64)
+	1335: ImmBorrowLoc[198](t2#1#199: u64)
+	1336: StLoc[199](t2#1#202: &u64)
+	1337: CopyLoc[127](t1#1#202: &u64)
+	1338: CopyLoc[199](t2#1#202: &u64)
+	1339: Eq
+	1340: Not
+	1341: BrFalse(1360)
+B79:
+	1342: LdConst[4](vector<u8>: "Ass..)
+	1343: Call string::utf8(vector<u8>): String
+	1344: StLoc[69](%#72: String)
+	1345: ImmBorrowLoc[69](%#72: String)
+	1346: Call debug::print<String>(&String)
+	1347: MoveLoc[127](t1#1#202: &u64)
+	1348: Call debug::print<u64>(&u64)
+	1349: LdConst[5](vector<u8>: "!="..)
+	1350: Call string::utf8(vector<u8>): String
+	1351: StLoc[70](%#73: String)
+	1352: ImmBorrowLoc[70](%#73: String)
+	1353: Call debug::print<String>(&String)
+	1354: MoveLoc[199](t2#1#202: &u64)
+	1355: Call debug::print<u64>(&u64)
+	1356: MoveLoc[82](ctx#5#0: &mut TxContext)
+	1357: Pop
+	1358: LdU64(13906839229519888383)
+	1359: Abort
+B80:
+	1360: MoveLoc[199](t2#1#202: &u64)
+	1361: Pop
+	1362: MoveLoc[127](t1#1#202: &u64)
+	1363: Pop
+	1364: CopyLoc[82](ctx#5#0: &mut TxContext)
+	1365: FreezeRef
+	1366: Call tx_context::gas_budget(&TxContext): u64
+	1367: StLoc[128](t1#1#205: u64)
+	1368: LdU64(100000)
+	1369: StLoc[200](t2#1#205: u64)
+	1370: ImmBorrowLoc[128](t1#1#205: u64)
+	1371: StLoc[129](t1#1#208: &u64)
+	1372: ImmBorrowLoc[200](t2#1#205: u64)
+	1373: StLoc[201](t2#1#208: &u64)
+	1374: CopyLoc[129](t1#1#208: &u64)
+	1375: CopyLoc[201](t2#1#208: &u64)
+	1376: Eq
+	1377: Not
+	1378: BrFalse(1397)
+B81:
+	1379: LdConst[4](vector<u8>: "Ass..)
+	1380: Call string::utf8(vector<u8>): String
+	1381: StLoc[71](%#74: String)
+	1382: ImmBorrowLoc[71](%#74: String)
+	1383: Call debug::print<String>(&String)
+	1384: MoveLoc[129](t1#1#208: &u64)
+	1385: Call debug::print<u64>(&u64)
+	1386: LdConst[5](vector<u8>: "!="..)
+	1387: Call string::utf8(vector<u8>): String
+	1388: StLoc[72](%#75: String)
+	1389: ImmBorrowLoc[72](%#75: String)
+	1390: Call debug::print<String>(&String)
+	1391: MoveLoc[201](t2#1#208: &u64)
+	1392: Call debug::print<u64>(&u64)
+	1393: MoveLoc[82](ctx#5#0: &mut TxContext)
+	1394: Pop
+	1395: LdU64(13906839233814855679)
+	1396: Abort
+B82:
+	1397: MoveLoc[201](t2#1#208: &u64)
+	1398: Pop
+	1399: MoveLoc[129](t1#1#208: &u64)
+	1400: Pop
+	1401: MoveLoc[82](ctx#5#0: &mut TxContext)
+	1402: FreezeRef
+	1403: Call tx_context::ids_created(&TxContext): u64
+	1404: StLoc[130](t1#1#211: u64)
+	1405: LdU64(5)
+	1406: StLoc[202](t2#1#211: u64)
+	1407: ImmBorrowLoc[130](t1#1#211: u64)
+	1408: StLoc[131](t1#1#214: &u64)
+	1409: ImmBorrowLoc[202](t2#1#211: u64)
+	1410: StLoc[203](t2#1#214: &u64)
+	1411: CopyLoc[131](t1#1#214: &u64)
+	1412: CopyLoc[203](t2#1#214: &u64)
+	1413: Eq
+	1414: Not
+	1415: BrFalse(1432)
+B83:
+	1416: LdConst[4](vector<u8>: "Ass..)
+	1417: Call string::utf8(vector<u8>): String
+	1418: StLoc[73](%#76: String)
+	1419: ImmBorrowLoc[73](%#76: String)
+	1420: Call debug::print<String>(&String)
+	1421: MoveLoc[131](t1#1#214: &u64)
+	1422: Call debug::print<u64>(&u64)
+	1423: LdConst[5](vector<u8>: "!="..)
+	1424: Call string::utf8(vector<u8>): String
+	1425: StLoc[74](%#77: String)
+	1426: ImmBorrowLoc[74](%#77: String)
+	1427: Call debug::print<String>(&String)
+	1428: MoveLoc[203](t2#1#214: &u64)
+	1429: Call debug::print<u64>(&u64)
+	1430: LdU64(13906839238109822975)
+	1431: Abort
+B84:
+	1432: MoveLoc[203](t2#1#214: &u64)
+	1433: Pop
+	1434: MoveLoc[131](t1#1#214: &u64)
+	1435: Pop
+	1436: ImmBorrowLoc[87](scenario#1#0: Scenario)
+	1437: Call test_scenario::ctx_builder(&Scenario): TxContextBuilder
+	1438: Call test_scenario::unset_sponsor(TxContextBuilder): TxContextBuilder
+	1439: StLoc[86](ctx_builder#4#0: TxContextBuilder)
+	1440: MutBorrowLoc[87](scenario#1#0: Scenario)
+	1441: MoveLoc[86](ctx_builder#4#0: TxContextBuilder)
+	1442: Call test_scenario::next_with_context(&mut Scenario, TxContextBuilder): TransactionEffects
+	1443: Pop
+	1444: MutBorrowLoc[87](scenario#1#0: Scenario)
+	1445: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	1446: FreezeRef
+	1447: Call tx_context::sponsor(&TxContext): Option<address>
+	1448: StLoc[75](%#78: Option<address>)
+	1449: ImmBorrowLoc[75](%#78: Option<address>)
+	1450: Call option::is_none<address>(&Option<address>): bool
+	1451: BrFalse(1453)
+B85:
+	1452: Branch(1455)
+B86:
+	1453: LdU64(13906839263879626751)
+	1454: Abort
+B87:
+	1455: MoveLoc[87](scenario#1#0: Scenario)
+	1456: Call test_scenario::end(Scenario): TransactionEffects
+	1457: Pop
+	1458: Ret
+}
+
+tx_context_with_builder() {
+L0:	%#1: String
+L1:	%#10: String
+L2:	%#11: String
+L3:	%#12: String
+L4:	%#13: String
+L5:	%#14: String
+L6:	%#15: String
+L7:	%#16: String
+L8:	%#17: String
+L9:	%#18: String
+L10:	%#19: String
+L11:	%#2: String
+L12:	%#20: String
+L13:	%#21: String
+L14:	%#22: String
+L15:	%#23: String
+L16:	%#24: String
+L17:	%#25: String
+L18:	%#26: String
+L19:	%#27: String
+L20:	%#28: String
+L21:	%#29: String
+L22:	%#3: String
+L23:	%#4: String
+L24:	%#5: String
+L25:	%#6: String
+L26:	%#7: Option<address>
+L27:	%#8: String
+L28:	%#9: String
+L29:	ctx#1#0: &mut TxContext
+L30:	ctx#2#0: &mut TxContext
+L31:	ctx_builder#2#0: TxContextBuilder
+L32:	ctx_builder#3#0: TxContextBuilder
+L33:	ctx_builder#4#0: TxContextBuilder
+L34:	epoch#1#0: u64
+L35:	epoch#2#0: u64
+L36:	epoch#3#0: u64
+L37:	scenario#1#0: Scenario
+L38:	t1#1#1: address
+L39:	t1#1#10: &u64
+L40:	t1#1#13: u64
+L41:	t1#1#16: &u64
+L42:	t1#1#19: u64
+L43:	t1#1#22: &u64
+L44:	t1#1#25: u64
+L45:	t1#1#28: &u64
+L46:	t1#1#31: u64
+L47:	t1#1#34: &u64
+L48:	t1#1#37: u64
+L49:	t1#1#4: &address
+L50:	t1#1#40: &u64
+L51:	t1#1#43: u64
+L52:	t1#1#46: &u64
+L53:	t1#1#49: u64
+L54:	t1#1#52: &u64
+L55:	t1#1#55: u64
+L56:	t1#1#58: &u64
+L57:	t1#1#61: u64
+L58:	t1#1#64: &u64
+L59:	t1#1#67: u64
+L60:	t1#1#7: u64
+L61:	t1#1#70: &u64
+L62:	t1#1#73: u64
+L63:	t1#1#76: &u64
+L64:	t1#1#79: u64
+L65:	t1#1#82: &u64
+L66:	t2#1#1: address
+L67:	t2#1#10: &u64
+L68:	t2#1#13: u64
+L69:	t2#1#16: &u64
+L70:	t2#1#19: u64
+L71:	t2#1#22: &u64
+L72:	t2#1#25: u64
+L73:	t2#1#28: &u64
+L74:	t2#1#31: u64
+L75:	t2#1#34: &u64
+L76:	t2#1#37: u64
+L77:	t2#1#4: &address
+L78:	t2#1#40: &u64
+L79:	t2#1#43: u64
+L80:	t2#1#46: &u64
+L81:	t2#1#49: u64
+L82:	t2#1#52: &u64
+L83:	t2#1#55: u64
+L84:	t2#1#58: &u64
+L85:	t2#1#61: u64
+L86:	t2#1#64: &u64
+L87:	t2#1#67: u64
+L88:	t2#1#7: u64
+L89:	t2#1#70: &u64
+L90:	t2#1#73: u64
+L91:	t2#1#76: &u64
+L92:	t2#1#79: u64
+L93:	t2#1#82: &u64
+B0:
+	0: LdConst[7](address: 0x00..)
+	1: Call test_scenario::ctx_builder_from_sender(address): TxContextBuilder
+	2: LdU64(42)
+	3: Call test_scenario::set_epoch(TxContextBuilder, u64): TxContextBuilder
+	4: LdU64(1000000000)
+	5: Call test_scenario::set_epoch_timestamp(TxContextBuilder, u64): TxContextBuilder
+	6: LdU64(3)
+	7: Call test_scenario::set_ids_created(TxContextBuilder, u64): TxContextBuilder
+	8: LdU64(1000)
+	9: Call test_scenario::set_reference_gas_price(TxContextBuilder, u64): TxContextBuilder
+	10: LdU64(700)
+	11: Call test_scenario::set_gas_price(TxContextBuilder, u64): TxContextBuilder
+	12: LdU64(100000)
+	13: Call test_scenario::set_gas_budget(TxContextBuilder, u64): TxContextBuilder
+	14: Call test_scenario::begin_with_context(TxContextBuilder): Scenario
+	15: StLoc[37](scenario#1#0: Scenario)
+	16: MutBorrowLoc[37](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: StLoc[29](ctx#1#0: &mut TxContext)
+	19: CopyLoc[29](ctx#1#0: &mut TxContext)
+	20: FreezeRef
+	21: Call tx_context::sender(&TxContext): address
+	22: StLoc[38](t1#1#1: address)
+	23: LdConst[7](address: 0x00..)
+	24: StLoc[66](t2#1#1: address)
+	25: ImmBorrowLoc[38](t1#1#1: address)
+	26: StLoc[49](t1#1#4: &address)
+	27: ImmBorrowLoc[66](t2#1#1: address)
+	28: StLoc[77](t2#1#4: &address)
+	29: CopyLoc[49](t1#1#4: &address)
+	30: CopyLoc[77](t2#1#4: &address)
+	31: Eq
+	32: Not
+	33: BrFalse(52)
+B1:
+	34: LdConst[4](vector<u8>: "Ass..)
+	35: Call string::utf8(vector<u8>): String
+	36: StLoc[0](%#1: String)
+	37: ImmBorrowLoc[0](%#1: String)
+	38: Call debug::print<String>(&String)
+	39: MoveLoc[49](t1#1#4: &address)
+	40: Call debug::print<address>(&address)
+	41: LdConst[5](vector<u8>: "!="..)
+	42: Call string::utf8(vector<u8>): String
+	43: StLoc[11](%#2: String)
+	44: ImmBorrowLoc[11](%#2: String)
+	45: Call debug::print<String>(&String)
+	46: MoveLoc[77](t2#1#4: &address)
+	47: Call debug::print<address>(&address)
+	48: MoveLoc[29](ctx#1#0: &mut TxContext)
+	49: Pop
+	50: LdU64(13906839336894070783)
+	51: Abort
+B2:
+	52: MoveLoc[77](t2#1#4: &address)
+	53: Pop
+	54: MoveLoc[49](t1#1#4: &address)
+	55: Pop
+	56: CopyLoc[29](ctx#1#0: &mut TxContext)
+	57: FreezeRef
+	58: Call tx_context::epoch(&TxContext): u64
+	59: StLoc[60](t1#1#7: u64)
+	60: LdU64(42)
+	61: StLoc[88](t2#1#7: u64)
+	62: ImmBorrowLoc[60](t1#1#7: u64)
+	63: StLoc[39](t1#1#10: &u64)
+	64: ImmBorrowLoc[88](t2#1#7: u64)
+	65: StLoc[67](t2#1#10: &u64)
+	66: CopyLoc[39](t1#1#10: &u64)
+	67: CopyLoc[67](t2#1#10: &u64)
+	68: Eq
+	69: Not
+	70: BrFalse(89)
+B3:
+	71: LdConst[4](vector<u8>: "Ass..)
+	72: Call string::utf8(vector<u8>): String
+	73: StLoc[22](%#3: String)
+	74: ImmBorrowLoc[22](%#3: String)
+	75: Call debug::print<String>(&String)
+	76: MoveLoc[39](t1#1#10: &u64)
+	77: Call debug::print<u64>(&u64)
+	78: LdConst[5](vector<u8>: "!="..)
+	79: Call string::utf8(vector<u8>): String
+	80: StLoc[23](%#4: String)
+	81: ImmBorrowLoc[23](%#4: String)
+	82: Call debug::print<String>(&String)
+	83: MoveLoc[67](t2#1#10: &u64)
+	84: Call debug::print<u64>(&u64)
+	85: MoveLoc[29](ctx#1#0: &mut TxContext)
+	86: Pop
+	87: LdU64(13906839341189038079)
+	88: Abort
+B4:
+	89: MoveLoc[67](t2#1#10: &u64)
+	90: Pop
+	91: MoveLoc[39](t1#1#10: &u64)
+	92: Pop
+	93: CopyLoc[29](ctx#1#0: &mut TxContext)
+	94: FreezeRef
+	95: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	96: StLoc[40](t1#1#13: u64)
+	97: LdU64(1000000000)
+	98: StLoc[68](t2#1#13: u64)
+	99: ImmBorrowLoc[40](t1#1#13: u64)
+	100: StLoc[41](t1#1#16: &u64)
+	101: ImmBorrowLoc[68](t2#1#13: u64)
+	102: StLoc[69](t2#1#16: &u64)
+	103: CopyLoc[41](t1#1#16: &u64)
+	104: CopyLoc[69](t2#1#16: &u64)
+	105: Eq
+	106: Not
+	107: BrFalse(126)
+B5:
+	108: LdConst[4](vector<u8>: "Ass..)
+	109: Call string::utf8(vector<u8>): String
+	110: StLoc[24](%#5: String)
+	111: ImmBorrowLoc[24](%#5: String)
+	112: Call debug::print<String>(&String)
+	113: MoveLoc[41](t1#1#16: &u64)
+	114: Call debug::print<u64>(&u64)
+	115: LdConst[5](vector<u8>: "!="..)
+	116: Call string::utf8(vector<u8>): String
+	117: StLoc[25](%#6: String)
+	118: ImmBorrowLoc[25](%#6: String)
+	119: Call debug::print<String>(&String)
+	120: MoveLoc[69](t2#1#16: &u64)
+	121: Call debug::print<u64>(&u64)
+	122: MoveLoc[29](ctx#1#0: &mut TxContext)
+	123: Pop
+	124: LdU64(13906839345484005375)
+	125: Abort
+B6:
+	126: MoveLoc[69](t2#1#16: &u64)
+	127: Pop
+	128: MoveLoc[41](t1#1#16: &u64)
+	129: Pop
+	130: CopyLoc[29](ctx#1#0: &mut TxContext)
+	131: FreezeRef
+	132: Call tx_context::sponsor(&TxContext): Option<address>
+	133: StLoc[26](%#7: Option<address>)
+	134: ImmBorrowLoc[26](%#7: Option<address>)
+	135: Call option::is_none<address>(&Option<address>): bool
+	136: BrFalse(138)
+B7:
+	137: Branch(142)
+B8:
+	138: MoveLoc[29](ctx#1#0: &mut TxContext)
+	139: Pop
+	140: LdU64(13906839349778972671)
+	141: Abort
+B9:
+	142: CopyLoc[29](ctx#1#0: &mut TxContext)
+	143: FreezeRef
+	144: Call tx_context::reference_gas_price(&TxContext): u64
+	145: StLoc[42](t1#1#19: u64)
+	146: LdU64(1000)
+	147: StLoc[70](t2#1#19: u64)
+	148: ImmBorrowLoc[42](t1#1#19: u64)
+	149: StLoc[43](t1#1#22: &u64)
+	150: ImmBorrowLoc[70](t2#1#19: u64)
+	151: StLoc[71](t2#1#22: &u64)
+	152: CopyLoc[43](t1#1#22: &u64)
+	153: CopyLoc[71](t2#1#22: &u64)
+	154: Eq
+	155: Not
+	156: BrFalse(175)
+B10:
+	157: LdConst[4](vector<u8>: "Ass..)
+	158: Call string::utf8(vector<u8>): String
+	159: StLoc[27](%#8: String)
+	160: ImmBorrowLoc[27](%#8: String)
+	161: Call debug::print<String>(&String)
+	162: MoveLoc[43](t1#1#22: &u64)
+	163: Call debug::print<u64>(&u64)
+	164: LdConst[5](vector<u8>: "!="..)
+	165: Call string::utf8(vector<u8>): String
+	166: StLoc[28](%#9: String)
+	167: ImmBorrowLoc[28](%#9: String)
+	168: Call debug::print<String>(&String)
+	169: MoveLoc[71](t2#1#22: &u64)
+	170: Call debug::print<u64>(&u64)
+	171: MoveLoc[29](ctx#1#0: &mut TxContext)
+	172: Pop
+	173: LdU64(13906839354073939967)
+	174: Abort
+B11:
+	175: MoveLoc[71](t2#1#22: &u64)
+	176: Pop
+	177: MoveLoc[43](t1#1#22: &u64)
+	178: Pop
+	179: CopyLoc[29](ctx#1#0: &mut TxContext)
+	180: FreezeRef
+	181: Call tx_context::gas_price(&TxContext): u64
+	182: StLoc[44](t1#1#25: u64)
+	183: LdU64(700)
+	184: StLoc[72](t2#1#25: u64)
+	185: ImmBorrowLoc[44](t1#1#25: u64)
+	186: StLoc[45](t1#1#28: &u64)
+	187: ImmBorrowLoc[72](t2#1#25: u64)
+	188: StLoc[73](t2#1#28: &u64)
+	189: CopyLoc[45](t1#1#28: &u64)
+	190: CopyLoc[73](t2#1#28: &u64)
+	191: Eq
+	192: Not
+	193: BrFalse(212)
+B12:
+	194: LdConst[4](vector<u8>: "Ass..)
+	195: Call string::utf8(vector<u8>): String
+	196: StLoc[1](%#10: String)
+	197: ImmBorrowLoc[1](%#10: String)
+	198: Call debug::print<String>(&String)
+	199: MoveLoc[45](t1#1#28: &u64)
+	200: Call debug::print<u64>(&u64)
+	201: LdConst[5](vector<u8>: "!="..)
+	202: Call string::utf8(vector<u8>): String
+	203: StLoc[2](%#11: String)
+	204: ImmBorrowLoc[2](%#11: String)
+	205: Call debug::print<String>(&String)
+	206: MoveLoc[73](t2#1#28: &u64)
+	207: Call debug::print<u64>(&u64)
+	208: MoveLoc[29](ctx#1#0: &mut TxContext)
+	209: Pop
+	210: LdU64(13906839358368907263)
+	211: Abort
+B13:
+	212: MoveLoc[73](t2#1#28: &u64)
+	213: Pop
+	214: MoveLoc[45](t1#1#28: &u64)
+	215: Pop
+	216: CopyLoc[29](ctx#1#0: &mut TxContext)
+	217: FreezeRef
+	218: Call tx_context::gas_budget(&TxContext): u64
+	219: StLoc[46](t1#1#31: u64)
+	220: LdU64(100000)
+	221: StLoc[74](t2#1#31: u64)
+	222: ImmBorrowLoc[46](t1#1#31: u64)
+	223: StLoc[47](t1#1#34: &u64)
+	224: ImmBorrowLoc[74](t2#1#31: u64)
+	225: StLoc[75](t2#1#34: &u64)
+	226: CopyLoc[47](t1#1#34: &u64)
+	227: CopyLoc[75](t2#1#34: &u64)
+	228: Eq
+	229: Not
+	230: BrFalse(249)
+B14:
+	231: LdConst[4](vector<u8>: "Ass..)
+	232: Call string::utf8(vector<u8>): String
+	233: StLoc[3](%#12: String)
+	234: ImmBorrowLoc[3](%#12: String)
+	235: Call debug::print<String>(&String)
+	236: MoveLoc[47](t1#1#34: &u64)
+	237: Call debug::print<u64>(&u64)
+	238: LdConst[5](vector<u8>: "!="..)
+	239: Call string::utf8(vector<u8>): String
+	240: StLoc[4](%#13: String)
+	241: ImmBorrowLoc[4](%#13: String)
+	242: Call debug::print<String>(&String)
+	243: MoveLoc[75](t2#1#34: &u64)
+	244: Call debug::print<u64>(&u64)
+	245: MoveLoc[29](ctx#1#0: &mut TxContext)
+	246: Pop
+	247: LdU64(13906839362663874559)
+	248: Abort
+B15:
+	249: MoveLoc[75](t2#1#34: &u64)
+	250: Pop
+	251: MoveLoc[47](t1#1#34: &u64)
+	252: Pop
+	253: CopyLoc[29](ctx#1#0: &mut TxContext)
+	254: FreezeRef
+	255: Call tx_context::ids_created(&TxContext): u64
+	256: StLoc[48](t1#1#37: u64)
+	257: LdU64(3)
+	258: StLoc[76](t2#1#37: u64)
+	259: ImmBorrowLoc[48](t1#1#37: u64)
+	260: StLoc[50](t1#1#40: &u64)
+	261: ImmBorrowLoc[76](t2#1#37: u64)
+	262: StLoc[78](t2#1#40: &u64)
+	263: CopyLoc[50](t1#1#40: &u64)
+	264: CopyLoc[78](t2#1#40: &u64)
+	265: Eq
+	266: Not
+	267: BrFalse(286)
+B16:
+	268: LdConst[4](vector<u8>: "Ass..)
+	269: Call string::utf8(vector<u8>): String
+	270: StLoc[5](%#14: String)
+	271: ImmBorrowLoc[5](%#14: String)
+	272: Call debug::print<String>(&String)
+	273: MoveLoc[50](t1#1#40: &u64)
+	274: Call debug::print<u64>(&u64)
+	275: LdConst[5](vector<u8>: "!="..)
+	276: Call string::utf8(vector<u8>): String
+	277: StLoc[6](%#15: String)
+	278: ImmBorrowLoc[6](%#15: String)
+	279: Call debug::print<String>(&String)
+	280: MoveLoc[78](t2#1#40: &u64)
+	281: Call debug::print<u64>(&u64)
+	282: MoveLoc[29](ctx#1#0: &mut TxContext)
+	283: Pop
+	284: LdU64(13906839366958841855)
+	285: Abort
+B17:
+	286: MoveLoc[78](t2#1#40: &u64)
+	287: Pop
+	288: MoveLoc[50](t1#1#40: &u64)
+	289: Pop
+	290: MoveLoc[29](ctx#1#0: &mut TxContext)
+	291: FreezeRef
+	292: Call tx_context::epoch(&TxContext): u64
+	293: LdU64(1)
+	294: Add
+	295: StLoc[34](epoch#1#0: u64)
+	296: ImmBorrowLoc[37](scenario#1#0: Scenario)
+	297: Call test_scenario::ctx_builder(&Scenario): TxContextBuilder
+	298: CopyLoc[34](epoch#1#0: u64)
+	299: Call test_scenario::set_epoch(TxContextBuilder, u64): TxContextBuilder
+	300: StLoc[31](ctx_builder#2#0: TxContextBuilder)
+	301: MutBorrowLoc[37](scenario#1#0: Scenario)
+	302: MoveLoc[31](ctx_builder#2#0: TxContextBuilder)
+	303: Call test_scenario::next_with_context(&mut Scenario, TxContextBuilder): TransactionEffects
+	304: Pop
+	305: MutBorrowLoc[37](scenario#1#0: Scenario)
+	306: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	307: FreezeRef
+	308: Call tx_context::epoch(&TxContext): u64
+	309: StLoc[51](t1#1#43: u64)
+	310: LdU64(43)
+	311: StLoc[79](t2#1#43: u64)
+	312: ImmBorrowLoc[51](t1#1#43: u64)
+	313: StLoc[52](t1#1#46: &u64)
+	314: ImmBorrowLoc[79](t2#1#43: u64)
+	315: StLoc[80](t2#1#46: &u64)
+	316: CopyLoc[52](t1#1#46: &u64)
+	317: CopyLoc[80](t2#1#46: &u64)
+	318: Eq
+	319: Not
+	320: BrFalse(337)
+B18:
+	321: LdConst[4](vector<u8>: "Ass..)
+	322: Call string::utf8(vector<u8>): String
+	323: StLoc[7](%#16: String)
+	324: ImmBorrowLoc[7](%#16: String)
+	325: Call debug::print<String>(&String)
+	326: MoveLoc[52](t1#1#46: &u64)
+	327: Call debug::print<u64>(&u64)
+	328: LdConst[5](vector<u8>: "!="..)
+	329: Call string::utf8(vector<u8>): String
+	330: StLoc[8](%#17: String)
+	331: ImmBorrowLoc[8](%#17: String)
+	332: Call debug::print<String>(&String)
+	333: MoveLoc[80](t2#1#46: &u64)
+	334: Call debug::print<u64>(&u64)
+	335: LdU64(13906839392728645631)
+	336: Abort
+B19:
+	337: MoveLoc[80](t2#1#46: &u64)
+	338: Pop
+	339: MoveLoc[52](t1#1#46: &u64)
+	340: Pop
+	341: ImmBorrowLoc[37](scenario#1#0: Scenario)
+	342: Call test_scenario::num_concluded_txes(&Scenario): u64
+	343: StLoc[53](t1#1#49: u64)
+	344: LdU64(1)
+	345: StLoc[81](t2#1#49: u64)
+	346: ImmBorrowLoc[53](t1#1#49: u64)
+	347: StLoc[54](t1#1#52: &u64)
+	348: ImmBorrowLoc[81](t2#1#49: u64)
+	349: StLoc[82](t2#1#52: &u64)
+	350: CopyLoc[54](t1#1#52: &u64)
+	351: CopyLoc[82](t2#1#52: &u64)
+	352: Eq
+	353: Not
+	354: BrFalse(371)
+B20:
+	355: LdConst[4](vector<u8>: "Ass..)
+	356: Call string::utf8(vector<u8>): String
+	357: StLoc[9](%#18: String)
+	358: ImmBorrowLoc[9](%#18: String)
+	359: Call debug::print<String>(&String)
+	360: MoveLoc[54](t1#1#52: &u64)
+	361: Call debug::print<u64>(&u64)
+	362: LdConst[5](vector<u8>: "!="..)
+	363: Call string::utf8(vector<u8>): String
+	364: StLoc[10](%#19: String)
+	365: ImmBorrowLoc[10](%#19: String)
+	366: Call debug::print<String>(&String)
+	367: MoveLoc[82](t2#1#52: &u64)
+	368: Call debug::print<u64>(&u64)
+	369: LdU64(13906839397023612927)
+	370: Abort
+B21:
+	371: MoveLoc[82](t2#1#52: &u64)
+	372: Pop
+	373: MoveLoc[54](t1#1#52: &u64)
+	374: Pop
+	375: MoveLoc[34](epoch#1#0: u64)
+	376: LdU64(10)
+	377: Add
+	378: StLoc[35](epoch#2#0: u64)
+	379: ImmBorrowLoc[37](scenario#1#0: Scenario)
+	380: Call test_scenario::ctx_builder(&Scenario): TxContextBuilder
+	381: CopyLoc[35](epoch#2#0: u64)
+	382: Call test_scenario::set_epoch(TxContextBuilder, u64): TxContextBuilder
+	383: StLoc[32](ctx_builder#3#0: TxContextBuilder)
+	384: MutBorrowLoc[37](scenario#1#0: Scenario)
+	385: MoveLoc[32](ctx_builder#3#0: TxContextBuilder)
+	386: Call test_scenario::next_with_context(&mut Scenario, TxContextBuilder): TransactionEffects
+	387: Pop
+	388: ImmBorrowLoc[37](scenario#1#0: Scenario)
+	389: Call test_scenario::num_concluded_txes(&Scenario): u64
+	390: StLoc[55](t1#1#55: u64)
+	391: LdU64(11)
+	392: StLoc[83](t2#1#55: u64)
+	393: ImmBorrowLoc[55](t1#1#55: u64)
+	394: StLoc[56](t1#1#58: &u64)
+	395: ImmBorrowLoc[83](t2#1#55: u64)
+	396: StLoc[84](t2#1#58: &u64)
+	397: CopyLoc[56](t1#1#58: &u64)
+	398: CopyLoc[84](t2#1#58: &u64)
+	399: Eq
+	400: Not
+	401: BrFalse(418)
+B22:
+	402: LdConst[4](vector<u8>: "Ass..)
+	403: Call string::utf8(vector<u8>): String
+	404: StLoc[12](%#20: String)
+	405: ImmBorrowLoc[12](%#20: String)
+	406: Call debug::print<String>(&String)
+	407: MoveLoc[56](t1#1#58: &u64)
+	408: Call debug::print<u64>(&u64)
+	409: LdConst[5](vector<u8>: "!="..)
+	410: Call string::utf8(vector<u8>): String
+	411: StLoc[13](%#21: String)
+	412: ImmBorrowLoc[13](%#21: String)
+	413: Call debug::print<String>(&String)
+	414: MoveLoc[84](t2#1#58: &u64)
+	415: Call debug::print<u64>(&u64)
+	416: LdU64(13906839418498449407)
+	417: Abort
+B23:
+	418: MoveLoc[84](t2#1#58: &u64)
+	419: Pop
+	420: MoveLoc[56](t1#1#58: &u64)
+	421: Pop
+	422: MutBorrowLoc[37](scenario#1#0: Scenario)
+	423: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	424: FreezeRef
+	425: Call tx_context::epoch(&TxContext): u64
+	426: StLoc[57](t1#1#61: u64)
+	427: LdU64(53)
+	428: StLoc[85](t2#1#61: u64)
+	429: ImmBorrowLoc[57](t1#1#61: u64)
+	430: StLoc[58](t1#1#64: &u64)
+	431: ImmBorrowLoc[85](t2#1#61: u64)
+	432: StLoc[86](t2#1#64: &u64)
+	433: CopyLoc[58](t1#1#64: &u64)
+	434: CopyLoc[86](t2#1#64: &u64)
+	435: Eq
+	436: Not
+	437: BrFalse(454)
+B24:
+	438: LdConst[4](vector<u8>: "Ass..)
+	439: Call string::utf8(vector<u8>): String
+	440: StLoc[14](%#22: String)
+	441: ImmBorrowLoc[14](%#22: String)
+	442: Call debug::print<String>(&String)
+	443: MoveLoc[58](t1#1#64: &u64)
+	444: Call debug::print<u64>(&u64)
+	445: LdConst[5](vector<u8>: "!="..)
+	446: Call string::utf8(vector<u8>): String
+	447: StLoc[15](%#23: String)
+	448: ImmBorrowLoc[15](%#23: String)
+	449: Call debug::print<String>(&String)
+	450: MoveLoc[86](t2#1#64: &u64)
+	451: Call debug::print<u64>(&u64)
+	452: LdU64(13906839422793416703)
+	453: Abort
+B25:
+	454: MoveLoc[86](t2#1#64: &u64)
+	455: Pop
+	456: MoveLoc[58](t1#1#64: &u64)
+	457: Pop
+	458: MoveLoc[35](epoch#2#0: u64)
+	459: LdU64(10)
+	460: Add
+	461: StLoc[36](epoch#3#0: u64)
+	462: ImmBorrowLoc[37](scenario#1#0: Scenario)
+	463: Call test_scenario::ctx_builder(&Scenario): TxContextBuilder
+	464: MoveLoc[36](epoch#3#0: u64)
+	465: Call test_scenario::set_epoch(TxContextBuilder, u64): TxContextBuilder
+	466: LdU64(2000)
+	467: Call test_scenario::set_reference_gas_price(TxContextBuilder, u64): TxContextBuilder
+	468: StLoc[33](ctx_builder#4#0: TxContextBuilder)
+	469: MutBorrowLoc[37](scenario#1#0: Scenario)
+	470: MoveLoc[33](ctx_builder#4#0: TxContextBuilder)
+	471: Call test_scenario::next_with_context(&mut Scenario, TxContextBuilder): TransactionEffects
+	472: Pop
+	473: ImmBorrowLoc[37](scenario#1#0: Scenario)
+	474: Call test_scenario::num_concluded_txes(&Scenario): u64
+	475: StLoc[59](t1#1#67: u64)
+	476: LdU64(21)
+	477: StLoc[87](t2#1#67: u64)
+	478: ImmBorrowLoc[59](t1#1#67: u64)
+	479: StLoc[61](t1#1#70: &u64)
+	480: ImmBorrowLoc[87](t2#1#67: u64)
+	481: StLoc[89](t2#1#70: &u64)
+	482: CopyLoc[61](t1#1#70: &u64)
+	483: CopyLoc[89](t2#1#70: &u64)
+	484: Eq
+	485: Not
+	486: BrFalse(503)
+B26:
+	487: LdConst[4](vector<u8>: "Ass..)
+	488: Call string::utf8(vector<u8>): String
+	489: StLoc[16](%#24: String)
+	490: ImmBorrowLoc[16](%#24: String)
+	491: Call debug::print<String>(&String)
+	492: MoveLoc[61](t1#1#70: &u64)
+	493: Call debug::print<u64>(&u64)
+	494: LdConst[5](vector<u8>: "!="..)
+	495: Call string::utf8(vector<u8>): String
+	496: StLoc[17](%#25: String)
+	497: ImmBorrowLoc[17](%#25: String)
+	498: Call debug::print<String>(&String)
+	499: MoveLoc[89](t2#1#70: &u64)
+	500: Call debug::print<u64>(&u64)
+	501: LdU64(13906839448563220479)
+	502: Abort
+B27:
+	503: MoveLoc[89](t2#1#70: &u64)
+	504: Pop
+	505: MoveLoc[61](t1#1#70: &u64)
+	506: Pop
+	507: MutBorrowLoc[37](scenario#1#0: Scenario)
+	508: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	509: StLoc[30](ctx#2#0: &mut TxContext)
+	510: CopyLoc[30](ctx#2#0: &mut TxContext)
+	511: FreezeRef
+	512: Call tx_context::epoch(&TxContext): u64
+	513: StLoc[62](t1#1#73: u64)
+	514: LdU64(63)
+	515: StLoc[90](t2#1#73: u64)
+	516: ImmBorrowLoc[62](t1#1#73: u64)
+	517: StLoc[63](t1#1#76: &u64)
+	518: ImmBorrowLoc[90](t2#1#73: u64)
+	519: StLoc[91](t2#1#76: &u64)
+	520: CopyLoc[63](t1#1#76: &u64)
+	521: CopyLoc[91](t2#1#76: &u64)
+	522: Eq
+	523: Not
+	524: BrFalse(543)
+B28:
+	525: LdConst[4](vector<u8>: "Ass..)
+	526: Call string::utf8(vector<u8>): String
+	527: StLoc[18](%#26: String)
+	528: ImmBorrowLoc[18](%#26: String)
+	529: Call debug::print<String>(&String)
+	530: MoveLoc[63](t1#1#76: &u64)
+	531: Call debug::print<u64>(&u64)
+	532: LdConst[5](vector<u8>: "!="..)
+	533: Call string::utf8(vector<u8>): String
+	534: StLoc[19](%#27: String)
+	535: ImmBorrowLoc[19](%#27: String)
+	536: Call debug::print<String>(&String)
+	537: MoveLoc[91](t2#1#76: &u64)
+	538: Call debug::print<u64>(&u64)
+	539: MoveLoc[30](ctx#2#0: &mut TxContext)
+	540: Pop
+	541: LdU64(13906839457153155071)
+	542: Abort
+B29:
+	543: MoveLoc[91](t2#1#76: &u64)
+	544: Pop
+	545: MoveLoc[63](t1#1#76: &u64)
+	546: Pop
+	547: MoveLoc[30](ctx#2#0: &mut TxContext)
+	548: FreezeRef
+	549: Call tx_context::reference_gas_price(&TxContext): u64
+	550: StLoc[64](t1#1#79: u64)
+	551: LdU64(2000)
+	552: StLoc[92](t2#1#79: u64)
+	553: ImmBorrowLoc[64](t1#1#79: u64)
+	554: StLoc[65](t1#1#82: &u64)
+	555: ImmBorrowLoc[92](t2#1#79: u64)
+	556: StLoc[93](t2#1#82: &u64)
+	557: CopyLoc[65](t1#1#82: &u64)
+	558: CopyLoc[93](t2#1#82: &u64)
+	559: Eq
+	560: Not
+	561: BrFalse(578)
+B30:
+	562: LdConst[4](vector<u8>: "Ass..)
+	563: Call string::utf8(vector<u8>): String
+	564: StLoc[20](%#28: String)
+	565: ImmBorrowLoc[20](%#28: String)
+	566: Call debug::print<String>(&String)
+	567: MoveLoc[65](t1#1#82: &u64)
+	568: Call debug::print<u64>(&u64)
+	569: LdConst[5](vector<u8>: "!="..)
+	570: Call string::utf8(vector<u8>): String
+	571: StLoc[21](%#29: String)
+	572: ImmBorrowLoc[21](%#29: String)
+	573: Call debug::print<String>(&String)
+	574: MoveLoc[93](t2#1#82: &u64)
+	575: Call debug::print<u64>(&u64)
+	576: LdU64(13906839461448122367)
+	577: Abort
+B31:
+	578: MoveLoc[93](t2#1#82: &u64)
+	579: Pop
+	580: MoveLoc[65](t1#1#82: &u64)
+	581: Pop
+	582: MoveLoc[37](scenario#1#0: Scenario)
+	583: Call test_scenario::end(Scenario): TransactionEffects
+	584: Pop
+	585: Ret
+}
+
+tx_context_no_rgp() {
+B0:
+	0: LdConst[7](address: 0x00..)
+	1: Call test_scenario::ctx_builder_from_sender(address): TxContextBuilder
+	2: LdU64(42)
+	3: Call test_scenario::set_epoch(TxContextBuilder, u64): TxContextBuilder
+	4: LdU64(1000000000)
+	5: Call test_scenario::set_epoch_timestamp(TxContextBuilder, u64): TxContextBuilder
+	6: LdU64(3)
+	7: Call test_scenario::set_ids_created(TxContextBuilder, u64): TxContextBuilder
+	8: Call test_scenario::unset_reference_gas_price(TxContextBuilder): TxContextBuilder
+	9: LdU64(700)
+	10: Call test_scenario::set_gas_price(TxContextBuilder, u64): TxContextBuilder
+	11: LdU64(100000)
+	12: Call test_scenario::set_gas_budget(TxContextBuilder, u64): TxContextBuilder
+	13: Call test_scenario::begin_with_context(TxContextBuilder): Scenario
+	14: Call test_scenario::end(Scenario): TransactionEffects
+	15: Pop
+	16: Ret
+}
+
+tx_context_bad_epoch() {
+L0:	ctx#1#0: &mut TxContext
+L1:	ctx_builder#2#0: TxContextBuilder
+L2:	scenario#1#0: Scenario
+B0:
+	0: LdConst[7](address: 0x00..)
+	1: Call test_scenario::ctx_builder_from_sender(address): TxContextBuilder
+	2: LdU64(42)
+	3: Call test_scenario::set_epoch(TxContextBuilder, u64): TxContextBuilder
+	4: LdU64(1000000000)
+	5: Call test_scenario::set_epoch_timestamp(TxContextBuilder, u64): TxContextBuilder
+	6: LdU64(3)
+	7: Call test_scenario::set_ids_created(TxContextBuilder, u64): TxContextBuilder
+	8: Call test_scenario::unset_reference_gas_price(TxContextBuilder): TxContextBuilder
+	9: LdU64(700)
+	10: Call test_scenario::set_gas_price(TxContextBuilder, u64): TxContextBuilder
+	11: LdU64(100000)
+	12: Call test_scenario::set_gas_budget(TxContextBuilder, u64): TxContextBuilder
+	13: Call test_scenario::begin_with_context(TxContextBuilder): Scenario
+	14: StLoc[2](scenario#1#0: Scenario)
+	15: MutBorrowLoc[2](scenario#1#0: Scenario)
+	16: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	17: StLoc[0](ctx#1#0: &mut TxContext)
+	18: CopyLoc[0](ctx#1#0: &mut TxContext)
+	19: FreezeRef
+	20: Call test_scenario::ctx_builder_from_context(&TxContext): TxContextBuilder
+	21: MoveLoc[0](ctx#1#0: &mut TxContext)
+	22: FreezeRef
+	23: Call tx_context::epoch(&TxContext): u64
+	24: LdU64(1)
+	25: Sub
+	26: Call test_scenario::set_epoch(TxContextBuilder, u64): TxContextBuilder
+	27: StLoc[1](ctx_builder#2#0: TxContextBuilder)
+	28: MutBorrowLoc[2](scenario#1#0: Scenario)
+	29: MoveLoc[1](ctx_builder#2#0: TxContextBuilder)
+	30: Call test_scenario::next_with_context(&mut Scenario, TxContextBuilder): TransactionEffects
+	31: Pop
+	32: MoveLoc[2](scenario#1#0: Scenario)
+	33: Call test_scenario::end(Scenario): TransactionEffects
+	34: Pop
+	35: Ret
+}
+
+tx_context_bad_rgp_no_epoch_change() {
+L0:	ctx_builder#2#0: TxContextBuilder
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[7](address: 0x00..)
+	1: Call test_scenario::ctx_builder_from_sender(address): TxContextBuilder
+	2: LdU64(42)
+	3: Call test_scenario::set_epoch(TxContextBuilder, u64): TxContextBuilder
+	4: LdU64(1000000000)
+	5: Call test_scenario::set_epoch_timestamp(TxContextBuilder, u64): TxContextBuilder
+	6: LdU64(3)
+	7: Call test_scenario::set_ids_created(TxContextBuilder, u64): TxContextBuilder
+	8: Call test_scenario::unset_reference_gas_price(TxContextBuilder): TxContextBuilder
+	9: LdU64(700)
+	10: Call test_scenario::set_gas_price(TxContextBuilder, u64): TxContextBuilder
+	11: LdU64(100000)
+	12: Call test_scenario::set_gas_budget(TxContextBuilder, u64): TxContextBuilder
+	13: Call test_scenario::begin_with_context(TxContextBuilder): Scenario
+	14: StLoc[1](scenario#1#0: Scenario)
+	15: MutBorrowLoc[1](scenario#1#0: Scenario)
+	16: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	17: FreezeRef
+	18: Call test_scenario::ctx_builder_from_context(&TxContext): TxContextBuilder
+	19: Call test_scenario::unset_reference_gas_price(TxContextBuilder): TxContextBuilder
+	20: StLoc[0](ctx_builder#2#0: TxContextBuilder)
+	21: MutBorrowLoc[1](scenario#1#0: Scenario)
+	22: MoveLoc[0](ctx_builder#2#0: TxContextBuilder)
+	23: Call test_scenario::next_with_context(&mut Scenario, TxContextBuilder): TransactionEffects
+	24: Pop
+	25: MoveLoc[1](scenario#1#0: Scenario)
+	26: Call test_scenario::end(Scenario): TransactionEffects
+	27: Pop
+	28: Ret
+}
+
+tx_context_bad_epoch_timestamp() {
+L0:	ctx#1#0: &mut TxContext
+L1:	ctx_builder#2#0: TxContextBuilder
+L2:	scenario#1#0: Scenario
+B0:
+	0: LdConst[7](address: 0x00..)
+	1: Call test_scenario::ctx_builder_from_sender(address): TxContextBuilder
+	2: LdU64(42)
+	3: Call test_scenario::set_epoch(TxContextBuilder, u64): TxContextBuilder
+	4: LdU64(1000000000)
+	5: Call test_scenario::set_epoch_timestamp(TxContextBuilder, u64): TxContextBuilder
+	6: LdU64(3)
+	7: Call test_scenario::set_ids_created(TxContextBuilder, u64): TxContextBuilder
+	8: Call test_scenario::unset_reference_gas_price(TxContextBuilder): TxContextBuilder
+	9: LdU64(700)
+	10: Call test_scenario::set_gas_price(TxContextBuilder, u64): TxContextBuilder
+	11: LdU64(100000)
+	12: Call test_scenario::set_gas_budget(TxContextBuilder, u64): TxContextBuilder
+	13: Call test_scenario::begin_with_context(TxContextBuilder): Scenario
+	14: StLoc[2](scenario#1#0: Scenario)
+	15: MutBorrowLoc[2](scenario#1#0: Scenario)
+	16: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	17: StLoc[0](ctx#1#0: &mut TxContext)
+	18: CopyLoc[0](ctx#1#0: &mut TxContext)
+	19: FreezeRef
+	20: Call test_scenario::ctx_builder_from_context(&TxContext): TxContextBuilder
+	21: MoveLoc[0](ctx#1#0: &mut TxContext)
+	22: FreezeRef
+	23: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	24: LdU64(1)
+	25: Sub
+	26: Call test_scenario::set_epoch_timestamp(TxContextBuilder, u64): TxContextBuilder
+	27: StLoc[1](ctx_builder#2#0: TxContextBuilder)
+	28: MutBorrowLoc[2](scenario#1#0: Scenario)
+	29: MoveLoc[1](ctx_builder#2#0: TxContextBuilder)
+	30: Call test_scenario::next_with_context(&mut Scenario, TxContextBuilder): TransactionEffects
+	31: Pop
+	32: MoveLoc[2](scenario#1#0: Scenario)
+	33: Call test_scenario::end(Scenario): TransactionEffects
+	34: Pop
+	35: Ret
+}
+
+create_system_objects() {
+L0:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::create_system_objects(&mut Scenario)
+	5: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	6: Call test_scenario::take_shared<Clock>(&Scenario): Clock
+	7: Call test_scenario::return_shared<Clock>(Clock)
+	8: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	9: Call test_scenario::take_shared<Random>(&Scenario): Random
+	10: Call test_scenario::return_shared<Random>(Random)
+	11: ImmBorrowLoc[0](scenario#1#0: Scenario)
+	12: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	13: Call test_scenario::return_shared<DenyList>(DenyList)
+	14: MoveLoc[0](scenario#1#0: Scenario)
+	15: Call test_scenario::end(Scenario): TransactionEffects
+	16: Pop
+	17: Ret
+}
+
+with_shared() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	clock#1#2: &mut Clock
+L3:	obj#1#1: Clock
+L4:	obj#1#9: Random
+L5:	random#1#10: &mut Random
+L6:	s#1#1: &mut Scenario
+L7:	s#1#9: &mut Scenario
+L8:	t1#1#3: u64
+L9:	t1#1#6: &u64
+L10:	t2#1#3: u64
+L11:	t2#1#6: &u64
+L12:	test#1#0: Scenario
+L13:	test#2#2: &mut Scenario
+L14:	test#3#10: &mut Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[12](test#1#0: Scenario)
+	3: MutBorrowLoc[12](test#1#0: Scenario)
+	4: Call test_scenario::create_system_objects(&mut Scenario)
+	5: MutBorrowLoc[12](test#1#0: Scenario)
+	6: StLoc[6](s#1#1: &mut Scenario)
+	7: CopyLoc[6](s#1#1: &mut Scenario)
+	8: FreezeRef
+	9: Call test_scenario::take_shared<Clock>(&Scenario): Clock
+	10: StLoc[3](obj#1#1: Clock)
+	11: MutBorrowLoc[3](obj#1#1: Clock)
+	12: StLoc[2](clock#1#2: &mut Clock)
+	13: MoveLoc[6](s#1#1: &mut Scenario)
+	14: StLoc[13](test#2#2: &mut Scenario)
+	15: MoveLoc[2](clock#1#2: &mut Clock)
+	16: FreezeRef
+	17: Call clock::timestamp_ms(&Clock): u64
+	18: StLoc[8](t1#1#3: u64)
+	19: LdU64(0)
+	20: StLoc[10](t2#1#3: u64)
+	21: ImmBorrowLoc[8](t1#1#3: u64)
+	22: StLoc[9](t1#1#6: &u64)
+	23: ImmBorrowLoc[10](t2#1#3: u64)
+	24: StLoc[11](t2#1#6: &u64)
+	25: CopyLoc[9](t1#1#6: &u64)
+	26: CopyLoc[11](t2#1#6: &u64)
+	27: Eq
+	28: Not
+	29: BrFalse(48)
+B1:
+	30: LdConst[4](vector<u8>: "Ass..)
+	31: Call string::utf8(vector<u8>): String
+	32: StLoc[0](%#1: String)
+	33: ImmBorrowLoc[0](%#1: String)
+	34: Call debug::print<String>(&String)
+	35: MoveLoc[9](t1#1#6: &u64)
+	36: Call debug::print<u64>(&u64)
+	37: LdConst[5](vector<u8>: "!="..)
+	38: Call string::utf8(vector<u8>): String
+	39: StLoc[1](%#2: String)
+	40: ImmBorrowLoc[1](%#2: String)
+	41: Call debug::print<String>(&String)
+	42: MoveLoc[11](t2#1#6: &u64)
+	43: Call debug::print<u64>(&u64)
+	44: MoveLoc[13](test#2#2: &mut Scenario)
+	45: Pop
+	46: LdU64(13906839886649884671)
+	47: Abort
+B2:
+	48: MoveLoc[11](t2#1#6: &u64)
+	49: Pop
+	50: MoveLoc[9](t1#1#6: &u64)
+	51: Pop
+	52: MoveLoc[13](test#2#2: &mut Scenario)
+	53: StLoc[7](s#1#9: &mut Scenario)
+	54: CopyLoc[7](s#1#9: &mut Scenario)
+	55: FreezeRef
+	56: Call test_scenario::take_shared<Random>(&Scenario): Random
+	57: StLoc[4](obj#1#9: Random)
+	58: MutBorrowLoc[4](obj#1#9: Random)
+	59: StLoc[5](random#1#10: &mut Random)
+	60: MoveLoc[7](s#1#9: &mut Scenario)
+	61: StLoc[14](test#3#10: &mut Scenario)
+	62: MoveLoc[5](random#1#10: &mut Random)
+	63: FreezeRef
+	64: MoveLoc[14](test#3#10: &mut Scenario)
+	65: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	66: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	67: Pop
+	68: MoveLoc[4](obj#1#9: Random)
+	69: Call test_scenario::return_shared<Random>(Random)
+	70: MoveLoc[3](obj#1#1: Clock)
+	71: Call test_scenario::return_shared<Clock>(Clock)
+	72: MoveLoc[12](test#1#0: Scenario)
+	73: Call test_scenario::end(Scenario): TransactionEffects
+	74: Pop
+	75: Ret
+}
+
+with_shared_by_id() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	clock#1#2: &mut Clock
+L3:	clock#2#5: &mut Clock
+L4:	obj#1#1: Clock
+L5:	obj#1#3: Clock
+L6:	s#1#1: &mut Scenario
+L7:	s#1#3: &mut Scenario
+L8:	t1#1#6: u64
+L9:	t1#1#9: &u64
+L10:	t2#1#6: u64
+L11:	t2#1#9: &u64
+L12:	test#1#0: Scenario
+L13:	test_clock_id#1#0: ID
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[12](test#1#0: Scenario)
+	3: MutBorrowLoc[12](test#1#0: Scenario)
+	4: Call test_scenario::create_system_objects(&mut Scenario)
+	5: MutBorrowLoc[12](test#1#0: Scenario)
+	6: StLoc[6](s#1#1: &mut Scenario)
+	7: CopyLoc[6](s#1#1: &mut Scenario)
+	8: FreezeRef
+	9: Call test_scenario::take_shared<Clock>(&Scenario): Clock
+	10: StLoc[4](obj#1#1: Clock)
+	11: MutBorrowLoc[4](obj#1#1: Clock)
+	12: StLoc[2](clock#1#2: &mut Clock)
+	13: MoveLoc[6](s#1#1: &mut Scenario)
+	14: Pop
+	15: MoveLoc[2](clock#1#2: &mut Clock)
+	16: FreezeRef
+	17: Call object::id<Clock>(&Clock): ID
+	18: StLoc[13](test_clock_id#1#0: ID)
+	19: MoveLoc[4](obj#1#1: Clock)
+	20: Call test_scenario::return_shared<Clock>(Clock)
+	21: MutBorrowLoc[12](test#1#0: Scenario)
+	22: LdConst[0](address: 0x00..)
+	23: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	24: Pop
+	25: MutBorrowLoc[12](test#1#0: Scenario)
+	26: StLoc[7](s#1#3: &mut Scenario)
+	27: CopyLoc[7](s#1#3: &mut Scenario)
+	28: FreezeRef
+	29: MoveLoc[13](test_clock_id#1#0: ID)
+	30: Call test_scenario::take_shared_by_id<Clock>(&Scenario, ID): Clock
+	31: StLoc[5](obj#1#3: Clock)
+	32: MutBorrowLoc[5](obj#1#3: Clock)
+	33: StLoc[3](clock#2#5: &mut Clock)
+	34: MoveLoc[7](s#1#3: &mut Scenario)
+	35: Pop
+	36: MoveLoc[3](clock#2#5: &mut Clock)
+	37: FreezeRef
+	38: Call clock::timestamp_ms(&Clock): u64
+	39: StLoc[8](t1#1#6: u64)
+	40: LdU64(0)
+	41: StLoc[10](t2#1#6: u64)
+	42: ImmBorrowLoc[8](t1#1#6: u64)
+	43: StLoc[9](t1#1#9: &u64)
+	44: ImmBorrowLoc[10](t2#1#6: u64)
+	45: StLoc[11](t2#1#9: &u64)
+	46: CopyLoc[9](t1#1#9: &u64)
+	47: CopyLoc[11](t2#1#9: &u64)
+	48: Eq
+	49: Not
+	50: BrFalse(67)
+B1:
+	51: LdConst[4](vector<u8>: "Ass..)
+	52: Call string::utf8(vector<u8>): String
+	53: StLoc[0](%#1: String)
+	54: ImmBorrowLoc[0](%#1: String)
+	55: Call debug::print<String>(&String)
+	56: MoveLoc[9](t1#1#9: &u64)
+	57: Call debug::print<u64>(&u64)
+	58: LdConst[5](vector<u8>: "!="..)
+	59: Call string::utf8(vector<u8>): String
+	60: StLoc[1](%#2: String)
+	61: ImmBorrowLoc[1](%#2: String)
+	62: Call debug::print<String>(&String)
+	63: MoveLoc[11](t2#1#9: &u64)
+	64: Call debug::print<u64>(&u64)
+	65: LdU64(13906840002614001663)
+	66: Abort
+B2:
+	67: MoveLoc[11](t2#1#9: &u64)
+	68: Pop
+	69: MoveLoc[9](t1#1#9: &u64)
+	70: Pop
+	71: MoveLoc[5](obj#1#3: Clock)
+	72: Call test_scenario::return_shared<Clock>(Clock)
+	73: MoveLoc[12](test#1#0: Scenario)
+	74: Call test_scenario::end(Scenario): TransactionEffects
+	75: Pop
+	76: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	1 => address: 0x0000000000000000000000000000000000000000000000000000000000000001
+	2 => address: 0x0000000000000000000000000000000000000000000000000000000000000002
+	3 => vector<u8>: "" // interpreted as UTF8 string
+	4 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	5 => vector<u8>: "!=" // interpreted as UTF8 string
+	6 => address: 0x000000000000000000000000000000000000000000000000000000000000000a
+	7 => address: 0x000000000000000000000000000000000000000000000000000000000000000b
+	8 => address: 0x000000000000000000000000000000000000000000000000000000000000000c
+	9 => address: 0x000000000000000000000000000000000000000000000000000000000000000d
+]
+}

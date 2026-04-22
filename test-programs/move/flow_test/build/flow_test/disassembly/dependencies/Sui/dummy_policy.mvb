@@ -1,0 +1,48 @@
+// Move bytecode v6
+module 2.dummy_policy {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::sui;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+
+struct Rule has drop {
+	dummy_field: bool
+}
+
+struct Config has drop, store {
+	dummy_field: bool
+}
+
+public set<T>(policy#0#0: &mut TransferPolicy<T>, cap#0#0: &TransferPolicyCap<T>) {
+B0:
+	0: LdFalse
+	1: Pack[0](Rule)
+	2: MoveLoc[0](policy#0#0: &mut TransferPolicy<T>)
+	3: MoveLoc[1](cap#0#0: &TransferPolicyCap<T>)
+	4: LdFalse
+	5: Pack[1](Config)
+	6: Call transfer_policy::add_rule<T, Rule, Config>(Rule, &mut TransferPolicy<T>, &TransferPolicyCap<T>, Config)
+	7: Ret
+}
+
+public pay<T>(policy#0#0: &mut TransferPolicy<T>, request#0#0: &mut TransferRequest<T>, payment#0#0: Coin<SUI>) {
+B0:
+	0: LdFalse
+	1: Pack[0](Rule)
+	2: MoveLoc[0](policy#0#0: &mut TransferPolicy<T>)
+	3: MoveLoc[2](payment#0#0: Coin<SUI>)
+	4: Call transfer_policy::add_to_balance<T, Rule>(Rule, &mut TransferPolicy<T>, Coin<SUI>)
+	5: LdFalse
+	6: Pack[0](Rule)
+	7: MoveLoc[1](request#0#0: &mut TransferRequest<T>)
+	8: Call transfer_policy::add_receipt<T, Rule>(Rule, &mut TransferRequest<T>)
+	9: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

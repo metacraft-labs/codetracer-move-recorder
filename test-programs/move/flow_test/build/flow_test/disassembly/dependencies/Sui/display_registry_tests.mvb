@@ -1,0 +1,1866 @@
+// Move bytecode v6
+module 2.display_registry_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::display;
+use 0000000000000000000000000000000000000000000000000000000000000002::display_registry;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::package;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::vec_map;
+
+struct MyKeyOnlyType has key {
+	id: UID
+}
+
+struct MyPotato {
+	dummy_field: bool
+}
+
+struct MY_OTW has drop {
+	dummy_field: bool
+}
+
+create_modern_and_do_operations_e2e() {
+L0:	%#1: String
+L1:	%#10: String
+L2:	%#11: String
+L3:	%#12: &VecMap<String, String>
+L4:	%#13: String
+L5:	%#14: String
+L6:	%#15: String
+L7:	%#16: String
+L8:	%#17: String
+L9:	%#18: String
+L10:	%#19: String
+L11:	%#2: String
+L12:	%#20: String
+L13:	%#3: Option<ID>
+L14:	%#5: bool
+L15:	%#7: ID
+L16:	%#8: &ID
+L17:	%#9: String
+L18:	cap#1#2: DisplayCap<MyPotato>
+L19:	display#1#2: Display<MyPotato>
+L20:	display#2#2: Display<MyPotato>
+L21:	display#3#2: Display<MyPotato>
+L22:	display#4#2: Display<MyPotato>
+L23:	o#1#9: &Option<ID>
+L24:	registry#1#1: DisplayRegistry
+L25:	registry#1#2: &mut DisplayRegistry
+L26:	scenario#1#1: Scenario
+L27:	scenario#1#2: &mut Scenario
+L28:	sender#1#1: address
+L29:	t1#1#11: u64
+L30:	t1#1#14: &u64
+L31:	t1#1#17: String
+L32:	t1#1#20: &String
+L33:	t1#1#23: u64
+L34:	t1#1#26: &u64
+L35:	t1#1#29: u64
+L36:	t1#1#3: u64
+L37:	t1#1#32: &u64
+L38:	t1#1#35: u64
+L39:	t1#1#38: &u64
+L40:	t1#1#6: &u64
+L41:	t2#1#11: u64
+L42:	t2#1#14: &u64
+L43:	t2#1#17: String
+L44:	t2#1#20: &String
+L45:	t2#1#23: u64
+L46:	t2#1#26: &u64
+L47:	t2#1#29: u64
+L48:	t2#1#3: u64
+L49:	t2#1#32: &u64
+L50:	t2#1#35: u64
+L51:	t2#1#38: &u64
+L52:	t2#1#6: &u64
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[28](sender#1#1: address)
+	2: CopyLoc[28](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[26](scenario#1#1: Scenario)
+	5: MutBorrowLoc[26](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[26](scenario#1#1: Scenario)
+	9: MoveLoc[28](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[26](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[24](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[24](registry#1#1: DisplayRegistry)
+	16: StLoc[25](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[26](scenario#1#1: Scenario)
+	18: StLoc[27](scenario#1#2: &mut Scenario)
+	19: MoveLoc[25](registry#1#2: &mut DisplayRegistry)
+	20: CopyLoc[27](scenario#1#2: &mut Scenario)
+	21: Call new_display<MyPotato>(&mut DisplayRegistry, &mut Scenario): DisplayCap<MyPotato>
+	22: StLoc[18](cap#1#2: DisplayCap<MyPotato>)
+	23: CopyLoc[27](scenario#1#2: &mut Scenario)
+	24: LdConst[3](address: 0x00..)
+	25: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	26: Pop
+	27: CopyLoc[27](scenario#1#2: &mut Scenario)
+	28: FreezeRef
+	29: Call test_scenario::take_shared<Display<MyPotato>>(&Scenario): Display<MyPotato>
+	30: StLoc[19](display#1#2: Display<MyPotato>)
+	31: ImmBorrowLoc[19](display#1#2: Display<MyPotato>)
+	32: Call display_registry::fields<MyPotato>(&Display<MyPotato>): &VecMap<String, String>
+	33: Call vec_map::length<String, String>(&VecMap<String, String>): u64
+	34: StLoc[36](t1#1#3: u64)
+	35: LdU64(0)
+	36: StLoc[48](t2#1#3: u64)
+	37: ImmBorrowLoc[36](t1#1#3: u64)
+	38: StLoc[40](t1#1#6: &u64)
+	39: ImmBorrowLoc[48](t2#1#3: u64)
+	40: StLoc[52](t2#1#6: &u64)
+	41: CopyLoc[40](t1#1#6: &u64)
+	42: CopyLoc[52](t2#1#6: &u64)
+	43: Eq
+	44: Not
+	45: BrFalse(64)
+B1:
+	46: LdConst[4](vector<u8>: "Ass..)
+	47: Call string::utf8(vector<u8>): String
+	48: StLoc[0](%#1: String)
+	49: ImmBorrowLoc[0](%#1: String)
+	50: Call debug::print<String>(&String)
+	51: MoveLoc[40](t1#1#6: &u64)
+	52: Call debug::print<u64>(&u64)
+	53: LdConst[5](vector<u8>: "!="..)
+	54: Call string::utf8(vector<u8>): String
+	55: StLoc[11](%#2: String)
+	56: ImmBorrowLoc[11](%#2: String)
+	57: Call debug::print<String>(&String)
+	58: MoveLoc[52](t2#1#6: &u64)
+	59: Call debug::print<u64>(&u64)
+	60: MoveLoc[27](scenario#1#2: &mut Scenario)
+	61: Pop
+	62: LdU64(13906834273127628799)
+	63: Abort
+B2:
+	64: MoveLoc[52](t2#1#6: &u64)
+	65: Pop
+	66: MoveLoc[40](t1#1#6: &u64)
+	67: Pop
+	68: ImmBorrowLoc[19](display#1#2: Display<MyPotato>)
+	69: Call display_registry::cap_id<MyPotato>(&Display<MyPotato>): Option<ID>
+	70: StLoc[13](%#3: Option<ID>)
+	71: ImmBorrowLoc[13](%#3: Option<ID>)
+	72: StLoc[23](o#1#9: &Option<ID>)
+	73: CopyLoc[23](o#1#9: &Option<ID>)
+	74: Call option::is_some<ID>(&Option<ID>): bool
+	75: BrFalse(87)
+B3:
+	76: MoveLoc[23](o#1#9: &Option<ID>)
+	77: Call option::borrow<ID>(&Option<ID>): &ID
+	78: StLoc[16](%#8: &ID)
+	79: ImmBorrowLoc[18](cap#1#2: DisplayCap<MyPotato>)
+	80: Call object::id<DisplayCap<MyPotato>>(&DisplayCap<MyPotato>): ID
+	81: StLoc[15](%#7: ID)
+	82: MoveLoc[16](%#8: &ID)
+	83: ImmBorrowLoc[15](%#7: ID)
+	84: Eq
+	85: StLoc[14](%#5: bool)
+	86: Branch(91)
+B4:
+	87: MoveLoc[23](o#1#9: &Option<ID>)
+	88: Pop
+	89: LdFalse
+	90: StLoc[14](%#5: bool)
+B5:
+	91: MoveLoc[14](%#5: bool)
+	92: BrFalse(94)
+B6:
+	93: Branch(98)
+B7:
+	94: MoveLoc[27](scenario#1#2: &mut Scenario)
+	95: Pop
+	96: LdU64(13906834298897432575)
+	97: Abort
+B8:
+	98: MutBorrowLoc[19](display#1#2: Display<MyPotato>)
+	99: ImmBorrowLoc[18](cap#1#2: DisplayCap<MyPotato>)
+	100: LdConst[0](vector<u8>: "nam..)
+	101: Call string::utf8(vector<u8>): String
+	102: LdConst[1](vector<u8>: "{na..)
+	103: Call string::utf8(vector<u8>): String
+	104: Call display_registry::set<MyPotato>(&mut Display<MyPotato>, &DisplayCap<MyPotato>, String, String)
+	105: MoveLoc[19](display#1#2: Display<MyPotato>)
+	106: Call test_scenario::return_shared<Display<MyPotato>>(Display<MyPotato>)
+	107: CopyLoc[27](scenario#1#2: &mut Scenario)
+	108: LdConst[3](address: 0x00..)
+	109: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	110: Pop
+	111: CopyLoc[27](scenario#1#2: &mut Scenario)
+	112: FreezeRef
+	113: Call test_scenario::take_shared<Display<MyPotato>>(&Scenario): Display<MyPotato>
+	114: StLoc[20](display#2#2: Display<MyPotato>)
+	115: ImmBorrowLoc[20](display#2#2: Display<MyPotato>)
+	116: Call display_registry::fields<MyPotato>(&Display<MyPotato>): &VecMap<String, String>
+	117: Call vec_map::length<String, String>(&VecMap<String, String>): u64
+	118: StLoc[29](t1#1#11: u64)
+	119: LdU64(1)
+	120: StLoc[41](t2#1#11: u64)
+	121: ImmBorrowLoc[29](t1#1#11: u64)
+	122: StLoc[30](t1#1#14: &u64)
+	123: ImmBorrowLoc[41](t2#1#11: u64)
+	124: StLoc[42](t2#1#14: &u64)
+	125: CopyLoc[30](t1#1#14: &u64)
+	126: CopyLoc[42](t2#1#14: &u64)
+	127: Eq
+	128: Not
+	129: BrFalse(148)
+B9:
+	130: LdConst[4](vector<u8>: "Ass..)
+	131: Call string::utf8(vector<u8>): String
+	132: StLoc[17](%#9: String)
+	133: ImmBorrowLoc[17](%#9: String)
+	134: Call debug::print<String>(&String)
+	135: MoveLoc[30](t1#1#14: &u64)
+	136: Call debug::print<u64>(&u64)
+	137: LdConst[5](vector<u8>: "!="..)
+	138: Call string::utf8(vector<u8>): String
+	139: StLoc[1](%#10: String)
+	140: ImmBorrowLoc[1](%#10: String)
+	141: Call debug::print<String>(&String)
+	142: MoveLoc[42](t2#1#14: &u64)
+	143: Call debug::print<u64>(&u64)
+	144: MoveLoc[27](scenario#1#2: &mut Scenario)
+	145: Pop
+	146: LdU64(13906834273127628799)
+	147: Abort
+B10:
+	148: MoveLoc[42](t2#1#14: &u64)
+	149: Pop
+	150: MoveLoc[30](t1#1#14: &u64)
+	151: Pop
+	152: ImmBorrowLoc[20](display#2#2: Display<MyPotato>)
+	153: Call display_registry::fields<MyPotato>(&Display<MyPotato>): &VecMap<String, String>
+	154: StLoc[3](%#12: &VecMap<String, String>)
+	155: LdConst[0](vector<u8>: "nam..)
+	156: Call string::utf8(vector<u8>): String
+	157: StLoc[2](%#11: String)
+	158: MoveLoc[3](%#12: &VecMap<String, String>)
+	159: ImmBorrowLoc[2](%#11: String)
+	160: Call vec_map::get<String, String>(&VecMap<String, String>, &String): &String
+	161: ReadRef
+	162: StLoc[31](t1#1#17: String)
+	163: LdConst[1](vector<u8>: "{na..)
+	164: Call string::utf8(vector<u8>): String
+	165: StLoc[43](t2#1#17: String)
+	166: ImmBorrowLoc[31](t1#1#17: String)
+	167: StLoc[32](t1#1#20: &String)
+	168: ImmBorrowLoc[43](t2#1#17: String)
+	169: StLoc[44](t2#1#20: &String)
+	170: CopyLoc[32](t1#1#20: &String)
+	171: CopyLoc[44](t2#1#20: &String)
+	172: Eq
+	173: Not
+	174: BrFalse(193)
+B11:
+	175: LdConst[4](vector<u8>: "Ass..)
+	176: Call string::utf8(vector<u8>): String
+	177: StLoc[4](%#13: String)
+	178: ImmBorrowLoc[4](%#13: String)
+	179: Call debug::print<String>(&String)
+	180: MoveLoc[32](t1#1#20: &String)
+	181: Call debug::print<String>(&String)
+	182: LdConst[5](vector<u8>: "!="..)
+	183: Call string::utf8(vector<u8>): String
+	184: StLoc[5](%#14: String)
+	185: ImmBorrowLoc[5](%#14: String)
+	186: Call debug::print<String>(&String)
+	187: MoveLoc[44](t2#1#20: &String)
+	188: Call debug::print<String>(&String)
+	189: MoveLoc[27](scenario#1#2: &mut Scenario)
+	190: Pop
+	191: LdU64(13906834273127628799)
+	192: Abort
+B12:
+	193: MoveLoc[44](t2#1#20: &String)
+	194: Pop
+	195: MoveLoc[32](t1#1#20: &String)
+	196: Pop
+	197: MoveLoc[20](display#2#2: Display<MyPotato>)
+	198: Call test_scenario::return_shared<Display<MyPotato>>(Display<MyPotato>)
+	199: CopyLoc[27](scenario#1#2: &mut Scenario)
+	200: LdConst[3](address: 0x00..)
+	201: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	202: Pop
+	203: CopyLoc[27](scenario#1#2: &mut Scenario)
+	204: FreezeRef
+	205: Call test_scenario::take_shared<Display<MyPotato>>(&Scenario): Display<MyPotato>
+	206: StLoc[21](display#3#2: Display<MyPotato>)
+	207: MutBorrowLoc[21](display#3#2: Display<MyPotato>)
+	208: ImmBorrowLoc[18](cap#1#2: DisplayCap<MyPotato>)
+	209: LdConst[0](vector<u8>: "nam..)
+	210: Call string::utf8(vector<u8>): String
+	211: Call display_registry::unset<MyPotato>(&mut Display<MyPotato>, &DisplayCap<MyPotato>, String)
+	212: MoveLoc[21](display#3#2: Display<MyPotato>)
+	213: Call test_scenario::return_shared<Display<MyPotato>>(Display<MyPotato>)
+	214: CopyLoc[27](scenario#1#2: &mut Scenario)
+	215: LdConst[3](address: 0x00..)
+	216: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	217: Pop
+	218: MoveLoc[27](scenario#1#2: &mut Scenario)
+	219: FreezeRef
+	220: Call test_scenario::take_shared<Display<MyPotato>>(&Scenario): Display<MyPotato>
+	221: StLoc[22](display#4#2: Display<MyPotato>)
+	222: ImmBorrowLoc[22](display#4#2: Display<MyPotato>)
+	223: Call display_registry::fields<MyPotato>(&Display<MyPotato>): &VecMap<String, String>
+	224: Call vec_map::length<String, String>(&VecMap<String, String>): u64
+	225: StLoc[33](t1#1#23: u64)
+	226: LdU64(0)
+	227: StLoc[45](t2#1#23: u64)
+	228: ImmBorrowLoc[33](t1#1#23: u64)
+	229: StLoc[34](t1#1#26: &u64)
+	230: ImmBorrowLoc[45](t2#1#23: u64)
+	231: StLoc[46](t2#1#26: &u64)
+	232: CopyLoc[34](t1#1#26: &u64)
+	233: CopyLoc[46](t2#1#26: &u64)
+	234: Eq
+	235: Not
+	236: BrFalse(253)
+B13:
+	237: LdConst[4](vector<u8>: "Ass..)
+	238: Call string::utf8(vector<u8>): String
+	239: StLoc[6](%#15: String)
+	240: ImmBorrowLoc[6](%#15: String)
+	241: Call debug::print<String>(&String)
+	242: MoveLoc[34](t1#1#26: &u64)
+	243: Call debug::print<u64>(&u64)
+	244: LdConst[5](vector<u8>: "!="..)
+	245: Call string::utf8(vector<u8>): String
+	246: StLoc[7](%#16: String)
+	247: ImmBorrowLoc[7](%#16: String)
+	248: Call debug::print<String>(&String)
+	249: MoveLoc[46](t2#1#26: &u64)
+	250: Call debug::print<u64>(&u64)
+	251: LdU64(13906834273127628799)
+	252: Abort
+B14:
+	253: MoveLoc[46](t2#1#26: &u64)
+	254: Pop
+	255: MoveLoc[34](t1#1#26: &u64)
+	256: Pop
+	257: MutBorrowLoc[22](display#4#2: Display<MyPotato>)
+	258: ImmBorrowLoc[18](cap#1#2: DisplayCap<MyPotato>)
+	259: LdConst[0](vector<u8>: "nam..)
+	260: Call string::utf8(vector<u8>): String
+	261: LdConst[1](vector<u8>: "{na..)
+	262: Call string::utf8(vector<u8>): String
+	263: Call display_registry::set<MyPotato>(&mut Display<MyPotato>, &DisplayCap<MyPotato>, String, String)
+	264: ImmBorrowLoc[22](display#4#2: Display<MyPotato>)
+	265: Call display_registry::fields<MyPotato>(&Display<MyPotato>): &VecMap<String, String>
+	266: Call vec_map::length<String, String>(&VecMap<String, String>): u64
+	267: StLoc[35](t1#1#29: u64)
+	268: LdU64(1)
+	269: StLoc[47](t2#1#29: u64)
+	270: ImmBorrowLoc[35](t1#1#29: u64)
+	271: StLoc[37](t1#1#32: &u64)
+	272: ImmBorrowLoc[47](t2#1#29: u64)
+	273: StLoc[49](t2#1#32: &u64)
+	274: CopyLoc[37](t1#1#32: &u64)
+	275: CopyLoc[49](t2#1#32: &u64)
+	276: Eq
+	277: Not
+	278: BrFalse(295)
+B15:
+	279: LdConst[4](vector<u8>: "Ass..)
+	280: Call string::utf8(vector<u8>): String
+	281: StLoc[8](%#17: String)
+	282: ImmBorrowLoc[8](%#17: String)
+	283: Call debug::print<String>(&String)
+	284: MoveLoc[37](t1#1#32: &u64)
+	285: Call debug::print<u64>(&u64)
+	286: LdConst[5](vector<u8>: "!="..)
+	287: Call string::utf8(vector<u8>): String
+	288: StLoc[9](%#18: String)
+	289: ImmBorrowLoc[9](%#18: String)
+	290: Call debug::print<String>(&String)
+	291: MoveLoc[49](t2#1#32: &u64)
+	292: Call debug::print<u64>(&u64)
+	293: LdU64(13906834273127628799)
+	294: Abort
+B16:
+	295: MoveLoc[49](t2#1#32: &u64)
+	296: Pop
+	297: MoveLoc[37](t1#1#32: &u64)
+	298: Pop
+	299: MutBorrowLoc[22](display#4#2: Display<MyPotato>)
+	300: ImmBorrowLoc[18](cap#1#2: DisplayCap<MyPotato>)
+	301: Call display_registry::clear<MyPotato>(&mut Display<MyPotato>, &DisplayCap<MyPotato>)
+	302: ImmBorrowLoc[22](display#4#2: Display<MyPotato>)
+	303: Call display_registry::fields<MyPotato>(&Display<MyPotato>): &VecMap<String, String>
+	304: Call vec_map::length<String, String>(&VecMap<String, String>): u64
+	305: StLoc[38](t1#1#35: u64)
+	306: LdU64(0)
+	307: StLoc[50](t2#1#35: u64)
+	308: ImmBorrowLoc[38](t1#1#35: u64)
+	309: StLoc[39](t1#1#38: &u64)
+	310: ImmBorrowLoc[50](t2#1#35: u64)
+	311: StLoc[51](t2#1#38: &u64)
+	312: CopyLoc[39](t1#1#38: &u64)
+	313: CopyLoc[51](t2#1#38: &u64)
+	314: Eq
+	315: Not
+	316: BrFalse(333)
+B17:
+	317: LdConst[4](vector<u8>: "Ass..)
+	318: Call string::utf8(vector<u8>): String
+	319: StLoc[10](%#19: String)
+	320: ImmBorrowLoc[10](%#19: String)
+	321: Call debug::print<String>(&String)
+	322: MoveLoc[39](t1#1#38: &u64)
+	323: Call debug::print<u64>(&u64)
+	324: LdConst[5](vector<u8>: "!="..)
+	325: Call string::utf8(vector<u8>): String
+	326: StLoc[12](%#20: String)
+	327: ImmBorrowLoc[12](%#20: String)
+	328: Call debug::print<String>(&String)
+	329: MoveLoc[51](t2#1#38: &u64)
+	330: Call debug::print<u64>(&u64)
+	331: LdU64(13906834273127628799)
+	332: Abort
+B18:
+	333: MoveLoc[51](t2#1#38: &u64)
+	334: Pop
+	335: MoveLoc[39](t1#1#38: &u64)
+	336: Pop
+	337: MoveLoc[22](display#4#2: Display<MyPotato>)
+	338: Call test_scenario::return_shared<Display<MyPotato>>(Display<MyPotato>)
+	339: MoveLoc[18](cap#1#2: DisplayCap<MyPotato>)
+	340: LdConst[3](address: 0x00..)
+	341: Call transfer::public_transfer<DisplayCap<MyPotato>>(DisplayCap<MyPotato>, address)
+	342: MoveLoc[24](registry#1#1: DisplayRegistry)
+	343: Call test_scenario::return_shared<DisplayRegistry>(DisplayRegistry)
+	344: MoveLoc[26](scenario#1#1: Scenario)
+	345: Call test_scenario::end(Scenario): TransactionEffects
+	346: Pop
+	347: Ret
+}
+
+claim_legacy() {
+L0:	%#1: Option<ID>
+L1:	another_legacy_display#1#2: Display<MyKeyOnlyType>
+L2:	cap#1#2: SystemMigrationCap
+L3:	display#1#2: Display<MyKeyOnlyType>
+L4:	legacy_display#1#2: Display<MyKeyOnlyType>
+L5:	new_cap#1#2: DisplayCap<MyKeyOnlyType>
+L6:	publisher#1#2: Publisher
+L7:	registry#1#1: DisplayRegistry
+L8:	registry#1#2: &mut DisplayRegistry
+L9:	scenario#1#1: Scenario
+L10:	scenario#1#2: &mut Scenario
+L11:	sender#1#1: address
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[11](sender#1#1: address)
+	2: CopyLoc[11](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[9](scenario#1#1: Scenario)
+	5: MutBorrowLoc[9](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[9](scenario#1#1: Scenario)
+	9: MoveLoc[11](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[9](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[7](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[7](registry#1#1: DisplayRegistry)
+	16: StLoc[8](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[9](scenario#1#1: Scenario)
+	18: StLoc[10](scenario#1#2: &mut Scenario)
+	19: CopyLoc[10](scenario#1#2: &mut Scenario)
+	20: Call new_publisher(&mut Scenario): Publisher
+	21: StLoc[6](publisher#1#2: Publisher)
+	22: ImmBorrowLoc[6](publisher#1#2: Publisher)
+	23: CopyLoc[10](scenario#1#2: &mut Scenario)
+	24: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	25: Call display::new<MyKeyOnlyType>(&Publisher, &mut TxContext): Display<MyKeyOnlyType>
+	26: StLoc[4](legacy_display#1#2: Display<MyKeyOnlyType>)
+	27: ImmBorrowLoc[6](publisher#1#2: Publisher)
+	28: CopyLoc[10](scenario#1#2: &mut Scenario)
+	29: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	30: Call display::new<MyKeyOnlyType>(&Publisher, &mut TxContext): Display<MyKeyOnlyType>
+	31: StLoc[1](another_legacy_display#1#2: Display<MyKeyOnlyType>)
+	32: CopyLoc[10](scenario#1#2: &mut Scenario)
+	33: Call take_migration_cap(&mut Scenario): SystemMigrationCap
+	34: StLoc[2](cap#1#2: SystemMigrationCap)
+	35: MoveLoc[8](registry#1#2: &mut DisplayRegistry)
+	36: ImmBorrowLoc[2](cap#1#2: SystemMigrationCap)
+	37: VecPack(23, 0)
+	38: VecPack(23, 0)
+	39: CopyLoc[10](scenario#1#2: &mut Scenario)
+	40: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	41: Call display_registry::system_migration<MyKeyOnlyType>(&mut DisplayRegistry, &SystemMigrationCap, vector<String>, vector<String>, &mut TxContext)
+	42: CopyLoc[10](scenario#1#2: &mut Scenario)
+	43: LdConst[3](address: 0x00..)
+	44: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	45: Pop
+	46: CopyLoc[10](scenario#1#2: &mut Scenario)
+	47: FreezeRef
+	48: Call test_scenario::take_shared<Display<MyKeyOnlyType>>(&Scenario): Display<MyKeyOnlyType>
+	49: StLoc[3](display#1#2: Display<MyKeyOnlyType>)
+	50: ImmBorrowLoc[3](display#1#2: Display<MyKeyOnlyType>)
+	51: Call display_registry::cap_id<MyKeyOnlyType>(&Display<MyKeyOnlyType>): Option<ID>
+	52: StLoc[0](%#1: Option<ID>)
+	53: ImmBorrowLoc[0](%#1: Option<ID>)
+	54: Call option::is_none<ID>(&Option<ID>): bool
+	55: BrFalse(57)
+B1:
+	56: Branch(61)
+B2:
+	57: MoveLoc[10](scenario#1#2: &mut Scenario)
+	58: Pop
+	59: LdU64(13906834526530699263)
+	60: Abort
+B3:
+	61: MutBorrowLoc[3](display#1#2: Display<MyKeyOnlyType>)
+	62: MoveLoc[4](legacy_display#1#2: Display<MyKeyOnlyType>)
+	63: MoveLoc[10](scenario#1#2: &mut Scenario)
+	64: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	65: Call display_registry::claim<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, Display<MyKeyOnlyType>, &mut TxContext): DisplayCap<MyKeyOnlyType>
+	66: StLoc[5](new_cap#1#2: DisplayCap<MyKeyOnlyType>)
+	67: MutBorrowLoc[3](display#1#2: Display<MyKeyOnlyType>)
+	68: ImmBorrowLoc[5](new_cap#1#2: DisplayCap<MyKeyOnlyType>)
+	69: LdConst[0](vector<u8>: "nam..)
+	70: Call string::utf8(vector<u8>): String
+	71: LdConst[1](vector<u8>: "{na..)
+	72: Call string::utf8(vector<u8>): String
+	73: Call display_registry::set<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, &DisplayCap<MyKeyOnlyType>, String, String)
+	74: ImmBorrowLoc[3](display#1#2: Display<MyKeyOnlyType>)
+	75: MoveLoc[1](another_legacy_display#1#2: Display<MyKeyOnlyType>)
+	76: Call display_registry::delete_legacy<MyKeyOnlyType>(&Display<MyKeyOnlyType>, Display<MyKeyOnlyType>)
+	77: MoveLoc[3](display#1#2: Display<MyKeyOnlyType>)
+	78: Call test_scenario::return_shared<Display<MyKeyOnlyType>>(Display<MyKeyOnlyType>)
+	79: MoveLoc[5](new_cap#1#2: DisplayCap<MyKeyOnlyType>)
+	80: LdConst[3](address: 0x00..)
+	81: Call transfer::public_transfer<DisplayCap<MyKeyOnlyType>>(DisplayCap<MyKeyOnlyType>, address)
+	82: MoveLoc[2](cap#1#2: SystemMigrationCap)
+	83: Call display_registry::destroy_system_migration_cap(SystemMigrationCap)
+	84: MoveLoc[6](publisher#1#2: Publisher)
+	85: Call package::burn_publisher(Publisher)
+	86: MoveLoc[7](registry#1#1: DisplayRegistry)
+	87: Call test_scenario::return_shared<DisplayRegistry>(DisplayRegistry)
+	88: MoveLoc[9](scenario#1#1: Scenario)
+	89: Call test_scenario::end(Scenario): TransactionEffects
+	90: Pop
+	91: Ret
+}
+
+migrate_legacy() {
+L0:	%#1: Option<ID>
+L1:	%#10: &VecMap<String, String>
+L2:	%#11: String
+L3:	%#12: String
+L4:	%#3: bool
+L5:	%#5: ID
+L6:	%#6: &ID
+L7:	%#7: String
+L8:	%#8: String
+L9:	%#9: String
+L10:	cap#1#2: DisplayCap<MyKeyOnlyType>
+L11:	display#1#2: Display<MyKeyOnlyType>
+L12:	legacy_display#1#2: Display<MyKeyOnlyType>
+L13:	o#1#3: &Option<ID>
+L14:	publisher#1#2: Publisher
+L15:	registry#1#1: DisplayRegistry
+L16:	registry#1#2: &mut DisplayRegistry
+L17:	scenario#1#1: Scenario
+L18:	scenario#1#2: &mut Scenario
+L19:	sender#1#1: address
+L20:	t1#1#11: String
+L21:	t1#1#14: &String
+L22:	t1#1#5: u64
+L23:	t1#1#8: &u64
+L24:	t2#1#11: String
+L25:	t2#1#14: &String
+L26:	t2#1#5: u64
+L27:	t2#1#8: &u64
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[19](sender#1#1: address)
+	2: CopyLoc[19](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[17](scenario#1#1: Scenario)
+	5: MutBorrowLoc[17](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[17](scenario#1#1: Scenario)
+	9: MoveLoc[19](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[17](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[15](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[15](registry#1#1: DisplayRegistry)
+	16: StLoc[16](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[17](scenario#1#1: Scenario)
+	18: StLoc[18](scenario#1#2: &mut Scenario)
+	19: CopyLoc[18](scenario#1#2: &mut Scenario)
+	20: Call new_publisher(&mut Scenario): Publisher
+	21: StLoc[14](publisher#1#2: Publisher)
+	22: ImmBorrowLoc[14](publisher#1#2: Publisher)
+	23: CopyLoc[18](scenario#1#2: &mut Scenario)
+	24: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	25: Call display::new<MyKeyOnlyType>(&Publisher, &mut TxContext): Display<MyKeyOnlyType>
+	26: StLoc[12](legacy_display#1#2: Display<MyKeyOnlyType>)
+	27: MutBorrowLoc[12](legacy_display#1#2: Display<MyKeyOnlyType>)
+	28: LdConst[0](vector<u8>: "nam..)
+	29: Call string::utf8(vector<u8>): String
+	30: LdConst[1](vector<u8>: "{na..)
+	31: Call string::utf8(vector<u8>): String
+	32: Call display::add<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, String, String)
+	33: MoveLoc[16](registry#1#2: &mut DisplayRegistry)
+	34: MoveLoc[12](legacy_display#1#2: Display<MyKeyOnlyType>)
+	35: MoveLoc[18](scenario#1#2: &mut Scenario)
+	36: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	37: Call display_registry::migrate_v1_to_v2<MyKeyOnlyType>(&mut DisplayRegistry, Display<MyKeyOnlyType>, &mut TxContext): Display<MyKeyOnlyType> * DisplayCap<MyKeyOnlyType>
+	38: StLoc[10](cap#1#2: DisplayCap<MyKeyOnlyType>)
+	39: StLoc[11](display#1#2: Display<MyKeyOnlyType>)
+	40: ImmBorrowLoc[11](display#1#2: Display<MyKeyOnlyType>)
+	41: Call display_registry::cap_id<MyKeyOnlyType>(&Display<MyKeyOnlyType>): Option<ID>
+	42: StLoc[0](%#1: Option<ID>)
+	43: ImmBorrowLoc[0](%#1: Option<ID>)
+	44: StLoc[13](o#1#3: &Option<ID>)
+	45: CopyLoc[13](o#1#3: &Option<ID>)
+	46: Call option::is_some<ID>(&Option<ID>): bool
+	47: BrFalse(59)
+B1:
+	48: MoveLoc[13](o#1#3: &Option<ID>)
+	49: Call option::borrow<ID>(&Option<ID>): &ID
+	50: StLoc[6](%#6: &ID)
+	51: ImmBorrowLoc[10](cap#1#2: DisplayCap<MyKeyOnlyType>)
+	52: Call object::id<DisplayCap<MyKeyOnlyType>>(&DisplayCap<MyKeyOnlyType>): ID
+	53: StLoc[5](%#5: ID)
+	54: MoveLoc[6](%#6: &ID)
+	55: ImmBorrowLoc[5](%#5: ID)
+	56: Eq
+	57: StLoc[4](%#3: bool)
+	58: Branch(63)
+B2:
+	59: MoveLoc[13](o#1#3: &Option<ID>)
+	60: Pop
+	61: LdFalse
+	62: StLoc[4](%#3: bool)
+B3:
+	63: MoveLoc[4](%#3: bool)
+	64: BrFalse(66)
+B4:
+	65: Branch(68)
+B5:
+	66: LdU64(13906834642494816255)
+	67: Abort
+B6:
+	68: ImmBorrowLoc[11](display#1#2: Display<MyKeyOnlyType>)
+	69: Call display_registry::fields<MyKeyOnlyType>(&Display<MyKeyOnlyType>): &VecMap<String, String>
+	70: Call vec_map::length<String, String>(&VecMap<String, String>): u64
+	71: StLoc[22](t1#1#5: u64)
+	72: LdU64(1)
+	73: StLoc[26](t2#1#5: u64)
+	74: ImmBorrowLoc[22](t1#1#5: u64)
+	75: StLoc[23](t1#1#8: &u64)
+	76: ImmBorrowLoc[26](t2#1#5: u64)
+	77: StLoc[27](t2#1#8: &u64)
+	78: CopyLoc[23](t1#1#8: &u64)
+	79: CopyLoc[27](t2#1#8: &u64)
+	80: Eq
+	81: Not
+	82: BrFalse(99)
+B7:
+	83: LdConst[4](vector<u8>: "Ass..)
+	84: Call string::utf8(vector<u8>): String
+	85: StLoc[7](%#7: String)
+	86: ImmBorrowLoc[7](%#7: String)
+	87: Call debug::print<String>(&String)
+	88: MoveLoc[23](t1#1#8: &u64)
+	89: Call debug::print<u64>(&u64)
+	90: LdConst[5](vector<u8>: "!="..)
+	91: Call string::utf8(vector<u8>): String
+	92: StLoc[8](%#8: String)
+	93: ImmBorrowLoc[8](%#8: String)
+	94: Call debug::print<String>(&String)
+	95: MoveLoc[27](t2#1#8: &u64)
+	96: Call debug::print<u64>(&u64)
+	97: LdU64(13906834603840110591)
+	98: Abort
+B8:
+	99: MoveLoc[27](t2#1#8: &u64)
+	100: Pop
+	101: MoveLoc[23](t1#1#8: &u64)
+	102: Pop
+	103: ImmBorrowLoc[11](display#1#2: Display<MyKeyOnlyType>)
+	104: Call display_registry::fields<MyKeyOnlyType>(&Display<MyKeyOnlyType>): &VecMap<String, String>
+	105: StLoc[1](%#10: &VecMap<String, String>)
+	106: LdConst[0](vector<u8>: "nam..)
+	107: Call string::utf8(vector<u8>): String
+	108: StLoc[9](%#9: String)
+	109: MoveLoc[1](%#10: &VecMap<String, String>)
+	110: ImmBorrowLoc[9](%#9: String)
+	111: Call vec_map::get<String, String>(&VecMap<String, String>, &String): &String
+	112: ReadRef
+	113: StLoc[20](t1#1#11: String)
+	114: LdConst[1](vector<u8>: "{na..)
+	115: Call string::utf8(vector<u8>): String
+	116: StLoc[24](t2#1#11: String)
+	117: ImmBorrowLoc[20](t1#1#11: String)
+	118: StLoc[21](t1#1#14: &String)
+	119: ImmBorrowLoc[24](t2#1#11: String)
+	120: StLoc[25](t2#1#14: &String)
+	121: CopyLoc[21](t1#1#14: &String)
+	122: CopyLoc[25](t2#1#14: &String)
+	123: Eq
+	124: Not
+	125: BrFalse(142)
+B9:
+	126: LdConst[4](vector<u8>: "Ass..)
+	127: Call string::utf8(vector<u8>): String
+	128: StLoc[2](%#11: String)
+	129: ImmBorrowLoc[2](%#11: String)
+	130: Call debug::print<String>(&String)
+	131: MoveLoc[21](t1#1#14: &String)
+	132: Call debug::print<String>(&String)
+	133: LdConst[5](vector<u8>: "!="..)
+	134: Call string::utf8(vector<u8>): String
+	135: StLoc[3](%#12: String)
+	136: ImmBorrowLoc[3](%#12: String)
+	137: Call debug::print<String>(&String)
+	138: MoveLoc[25](t2#1#14: &String)
+	139: Call debug::print<String>(&String)
+	140: LdU64(13906834603840110591)
+	141: Abort
+B10:
+	142: MoveLoc[25](t2#1#14: &String)
+	143: Pop
+	144: MoveLoc[21](t1#1#14: &String)
+	145: Pop
+	146: MoveLoc[11](display#1#2: Display<MyKeyOnlyType>)
+	147: Call display_registry::share<MyKeyOnlyType>(Display<MyKeyOnlyType>)
+	148: MoveLoc[10](cap#1#2: DisplayCap<MyKeyOnlyType>)
+	149: LdConst[3](address: 0x00..)
+	150: Call transfer::public_transfer<DisplayCap<MyKeyOnlyType>>(DisplayCap<MyKeyOnlyType>, address)
+	151: MoveLoc[14](publisher#1#2: Publisher)
+	152: Call package::burn_publisher(Publisher)
+	153: MoveLoc[15](registry#1#1: DisplayRegistry)
+	154: Call test_scenario::return_shared<DisplayRegistry>(DisplayRegistry)
+	155: MoveLoc[17](scenario#1#1: Scenario)
+	156: Call test_scenario::end(Scenario): TransactionEffects
+	157: Pop
+	158: Ret
+}
+
+claim_with_publisher() {
+L0:	%#1: Option<ID>
+L1:	cap#1#2: SystemMigrationCap
+L2:	display#1#2: Display<MyKeyOnlyType>
+L3:	new_cap#1#2: DisplayCap<MyKeyOnlyType>
+L4:	publisher#1#2: Publisher
+L5:	registry#1#1: DisplayRegistry
+L6:	registry#1#2: &mut DisplayRegistry
+L7:	scenario#1#1: Scenario
+L8:	scenario#1#2: &mut Scenario
+L9:	sender#1#1: address
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[9](sender#1#1: address)
+	2: CopyLoc[9](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[7](scenario#1#1: Scenario)
+	5: MutBorrowLoc[7](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[7](scenario#1#1: Scenario)
+	9: MoveLoc[9](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[7](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[5](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[5](registry#1#1: DisplayRegistry)
+	16: StLoc[6](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[7](scenario#1#1: Scenario)
+	18: StLoc[8](scenario#1#2: &mut Scenario)
+	19: LdFalse
+	20: Pack[2](MY_OTW)
+	21: CopyLoc[8](scenario#1#2: &mut Scenario)
+	22: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	23: Call package::test_claim<MY_OTW>(MY_OTW, &mut TxContext): Publisher
+	24: StLoc[4](publisher#1#2: Publisher)
+	25: CopyLoc[8](scenario#1#2: &mut Scenario)
+	26: Call take_migration_cap(&mut Scenario): SystemMigrationCap
+	27: StLoc[1](cap#1#2: SystemMigrationCap)
+	28: MoveLoc[6](registry#1#2: &mut DisplayRegistry)
+	29: ImmBorrowLoc[1](cap#1#2: SystemMigrationCap)
+	30: VecPack(23, 0)
+	31: VecPack(23, 0)
+	32: CopyLoc[8](scenario#1#2: &mut Scenario)
+	33: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	34: Call display_registry::system_migration<MyKeyOnlyType>(&mut DisplayRegistry, &SystemMigrationCap, vector<String>, vector<String>, &mut TxContext)
+	35: CopyLoc[8](scenario#1#2: &mut Scenario)
+	36: LdConst[3](address: 0x00..)
+	37: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	38: Pop
+	39: CopyLoc[8](scenario#1#2: &mut Scenario)
+	40: FreezeRef
+	41: Call test_scenario::take_shared<Display<MyKeyOnlyType>>(&Scenario): Display<MyKeyOnlyType>
+	42: StLoc[2](display#1#2: Display<MyKeyOnlyType>)
+	43: ImmBorrowLoc[2](display#1#2: Display<MyKeyOnlyType>)
+	44: Call display_registry::cap_id<MyKeyOnlyType>(&Display<MyKeyOnlyType>): Option<ID>
+	45: StLoc[0](%#1: Option<ID>)
+	46: ImmBorrowLoc[0](%#1: Option<ID>)
+	47: Call option::is_none<ID>(&Option<ID>): bool
+	48: BrFalse(50)
+B1:
+	49: Branch(54)
+B2:
+	50: MoveLoc[8](scenario#1#2: &mut Scenario)
+	51: Pop
+	52: LdU64(13906834749868998655)
+	53: Abort
+B3:
+	54: MutBorrowLoc[2](display#1#2: Display<MyKeyOnlyType>)
+	55: MutBorrowLoc[4](publisher#1#2: Publisher)
+	56: MoveLoc[8](scenario#1#2: &mut Scenario)
+	57: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	58: Call display_registry::claim_with_publisher<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, &mut Publisher, &mut TxContext): DisplayCap<MyKeyOnlyType>
+	59: StLoc[3](new_cap#1#2: DisplayCap<MyKeyOnlyType>)
+	60: MutBorrowLoc[2](display#1#2: Display<MyKeyOnlyType>)
+	61: ImmBorrowLoc[3](new_cap#1#2: DisplayCap<MyKeyOnlyType>)
+	62: LdConst[0](vector<u8>: "nam..)
+	63: Call string::utf8(vector<u8>): String
+	64: LdConst[1](vector<u8>: "{na..)
+	65: Call string::utf8(vector<u8>): String
+	66: Call display_registry::set<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, &DisplayCap<MyKeyOnlyType>, String, String)
+	67: MoveLoc[2](display#1#2: Display<MyKeyOnlyType>)
+	68: Call test_scenario::return_shared<Display<MyKeyOnlyType>>(Display<MyKeyOnlyType>)
+	69: MoveLoc[3](new_cap#1#2: DisplayCap<MyKeyOnlyType>)
+	70: LdConst[3](address: 0x00..)
+	71: Call transfer::public_transfer<DisplayCap<MyKeyOnlyType>>(DisplayCap<MyKeyOnlyType>, address)
+	72: MoveLoc[1](cap#1#2: SystemMigrationCap)
+	73: Call display_registry::destroy_system_migration_cap(SystemMigrationCap)
+	74: MoveLoc[4](publisher#1#2: Publisher)
+	75: Call package::burn_publisher(Publisher)
+	76: MoveLoc[5](registry#1#1: DisplayRegistry)
+	77: Call test_scenario::return_shared<DisplayRegistry>(DisplayRegistry)
+	78: MoveLoc[7](scenario#1#1: Scenario)
+	79: Call test_scenario::end(Scenario): TransactionEffects
+	80: Pop
+	81: Ret
+}
+
+update_field() {
+L0:	%#1: String
+L1:	%#10: &VecMap<String, String>
+L2:	%#11: String
+L3:	%#12: String
+L4:	%#2: &VecMap<String, String>
+L5:	%#3: String
+L6:	%#4: String
+L7:	%#5: String
+L8:	%#6: &VecMap<String, String>
+L9:	%#7: String
+L10:	%#8: String
+L11:	%#9: String
+L12:	cap#1#2: DisplayCap<MyKeyOnlyType>
+L13:	display#1#2: Display<MyKeyOnlyType>
+L14:	registry#1#1: DisplayRegistry
+L15:	registry#1#2: &mut DisplayRegistry
+L16:	scenario#1#1: Scenario
+L17:	scenario#1#2: &mut Scenario
+L18:	sender#1#1: address
+L19:	t1#1#12: &String
+L20:	t1#1#15: String
+L21:	t1#1#18: &String
+L22:	t1#1#3: String
+L23:	t1#1#6: &String
+L24:	t1#1#9: String
+L25:	t2#1#12: &String
+L26:	t2#1#15: String
+L27:	t2#1#18: &String
+L28:	t2#1#3: String
+L29:	t2#1#6: &String
+L30:	t2#1#9: String
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[18](sender#1#1: address)
+	2: CopyLoc[18](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[16](scenario#1#1: Scenario)
+	5: MutBorrowLoc[16](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[16](scenario#1#1: Scenario)
+	9: MoveLoc[18](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[16](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[14](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[14](registry#1#1: DisplayRegistry)
+	16: StLoc[15](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[16](scenario#1#1: Scenario)
+	18: StLoc[17](scenario#1#2: &mut Scenario)
+	19: MoveLoc[15](registry#1#2: &mut DisplayRegistry)
+	20: CopyLoc[17](scenario#1#2: &mut Scenario)
+	21: Call new_display<MyKeyOnlyType>(&mut DisplayRegistry, &mut Scenario): DisplayCap<MyKeyOnlyType>
+	22: StLoc[12](cap#1#2: DisplayCap<MyKeyOnlyType>)
+	23: CopyLoc[17](scenario#1#2: &mut Scenario)
+	24: LdConst[3](address: 0x00..)
+	25: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	26: Pop
+	27: MoveLoc[17](scenario#1#2: &mut Scenario)
+	28: FreezeRef
+	29: Call test_scenario::take_shared<Display<MyKeyOnlyType>>(&Scenario): Display<MyKeyOnlyType>
+	30: StLoc[13](display#1#2: Display<MyKeyOnlyType>)
+	31: MutBorrowLoc[13](display#1#2: Display<MyKeyOnlyType>)
+	32: ImmBorrowLoc[12](cap#1#2: DisplayCap<MyKeyOnlyType>)
+	33: LdConst[0](vector<u8>: "nam..)
+	34: Call string::utf8(vector<u8>): String
+	35: LdConst[1](vector<u8>: "{na..)
+	36: Call string::utf8(vector<u8>): String
+	37: Call display_registry::set<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, &DisplayCap<MyKeyOnlyType>, String, String)
+	38: ImmBorrowLoc[13](display#1#2: Display<MyKeyOnlyType>)
+	39: Call display_registry::fields<MyKeyOnlyType>(&Display<MyKeyOnlyType>): &VecMap<String, String>
+	40: StLoc[4](%#2: &VecMap<String, String>)
+	41: LdConst[0](vector<u8>: "nam..)
+	42: Call string::utf8(vector<u8>): String
+	43: StLoc[0](%#1: String)
+	44: MoveLoc[4](%#2: &VecMap<String, String>)
+	45: ImmBorrowLoc[0](%#1: String)
+	46: Call vec_map::get<String, String>(&VecMap<String, String>, &String): &String
+	47: ReadRef
+	48: StLoc[22](t1#1#3: String)
+	49: LdConst[1](vector<u8>: "{na..)
+	50: Call string::utf8(vector<u8>): String
+	51: StLoc[28](t2#1#3: String)
+	52: ImmBorrowLoc[22](t1#1#3: String)
+	53: StLoc[23](t1#1#6: &String)
+	54: ImmBorrowLoc[28](t2#1#3: String)
+	55: StLoc[29](t2#1#6: &String)
+	56: CopyLoc[23](t1#1#6: &String)
+	57: CopyLoc[29](t2#1#6: &String)
+	58: Eq
+	59: Not
+	60: BrFalse(77)
+B1:
+	61: LdConst[4](vector<u8>: "Ass..)
+	62: Call string::utf8(vector<u8>): String
+	63: StLoc[5](%#3: String)
+	64: ImmBorrowLoc[5](%#3: String)
+	65: Call debug::print<String>(&String)
+	66: MoveLoc[23](t1#1#6: &String)
+	67: Call debug::print<String>(&String)
+	68: LdConst[5](vector<u8>: "!="..)
+	69: Call string::utf8(vector<u8>): String
+	70: StLoc[6](%#4: String)
+	71: ImmBorrowLoc[6](%#4: String)
+	72: Call debug::print<String>(&String)
+	73: MoveLoc[29](t2#1#6: &String)
+	74: Call debug::print<String>(&String)
+	75: LdU64(13906834805703573503)
+	76: Abort
+B2:
+	77: MoveLoc[29](t2#1#6: &String)
+	78: Pop
+	79: MoveLoc[23](t1#1#6: &String)
+	80: Pop
+	81: MutBorrowLoc[13](display#1#2: Display<MyKeyOnlyType>)
+	82: ImmBorrowLoc[12](cap#1#2: DisplayCap<MyKeyOnlyType>)
+	83: LdConst[0](vector<u8>: "nam..)
+	84: Call string::utf8(vector<u8>): String
+	85: LdConst[6](vector<u8>: "" /..)
+	86: Call string::utf8(vector<u8>): String
+	87: Call display_registry::set<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, &DisplayCap<MyKeyOnlyType>, String, String)
+	88: ImmBorrowLoc[13](display#1#2: Display<MyKeyOnlyType>)
+	89: Call display_registry::fields<MyKeyOnlyType>(&Display<MyKeyOnlyType>): &VecMap<String, String>
+	90: StLoc[8](%#6: &VecMap<String, String>)
+	91: LdConst[0](vector<u8>: "nam..)
+	92: Call string::utf8(vector<u8>): String
+	93: StLoc[7](%#5: String)
+	94: MoveLoc[8](%#6: &VecMap<String, String>)
+	95: ImmBorrowLoc[7](%#5: String)
+	96: Call vec_map::get<String, String>(&VecMap<String, String>, &String): &String
+	97: ReadRef
+	98: StLoc[24](t1#1#9: String)
+	99: LdConst[6](vector<u8>: "" /..)
+	100: Call string::utf8(vector<u8>): String
+	101: StLoc[30](t2#1#9: String)
+	102: ImmBorrowLoc[24](t1#1#9: String)
+	103: StLoc[19](t1#1#12: &String)
+	104: ImmBorrowLoc[30](t2#1#9: String)
+	105: StLoc[25](t2#1#12: &String)
+	106: CopyLoc[19](t1#1#12: &String)
+	107: CopyLoc[25](t2#1#12: &String)
+	108: Eq
+	109: Not
+	110: BrFalse(127)
+B3:
+	111: LdConst[4](vector<u8>: "Ass..)
+	112: Call string::utf8(vector<u8>): String
+	113: StLoc[9](%#7: String)
+	114: ImmBorrowLoc[9](%#7: String)
+	115: Call debug::print<String>(&String)
+	116: MoveLoc[19](t1#1#12: &String)
+	117: Call debug::print<String>(&String)
+	118: LdConst[5](vector<u8>: "!="..)
+	119: Call string::utf8(vector<u8>): String
+	120: StLoc[10](%#8: String)
+	121: ImmBorrowLoc[10](%#8: String)
+	122: Call debug::print<String>(&String)
+	123: MoveLoc[25](t2#1#12: &String)
+	124: Call debug::print<String>(&String)
+	125: LdU64(13906834805703573503)
+	126: Abort
+B4:
+	127: MoveLoc[25](t2#1#12: &String)
+	128: Pop
+	129: MoveLoc[19](t1#1#12: &String)
+	130: Pop
+	131: MutBorrowLoc[13](display#1#2: Display<MyKeyOnlyType>)
+	132: ImmBorrowLoc[12](cap#1#2: DisplayCap<MyKeyOnlyType>)
+	133: LdConst[7](vector<u8>: "new..)
+	134: Call string::utf8(vector<u8>): String
+	135: LdConst[6](vector<u8>: "" /..)
+	136: Call string::utf8(vector<u8>): String
+	137: Call display_registry::set<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, &DisplayCap<MyKeyOnlyType>, String, String)
+	138: ImmBorrowLoc[13](display#1#2: Display<MyKeyOnlyType>)
+	139: Call display_registry::fields<MyKeyOnlyType>(&Display<MyKeyOnlyType>): &VecMap<String, String>
+	140: StLoc[1](%#10: &VecMap<String, String>)
+	141: LdConst[7](vector<u8>: "new..)
+	142: Call string::utf8(vector<u8>): String
+	143: StLoc[11](%#9: String)
+	144: MoveLoc[1](%#10: &VecMap<String, String>)
+	145: ImmBorrowLoc[11](%#9: String)
+	146: Call vec_map::get<String, String>(&VecMap<String, String>, &String): &String
+	147: ReadRef
+	148: StLoc[20](t1#1#15: String)
+	149: LdConst[6](vector<u8>: "" /..)
+	150: Call string::utf8(vector<u8>): String
+	151: StLoc[26](t2#1#15: String)
+	152: ImmBorrowLoc[20](t1#1#15: String)
+	153: StLoc[21](t1#1#18: &String)
+	154: ImmBorrowLoc[26](t2#1#15: String)
+	155: StLoc[27](t2#1#18: &String)
+	156: CopyLoc[21](t1#1#18: &String)
+	157: CopyLoc[27](t2#1#18: &String)
+	158: Eq
+	159: Not
+	160: BrFalse(177)
+B5:
+	161: LdConst[4](vector<u8>: "Ass..)
+	162: Call string::utf8(vector<u8>): String
+	163: StLoc[2](%#11: String)
+	164: ImmBorrowLoc[2](%#11: String)
+	165: Call debug::print<String>(&String)
+	166: MoveLoc[21](t1#1#18: &String)
+	167: Call debug::print<String>(&String)
+	168: LdConst[5](vector<u8>: "!="..)
+	169: Call string::utf8(vector<u8>): String
+	170: StLoc[3](%#12: String)
+	171: ImmBorrowLoc[3](%#12: String)
+	172: Call debug::print<String>(&String)
+	173: MoveLoc[27](t2#1#18: &String)
+	174: Call debug::print<String>(&String)
+	175: LdU64(13906834805703573503)
+	176: Abort
+B6:
+	177: MoveLoc[27](t2#1#18: &String)
+	178: Pop
+	179: MoveLoc[21](t1#1#18: &String)
+	180: Pop
+	181: MoveLoc[12](cap#1#2: DisplayCap<MyKeyOnlyType>)
+	182: LdConst[3](address: 0x00..)
+	183: Call transfer::public_transfer<DisplayCap<MyKeyOnlyType>>(DisplayCap<MyKeyOnlyType>, address)
+	184: MoveLoc[13](display#1#2: Display<MyKeyOnlyType>)
+	185: Call test_scenario::return_shared<Display<MyKeyOnlyType>>(Display<MyKeyOnlyType>)
+	186: MoveLoc[14](registry#1#1: DisplayRegistry)
+	187: Call test_scenario::return_shared<DisplayRegistry>(DisplayRegistry)
+	188: MoveLoc[16](scenario#1#1: Scenario)
+	189: Call test_scenario::end(Scenario): TransactionEffects
+	190: Pop
+	191: Ret
+}
+
+create_display_twice_fails() {
+L0:	__cap#1#2: DisplayCap<MyKeyOnlyType>
+L1:	__display#1#2: Display<MyKeyOnlyType>
+L2:	_cap#1#2: DisplayCap<MyKeyOnlyType>
+L3:	_display#1#2: Display<MyKeyOnlyType>
+L4:	pub#1#2: Publisher
+L5:	registry#1#1: DisplayRegistry
+L6:	registry#1#2: &mut DisplayRegistry
+L7:	scenario#1#1: Scenario
+L8:	scenario#1#2: &mut Scenario
+L9:	sender#1#1: address
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[9](sender#1#1: address)
+	2: CopyLoc[9](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[7](scenario#1#1: Scenario)
+	5: MutBorrowLoc[7](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[7](scenario#1#1: Scenario)
+	9: MoveLoc[9](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[7](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[5](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[5](registry#1#1: DisplayRegistry)
+	16: StLoc[6](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[7](scenario#1#1: Scenario)
+	18: StLoc[8](scenario#1#2: &mut Scenario)
+	19: CopyLoc[8](scenario#1#2: &mut Scenario)
+	20: Call new_publisher(&mut Scenario): Publisher
+	21: StLoc[4](pub#1#2: Publisher)
+	22: CopyLoc[6](registry#1#2: &mut DisplayRegistry)
+	23: MutBorrowLoc[4](pub#1#2: Publisher)
+	24: CopyLoc[8](scenario#1#2: &mut Scenario)
+	25: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	26: Call display_registry::new_with_publisher<MyKeyOnlyType>(&mut DisplayRegistry, &mut Publisher, &mut TxContext): Display<MyKeyOnlyType> * DisplayCap<MyKeyOnlyType>
+	27: StLoc[2](_cap#1#2: DisplayCap<MyKeyOnlyType>)
+	28: StLoc[3](_display#1#2: Display<MyKeyOnlyType>)
+	29: MoveLoc[6](registry#1#2: &mut DisplayRegistry)
+	30: MutBorrowLoc[4](pub#1#2: Publisher)
+	31: MoveLoc[8](scenario#1#2: &mut Scenario)
+	32: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	33: Call display_registry::new_with_publisher<MyKeyOnlyType>(&mut DisplayRegistry, &mut Publisher, &mut TxContext): Display<MyKeyOnlyType> * DisplayCap<MyKeyOnlyType>
+	34: StLoc[0](__cap#1#2: DisplayCap<MyKeyOnlyType>)
+	35: StLoc[1](__display#1#2: Display<MyKeyOnlyType>)
+	36: LdU64(13906834951732461567)
+	37: Abort
+}
+
+migrate_twice_returns_silently() {
+L0:	%#1: vector<ID>
+L1:	%#10: vector<ID>
+L2:	%#11: String
+L3:	%#12: String
+L4:	%#13: String
+L5:	%#14: String
+L6:	%#15: String
+L7:	%#16: &VecMap<String, String>
+L8:	%#17: String
+L9:	%#18: String
+L10:	%#2: String
+L11:	%#3: String
+L12:	%#4: vector<ID>
+L13:	%#5: String
+L14:	%#6: String
+L15:	%#7: vector<ID>
+L16:	%#8: String
+L17:	%#9: String
+L18:	cap#1#2: SystemMigrationCap
+L19:	display#1#2: Display<MyKeyOnlyType>
+L20:	effects#1#2: TransactionEffects
+L21:	effects#2#2: TransactionEffects
+L22:	registry#1#1: DisplayRegistry
+L23:	registry#1#2: &mut DisplayRegistry
+L24:	scenario#1#1: Scenario
+L25:	scenario#1#2: &mut Scenario
+L26:	sender#1#1: address
+L27:	t1#1#12: &u64
+L28:	t1#1#15: u64
+L29:	t1#1#18: &u64
+L30:	t1#1#21: u64
+L31:	t1#1#24: &u64
+L32:	t1#1#27: u64
+L33:	t1#1#3: u64
+L34:	t1#1#30: &u64
+L35:	t1#1#33: String
+L36:	t1#1#36: &String
+L37:	t1#1#6: &u64
+L38:	t1#1#9: u64
+L39:	t2#1#12: &u64
+L40:	t2#1#15: u64
+L41:	t2#1#18: &u64
+L42:	t2#1#21: u64
+L43:	t2#1#24: &u64
+L44:	t2#1#27: u64
+L45:	t2#1#3: u64
+L46:	t2#1#30: &u64
+L47:	t2#1#33: String
+L48:	t2#1#36: &String
+L49:	t2#1#6: &u64
+L50:	t2#1#9: u64
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[26](sender#1#1: address)
+	2: CopyLoc[26](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[24](scenario#1#1: Scenario)
+	5: MutBorrowLoc[24](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[24](scenario#1#1: Scenario)
+	9: MoveLoc[26](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[24](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[22](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[22](registry#1#1: DisplayRegistry)
+	16: StLoc[23](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[24](scenario#1#1: Scenario)
+	18: StLoc[25](scenario#1#2: &mut Scenario)
+	19: CopyLoc[25](scenario#1#2: &mut Scenario)
+	20: LdConst[8](address: 0x00..)
+	21: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	22: Pop
+	23: CopyLoc[25](scenario#1#2: &mut Scenario)
+	24: Call take_migration_cap(&mut Scenario): SystemMigrationCap
+	25: StLoc[18](cap#1#2: SystemMigrationCap)
+	26: CopyLoc[23](registry#1#2: &mut DisplayRegistry)
+	27: ImmBorrowLoc[18](cap#1#2: SystemMigrationCap)
+	28: LdConst[0](vector<u8>: "nam..)
+	29: Call string::utf8(vector<u8>): String
+	30: VecPack(23, 1)
+	31: LdConst[1](vector<u8>: "{na..)
+	32: Call string::utf8(vector<u8>): String
+	33: VecPack(23, 1)
+	34: CopyLoc[25](scenario#1#2: &mut Scenario)
+	35: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	36: Call display_registry::system_migration<MyKeyOnlyType>(&mut DisplayRegistry, &SystemMigrationCap, vector<String>, vector<String>, &mut TxContext)
+	37: CopyLoc[25](scenario#1#2: &mut Scenario)
+	38: LdConst[8](address: 0x00..)
+	39: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	40: StLoc[20](effects#1#2: TransactionEffects)
+	41: ImmBorrowLoc[20](effects#1#2: TransactionEffects)
+	42: Call test_scenario::shared(&TransactionEffects): vector<ID>
+	43: StLoc[0](%#1: vector<ID>)
+	44: ImmBorrowLoc[0](%#1: vector<ID>)
+	45: VecLen(26)
+	46: StLoc[33](t1#1#3: u64)
+	47: LdU64(1)
+	48: StLoc[45](t2#1#3: u64)
+	49: ImmBorrowLoc[33](t1#1#3: u64)
+	50: StLoc[37](t1#1#6: &u64)
+	51: ImmBorrowLoc[45](t2#1#3: u64)
+	52: StLoc[49](t2#1#6: &u64)
+	53: CopyLoc[37](t1#1#6: &u64)
+	54: CopyLoc[49](t2#1#6: &u64)
+	55: Eq
+	56: Not
+	57: BrFalse(78)
+B1:
+	58: LdConst[4](vector<u8>: "Ass..)
+	59: Call string::utf8(vector<u8>): String
+	60: StLoc[10](%#2: String)
+	61: ImmBorrowLoc[10](%#2: String)
+	62: Call debug::print<String>(&String)
+	63: MoveLoc[37](t1#1#6: &u64)
+	64: Call debug::print<u64>(&u64)
+	65: LdConst[5](vector<u8>: "!="..)
+	66: Call string::utf8(vector<u8>): String
+	67: StLoc[11](%#3: String)
+	68: ImmBorrowLoc[11](%#3: String)
+	69: Call debug::print<String>(&String)
+	70: MoveLoc[49](t2#1#6: &u64)
+	71: Call debug::print<u64>(&u64)
+	72: MoveLoc[25](scenario#1#2: &mut Scenario)
+	73: Pop
+	74: MoveLoc[23](registry#1#2: &mut DisplayRegistry)
+	75: Pop
+	76: LdU64(13906834977502265343)
+	77: Abort
+B2:
+	78: MoveLoc[49](t2#1#6: &u64)
+	79: Pop
+	80: MoveLoc[37](t1#1#6: &u64)
+	81: Pop
+	82: ImmBorrowLoc[20](effects#1#2: TransactionEffects)
+	83: Call test_scenario::created(&TransactionEffects): vector<ID>
+	84: StLoc[12](%#4: vector<ID>)
+	85: ImmBorrowLoc[12](%#4: vector<ID>)
+	86: VecLen(26)
+	87: StLoc[38](t1#1#9: u64)
+	88: LdU64(1)
+	89: StLoc[50](t2#1#9: u64)
+	90: ImmBorrowLoc[38](t1#1#9: u64)
+	91: StLoc[27](t1#1#12: &u64)
+	92: ImmBorrowLoc[50](t2#1#9: u64)
+	93: StLoc[39](t2#1#12: &u64)
+	94: CopyLoc[27](t1#1#12: &u64)
+	95: CopyLoc[39](t2#1#12: &u64)
+	96: Eq
+	97: Not
+	98: BrFalse(119)
+B3:
+	99: LdConst[4](vector<u8>: "Ass..)
+	100: Call string::utf8(vector<u8>): String
+	101: StLoc[13](%#5: String)
+	102: ImmBorrowLoc[13](%#5: String)
+	103: Call debug::print<String>(&String)
+	104: MoveLoc[27](t1#1#12: &u64)
+	105: Call debug::print<u64>(&u64)
+	106: LdConst[5](vector<u8>: "!="..)
+	107: Call string::utf8(vector<u8>): String
+	108: StLoc[14](%#6: String)
+	109: ImmBorrowLoc[14](%#6: String)
+	110: Call debug::print<String>(&String)
+	111: MoveLoc[39](t2#1#12: &u64)
+	112: Call debug::print<u64>(&u64)
+	113: MoveLoc[25](scenario#1#2: &mut Scenario)
+	114: Pop
+	115: MoveLoc[23](registry#1#2: &mut DisplayRegistry)
+	116: Pop
+	117: LdU64(13906834977502265343)
+	118: Abort
+B4:
+	119: MoveLoc[39](t2#1#12: &u64)
+	120: Pop
+	121: MoveLoc[27](t1#1#12: &u64)
+	122: Pop
+	123: MoveLoc[23](registry#1#2: &mut DisplayRegistry)
+	124: ImmBorrowLoc[18](cap#1#2: SystemMigrationCap)
+	125: VecPack(23, 0)
+	126: VecPack(23, 0)
+	127: CopyLoc[25](scenario#1#2: &mut Scenario)
+	128: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	129: Call display_registry::system_migration<MyKeyOnlyType>(&mut DisplayRegistry, &SystemMigrationCap, vector<String>, vector<String>, &mut TxContext)
+	130: CopyLoc[25](scenario#1#2: &mut Scenario)
+	131: LdConst[8](address: 0x00..)
+	132: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	133: StLoc[21](effects#2#2: TransactionEffects)
+	134: ImmBorrowLoc[21](effects#2#2: TransactionEffects)
+	135: Call test_scenario::shared(&TransactionEffects): vector<ID>
+	136: StLoc[15](%#7: vector<ID>)
+	137: ImmBorrowLoc[15](%#7: vector<ID>)
+	138: VecLen(26)
+	139: StLoc[28](t1#1#15: u64)
+	140: LdU64(0)
+	141: StLoc[40](t2#1#15: u64)
+	142: ImmBorrowLoc[28](t1#1#15: u64)
+	143: StLoc[29](t1#1#18: &u64)
+	144: ImmBorrowLoc[40](t2#1#15: u64)
+	145: StLoc[41](t2#1#18: &u64)
+	146: CopyLoc[29](t1#1#18: &u64)
+	147: CopyLoc[41](t2#1#18: &u64)
+	148: Eq
+	149: Not
+	150: BrFalse(169)
+B5:
+	151: LdConst[4](vector<u8>: "Ass..)
+	152: Call string::utf8(vector<u8>): String
+	153: StLoc[16](%#8: String)
+	154: ImmBorrowLoc[16](%#8: String)
+	155: Call debug::print<String>(&String)
+	156: MoveLoc[29](t1#1#18: &u64)
+	157: Call debug::print<u64>(&u64)
+	158: LdConst[5](vector<u8>: "!="..)
+	159: Call string::utf8(vector<u8>): String
+	160: StLoc[17](%#9: String)
+	161: ImmBorrowLoc[17](%#9: String)
+	162: Call debug::print<String>(&String)
+	163: MoveLoc[41](t2#1#18: &u64)
+	164: Call debug::print<u64>(&u64)
+	165: MoveLoc[25](scenario#1#2: &mut Scenario)
+	166: Pop
+	167: LdU64(13906834977502265343)
+	168: Abort
+B6:
+	169: MoveLoc[41](t2#1#18: &u64)
+	170: Pop
+	171: MoveLoc[29](t1#1#18: &u64)
+	172: Pop
+	173: ImmBorrowLoc[21](effects#2#2: TransactionEffects)
+	174: Call test_scenario::created(&TransactionEffects): vector<ID>
+	175: StLoc[1](%#10: vector<ID>)
+	176: ImmBorrowLoc[1](%#10: vector<ID>)
+	177: VecLen(26)
+	178: StLoc[30](t1#1#21: u64)
+	179: LdU64(0)
+	180: StLoc[42](t2#1#21: u64)
+	181: ImmBorrowLoc[30](t1#1#21: u64)
+	182: StLoc[31](t1#1#24: &u64)
+	183: ImmBorrowLoc[42](t2#1#21: u64)
+	184: StLoc[43](t2#1#24: &u64)
+	185: CopyLoc[31](t1#1#24: &u64)
+	186: CopyLoc[43](t2#1#24: &u64)
+	187: Eq
+	188: Not
+	189: BrFalse(208)
+B7:
+	190: LdConst[4](vector<u8>: "Ass..)
+	191: Call string::utf8(vector<u8>): String
+	192: StLoc[2](%#11: String)
+	193: ImmBorrowLoc[2](%#11: String)
+	194: Call debug::print<String>(&String)
+	195: MoveLoc[31](t1#1#24: &u64)
+	196: Call debug::print<u64>(&u64)
+	197: LdConst[5](vector<u8>: "!="..)
+	198: Call string::utf8(vector<u8>): String
+	199: StLoc[3](%#12: String)
+	200: ImmBorrowLoc[3](%#12: String)
+	201: Call debug::print<String>(&String)
+	202: MoveLoc[43](t2#1#24: &u64)
+	203: Call debug::print<u64>(&u64)
+	204: MoveLoc[25](scenario#1#2: &mut Scenario)
+	205: Pop
+	206: LdU64(13906834977502265343)
+	207: Abort
+B8:
+	208: MoveLoc[43](t2#1#24: &u64)
+	209: Pop
+	210: MoveLoc[31](t1#1#24: &u64)
+	211: Pop
+	212: MoveLoc[25](scenario#1#2: &mut Scenario)
+	213: FreezeRef
+	214: Call test_scenario::take_shared<Display<MyKeyOnlyType>>(&Scenario): Display<MyKeyOnlyType>
+	215: StLoc[19](display#1#2: Display<MyKeyOnlyType>)
+	216: ImmBorrowLoc[19](display#1#2: Display<MyKeyOnlyType>)
+	217: Call display_registry::fields<MyKeyOnlyType>(&Display<MyKeyOnlyType>): &VecMap<String, String>
+	218: Call vec_map::length<String, String>(&VecMap<String, String>): u64
+	219: StLoc[32](t1#1#27: u64)
+	220: LdU64(1)
+	221: StLoc[44](t2#1#27: u64)
+	222: ImmBorrowLoc[32](t1#1#27: u64)
+	223: StLoc[34](t1#1#30: &u64)
+	224: ImmBorrowLoc[44](t2#1#27: u64)
+	225: StLoc[46](t2#1#30: &u64)
+	226: CopyLoc[34](t1#1#30: &u64)
+	227: CopyLoc[46](t2#1#30: &u64)
+	228: Eq
+	229: Not
+	230: BrFalse(247)
+B9:
+	231: LdConst[4](vector<u8>: "Ass..)
+	232: Call string::utf8(vector<u8>): String
+	233: StLoc[4](%#13: String)
+	234: ImmBorrowLoc[4](%#13: String)
+	235: Call debug::print<String>(&String)
+	236: MoveLoc[34](t1#1#30: &u64)
+	237: Call debug::print<u64>(&u64)
+	238: LdConst[5](vector<u8>: "!="..)
+	239: Call string::utf8(vector<u8>): String
+	240: StLoc[5](%#14: String)
+	241: ImmBorrowLoc[5](%#14: String)
+	242: Call debug::print<String>(&String)
+	243: MoveLoc[46](t2#1#30: &u64)
+	244: Call debug::print<u64>(&u64)
+	245: LdU64(13906834977502265343)
+	246: Abort
+B10:
+	247: MoveLoc[46](t2#1#30: &u64)
+	248: Pop
+	249: MoveLoc[34](t1#1#30: &u64)
+	250: Pop
+	251: ImmBorrowLoc[19](display#1#2: Display<MyKeyOnlyType>)
+	252: Call display_registry::fields<MyKeyOnlyType>(&Display<MyKeyOnlyType>): &VecMap<String, String>
+	253: StLoc[7](%#16: &VecMap<String, String>)
+	254: LdConst[0](vector<u8>: "nam..)
+	255: Call string::utf8(vector<u8>): String
+	256: StLoc[6](%#15: String)
+	257: MoveLoc[7](%#16: &VecMap<String, String>)
+	258: ImmBorrowLoc[6](%#15: String)
+	259: Call vec_map::get<String, String>(&VecMap<String, String>, &String): &String
+	260: ReadRef
+	261: StLoc[35](t1#1#33: String)
+	262: LdConst[1](vector<u8>: "{na..)
+	263: Call string::utf8(vector<u8>): String
+	264: StLoc[47](t2#1#33: String)
+	265: ImmBorrowLoc[35](t1#1#33: String)
+	266: StLoc[36](t1#1#36: &String)
+	267: ImmBorrowLoc[47](t2#1#33: String)
+	268: StLoc[48](t2#1#36: &String)
+	269: CopyLoc[36](t1#1#36: &String)
+	270: CopyLoc[48](t2#1#36: &String)
+	271: Eq
+	272: Not
+	273: BrFalse(290)
+B11:
+	274: LdConst[4](vector<u8>: "Ass..)
+	275: Call string::utf8(vector<u8>): String
+	276: StLoc[8](%#17: String)
+	277: ImmBorrowLoc[8](%#17: String)
+	278: Call debug::print<String>(&String)
+	279: MoveLoc[36](t1#1#36: &String)
+	280: Call debug::print<String>(&String)
+	281: LdConst[5](vector<u8>: "!="..)
+	282: Call string::utf8(vector<u8>): String
+	283: StLoc[9](%#18: String)
+	284: ImmBorrowLoc[9](%#18: String)
+	285: Call debug::print<String>(&String)
+	286: MoveLoc[48](t2#1#36: &String)
+	287: Call debug::print<String>(&String)
+	288: LdU64(13906834977502265343)
+	289: Abort
+B12:
+	290: MoveLoc[48](t2#1#36: &String)
+	291: Pop
+	292: MoveLoc[36](t1#1#36: &String)
+	293: Pop
+	294: MoveLoc[19](display#1#2: Display<MyKeyOnlyType>)
+	295: Call test_scenario::return_shared<Display<MyKeyOnlyType>>(Display<MyKeyOnlyType>)
+	296: MoveLoc[18](cap#1#2: SystemMigrationCap)
+	297: Call display_registry::destroy_system_migration_cap(SystemMigrationCap)
+	298: MoveLoc[22](registry#1#1: DisplayRegistry)
+	299: Call test_scenario::return_shared<DisplayRegistry>(DisplayRegistry)
+	300: MoveLoc[24](scenario#1#1: Scenario)
+	301: Call test_scenario::end(Scenario): TransactionEffects
+	302: Pop
+	303: Ret
+}
+
+claim_cap_twice_fails() {
+L0:	_first#1#2: DisplayCap<MyKeyOnlyType>
+L1:	_second#1#2: DisplayCap<MyKeyOnlyType>
+L2:	cap#1#2: SystemMigrationCap
+L3:	display#1#2: Display<MyKeyOnlyType>
+L4:	publisher#1#2: Publisher
+L5:	registry#1#1: DisplayRegistry
+L6:	registry#1#2: &mut DisplayRegistry
+L7:	scenario#1#1: Scenario
+L8:	scenario#1#2: &mut Scenario
+L9:	sender#1#1: address
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[9](sender#1#1: address)
+	2: CopyLoc[9](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[7](scenario#1#1: Scenario)
+	5: MutBorrowLoc[7](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[7](scenario#1#1: Scenario)
+	9: MoveLoc[9](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[7](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[5](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[5](registry#1#1: DisplayRegistry)
+	16: StLoc[6](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[7](scenario#1#1: Scenario)
+	18: StLoc[8](scenario#1#2: &mut Scenario)
+	19: LdFalse
+	20: Pack[2](MY_OTW)
+	21: CopyLoc[8](scenario#1#2: &mut Scenario)
+	22: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	23: Call package::test_claim<MY_OTW>(MY_OTW, &mut TxContext): Publisher
+	24: StLoc[4](publisher#1#2: Publisher)
+	25: CopyLoc[8](scenario#1#2: &mut Scenario)
+	26: Call take_migration_cap(&mut Scenario): SystemMigrationCap
+	27: StLoc[2](cap#1#2: SystemMigrationCap)
+	28: MoveLoc[6](registry#1#2: &mut DisplayRegistry)
+	29: ImmBorrowLoc[2](cap#1#2: SystemMigrationCap)
+	30: VecPack(23, 0)
+	31: VecPack(23, 0)
+	32: CopyLoc[8](scenario#1#2: &mut Scenario)
+	33: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	34: Call display_registry::system_migration<MyKeyOnlyType>(&mut DisplayRegistry, &SystemMigrationCap, vector<String>, vector<String>, &mut TxContext)
+	35: CopyLoc[8](scenario#1#2: &mut Scenario)
+	36: LdConst[3](address: 0x00..)
+	37: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	38: Pop
+	39: CopyLoc[8](scenario#1#2: &mut Scenario)
+	40: FreezeRef
+	41: Call test_scenario::take_shared<Display<MyKeyOnlyType>>(&Scenario): Display<MyKeyOnlyType>
+	42: StLoc[3](display#1#2: Display<MyKeyOnlyType>)
+	43: MutBorrowLoc[3](display#1#2: Display<MyKeyOnlyType>)
+	44: MutBorrowLoc[4](publisher#1#2: Publisher)
+	45: CopyLoc[8](scenario#1#2: &mut Scenario)
+	46: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	47: Call display_registry::claim_with_publisher<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, &mut Publisher, &mut TxContext): DisplayCap<MyKeyOnlyType>
+	48: StLoc[0](_first#1#2: DisplayCap<MyKeyOnlyType>)
+	49: MutBorrowLoc[3](display#1#2: Display<MyKeyOnlyType>)
+	50: MutBorrowLoc[4](publisher#1#2: Publisher)
+	51: MoveLoc[8](scenario#1#2: &mut Scenario)
+	52: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	53: Call display_registry::claim_with_publisher<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, &mut Publisher, &mut TxContext): DisplayCap<MyKeyOnlyType>
+	54: StLoc[1](_second#1#2: DisplayCap<MyKeyOnlyType>)
+	55: LdU64(13906835218020433919)
+	56: Abort
+}
+
+delete_legacy_before_migration_fails() {
+L0:	cap#1#2: SystemMigrationCap
+L1:	display#1#2: Display<MyKeyOnlyType>
+L2:	legacy_display#1#2: Display<MyKeyOnlyType>
+L3:	publisher#1#2: Publisher
+L4:	registry#1#1: DisplayRegistry
+L5:	registry#1#2: &mut DisplayRegistry
+L6:	scenario#1#1: Scenario
+L7:	scenario#1#2: &mut Scenario
+L8:	sender#1#1: address
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[8](sender#1#1: address)
+	2: CopyLoc[8](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[6](scenario#1#1: Scenario)
+	5: MutBorrowLoc[6](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[6](scenario#1#1: Scenario)
+	9: MoveLoc[8](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[6](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[4](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[4](registry#1#1: DisplayRegistry)
+	16: StLoc[5](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[6](scenario#1#1: Scenario)
+	18: StLoc[7](scenario#1#2: &mut Scenario)
+	19: CopyLoc[7](scenario#1#2: &mut Scenario)
+	20: Call take_migration_cap(&mut Scenario): SystemMigrationCap
+	21: StLoc[0](cap#1#2: SystemMigrationCap)
+	22: MoveLoc[5](registry#1#2: &mut DisplayRegistry)
+	23: ImmBorrowLoc[0](cap#1#2: SystemMigrationCap)
+	24: VecPack(23, 0)
+	25: VecPack(23, 0)
+	26: CopyLoc[7](scenario#1#2: &mut Scenario)
+	27: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	28: Call display_registry::system_migration<MyKeyOnlyType>(&mut DisplayRegistry, &SystemMigrationCap, vector<String>, vector<String>, &mut TxContext)
+	29: CopyLoc[7](scenario#1#2: &mut Scenario)
+	30: LdConst[3](address: 0x00..)
+	31: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	32: Pop
+	33: CopyLoc[7](scenario#1#2: &mut Scenario)
+	34: FreezeRef
+	35: Call test_scenario::take_shared<Display<MyKeyOnlyType>>(&Scenario): Display<MyKeyOnlyType>
+	36: StLoc[1](display#1#2: Display<MyKeyOnlyType>)
+	37: LdFalse
+	38: Pack[2](MY_OTW)
+	39: CopyLoc[7](scenario#1#2: &mut Scenario)
+	40: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	41: Call package::test_claim<MY_OTW>(MY_OTW, &mut TxContext): Publisher
+	42: StLoc[3](publisher#1#2: Publisher)
+	43: ImmBorrowLoc[3](publisher#1#2: Publisher)
+	44: MoveLoc[7](scenario#1#2: &mut Scenario)
+	45: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	46: Call display::new<MyKeyOnlyType>(&Publisher, &mut TxContext): Display<MyKeyOnlyType>
+	47: StLoc[2](legacy_display#1#2: Display<MyKeyOnlyType>)
+	48: ImmBorrowLoc[1](display#1#2: Display<MyKeyOnlyType>)
+	49: MoveLoc[2](legacy_display#1#2: Display<MyKeyOnlyType>)
+	50: Call display_registry::delete_legacy<MyKeyOnlyType>(&Display<MyKeyOnlyType>, Display<MyKeyOnlyType>)
+	51: LdU64(13906835303919779839)
+	52: Abort
+}
+
+remove_non_existing_field_fails() {
+L0:	cap#1#2: DisplayCap<MyKeyOnlyType>
+L1:	display#1#2: Display<MyKeyOnlyType>
+L2:	registry#1#1: DisplayRegistry
+L3:	registry#1#2: &mut DisplayRegistry
+L4:	scenario#1#1: Scenario
+L5:	scenario#1#2: &mut Scenario
+L6:	sender#1#1: address
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[6](sender#1#1: address)
+	2: CopyLoc[6](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[4](scenario#1#1: Scenario)
+	5: MutBorrowLoc[4](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[4](scenario#1#1: Scenario)
+	9: MoveLoc[6](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[4](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[2](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[2](registry#1#1: DisplayRegistry)
+	16: StLoc[3](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[4](scenario#1#1: Scenario)
+	18: StLoc[5](scenario#1#2: &mut Scenario)
+	19: MoveLoc[3](registry#1#2: &mut DisplayRegistry)
+	20: CopyLoc[5](scenario#1#2: &mut Scenario)
+	21: Call new_display<MyKeyOnlyType>(&mut DisplayRegistry, &mut Scenario): DisplayCap<MyKeyOnlyType>
+	22: StLoc[0](cap#1#2: DisplayCap<MyKeyOnlyType>)
+	23: CopyLoc[5](scenario#1#2: &mut Scenario)
+	24: LdConst[3](address: 0x00..)
+	25: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	26: Pop
+	27: MoveLoc[5](scenario#1#2: &mut Scenario)
+	28: FreezeRef
+	29: Call test_scenario::take_shared<Display<MyKeyOnlyType>>(&Scenario): Display<MyKeyOnlyType>
+	30: StLoc[1](display#1#2: Display<MyKeyOnlyType>)
+	31: MutBorrowLoc[1](display#1#2: Display<MyKeyOnlyType>)
+	32: ImmBorrowLoc[0](cap#1#2: DisplayCap<MyKeyOnlyType>)
+	33: LdConst[0](vector<u8>: "nam..)
+	34: Call string::utf8(vector<u8>): String
+	35: Call display_registry::unset<MyKeyOnlyType>(&mut Display<MyKeyOnlyType>, &DisplayCap<MyKeyOnlyType>, String)
+	36: LdU64(13906835355459387391)
+	37: Abort
+}
+
+use_invalid_publisher() {
+L0:	_cap#1#2: DisplayCap<String>
+L1:	registry#1#1: DisplayRegistry
+L2:	registry#1#2: &mut DisplayRegistry
+L3:	scenario#1#1: Scenario
+L4:	scenario#1#2: &mut Scenario
+L5:	sender#1#1: address
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[5](sender#1#1: address)
+	2: CopyLoc[5](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[3](scenario#1#1: Scenario)
+	5: MutBorrowLoc[3](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[3](scenario#1#1: Scenario)
+	9: MoveLoc[5](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[3](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[1](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[1](registry#1#1: DisplayRegistry)
+	16: StLoc[2](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[3](scenario#1#1: Scenario)
+	18: StLoc[4](scenario#1#2: &mut Scenario)
+	19: MoveLoc[2](registry#1#2: &mut DisplayRegistry)
+	20: MoveLoc[4](scenario#1#2: &mut Scenario)
+	21: Call new_display<String>(&mut DisplayRegistry, &mut Scenario): DisplayCap<String>
+	22: StLoc[0](_cap#1#2: DisplayCap<String>)
+	23: LdU64(13906835394114093055)
+	24: Abort
+}
+
+fails_when_migrating_twice() {
+L0:	_another_cap#1#2: DisplayCap<MyKeyOnlyType>
+L1:	_another_display#1#2: Display<MyKeyOnlyType>
+L2:	_cap#1#2: DisplayCap<MyKeyOnlyType>
+L3:	_display#1#2: Display<MyKeyOnlyType>
+L4:	another_legacy_display#1#2: Display<MyKeyOnlyType>
+L5:	legacy_display#1#2: Display<MyKeyOnlyType>
+L6:	publisher#1#2: Publisher
+L7:	registry#1#1: DisplayRegistry
+L8:	registry#1#2: &mut DisplayRegistry
+L9:	scenario#1#1: Scenario
+L10:	scenario#1#2: &mut Scenario
+L11:	sender#1#1: address
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: StLoc[11](sender#1#1: address)
+	2: CopyLoc[11](sender#1#1: address)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[9](scenario#1#1: Scenario)
+	5: MutBorrowLoc[9](scenario#1#1: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::create_for_testing(&mut TxContext)
+	8: MutBorrowLoc[9](scenario#1#1: Scenario)
+	9: MoveLoc[11](sender#1#1: address)
+	10: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	11: Pop
+	12: ImmBorrowLoc[9](scenario#1#1: Scenario)
+	13: Call test_scenario::take_shared<DisplayRegistry>(&Scenario): DisplayRegistry
+	14: StLoc[7](registry#1#1: DisplayRegistry)
+	15: MutBorrowLoc[7](registry#1#1: DisplayRegistry)
+	16: StLoc[8](registry#1#2: &mut DisplayRegistry)
+	17: MutBorrowLoc[9](scenario#1#1: Scenario)
+	18: StLoc[10](scenario#1#2: &mut Scenario)
+	19: CopyLoc[10](scenario#1#2: &mut Scenario)
+	20: Call new_publisher(&mut Scenario): Publisher
+	21: StLoc[6](publisher#1#2: Publisher)
+	22: ImmBorrowLoc[6](publisher#1#2: Publisher)
+	23: CopyLoc[10](scenario#1#2: &mut Scenario)
+	24: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	25: Call display::new<MyKeyOnlyType>(&Publisher, &mut TxContext): Display<MyKeyOnlyType>
+	26: StLoc[5](legacy_display#1#2: Display<MyKeyOnlyType>)
+	27: ImmBorrowLoc[6](publisher#1#2: Publisher)
+	28: CopyLoc[10](scenario#1#2: &mut Scenario)
+	29: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	30: Call display::new<MyKeyOnlyType>(&Publisher, &mut TxContext): Display<MyKeyOnlyType>
+	31: StLoc[4](another_legacy_display#1#2: Display<MyKeyOnlyType>)
+	32: CopyLoc[8](registry#1#2: &mut DisplayRegistry)
+	33: MoveLoc[5](legacy_display#1#2: Display<MyKeyOnlyType>)
+	34: CopyLoc[10](scenario#1#2: &mut Scenario)
+	35: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	36: Call display_registry::migrate_v1_to_v2<MyKeyOnlyType>(&mut DisplayRegistry, Display<MyKeyOnlyType>, &mut TxContext): Display<MyKeyOnlyType> * DisplayCap<MyKeyOnlyType>
+	37: StLoc[2](_cap#1#2: DisplayCap<MyKeyOnlyType>)
+	38: StLoc[3](_display#1#2: Display<MyKeyOnlyType>)
+	39: MoveLoc[8](registry#1#2: &mut DisplayRegistry)
+	40: MoveLoc[4](another_legacy_display#1#2: Display<MyKeyOnlyType>)
+	41: MoveLoc[10](scenario#1#2: &mut Scenario)
+	42: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	43: Call display_registry::migrate_v1_to_v2<MyKeyOnlyType>(&mut DisplayRegistry, Display<MyKeyOnlyType>, &mut TxContext): Display<MyKeyOnlyType> * DisplayCap<MyKeyOnlyType>
+	44: StLoc[0](_another_cap#1#2: DisplayCap<MyKeyOnlyType>)
+	45: StLoc[1](_another_display#1#2: Display<MyKeyOnlyType>)
+	46: LdU64(13906835471423504383)
+	47: Abort
+}
+
+new_display<T>(registry#0#0: &mut DisplayRegistry, scenario#0#0: &mut Scenario): DisplayCap<T> {
+L2:	cap#1#0: DisplayCap<T>
+L3:	display#1#0: Display<T>
+L4:	publisher#1#0: Publisher
+B0:
+	0: CopyLoc[1](scenario#0#0: &mut Scenario)
+	1: Call new_publisher(&mut Scenario): Publisher
+	2: StLoc[4](publisher#1#0: Publisher)
+	3: MoveLoc[0](registry#0#0: &mut DisplayRegistry)
+	4: MutBorrowLoc[4](publisher#1#0: Publisher)
+	5: MoveLoc[1](scenario#0#0: &mut Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call display_registry::new_with_publisher<T>(&mut DisplayRegistry, &mut Publisher, &mut TxContext): Display<T> * DisplayCap<T>
+	8: StLoc[2](cap#1#0: DisplayCap<T>)
+	9: StLoc[3](display#1#0: Display<T>)
+	10: MoveLoc[4](publisher#1#0: Publisher)
+	11: Call package::burn_publisher(Publisher)
+	12: MoveLoc[3](display#1#0: Display<T>)
+	13: Call display_registry::share<T>(Display<T>)
+	14: MoveLoc[2](cap#1#0: DisplayCap<T>)
+	15: Ret
+}
+
+new_publisher(scenario#0#0: &mut Scenario): Publisher {
+B0:
+	0: LdFalse
+	1: Pack[2](MY_OTW)
+	2: MoveLoc[0](scenario#0#0: &mut Scenario)
+	3: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	4: Call package::test_claim<MY_OTW>(MY_OTW, &mut TxContext): Publisher
+	5: Ret
+}
+
+take_migration_cap(scenario#0#0: &mut Scenario): SystemMigrationCap {
+B0:
+	0: CopyLoc[0](scenario#0#0: &mut Scenario)
+	1: Call display_registry::migration_cap_receiver(): address
+	2: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	3: Pop
+	4: MoveLoc[0](scenario#0#0: &mut Scenario)
+	5: FreezeRef
+	6: Call display_registry::migration_cap_receiver(): address
+	7: Call test_scenario::take_from_address<SystemMigrationCap>(&Scenario, address): SystemMigrationCap
+	8: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "name" // interpreted as UTF8 string
+	1 => vector<u8>: "{name}" // interpreted as UTF8 string
+	2 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	3 => address: 0x0000000000000000000000000000000000000000000000000000000000000001
+	4 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	5 => vector<u8>: "!=" // interpreted as UTF8 string
+	6 => vector<u8>: "" // interpreted as UTF8 string
+	7 => vector<u8>: "new_field" // interpreted as UTF8 string
+	8 => address: 0x0000000000000000000000000000000000000000000000000000000000000005
+]
+}

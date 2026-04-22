@@ -1,0 +1,412 @@
+// Move bytecode v6
+module 2.display_registry {
+use 0000000000000000000000000000000000000000000000000000000000000001::internal;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::derived_object;
+use 0000000000000000000000000000000000000000000000000000000000000002::display;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::package;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::vec_map;
+
+struct DisplayRegistry has key {
+	id: UID
+}
+
+struct SystemMigrationCap has key {
+	id: UID
+}
+
+struct Display<phantom T> has key {
+	id: UID,
+	fields: VecMap<String, String>,
+	cap_id: Option<ID>
+}
+
+struct DisplayCap<phantom T> has store, key {
+	id: UID
+}
+
+struct DisplayKey<phantom T> has copy, drop, store {
+	dummy_field: bool
+}
+
+public new<T>(registry#0#0: &mut DisplayRegistry, _#0#0: Permit<T>, ctx#0#0: &mut TxContext): Display<T> * DisplayCap<T> {
+B0:
+	0: MoveLoc[0](registry#0#0: &mut DisplayRegistry)
+	1: MoveLoc[2](ctx#0#0: &mut TxContext)
+	2: Call new_display<T>(&mut DisplayRegistry, &mut TxContext): Display<T> * DisplayCap<T>
+	3: Ret
+}
+
+public new_with_publisher<T>(registry#0#0: &mut DisplayRegistry, publisher#0#0: &mut Publisher, ctx#0#0: &mut TxContext): Display<T> * DisplayCap<T> {
+B0:
+	0: MoveLoc[1](publisher#0#0: &mut Publisher)
+	1: FreezeRef
+	2: Call package::from_package<T>(&Publisher): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(11)
+B2:
+	5: MoveLoc[0](registry#0#0: &mut DisplayRegistry)
+	6: Pop
+	7: MoveLoc[2](ctx#0#0: &mut TxContext)
+	8: Pop
+	9: LdU64(13835902776565497864)
+	10: Abort
+B3:
+	11: MoveLoc[0](registry#0#0: &mut DisplayRegistry)
+	12: MoveLoc[2](ctx#0#0: &mut TxContext)
+	13: Call new_display<T>(&mut DisplayRegistry, &mut TxContext): Display<T> * DisplayCap<T>
+	14: Ret
+}
+
+public unset<T>(display#0#0: &mut Display<T>, _#0#0: &DisplayCap<T>, name#0#0: String) {
+B0:
+	0: CopyLoc[0](display#0#0: &mut Display<T>)
+	1: ImmBorrowFieldGeneric[0](Display.fields: VecMap<String, String>)
+	2: ImmBorrowLoc[2](name#0#0: String)
+	3: Call vec_map::contains<String, String>(&VecMap<String, String>, &String): bool
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](display#0#0: &mut Display<T>)
+	7: Pop
+	8: LdU64(13836184281607110666)
+	9: Abort
+B3:
+	10: MoveLoc[0](display#0#0: &mut Display<T>)
+	11: MutBorrowFieldGeneric[0](Display.fields: VecMap<String, String>)
+	12: ImmBorrowLoc[2](name#0#0: String)
+	13: Call vec_map::remove<String, String>(&mut VecMap<String, String>, &String): String * String
+	14: Pop
+	15: Pop
+	16: Ret
+}
+
+public set<T>(display#0#0: &mut Display<T>, _#0#0: &DisplayCap<T>, name#0#0: String, value#0#0: String) {
+B0:
+	0: CopyLoc[0](display#0#0: &mut Display<T>)
+	1: ImmBorrowFieldGeneric[0](Display.fields: VecMap<String, String>)
+	2: ImmBorrowLoc[2](name#0#0: String)
+	3: Call vec_map::contains<String, String>(&VecMap<String, String>, &String): bool
+	4: BrFalse(11)
+B1:
+	5: CopyLoc[0](display#0#0: &mut Display<T>)
+	6: MutBorrowFieldGeneric[0](Display.fields: VecMap<String, String>)
+	7: ImmBorrowLoc[2](name#0#0: String)
+	8: Call vec_map::remove<String, String>(&mut VecMap<String, String>, &String): String * String
+	9: Pop
+	10: Pop
+B2:
+	11: MoveLoc[0](display#0#0: &mut Display<T>)
+	12: MutBorrowFieldGeneric[0](Display.fields: VecMap<String, String>)
+	13: MoveLoc[2](name#0#0: String)
+	14: MoveLoc[3](value#0#0: String)
+	15: Call vec_map::insert<String, String>(&mut VecMap<String, String>, String, String)
+	16: Ret
+}
+
+public clear<T>(display#0#0: &mut Display<T>, _#0#0: &DisplayCap<T>) {
+B0:
+	0: Call vec_map::empty<String, String>(): VecMap<String, String>
+	1: MoveLoc[0](display#0#0: &mut Display<T>)
+	2: MutBorrowFieldGeneric[0](Display.fields: VecMap<String, String>)
+	3: WriteRef
+	4: Ret
+}
+
+public share<T>(display#0#0: Display<T>) {
+B0:
+	0: MoveLoc[0](display#0#0: Display<T>)
+	1: Call transfer::share_object<Display<T>>(Display<T>)
+	2: Ret
+}
+
+public claim<T: key>(display#0#0: &mut Display<T>, legacy#0#0: Display<T>, ctx#0#0: &mut TxContext): DisplayCap<T> {
+L3:	cap#1#0: DisplayCap<T>
+B0:
+	0: CopyLoc[0](display#0#0: &mut Display<T>)
+	1: ImmBorrowFieldGeneric[1](Display.cap_id: Option<ID>)
+	2: Call option::is_none<ID>(&Option<ID>): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(11)
+B2:
+	5: MoveLoc[0](display#0#0: &mut Display<T>)
+	6: Pop
+	7: MoveLoc[2](ctx#0#0: &mut TxContext)
+	8: Pop
+	9: LdU64(13835621451912511494)
+	10: Abort
+B3:
+	11: MoveLoc[2](ctx#0#0: &mut TxContext)
+	12: Call object::new(&mut TxContext): UID
+	13: PackGeneric[0](DisplayCap<T>)
+	14: StLoc[3](cap#1#0: DisplayCap<T>)
+	15: MoveLoc[0](display#0#0: &mut Display<T>)
+	16: MutBorrowFieldGeneric[1](Display.cap_id: Option<ID>)
+	17: ImmBorrowLoc[3](cap#1#0: DisplayCap<T>)
+	18: ImmBorrowFieldGeneric[2](DisplayCap.id: UID)
+	19: Call object::uid_to_inner(&UID): ID
+	20: Call option::fill<ID>(&mut Option<ID>, ID)
+	21: MoveLoc[1](legacy#0#0: Display<T>)
+	22: Call display::destroy<T>(Display<T>)
+	23: MoveLoc[3](cap#1#0: DisplayCap<T>)
+	24: Ret
+}
+
+public claim_with_publisher<T: key>(display#0#0: &mut Display<T>, publisher#0#0: &mut Publisher, ctx#0#0: &mut TxContext): DisplayCap<T> {
+L3:	cap#1#0: DisplayCap<T>
+B0:
+	0: CopyLoc[0](display#0#0: &mut Display<T>)
+	1: ImmBorrowFieldGeneric[1](Display.cap_id: Option<ID>)
+	2: Call option::is_none<ID>(&Option<ID>): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(13)
+B2:
+	5: MoveLoc[1](publisher#0#0: &mut Publisher)
+	6: Pop
+	7: MoveLoc[0](display#0#0: &mut Display<T>)
+	8: Pop
+	9: MoveLoc[2](ctx#0#0: &mut TxContext)
+	10: Pop
+	11: LdU64(13835621507747086342)
+	12: Abort
+B3:
+	13: MoveLoc[1](publisher#0#0: &mut Publisher)
+	14: FreezeRef
+	15: Call package::from_package<T>(&Publisher): bool
+	16: BrFalse(18)
+B4:
+	17: Branch(24)
+B5:
+	18: MoveLoc[0](display#0#0: &mut Display<T>)
+	19: Pop
+	20: MoveLoc[2](ctx#0#0: &mut TxContext)
+	21: Pop
+	22: LdU64(13835902987018895368)
+	23: Abort
+B6:
+	24: MoveLoc[2](ctx#0#0: &mut TxContext)
+	25: Call object::new(&mut TxContext): UID
+	26: PackGeneric[0](DisplayCap<T>)
+	27: StLoc[3](cap#1#0: DisplayCap<T>)
+	28: MoveLoc[0](display#0#0: &mut Display<T>)
+	29: MutBorrowFieldGeneric[1](Display.cap_id: Option<ID>)
+	30: ImmBorrowLoc[3](cap#1#0: DisplayCap<T>)
+	31: ImmBorrowFieldGeneric[2](DisplayCap.id: UID)
+	32: Call object::uid_to_inner(&UID): ID
+	33: Call option::fill<ID>(&mut Option<ID>, ID)
+	34: MoveLoc[3](cap#1#0: DisplayCap<T>)
+	35: Ret
+}
+
+public system_migration<T: key>(registry#0#0: &mut DisplayRegistry, _#0#0: &SystemMigrationCap, keys#0#0: vector<String>, values#0#0: vector<String>, _ctx#0#0: &mut TxContext) {
+L5:	key#1#0: DisplayKey<T>
+B0:
+	0: LdFalse
+	1: PackGeneric[1](DisplayKey<T>)
+	2: StLoc[5](key#1#0: DisplayKey<T>)
+	3: CopyLoc[0](registry#0#0: &mut DisplayRegistry)
+	4: ImmBorrowField[3](DisplayRegistry.id: UID)
+	5: CopyLoc[5](key#1#0: DisplayKey<T>)
+	6: Call derived_object::exists<DisplayKey<T>>(&UID, DisplayKey<T>): bool
+	7: BrFalse(11)
+B1:
+	8: MoveLoc[0](registry#0#0: &mut DisplayRegistry)
+	9: Pop
+	10: Ret
+B2:
+	11: MoveLoc[0](registry#0#0: &mut DisplayRegistry)
+	12: MutBorrowField[3](DisplayRegistry.id: UID)
+	13: MoveLoc[5](key#1#0: DisplayKey<T>)
+	14: Call derived_object::claim<DisplayKey<T>>(&mut UID, DisplayKey<T>): UID
+	15: MoveLoc[2](keys#0#0: vector<String>)
+	16: MoveLoc[3](values#0#0: vector<String>)
+	17: Call vec_map::from_keys_values<String, String>(vector<String>, vector<String>): VecMap<String, String>
+	18: Call option::none<ID>(): Option<ID>
+	19: PackGeneric[2](Display<T>)
+	20: Call transfer::share_object<Display<T>>(Display<T>)
+	21: Ret
+}
+
+public migrate_v1_to_v2<T: key>(registry#0#0: &mut DisplayRegistry, legacy#0#0: Display<T>, ctx#0#0: &mut TxContext): Display<T> * DisplayCap<T> {
+L3:	cap#1#0: DisplayCap<T>
+L4:	display#1#0: Display<T>
+B0:
+	0: MoveLoc[0](registry#0#0: &mut DisplayRegistry)
+	1: MoveLoc[2](ctx#0#0: &mut TxContext)
+	2: Call new_display<T>(&mut DisplayRegistry, &mut TxContext): Display<T> * DisplayCap<T>
+	3: StLoc[3](cap#1#0: DisplayCap<T>)
+	4: StLoc[4](display#1#0: Display<T>)
+	5: ImmBorrowLoc[1](legacy#0#0: Display<T>)
+	6: Call display::fields<T>(&Display<T>): &VecMap<String, String>
+	7: ReadRef
+	8: MutBorrowLoc[4](display#1#0: Display<T>)
+	9: MutBorrowFieldGeneric[0](Display.fields: VecMap<String, String>)
+	10: WriteRef
+	11: MoveLoc[1](legacy#0#0: Display<T>)
+	12: Call display::destroy<T>(Display<T>)
+	13: MoveLoc[4](display#1#0: Display<T>)
+	14: MoveLoc[3](cap#1#0: DisplayCap<T>)
+	15: Ret
+}
+
+entry public destroy_system_migration_cap(cap#0#0: SystemMigrationCap) {
+B0:
+	0: MoveLoc[0](cap#0#0: SystemMigrationCap)
+	1: Unpack[1](SystemMigrationCap)
+	2: Call object::delete(UID)
+	3: Ret
+}
+
+entry public transfer_migration_cap(cap#0#0: SystemMigrationCap, recipient#0#0: address) {
+B0:
+	0: MoveLoc[0](cap#0#0: SystemMigrationCap)
+	1: MoveLoc[1](recipient#0#0: address)
+	2: Call transfer::transfer<SystemMigrationCap>(SystemMigrationCap, address)
+	3: Ret
+}
+
+public delete_legacy<T: key>(display#0#0: &Display<T>, legacy#0#0: Display<T>) {
+B0:
+	0: MoveLoc[0](display#0#0: &Display<T>)
+	1: ImmBorrowFieldGeneric[1](Display.cap_id: Option<ID>)
+	2: Call option::is_some<ID>(&Option<ID>): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(7)
+B2:
+	5: LdU64(13836466173195780108)
+	6: Abort
+B3:
+	7: MoveLoc[1](legacy#0#0: Display<T>)
+	8: Call display::destroy<T>(Display<T>)
+	9: Ret
+}
+
+public fields<T>(display#0#0: &Display<T>): &VecMap<String, String> {
+B0:
+	0: MoveLoc[0](display#0#0: &Display<T>)
+	1: ImmBorrowFieldGeneric[0](Display.fields: VecMap<String, String>)
+	2: Ret
+}
+
+public cap_id<T>(display#0#0: &Display<T>): Option<ID> {
+B0:
+	0: MoveLoc[0](display#0#0: &Display<T>)
+	1: ImmBorrowFieldGeneric[1](Display.cap_id: Option<ID>)
+	2: ReadRef
+	3: Ret
+}
+
+public(friend) migration_cap_receiver(): address {
+B0:
+	0: LdConst[0](address: 0x80..)
+	1: Ret
+}
+
+new_display<T>(registry#0#0: &mut DisplayRegistry, ctx#0#0: &mut TxContext): Display<T> * DisplayCap<T> {
+L2:	cap#1#0: DisplayCap<T>
+L3:	key#1#0: DisplayKey<T>
+B0:
+	0: LdFalse
+	1: PackGeneric[1](DisplayKey<T>)
+	2: StLoc[3](key#1#0: DisplayKey<T>)
+	3: CopyLoc[0](registry#0#0: &mut DisplayRegistry)
+	4: ImmBorrowField[3](DisplayRegistry.id: UID)
+	5: CopyLoc[3](key#1#0: DisplayKey<T>)
+	6: Call derived_object::exists<DisplayKey<T>>(&UID, DisplayKey<T>): bool
+	7: Not
+	8: BrFalse(10)
+B1:
+	9: Branch(16)
+B2:
+	10: MoveLoc[0](registry#0#0: &mut DisplayRegistry)
+	11: Pop
+	12: MoveLoc[1](ctx#0#0: &mut TxContext)
+	13: Pop
+	14: LdU64(13835340372072660996)
+	15: Abort
+B3:
+	16: MoveLoc[1](ctx#0#0: &mut TxContext)
+	17: Call object::new(&mut TxContext): UID
+	18: PackGeneric[0](DisplayCap<T>)
+	19: StLoc[2](cap#1#0: DisplayCap<T>)
+	20: MoveLoc[0](registry#0#0: &mut DisplayRegistry)
+	21: MutBorrowField[3](DisplayRegistry.id: UID)
+	22: MoveLoc[3](key#1#0: DisplayKey<T>)
+	23: Call derived_object::claim<DisplayKey<T>>(&mut UID, DisplayKey<T>): UID
+	24: Call vec_map::empty<String, String>(): VecMap<String, String>
+	25: ImmBorrowLoc[2](cap#1#0: DisplayCap<T>)
+	26: ImmBorrowFieldGeneric[2](DisplayCap.id: UID)
+	27: Call object::uid_to_inner(&UID): ID
+	28: Call option::some<ID>(ID): Option<ID>
+	29: PackGeneric[2](Display<T>)
+	30: MoveLoc[2](cap#1#0: DisplayCap<T>)
+	31: Ret
+}
+
+create(ctx#0#0: &mut TxContext) {
+B0:
+	0: CopyLoc[0](ctx#0#0: &mut TxContext)
+	1: FreezeRef
+	2: Call tx_context::sender(&TxContext): address
+	3: LdConst[13](address: 0x00..)
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](ctx#0#0: &mut TxContext)
+	8: Pop
+	9: LdU64(13835058952930394114)
+	10: Abort
+B3:
+	11: Call object::sui_display_registry_object_id(): UID
+	12: Pack[0](DisplayRegistry)
+	13: Call transfer::share_object<DisplayRegistry>(DisplayRegistry)
+	14: MoveLoc[0](ctx#0#0: &mut TxContext)
+	15: Call object::new(&mut TxContext): UID
+	16: Pack[1](SystemMigrationCap)
+	17: LdConst[0](address: 0x80..)
+	18: Call transfer::transfer<SystemMigrationCap>(SystemMigrationCap, address)
+	19: Ret
+}
+
+public(friend) create_for_testing(ctx#0#0: &mut TxContext) {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call create(&mut TxContext)
+	2: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x80e8249451c1a94b0d4ec317d9dd040f11344dcce6f917218086caf2bb1d7bdd
+	1 => vector<u8>: "ENotSystemAddress" // interpreted as UTF8 string
+	2 => vector<u8>: "This is only callable from system address." // interpreted as UTF8 string
+	3 => vector<u8>: "EDisplayAlreadyExists" // interpreted as UTF8 string
+	4 => vector<u8>: "Display for the supplied type already exists." // interpreted as UTF8 string
+	5 => vector<u8>: "ECapAlreadyClaimed" // interpreted as UTF8 string
+	6 => vector<u8>: "Cap for this display object has already been claimed." // interpreted as UTF8 string
+	7 => vector<u8>: "ENotValidPublisher" // interpreted as UTF8 string
+	8 => vector<u8>: "The publisher is not valid for the supplied type." // interpreted as UTF8 string
+	9 => vector<u8>: "EFieldDoesNotExist" // interpreted as UTF8 string
+	10 => vector<u8>: "Field does not exist in the display." // interpreted as UTF8 string
+	11 => vector<u8>: "ECapNotClaimed" // interpreted as UTF8 string
+	12 => vector<u8>: "Cap for this display object has not been claimed so you cannot delete the legacy display yet." // interpreted as UTF8 string
+	13 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

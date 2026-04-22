@@ -1,0 +1,188 @@
+// Move bytecode v6
+module 2.funds_accumulator {
+use 0000000000000000000000000000000000000000000000000000000000000001::internal;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::accumulator;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::protocol_config;
+
+struct Withdrawal<phantom T: store> has drop {
+	owner: address,
+	limit: u256
+}
+
+public withdrawal_owner<T: store>(withdrawal#0#0: &Withdrawal<T>): address {
+B0:
+	0: MoveLoc[0](withdrawal#0#0: &Withdrawal<T>)
+	1: ImmBorrowFieldGeneric[0](Withdrawal.owner: address)
+	2: ReadRef
+	3: Ret
+}
+
+public withdrawal_limit<T: store>(withdrawal#0#0: &Withdrawal<T>): u256 {
+B0:
+	0: MoveLoc[0](withdrawal#0#0: &Withdrawal<T>)
+	1: ImmBorrowFieldGeneric[1](Withdrawal.limit: u256)
+	2: ReadRef
+	3: Ret
+}
+
+public withdrawal_split<T: store>(withdrawal#0#0: &mut Withdrawal<T>, sub_limit#0#0: u256): Withdrawal<T> {
+B0:
+	0: CopyLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	1: ImmBorrowFieldGeneric[1](Withdrawal.limit: u256)
+	2: ReadRef
+	3: CopyLoc[1](sub_limit#0#0: u256)
+	4: Ge
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	8: Pop
+	9: LdU64(13835339792251944962)
+	10: Abort
+B3:
+	11: CopyLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	12: ImmBorrowFieldGeneric[1](Withdrawal.limit: u256)
+	13: ReadRef
+	14: CopyLoc[1](sub_limit#0#0: u256)
+	15: Sub
+	16: CopyLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	17: MutBorrowFieldGeneric[1](Withdrawal.limit: u256)
+	18: WriteRef
+	19: MoveLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	20: ImmBorrowFieldGeneric[0](Withdrawal.owner: address)
+	21: ReadRef
+	22: MoveLoc[1](sub_limit#0#0: u256)
+	23: PackGeneric[0](Withdrawal<T>)
+	24: Ret
+}
+
+public withdrawal_join<T: store>(withdrawal#0#0: &mut Withdrawal<T>, other#0#0: Withdrawal<T>) {
+B0:
+	0: CopyLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	1: ImmBorrowFieldGeneric[0](Withdrawal.owner: address)
+	2: ReadRef
+	3: ImmBorrowLoc[1](other#0#0: Withdrawal<T>)
+	4: ImmBorrowFieldGeneric[0](Withdrawal.owner: address)
+	5: ReadRef
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	10: Pop
+	11: LdU64(13835621305883492356)
+	12: Abort
+B3:
+	13: LdU256(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+	14: CopyLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	15: ImmBorrowFieldGeneric[1](Withdrawal.limit: u256)
+	16: ReadRef
+	17: Sub
+	18: ImmBorrowLoc[1](other#0#0: Withdrawal<T>)
+	19: ImmBorrowFieldGeneric[1](Withdrawal.limit: u256)
+	20: ReadRef
+	21: Ge
+	22: BrFalse(24)
+B4:
+	23: Branch(28)
+B5:
+	24: MoveLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	25: Pop
+	26: LdConst[0](u64: 0)
+	27: Abort
+B6:
+	28: CopyLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	29: ImmBorrowFieldGeneric[1](Withdrawal.limit: u256)
+	30: ReadRef
+	31: ImmBorrowLoc[1](other#0#0: Withdrawal<T>)
+	32: ImmBorrowFieldGeneric[1](Withdrawal.limit: u256)
+	33: ReadRef
+	34: Add
+	35: MoveLoc[0](withdrawal#0#0: &mut Withdrawal<T>)
+	36: MutBorrowFieldGeneric[1](Withdrawal.limit: u256)
+	37: WriteRef
+	38: Ret
+}
+
+public(friend) redeem<T: store>(withdrawal#0#0: Withdrawal<T>, _#0#0: Permit<T>): T {
+B0:
+	0: MoveLoc[0](withdrawal#0#0: Withdrawal<T>)
+	1: UnpackGeneric[0](Withdrawal<T>)
+	2: Call withdraw_impl<T>(address, u256): T
+	3: Ret
+}
+
+public(friend) withdraw_from_object<T: store>(obj#0#0: &mut UID, limit#0#0: u256): Withdrawal<T> {
+B0:
+	0: LdConst[7](vector<u8>: "ena..)
+	1: Call protocol_config::is_feature_enabled(vector<u8>): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(8)
+B2:
+	4: MoveLoc[0](obj#0#0: &mut UID)
+	5: Pop
+	6: LdU64(13835902875349614598)
+	7: Abort
+B3:
+	8: MoveLoc[0](obj#0#0: &mut UID)
+	9: FreezeRef
+	10: Call object::uid_to_address(&UID): address
+	11: MoveLoc[1](limit#0#0: u256)
+	12: PackGeneric[0](Withdrawal<T>)
+	13: Ret
+}
+
+public(friend) add_impl<T: store>(value#0#0: T, recipient#0#0: address) {
+B0:
+	0: CopyLoc[1](recipient#0#0: address)
+	1: Call accumulator::accumulator_address<T>(address): address
+	2: MoveLoc[1](recipient#0#0: address)
+	3: MoveLoc[0](value#0#0: T)
+	4: Call add_to_accumulator_address<T>(address, address, T)
+	5: Ret
+}
+
+withdraw_impl<T: store>(owner#0#0: address, value#0#0: u256): T {
+B0:
+	0: CopyLoc[0](owner#0#0: address)
+	1: Call accumulator::accumulator_address<T>(address): address
+	2: MoveLoc[0](owner#0#0: address)
+	3: MoveLoc[1](value#0#0: u256)
+	4: Call withdraw_from_accumulator_address<T>(address, address, u256): T
+	5: Ret
+}
+
+native add_to_accumulator_address<T: store>(accumulator#0#0: address, recipient#0#0: address, value#0#0: T);
+
+native withdraw_from_accumulator_address<T: store>(accumulator#0#0: address, owner#0#0: address, value#0#0: u256): T;
+
+public(friend) create_withdrawal<T: store>(owner#0#0: address, limit#0#0: u256): Withdrawal<T> {
+B0:
+	0: MoveLoc[0](owner#0#0: address)
+	1: MoveLoc[1](limit#0#0: u256)
+	2: PackGeneric[0](Withdrawal<T>)
+	3: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => vector<u8>: "EInvalidSubLimit" // interpreted as UTF8 string
+	2 => vector<u8>: "Sub-limit exceeds current withdrawal limit" // interpreted as UTF8 string
+	3 => vector<u8>: "EOwnerMismatch" // interpreted as UTF8 string
+	4 => vector<u8>: "Withdrawal owners do not match" // interpreted as UTF8 string
+	5 => vector<u8>: "EObjectFundsWithdrawNotEnabled" // interpreted as UTF8 string
+	6 => vector<u8>: "Object funds withdraw is not enabled" // interpreted as UTF8 string
+	7 => vector<u8>: "enable_object_funds_withdraw" // interpreted as UTF8 string
+]
+}

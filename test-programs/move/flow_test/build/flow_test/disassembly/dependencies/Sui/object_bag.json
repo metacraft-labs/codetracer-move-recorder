@@ -1,0 +1,1052 @@
+{
+  "version": 2,
+  "from_file_path": "/home/zahary/metacraft/codetracer-move-recorder/test-programs/move/flow_test/build/flow_test/disassembly/dependencies/Sui/dependencies/Sui/object_bag.mvb",
+  "definition_location": {
+    "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+    "start": 29,
+    "end": 39
+  },
+  "module_name": [
+    "0000000000000000000000000000000000000000000000000000000000000002",
+    "object_bag"
+  ],
+  "struct_map": {
+    "0": {
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 461,
+        "end": 470
+      },
+      "type_parameters": [],
+      "fields": [
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 489,
+          "end": 491
+        },
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 499,
+          "end": 503
+        }
+      ]
+    }
+  },
+  "enum_map": {},
+  "function_map": {
+    "0": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 512,
+        "end": 693
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 519,
+        "end": 522
+      },
+      "type_parameters": [],
+      "parameters": [
+        [
+          "ctx#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 523,
+            "end": 530
+          }
+        ]
+      ],
+      "returns": [
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 549,
+          "end": 558
+        }
+      ],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 569,
+          "end": 604
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 609,
+          "end": 646
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 651,
+          "end": 659
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 664,
+          "end": 682
+        },
+        "4": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 687,
+          "end": 690
+        }
+      },
+      "is_native": false
+    },
+    "1": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 694,
+        "end": 1210
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 701,
+        "end": 704
+      },
+      "type_parameters": [
+        [
+          "K",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 705,
+            "end": 706
+          }
+        ],
+        [
+          "V",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 729,
+            "end": 730
+          }
+        ]
+      ],
+      "parameters": [
+        [
+          "bag#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 745,
+            "end": 752
+          }
+        ],
+        [
+          "k#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 770,
+            "end": 775
+          }
+        ],
+        [
+          "v#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 780,
+            "end": 785
+          }
+        ]
+      ],
+      "returns": [],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 800,
+          "end": 835
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 840,
+          "end": 876
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 881,
+          "end": 901
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 906,
+          "end": 926
+        },
+        "4": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 931,
+          "end": 983
+        },
+        "5": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 988,
+          "end": 1023
+        },
+        "6": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1028,
+          "end": 1066
+        },
+        "7": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1071,
+          "end": 1078
+        },
+        "8": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1083,
+          "end": 1091
+        },
+        "9": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1096,
+          "end": 1099
+        },
+        "10": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1105,
+          "end": 1140
+        },
+        "11": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1146,
+          "end": 1184
+        },
+        "12": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1190,
+          "end": 1198
+        },
+        "13": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1204,
+          "end": 1207
+        }
+      },
+      "is_native": false
+    },
+    "2": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 1211,
+        "end": 1475
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 1218,
+        "end": 1224
+      },
+      "type_parameters": [
+        [
+          "K",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1225,
+            "end": 1226
+          }
+        ],
+        [
+          "V",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1249,
+            "end": 1250
+          }
+        ]
+      ],
+      "parameters": [
+        [
+          "bag#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1265,
+            "end": 1272
+          }
+        ],
+        [
+          "k#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1286,
+            "end": 1291
+          }
+        ]
+      ],
+      "returns": [
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1297,
+          "end": 1299
+        }
+      ],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1310,
+          "end": 1341
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1346,
+          "end": 1382
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1387,
+          "end": 1407
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1412,
+          "end": 1464
+        },
+        "4": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1469,
+          "end": 1472
+        }
+      },
+      "is_native": false
+    },
+    "3": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 1476,
+        "end": 1768
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 1483,
+        "end": 1493
+      },
+      "type_parameters": [
+        [
+          "K",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1494,
+            "end": 1495
+          }
+        ],
+        [
+          "V",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1518,
+            "end": 1519
+          }
+        ]
+      ],
+      "parameters": [
+        [
+          "bag#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1534,
+            "end": 1541
+          }
+        ],
+        [
+          "k#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1559,
+            "end": 1564
+          }
+        ]
+      ],
+      "returns": [
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1570,
+          "end": 1576
+        }
+      ],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1587,
+          "end": 1622
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1627,
+          "end": 1663
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1668,
+          "end": 1688
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1693,
+          "end": 1757
+        },
+        "4": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1762,
+          "end": 1765
+        }
+      },
+      "is_native": false
+    },
+    "4": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 1769,
+        "end": 2321
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 1776,
+        "end": 1782
+      },
+      "type_parameters": [
+        [
+          "K",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1783,
+            "end": 1784
+          }
+        ],
+        [
+          "V",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1807,
+            "end": 1808
+          }
+        ]
+      ],
+      "parameters": [
+        [
+          "bag#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1823,
+            "end": 1830
+          }
+        ],
+        [
+          "k#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1848,
+            "end": 1853
+          }
+        ]
+      ],
+      "returns": [
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1859,
+          "end": 1860
+        }
+      ],
+      "locals": [
+        [
+          "v#1#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 1867,
+            "end": 1872
+          }
+        ]
+      ],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1884,
+          "end": 1919
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1924,
+          "end": 1960
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1965,
+          "end": 1985
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 1990,
+          "end": 2045
+        },
+        "4": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2050,
+          "end": 2068
+        },
+        "5": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2073,
+          "end": 2108
+        },
+        "6": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2113,
+          "end": 2151
+        },
+        "7": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2156,
+          "end": 2163
+        },
+        "8": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2168,
+          "end": 2176
+        },
+        "9": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2181,
+          "end": 2184
+        },
+        "10": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2190,
+          "end": 2225
+        },
+        "11": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2231,
+          "end": 2269
+        },
+        "12": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2275,
+          "end": 2283
+        },
+        "13": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2289,
+          "end": 2309
+        },
+        "14": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2315,
+          "end": 2318
+        }
+      },
+      "is_native": false
+    },
+    "5": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 2322,
+        "end": 2574
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 2329,
+        "end": 2337
+      },
+      "type_parameters": [
+        [
+          "K",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 2338,
+            "end": 2339
+          }
+        ]
+      ],
+      "parameters": [
+        [
+          "bag#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 2362,
+            "end": 2369
+          }
+        ],
+        [
+          "k#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 2383,
+            "end": 2388
+          }
+        ]
+      ],
+      "returns": [
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2394,
+          "end": 2398
+        }
+      ],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2409,
+          "end": 2440
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2445,
+          "end": 2481
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2486,
+          "end": 2506
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2511,
+          "end": 2563
+        },
+        "4": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2568,
+          "end": 2571
+        }
+      },
+      "is_native": false
+    },
+    "6": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 2575,
+        "end": 2865
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 2582,
+        "end": 2600
+      },
+      "type_parameters": [
+        [
+          "K",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 2601,
+            "end": 2602
+          }
+        ],
+        [
+          "V",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 2625,
+            "end": 2626
+          }
+        ]
+      ],
+      "parameters": [
+        [
+          "bag#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 2641,
+            "end": 2648
+          }
+        ],
+        [
+          "k#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 2662,
+            "end": 2667
+          }
+        ]
+      ],
+      "returns": [
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2673,
+          "end": 2677
+        }
+      ],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2688,
+          "end": 2719
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2724,
+          "end": 2760
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2765,
+          "end": 2785
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2790,
+          "end": 2854
+        },
+        "4": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2859,
+          "end": 2862
+        }
+      },
+      "is_native": false
+    },
+    "7": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 2866,
+        "end": 3013
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 2873,
+        "end": 2879
+      },
+      "type_parameters": [],
+      "parameters": [
+        [
+          "bag#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 2880,
+            "end": 2887
+          }
+        ]
+      ],
+      "returns": [
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2902,
+          "end": 2905
+        }
+      ],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2916,
+          "end": 2947
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2952,
+          "end": 2990
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 2995,
+          "end": 3002
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3007,
+          "end": 3010
+        }
+      },
+      "is_native": false
+    },
+    "8": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 3014,
+        "end": 3184
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 3021,
+        "end": 3029
+      },
+      "type_parameters": [],
+      "parameters": [
+        [
+          "bag#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 3030,
+            "end": 3037
+          }
+        ]
+      ],
+      "returns": [
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3052,
+          "end": 3056
+        }
+      ],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3067,
+          "end": 3098
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3103,
+          "end": 3141
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3146,
+          "end": 3153
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3158,
+          "end": 3166
+        },
+        "4": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3171,
+          "end": 3173
+        },
+        "5": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3178,
+          "end": 3181
+        }
+      },
+      "is_native": false
+    },
+    "9": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 3185,
+        "end": 3576
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 3192,
+        "end": 3205
+      },
+      "type_parameters": [],
+      "parameters": [
+        [
+          "bag#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 3206,
+            "end": 3213
+          }
+        ]
+      ],
+      "returns": [],
+      "locals": [
+        [
+          "id#1#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 3232,
+            "end": 3238
+          }
+        ],
+        [
+          "size#1#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 3248,
+            "end": 3256
+          }
+        ]
+      ],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3270,
+          "end": 3300
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3305,
+          "end": 3325
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3330,
+          "end": 3353
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3358,
+          "end": 3379
+        },
+        "4": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3384,
+          "end": 3409
+        },
+        "5": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3414,
+          "end": 3422
+        },
+        "6": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3427,
+          "end": 3429
+        },
+        "7": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3434,
+          "end": 3444
+        },
+        "8": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3453,
+          "end": 3463
+        },
+        "9": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3472,
+          "end": 3490
+        },
+        "10": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3496,
+          "end": 3501
+        },
+        "11": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3511,
+          "end": 3534
+        },
+        "12": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3540,
+          "end": 3564
+        },
+        "13": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3570,
+          "end": 3573
+        }
+      },
+      "is_native": false
+    },
+    "10": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 3577,
+        "end": 3836
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 3584,
+        "end": 3592
+      },
+      "type_parameters": [
+        [
+          "K",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 3593,
+            "end": 3594
+          }
+        ]
+      ],
+      "parameters": [
+        [
+          "bag#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 3617,
+            "end": 3624
+          }
+        ],
+        [
+          "k#0#0",
+          {
+            "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+            "start": 3638,
+            "end": 3643
+          }
+        ]
+      ],
+      "returns": [
+        {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3649,
+          "end": 3659
+        }
+      ],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3670,
+          "end": 3701
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3706,
+          "end": 3742
+        },
+        "2": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3747,
+          "end": 3767
+        },
+        "3": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3772,
+          "end": 3825
+        },
+        "4": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3830,
+          "end": 3833
+        }
+      },
+      "is_native": false
+    },
+    "11": {
+      "location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 3837,
+        "end": 3914
+      },
+      "definition_location": {
+        "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+        "start": 3850,
+        "end": 3866
+      },
+      "type_parameters": [],
+      "parameters": [],
+      "returns": [],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3879,
+          "end": 3903
+        },
+        "1": {
+          "file_hash": "17016d2ff98bdda23fd698689897fe03d84c80638ed5b572b573eded37903e6e",
+          "start": 3908,
+          "end": 3911
+        }
+      },
+      "is_native": false
+    }
+  },
+  "constant_map": {
+    "0": 0
+  }
+}

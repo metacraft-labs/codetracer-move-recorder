@@ -1,0 +1,2007 @@
+// Move bytecode v7
+module 2.coin_registry {
+use 0000000000000000000000000000000000000000000000000000000000000001::ascii;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::type_name;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::bag;
+use 0000000000000000000000000000000000000000000000000000000000000002::balance;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::derived_object;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::types;
+use 0000000000000000000000000000000000000000000000000000000000000002::url;
+use 0000000000000000000000000000000000000000000000000000000000000002::vec_map;
+
+struct CoinRegistry has key {
+	id: UID
+}
+
+struct ExtraField has store {
+	pos0: TypeName,
+	pos1: vector<u8>
+}
+
+struct CurrencyKey<phantom T> has copy, drop, store {
+	dummy_field: bool
+}
+
+struct LegacyMetadataKey has copy, drop, store {
+	dummy_field: bool
+}
+
+struct MetadataCap<phantom T> has store, key {
+	id: UID
+}
+
+struct Borrow<phantom T> {
+	dummy_field: bool
+}
+
+struct Currency<phantom T> has key {
+	id: UID,
+	decimals: u8,
+	name: String,
+	symbol: String,
+	description: String,
+	icon_url: String,
+	supply: Option<SupplyState<T>>,
+	regulated: RegulatedState,
+	treasury_cap_id: Option<ID>,
+	metadata_cap_id: MetadataCapState,
+	extra_fields: VecMap<String, ExtraField>
+}
+
+struct CurrencyInitializer<phantom T> {
+	currency: Currency<T>,
+	extra_fields: Bag,
+	is_otw: bool
+}
+
+enum SupplyState<phantom T> has store {
+	Fixed { pos0: Supply<T> },
+	BurnOnly { pos0: Supply<T> },
+	Unknown {  }
+}
+
+enum RegulatedState has copy, drop, store {
+	Regulated { cap: ID, allow_global_pause: Option<bool>, variant: u8 },
+	Unregulated {  },
+	Unknown {  }
+}
+
+enum MetadataCapState has copy, drop, store {
+	Claimed { pos0: ID },
+	Unclaimed {  },
+	Deleted {  }
+}
+
+public new_currency<T: key>(registry#0#0: &mut CoinRegistry, decimals#0#0: u8, symbol#0#0: String, name#0#0: String, description#0#0: String, icon_url#0#0: String, ctx#0#0: &mut TxContext): CurrencyInitializer<T> * TreasuryCap<T> {
+L7:	$stop#0#8: u64
+L8:	%#3: bool
+L9:	%#5: Currency<T>
+L10:	%#7: Bag
+L11:	i#1#11: u64
+L12:	i#1#14: u64
+L13:	stop#1#11: u64
+L14:	treasury_cap#1#0: TreasuryCap<T>
+L15:	v#1#5: &vector<u8>
+B0:
+	0: CopyLoc[0](registry#0#0: &mut CoinRegistry)
+	1: FreezeRef
+	2: Call exists<T>(&CoinRegistry): bool
+	3: Not
+	4: BrFalse(6)
+B1:
+	5: Branch(12)
+B2:
+	6: MoveLoc[0](registry#0#0: &mut CoinRegistry)
+	7: Pop
+	8: MoveLoc[6](ctx#0#0: &mut TxContext)
+	9: Pop
+	10: LdU64(13835621791214862341)
+	11: Abort
+B3:
+	12: ImmBorrowLoc[2](symbol#0#0: String)
+	13: Call string::as_bytes(&String): &vector<u8>
+	14: StLoc[15](v#1#5: &vector<u8>)
+	15: CopyLoc[15](v#1#5: &vector<u8>)
+	16: VecLen(26)
+	17: StLoc[7]($stop#0#8: u64)
+	18: LdU64(0)
+	19: StLoc[11](i#1#11: u64)
+	20: MoveLoc[7]($stop#0#8: u64)
+	21: StLoc[13](stop#1#11: u64)
+B4:
+	22: CopyLoc[11](i#1#11: u64)
+	23: CopyLoc[13](stop#1#11: u64)
+	24: Lt
+	25: BrFalse(45)
+B5:
+	26: CopyLoc[11](i#1#11: u64)
+	27: StLoc[12](i#1#14: u64)
+	28: CopyLoc[15](v#1#5: &vector<u8>)
+	29: MoveLoc[12](i#1#14: u64)
+	30: VecImmBorrow(26)
+	31: ReadRef
+	32: Call ascii::is_printable_char(u8): bool
+	33: Not
+	34: BrFalse(40)
+B6:
+	35: MoveLoc[15](v#1#5: &vector<u8>)
+	36: Pop
+	37: LdFalse
+	38: StLoc[8](%#3: bool)
+	39: Branch(49)
+B7:
+	40: MoveLoc[11](i#1#11: u64)
+	41: LdU64(1)
+	42: Add
+	43: StLoc[11](i#1#11: u64)
+	44: Branch(22)
+B8:
+	45: MoveLoc[15](v#1#5: &vector<u8>)
+	46: Pop
+	47: LdTrue
+	48: StLoc[8](%#3: bool)
+B9:
+	49: MoveLoc[8](%#3: bool)
+	50: BrFalse(52)
+B10:
+	51: Branch(58)
+B11:
+	52: MoveLoc[0](registry#0#0: &mut CoinRegistry)
+	53: Pop
+	54: MoveLoc[6](ctx#0#0: &mut TxContext)
+	55: Pop
+	56: LdU64(13836747695417065483)
+	57: Abort
+B12:
+	58: CopyLoc[6](ctx#0#0: &mut TxContext)
+	59: Call coin::new_treasury_cap<T>(&mut TxContext): TreasuryCap<T>
+	60: StLoc[14](treasury_cap#1#0: TreasuryCap<T>)
+	61: MoveLoc[0](registry#0#0: &mut CoinRegistry)
+	62: MutBorrowField[0](CoinRegistry.id: UID)
+	63: LdFalse
+	64: PackGeneric[0](CurrencyKey<T>)
+	65: Call derived_object::claim<CurrencyKey<T>>(&mut UID, CurrencyKey<T>): UID
+	66: MoveLoc[1](decimals#0#0: u8)
+	67: MoveLoc[3](name#0#0: String)
+	68: MoveLoc[2](symbol#0#0: String)
+	69: MoveLoc[4](description#0#0: String)
+	70: MoveLoc[5](icon_url#0#0: String)
+	71: PackVariantGeneric(VariantInstantiationHandleIndex(0))
+	72: Call option::some<SupplyState<T>>(SupplyState<T>): Option<SupplyState<T>>
+	73: PackVariant(VariantHandleIndex(0))
+	74: ImmBorrowLoc[14](treasury_cap#1#0: TreasuryCap<T>)
+	75: Call object::id<TreasuryCap<T>>(&TreasuryCap<T>): ID
+	76: Call option::some<ID>(ID): Option<ID>
+	77: PackVariant(VariantHandleIndex(1))
+	78: Call vec_map::empty<String, ExtraField>(): VecMap<String, ExtraField>
+	79: PackGeneric[1](Currency<T>)
+	80: StLoc[9](%#5: Currency<T>)
+	81: MoveLoc[6](ctx#0#0: &mut TxContext)
+	82: Call bag::new(&mut TxContext): Bag
+	83: StLoc[10](%#7: Bag)
+	84: MoveLoc[9](%#5: Currency<T>)
+	85: MoveLoc[10](%#7: Bag)
+	86: LdFalse
+	87: PackGeneric[2](CurrencyInitializer<T>)
+	88: MoveLoc[14](treasury_cap#1#0: TreasuryCap<T>)
+	89: Ret
+}
+
+public new_currency_with_otw<T: drop>(otw#0#0: T, decimals#0#0: u8, symbol#0#0: String, name#0#0: String, description#0#0: String, icon_url#0#0: String, ctx#0#0: &mut TxContext): CurrencyInitializer<T> * TreasuryCap<T> {
+L7:	$stop#0#8: u64
+L8:	%#3: bool
+L9:	%#5: Currency<T>
+L10:	%#7: Bag
+L11:	i#1#11: u64
+L12:	i#1#14: u64
+L13:	stop#1#11: u64
+L14:	treasury_cap#1#0: TreasuryCap<T>
+L15:	v#1#5: &vector<u8>
+B0:
+	0: ImmBorrowLoc[0](otw#0#0: T)
+	1: Call types::is_one_time_witness<T>(&T): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(8)
+B2:
+	4: MoveLoc[6](ctx#0#0: &mut TxContext)
+	5: Pop
+	6: LdU64(13838718166283845657)
+	7: Abort
+B3:
+	8: ImmBorrowLoc[2](symbol#0#0: String)
+	9: Call string::as_bytes(&String): &vector<u8>
+	10: StLoc[15](v#1#5: &vector<u8>)
+	11: CopyLoc[15](v#1#5: &vector<u8>)
+	12: VecLen(26)
+	13: StLoc[7]($stop#0#8: u64)
+	14: LdU64(0)
+	15: StLoc[11](i#1#11: u64)
+	16: MoveLoc[7]($stop#0#8: u64)
+	17: StLoc[13](stop#1#11: u64)
+B4:
+	18: CopyLoc[11](i#1#11: u64)
+	19: CopyLoc[13](stop#1#11: u64)
+	20: Lt
+	21: BrFalse(41)
+B5:
+	22: CopyLoc[11](i#1#11: u64)
+	23: StLoc[12](i#1#14: u64)
+	24: CopyLoc[15](v#1#5: &vector<u8>)
+	25: MoveLoc[12](i#1#14: u64)
+	26: VecImmBorrow(26)
+	27: ReadRef
+	28: Call ascii::is_printable_char(u8): bool
+	29: Not
+	30: BrFalse(36)
+B6:
+	31: MoveLoc[15](v#1#5: &vector<u8>)
+	32: Pop
+	33: LdFalse
+	34: StLoc[8](%#3: bool)
+	35: Branch(45)
+B7:
+	36: MoveLoc[11](i#1#11: u64)
+	37: LdU64(1)
+	38: Add
+	39: StLoc[11](i#1#11: u64)
+	40: Branch(18)
+B8:
+	41: MoveLoc[15](v#1#5: &vector<u8>)
+	42: Pop
+	43: LdTrue
+	44: StLoc[8](%#3: bool)
+B9:
+	45: MoveLoc[8](%#3: bool)
+	46: BrFalse(48)
+B10:
+	47: Branch(52)
+B11:
+	48: MoveLoc[6](ctx#0#0: &mut TxContext)
+	49: Pop
+	50: LdU64(13836747845740920843)
+	51: Abort
+B12:
+	52: CopyLoc[6](ctx#0#0: &mut TxContext)
+	53: Call coin::new_treasury_cap<T>(&mut TxContext): TreasuryCap<T>
+	54: StLoc[14](treasury_cap#1#0: TreasuryCap<T>)
+	55: CopyLoc[6](ctx#0#0: &mut TxContext)
+	56: Call object::new(&mut TxContext): UID
+	57: MoveLoc[1](decimals#0#0: u8)
+	58: MoveLoc[3](name#0#0: String)
+	59: MoveLoc[2](symbol#0#0: String)
+	60: MoveLoc[4](description#0#0: String)
+	61: MoveLoc[5](icon_url#0#0: String)
+	62: PackVariantGeneric(VariantInstantiationHandleIndex(0))
+	63: Call option::some<SupplyState<T>>(SupplyState<T>): Option<SupplyState<T>>
+	64: PackVariant(VariantHandleIndex(0))
+	65: ImmBorrowLoc[14](treasury_cap#1#0: TreasuryCap<T>)
+	66: Call object::id<TreasuryCap<T>>(&TreasuryCap<T>): ID
+	67: Call option::some<ID>(ID): Option<ID>
+	68: PackVariant(VariantHandleIndex(1))
+	69: Call vec_map::empty<String, ExtraField>(): VecMap<String, ExtraField>
+	70: PackGeneric[1](Currency<T>)
+	71: StLoc[9](%#5: Currency<T>)
+	72: MoveLoc[6](ctx#0#0: &mut TxContext)
+	73: Call bag::new(&mut TxContext): Bag
+	74: StLoc[10](%#7: Bag)
+	75: MoveLoc[9](%#5: Currency<T>)
+	76: MoveLoc[10](%#7: Bag)
+	77: LdTrue
+	78: PackGeneric[2](CurrencyInitializer<T>)
+	79: MoveLoc[14](treasury_cap#1#0: TreasuryCap<T>)
+	80: Ret
+}
+
+public claim_metadata_cap<T>(currency#0#0: &mut Currency<T>, _#0#0: &TreasuryCap<T>, ctx#0#0: &mut TxContext): MetadataCap<T> {
+L3:	id#1#0: UID
+B0:
+	0: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	1: FreezeRef
+	2: Call is_metadata_cap_claimed<T>(&Currency<T>): bool
+	3: Not
+	4: BrFalse(6)
+B1:
+	5: Branch(12)
+B2:
+	6: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	7: Pop
+	8: MoveLoc[2](ctx#0#0: &mut TxContext)
+	9: Pop
+	10: LdU64(13835059124729020417)
+	11: Abort
+B3:
+	12: MoveLoc[2](ctx#0#0: &mut TxContext)
+	13: Call object::new(&mut TxContext): UID
+	14: StLoc[3](id#1#0: UID)
+	15: ImmBorrowLoc[3](id#1#0: UID)
+	16: Call object::uid_to_inner(&UID): ID
+	17: PackVariant(VariantHandleIndex(2))
+	18: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	19: MutBorrowFieldGeneric[0](Currency.metadata_cap_id: MetadataCapState)
+	20: WriteRef
+	21: MoveLoc[3](id#1#0: UID)
+	22: PackGeneric[3](MetadataCap<T>)
+	23: Ret
+}
+
+public make_regulated<T>(init#0#0: &mut CurrencyInitializer<T>, allow_global_pause#0#0: bool, ctx#0#0: &mut TxContext): DenyCapV2<T> {
+L3:	deny_cap#1#0: DenyCapV2<T>
+B0:
+	0: CopyLoc[0](init#0#0: &mut CurrencyInitializer<T>)
+	1: ImmBorrowFieldGeneric[1](CurrencyInitializer.currency: Currency<T>)
+	2: ImmBorrowFieldGeneric[2](Currency.regulated: RegulatedState)
+	3: ReadRef
+	4: PackVariant(VariantHandleIndex(0))
+	5: Eq
+	6: BrFalse(8)
+B1:
+	7: Branch(14)
+B2:
+	8: MoveLoc[0](init#0#0: &mut CurrencyInitializer<T>)
+	9: Pop
+	10: MoveLoc[2](ctx#0#0: &mut TxContext)
+	11: Pop
+	12: LdU64(13837029531171160077)
+	13: Abort
+B3:
+	14: CopyLoc[1](allow_global_pause#0#0: bool)
+	15: MoveLoc[2](ctx#0#0: &mut TxContext)
+	16: Call coin::new_deny_cap_v2<T>(bool, &mut TxContext): DenyCapV2<T>
+	17: StLoc[3](deny_cap#1#0: DenyCapV2<T>)
+	18: ImmBorrowLoc[3](deny_cap#1#0: DenyCapV2<T>)
+	19: Call object::id<DenyCapV2<T>>(&DenyCapV2<T>): ID
+	20: MoveLoc[1](allow_global_pause#0#0: bool)
+	21: Call option::some<bool>(bool): Option<bool>
+	22: LdConst[30](u8: 0)
+	23: PackVariant(VariantHandleIndex(3))
+	24: MoveLoc[0](init#0#0: &mut CurrencyInitializer<T>)
+	25: MutBorrowFieldGeneric[1](CurrencyInitializer.currency: Currency<T>)
+	26: MutBorrowFieldGeneric[2](Currency.regulated: RegulatedState)
+	27: WriteRef
+	28: MoveLoc[3](deny_cap#1#0: DenyCapV2<T>)
+	29: Ret
+}
+
+public make_supply_fixed_init<T>(init#0#0: &mut CurrencyInitializer<T>, cap#0#0: TreasuryCap<T>) {
+B0:
+	0: ImmBorrowLoc[1](cap#0#0: TreasuryCap<T>)
+	1: Call coin::total_supply<T>(&TreasuryCap<T>): u64
+	2: LdU64(0)
+	3: Gt
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](init#0#0: &mut CurrencyInitializer<T>)
+	7: Pop
+	8: LdU64(13837592554139287569)
+	9: Abort
+B3:
+	10: MoveLoc[0](init#0#0: &mut CurrencyInitializer<T>)
+	11: MutBorrowFieldGeneric[1](CurrencyInitializer.currency: Currency<T>)
+	12: MoveLoc[1](cap#0#0: TreasuryCap<T>)
+	13: Call make_supply_fixed<T>(&mut Currency<T>, TreasuryCap<T>)
+	14: Ret
+}
+
+public make_supply_burn_only_init<T>(init#0#0: &mut CurrencyInitializer<T>, cap#0#0: TreasuryCap<T>) {
+B0:
+	0: ImmBorrowLoc[1](cap#0#0: TreasuryCap<T>)
+	1: Call coin::total_supply<T>(&TreasuryCap<T>): u64
+	2: LdU64(0)
+	3: Gt
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](init#0#0: &mut CurrencyInitializer<T>)
+	7: Pop
+	8: LdU64(13837592592793993233)
+	9: Abort
+B3:
+	10: MoveLoc[0](init#0#0: &mut CurrencyInitializer<T>)
+	11: MutBorrowFieldGeneric[1](CurrencyInitializer.currency: Currency<T>)
+	12: MoveLoc[1](cap#0#0: TreasuryCap<T>)
+	13: Call make_supply_burn_only<T>(&mut Currency<T>, TreasuryCap<T>)
+	14: Ret
+}
+
+public make_supply_fixed<T>(currency#0#0: &mut Currency<T>, cap#0#0: TreasuryCap<T>) {
+L2:	__match_tmp%#0#5#5#0: Supply<T>
+L3:	__match_tmp%#0#6#6#0: Supply<T>
+L4:	__match_tmp%#match_subject#2#2#0: &SupplyState<T>
+L5:	__match_tmp%#unpack_subject#1#1#0: SupplyState<T>
+B0:
+	0: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	1: MutBorrowFieldGeneric[3](Currency.supply: Option<SupplyState<T>>)
+	2: MoveLoc[1](cap#0#0: TreasuryCap<T>)
+	3: Call coin::treasury_into_supply<T>(TreasuryCap<T>): Supply<T>
+	4: PackVariantGeneric(VariantInstantiationHandleIndex(1))
+	5: Call option::swap<SupplyState<T>>(&mut Option<SupplyState<T>>, SupplyState<T>): SupplyState<T>
+	6: StLoc[5](__match_tmp%#unpack_subject#1#1#0: SupplyState<T>)
+	7: ImmBorrowLoc[5](__match_tmp%#unpack_subject#1#1#0: SupplyState<T>)
+	8: StLoc[4](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	9: CopyLoc[4](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	10: VariantSwitch(VariantJumpTableIndex(0))
+B1:
+	11: MoveLoc[4](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	12: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(1))
+	13: Pop
+	14: MoveLoc[5](__match_tmp%#unpack_subject#1#1#0: SupplyState<T>)
+	15: UnpackVariantGeneric(VariantInstantiationHandleIndex(1))
+	16: StLoc[2](__match_tmp%#0#5#5#0: Supply<T>)
+	17: LdU64(13838155577107415061)
+	18: Abort
+B2:
+	19: MoveLoc[4](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	20: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(2))
+	21: Pop
+	22: MoveLoc[5](__match_tmp%#unpack_subject#1#1#0: SupplyState<T>)
+	23: UnpackVariantGeneric(VariantInstantiationHandleIndex(2))
+	24: StLoc[3](__match_tmp%#0#6#6#0: Supply<T>)
+	25: LdU64(13838155577107415061)
+	26: Abort
+B3:
+	27: MoveLoc[4](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	28: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(0))
+	29: MoveLoc[5](__match_tmp%#unpack_subject#1#1#0: SupplyState<T>)
+	30: UnpackVariantGeneric(VariantInstantiationHandleIndex(0))
+	31: Ret
+Jump tables:
+[0]:	variant_switch SupplyState {
+		Fixed => jump 11
+		BurnOnly => jump 19
+		Unknown => jump 27
+	}
+}
+
+public make_supply_burn_only<T>(currency#0#0: &mut Currency<T>, cap#0#0: TreasuryCap<T>) {
+L2:	__match_tmp%#0#5#5#0: Supply<T>
+L3:	__match_tmp%#0#6#6#0: Supply<T>
+L4:	__match_tmp%#match_subject#2#2#0: &SupplyState<T>
+L5:	__match_tmp%#unpack_subject#1#1#0: SupplyState<T>
+B0:
+	0: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	1: MutBorrowFieldGeneric[3](Currency.supply: Option<SupplyState<T>>)
+	2: MoveLoc[1](cap#0#0: TreasuryCap<T>)
+	3: Call coin::treasury_into_supply<T>(TreasuryCap<T>): Supply<T>
+	4: PackVariantGeneric(VariantInstantiationHandleIndex(2))
+	5: Call option::swap<SupplyState<T>>(&mut Option<SupplyState<T>>, SupplyState<T>): SupplyState<T>
+	6: StLoc[5](__match_tmp%#unpack_subject#1#1#0: SupplyState<T>)
+	7: ImmBorrowLoc[5](__match_tmp%#unpack_subject#1#1#0: SupplyState<T>)
+	8: StLoc[4](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	9: CopyLoc[4](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	10: VariantSwitch(VariantJumpTableIndex(0))
+B1:
+	11: MoveLoc[4](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	12: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(1))
+	13: Pop
+	14: MoveLoc[5](__match_tmp%#unpack_subject#1#1#0: SupplyState<T>)
+	15: UnpackVariantGeneric(VariantInstantiationHandleIndex(1))
+	16: StLoc[2](__match_tmp%#0#5#5#0: Supply<T>)
+	17: LdU64(13838155624352055317)
+	18: Abort
+B2:
+	19: MoveLoc[4](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	20: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(2))
+	21: Pop
+	22: MoveLoc[5](__match_tmp%#unpack_subject#1#1#0: SupplyState<T>)
+	23: UnpackVariantGeneric(VariantInstantiationHandleIndex(2))
+	24: StLoc[3](__match_tmp%#0#6#6#0: Supply<T>)
+	25: LdU64(13838155624352055317)
+	26: Abort
+B3:
+	27: MoveLoc[4](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	28: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(0))
+	29: MoveLoc[5](__match_tmp%#unpack_subject#1#1#0: SupplyState<T>)
+	30: UnpackVariantGeneric(VariantInstantiationHandleIndex(0))
+	31: Ret
+Jump tables:
+[0]:	variant_switch SupplyState {
+		Fixed => jump 11
+		BurnOnly => jump 19
+		Unknown => jump 27
+	}
+}
+
+public finalize<T>(builder#0#0: CurrencyInitializer<T>, ctx#0#0: &mut TxContext): MetadataCap<T> {
+L2:	currency#1#0: Currency<T>
+L3:	currency#1#1: Currency<T>
+L4:	extra_fields#1#1: Bag
+L5:	id#1#1: UID
+L6:	is_otw#1#0: bool
+L7:	metadata_cap#1#0: MetadataCap<T>
+B0:
+	0: ImmBorrowLoc[0](builder#0#0: CurrencyInitializer<T>)
+	1: ImmBorrowFieldGeneric[4](CurrencyInitializer.is_otw: bool)
+	2: ReadRef
+	3: StLoc[6](is_otw#1#0: bool)
+	4: MoveLoc[0](builder#0#0: CurrencyInitializer<T>)
+	5: UnpackGeneric[2](CurrencyInitializer<T>)
+	6: Pop
+	7: StLoc[4](extra_fields#1#1: Bag)
+	8: StLoc[3](currency#1#1: Currency<T>)
+	9: MoveLoc[4](extra_fields#1#1: Bag)
+	10: Call bag::destroy_empty(Bag)
+	11: MoveLoc[1](ctx#0#0: &mut TxContext)
+	12: Call object::new(&mut TxContext): UID
+	13: StLoc[5](id#1#1: UID)
+	14: ImmBorrowLoc[5](id#1#1: UID)
+	15: Call object::uid_to_inner(&UID): ID
+	16: PackVariant(VariantHandleIndex(2))
+	17: MutBorrowLoc[3](currency#1#1: Currency<T>)
+	18: MutBorrowFieldGeneric[0](Currency.metadata_cap_id: MetadataCapState)
+	19: WriteRef
+	20: MutBorrowLoc[3](currency#1#1: Currency<T>)
+	21: MutBorrowFieldGeneric[5](Currency.extra_fields: VecMap<String, ExtraField>)
+	22: LdConst[31](vector<u8>: "is_..)
+	23: Call string::utf8(vector<u8>): String
+	24: Call type_name::with_original_ids<bool>(): TypeName
+	25: LdConst[31](vector<u8>: "is_..)
+	26: Pack[1](ExtraField)
+	27: Call vec_map::insert<String, ExtraField>(&mut VecMap<String, ExtraField>, String, ExtraField)
+	28: MoveLoc[3](currency#1#1: Currency<T>)
+	29: MoveLoc[5](id#1#1: UID)
+	30: PackGeneric[3](MetadataCap<T>)
+	31: StLoc[7](metadata_cap#1#0: MetadataCap<T>)
+	32: StLoc[2](currency#1#0: Currency<T>)
+	33: MoveLoc[6](is_otw#1#0: bool)
+	34: BrFalse(39)
+B1:
+	35: MoveLoc[2](currency#1#0: Currency<T>)
+	36: Call object::sui_coin_registry_address(): address
+	37: Call transfer::transfer<Currency<T>>(Currency<T>, address)
+	38: Branch(41)
+B2:
+	39: MoveLoc[2](currency#1#0: Currency<T>)
+	40: Call transfer::share_object<Currency<T>>(Currency<T>)
+B3:
+	41: MoveLoc[7](metadata_cap#1#0: MetadataCap<T>)
+	42: Ret
+}
+
+public finalize_and_delete_metadata_cap<T>(builder#0#0: CurrencyInitializer<T>, ctx#0#0: &mut TxContext) {
+L2:	currency#1#0: Currency<T>
+L3:	currency#1#1: Currency<T>
+L4:	extra_fields#1#1: Bag
+L5:	id#1#1: UID
+L6:	is_otw#1#0: bool
+L7:	metadata_cap#1#0: MetadataCap<T>
+B0:
+	0: ImmBorrowLoc[0](builder#0#0: CurrencyInitializer<T>)
+	1: ImmBorrowFieldGeneric[4](CurrencyInitializer.is_otw: bool)
+	2: ReadRef
+	3: StLoc[6](is_otw#1#0: bool)
+	4: MoveLoc[0](builder#0#0: CurrencyInitializer<T>)
+	5: UnpackGeneric[2](CurrencyInitializer<T>)
+	6: Pop
+	7: StLoc[4](extra_fields#1#1: Bag)
+	8: StLoc[3](currency#1#1: Currency<T>)
+	9: MoveLoc[4](extra_fields#1#1: Bag)
+	10: Call bag::destroy_empty(Bag)
+	11: MoveLoc[1](ctx#0#0: &mut TxContext)
+	12: Call object::new(&mut TxContext): UID
+	13: StLoc[5](id#1#1: UID)
+	14: ImmBorrowLoc[5](id#1#1: UID)
+	15: Call object::uid_to_inner(&UID): ID
+	16: PackVariant(VariantHandleIndex(2))
+	17: MutBorrowLoc[3](currency#1#1: Currency<T>)
+	18: MutBorrowFieldGeneric[0](Currency.metadata_cap_id: MetadataCapState)
+	19: WriteRef
+	20: MutBorrowLoc[3](currency#1#1: Currency<T>)
+	21: MutBorrowFieldGeneric[5](Currency.extra_fields: VecMap<String, ExtraField>)
+	22: LdConst[31](vector<u8>: "is_..)
+	23: Call string::utf8(vector<u8>): String
+	24: Call type_name::with_original_ids<bool>(): TypeName
+	25: LdConst[31](vector<u8>: "is_..)
+	26: Pack[1](ExtraField)
+	27: Call vec_map::insert<String, ExtraField>(&mut VecMap<String, ExtraField>, String, ExtraField)
+	28: MoveLoc[3](currency#1#1: Currency<T>)
+	29: MoveLoc[5](id#1#1: UID)
+	30: PackGeneric[3](MetadataCap<T>)
+	31: StLoc[7](metadata_cap#1#0: MetadataCap<T>)
+	32: StLoc[2](currency#1#0: Currency<T>)
+	33: MutBorrowLoc[2](currency#1#0: Currency<T>)
+	34: MoveLoc[7](metadata_cap#1#0: MetadataCap<T>)
+	35: Call delete_metadata_cap<T>(&mut Currency<T>, MetadataCap<T>)
+	36: MoveLoc[6](is_otw#1#0: bool)
+	37: BrFalse(42)
+B1:
+	38: MoveLoc[2](currency#1#0: Currency<T>)
+	39: Call object::sui_coin_registry_address(): address
+	40: Call transfer::transfer<Currency<T>>(Currency<T>, address)
+	41: Branch(44)
+B2:
+	42: MoveLoc[2](currency#1#0: Currency<T>)
+	43: Call transfer::share_object<Currency<T>>(Currency<T>)
+B3:
+	44: Ret
+}
+
+public finalize_registration<T>(registry#0#0: &mut CoinRegistry, currency#0#0: Receiving<Currency<T>>, _ctx#0#0: &mut TxContext) {
+L3:	decimals#1#0: u8
+L4:	description#1#0: String
+L5:	extra_fields#1#0: VecMap<String, ExtraField>
+L6:	icon_url#1#0: String
+L7:	metadata_cap_id#1#0: MetadataCapState
+L8:	name#1#0: String
+L9:	regulated#1#0: RegulatedState
+L10:	supply#1#0: Option<SupplyState<T>>
+L11:	symbol#1#0: String
+L12:	treasury_cap_id#1#0: Option<ID>
+B0:
+	0: CopyLoc[0](registry#0#0: &mut CoinRegistry)
+	1: MutBorrowField[0](CoinRegistry.id: UID)
+	2: MoveLoc[1](currency#0#0: Receiving<Currency<T>>)
+	3: Call transfer::receive<Currency<T>>(&mut UID, Receiving<Currency<T>>): Currency<T>
+	4: UnpackGeneric[1](Currency<T>)
+	5: StLoc[5](extra_fields#1#0: VecMap<String, ExtraField>)
+	6: StLoc[7](metadata_cap_id#1#0: MetadataCapState)
+	7: StLoc[12](treasury_cap_id#1#0: Option<ID>)
+	8: StLoc[9](regulated#1#0: RegulatedState)
+	9: StLoc[10](supply#1#0: Option<SupplyState<T>>)
+	10: StLoc[6](icon_url#1#0: String)
+	11: StLoc[4](description#1#0: String)
+	12: StLoc[11](symbol#1#0: String)
+	13: StLoc[8](name#1#0: String)
+	14: StLoc[3](decimals#1#0: u8)
+	15: Call object::delete(UID)
+	16: MoveLoc[0](registry#0#0: &mut CoinRegistry)
+	17: MutBorrowField[0](CoinRegistry.id: UID)
+	18: LdFalse
+	19: PackGeneric[0](CurrencyKey<T>)
+	20: Call derived_object::claim<CurrencyKey<T>>(&mut UID, CurrencyKey<T>): UID
+	21: MoveLoc[3](decimals#1#0: u8)
+	22: MoveLoc[8](name#1#0: String)
+	23: MoveLoc[11](symbol#1#0: String)
+	24: MoveLoc[4](description#1#0: String)
+	25: MoveLoc[6](icon_url#1#0: String)
+	26: MoveLoc[10](supply#1#0: Option<SupplyState<T>>)
+	27: MoveLoc[9](regulated#1#0: RegulatedState)
+	28: MoveLoc[12](treasury_cap_id#1#0: Option<ID>)
+	29: MoveLoc[7](metadata_cap_id#1#0: MetadataCapState)
+	30: MoveLoc[5](extra_fields#1#0: VecMap<String, ExtraField>)
+	31: PackGeneric[1](Currency<T>)
+	32: Call transfer::share_object<Currency<T>>(Currency<T>)
+	33: Ret
+}
+
+public delete_metadata_cap<T>(currency#0#0: &mut Currency<T>, cap#0#0: MetadataCap<T>) {
+L2:	id#1#0: UID
+B0:
+	0: MoveLoc[1](cap#0#0: MetadataCap<T>)
+	1: UnpackGeneric[3](MetadataCap<T>)
+	2: StLoc[2](id#1#0: UID)
+	3: PackVariant(VariantHandleIndex(4))
+	4: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	5: MutBorrowFieldGeneric[0](Currency.metadata_cap_id: MetadataCapState)
+	6: WriteRef
+	7: MoveLoc[2](id#1#0: UID)
+	8: Call object::delete(UID)
+	9: Ret
+}
+
+public burn<T>(currency#0#0: &mut Currency<T>, coin#0#0: Coin<T>) {
+B0:
+	0: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	1: MoveLoc[1](coin#0#0: Coin<T>)
+	2: Call coin::into_balance<T>(Coin<T>): Balance<T>
+	3: Call burn_balance<T>(&mut Currency<T>, Balance<T>)
+	4: Ret
+}
+
+public burn_balance<T>(currency#0#0: &mut Currency<T>, balance#0#0: Balance<T>) {
+L2:	__match_tmp%#match_subject#2#2#0: &SupplyState<T>
+L3:	__match_tmp%#unpack_subject#1#1#0: &mut SupplyState<T>
+B0:
+	0: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	1: FreezeRef
+	2: Call is_supply_burn_only<T>(&Currency<T>): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	6: Pop
+	7: LdU64(13837874548807172115)
+	8: Abort
+B3:
+	9: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	10: MutBorrowFieldGeneric[3](Currency.supply: Option<SupplyState<T>>)
+	11: Call option::borrow_mut<SupplyState<T>>(&mut Option<SupplyState<T>>): &mut SupplyState<T>
+	12: StLoc[3](__match_tmp%#unpack_subject#1#1#0: &mut SupplyState<T>)
+	13: CopyLoc[3](__match_tmp%#unpack_subject#1#1#0: &mut SupplyState<T>)
+	14: FreezeRef
+	15: StLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	16: CopyLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	17: VariantSwitch(VariantJumpTableIndex(0))
+B4:
+	18: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: &mut SupplyState<T>)
+	19: Pop
+	20: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	21: Pop
+	22: LdU64(13838156036668915733)
+	23: Abort
+B5:
+	24: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: &mut SupplyState<T>)
+	25: Pop
+	26: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	27: Pop
+	28: LdU64(13838156036668915733)
+	29: Abort
+B6:
+	30: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	31: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(2))
+	32: Pop
+	33: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: &mut SupplyState<T>)
+	34: UnpackVariantGenericMutRef(VariantInstantiationHandleIndex(2))
+	35: MoveLoc[1](balance#0#0: Balance<T>)
+	36: Call balance::decrease_supply<T>(&mut Supply<T>, Balance<T>): u64
+	37: Pop
+	38: Ret
+Jump tables:
+[0]:	variant_switch SupplyState {
+		Fixed => jump 18
+		BurnOnly => jump 30
+		Unknown => jump 24
+	}
+}
+
+public set_name<T>(currency#0#0: &mut Currency<T>, _#0#0: &MetadataCap<T>, name#0#0: String) {
+B0:
+	0: MoveLoc[2](name#0#0: String)
+	1: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	2: MutBorrowFieldGeneric[6](Currency.name: String)
+	3: WriteRef
+	4: Ret
+}
+
+public set_description<T>(currency#0#0: &mut Currency<T>, _#0#0: &MetadataCap<T>, description#0#0: String) {
+B0:
+	0: MoveLoc[2](description#0#0: String)
+	1: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	2: MutBorrowFieldGeneric[7](Currency.description: String)
+	3: WriteRef
+	4: Ret
+}
+
+public set_icon_url<T>(currency#0#0: &mut Currency<T>, _#0#0: &MetadataCap<T>, icon_url#0#0: String) {
+B0:
+	0: MoveLoc[2](icon_url#0#0: String)
+	1: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	2: MutBorrowFieldGeneric[8](Currency.icon_url: String)
+	3: WriteRef
+	4: Ret
+}
+
+public set_treasury_cap_id<T>(currency#0#0: &mut Currency<T>, cap#0#0: &TreasuryCap<T>) {
+B0:
+	0: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	1: MutBorrowFieldGeneric[9](Currency.treasury_cap_id: Option<ID>)
+	2: MoveLoc[1](cap#0#0: &TreasuryCap<T>)
+	3: Call object::id<TreasuryCap<T>>(&TreasuryCap<T>): ID
+	4: Call option::fill<ID>(&mut Option<ID>, ID)
+	5: Ret
+}
+
+public migrate_legacy_metadata<T>(registry#0#0: &mut CoinRegistry, legacy#0#0: &CoinMetadata<T>, _ctx#0#0: &mut TxContext) {
+L3:	$stop#0#11: u64
+L4:	%#10: String
+L5:	%#11: String
+L6:	%#12: String
+L7:	%#13: String
+L8:	%#14: String
+L9:	%#15: u8
+L10:	%#16: UID
+L11:	%#3: String
+L12:	%#5: bool
+L13:	%#9: Option<String>
+L14:	i#1#14: u64
+L15:	i#1#17: u64
+L16:	legacy#1#1: &CoinMetadata<T>
+L17:	o#1#20: Option<Url>
+L18:	o#1#22: Option<String>
+L19:	registry#1#1: &mut CoinRegistry
+L20:	stop#1#14: u64
+L21:	url#1#21: Url
+L22:	v#1#8: &vector<u8>
+B0:
+	0: MoveLoc[0](registry#0#0: &mut CoinRegistry)
+	1: StLoc[19](registry#1#1: &mut CoinRegistry)
+	2: MoveLoc[1](legacy#0#0: &CoinMetadata<T>)
+	3: StLoc[16](legacy#1#1: &CoinMetadata<T>)
+	4: CopyLoc[19](registry#1#1: &mut CoinRegistry)
+	5: FreezeRef
+	6: Call exists<T>(&CoinRegistry): bool
+	7: Not
+	8: BrFalse(10)
+B1:
+	9: Branch(16)
+B2:
+	10: MoveLoc[19](registry#1#1: &mut CoinRegistry)
+	11: Pop
+	12: MoveLoc[16](legacy#1#1: &CoinMetadata<T>)
+	13: Pop
+	14: LdU64(13837312878753742863)
+	15: Abort
+B3:
+	16: CopyLoc[16](legacy#1#1: &CoinMetadata<T>)
+	17: Call coin::get_symbol<T>(&CoinMetadata<T>): String
+	18: Call string::from_ascii(String): String
+	19: StLoc[11](%#3: String)
+	20: ImmBorrowLoc[11](%#3: String)
+	21: Call string::as_bytes(&String): &vector<u8>
+	22: StLoc[22](v#1#8: &vector<u8>)
+	23: CopyLoc[22](v#1#8: &vector<u8>)
+	24: VecLen(26)
+	25: StLoc[3]($stop#0#11: u64)
+	26: LdU64(0)
+	27: StLoc[14](i#1#14: u64)
+	28: MoveLoc[3]($stop#0#11: u64)
+	29: StLoc[20](stop#1#14: u64)
+B4:
+	30: CopyLoc[14](i#1#14: u64)
+	31: CopyLoc[20](stop#1#14: u64)
+	32: Lt
+	33: BrFalse(53)
+B5:
+	34: CopyLoc[14](i#1#14: u64)
+	35: StLoc[15](i#1#17: u64)
+	36: CopyLoc[22](v#1#8: &vector<u8>)
+	37: MoveLoc[15](i#1#17: u64)
+	38: VecImmBorrow(26)
+	39: ReadRef
+	40: Call ascii::is_printable_char(u8): bool
+	41: Not
+	42: BrFalse(48)
+B6:
+	43: MoveLoc[22](v#1#8: &vector<u8>)
+	44: Pop
+	45: LdFalse
+	46: StLoc[12](%#5: bool)
+	47: Branch(57)
+B7:
+	48: MoveLoc[14](i#1#14: u64)
+	49: LdU64(1)
+	50: Add
+	51: StLoc[14](i#1#14: u64)
+	52: Branch(30)
+B8:
+	53: MoveLoc[22](v#1#8: &vector<u8>)
+	54: Pop
+	55: LdTrue
+	56: StLoc[12](%#5: bool)
+B9:
+	57: MoveLoc[12](%#5: bool)
+	58: BrFalse(60)
+B10:
+	59: Branch(66)
+B11:
+	60: MoveLoc[19](registry#1#1: &mut CoinRegistry)
+	61: Pop
+	62: MoveLoc[16](legacy#1#1: &CoinMetadata<T>)
+	63: Pop
+	64: LdU64(13836749933095026699)
+	65: Abort
+B12:
+	66: MoveLoc[19](registry#1#1: &mut CoinRegistry)
+	67: MutBorrowField[0](CoinRegistry.id: UID)
+	68: LdFalse
+	69: PackGeneric[0](CurrencyKey<T>)
+	70: Call derived_object::claim<CurrencyKey<T>>(&mut UID, CurrencyKey<T>): UID
+	71: StLoc[10](%#16: UID)
+	72: CopyLoc[16](legacy#1#1: &CoinMetadata<T>)
+	73: Call coin::get_decimals<T>(&CoinMetadata<T>): u8
+	74: StLoc[9](%#15: u8)
+	75: CopyLoc[16](legacy#1#1: &CoinMetadata<T>)
+	76: Call coin::get_name<T>(&CoinMetadata<T>): String
+	77: StLoc[8](%#14: String)
+	78: CopyLoc[16](legacy#1#1: &CoinMetadata<T>)
+	79: Call coin::get_symbol<T>(&CoinMetadata<T>): String
+	80: Call string::from_ascii(String): String
+	81: StLoc[7](%#13: String)
+	82: CopyLoc[16](legacy#1#1: &CoinMetadata<T>)
+	83: Call coin::get_description<T>(&CoinMetadata<T>): String
+	84: StLoc[6](%#12: String)
+	85: MoveLoc[16](legacy#1#1: &CoinMetadata<T>)
+	86: Call coin::get_icon_url<T>(&CoinMetadata<T>): Option<Url>
+	87: StLoc[17](o#1#20: Option<Url>)
+	88: ImmBorrowLoc[17](o#1#20: Option<Url>)
+	89: Call option::is_some<Url>(&Option<Url>): bool
+	90: BrFalse(100)
+B13:
+	91: MoveLoc[17](o#1#20: Option<Url>)
+	92: Call option::destroy_some<Url>(Option<Url>): Url
+	93: StLoc[21](url#1#21: Url)
+	94: ImmBorrowLoc[21](url#1#21: Url)
+	95: Call url::inner_url(&Url): String
+	96: Call string::from_ascii(String): String
+	97: Call option::some<String>(String): Option<String>
+	98: StLoc[13](%#9: Option<String>)
+	99: Branch(104)
+B14:
+	100: MoveLoc[17](o#1#20: Option<Url>)
+	101: Call option::destroy_none<Url>(Option<Url>)
+	102: Call option::none<String>(): Option<String>
+	103: StLoc[13](%#9: Option<String>)
+B15:
+	104: MoveLoc[13](%#9: Option<String>)
+	105: StLoc[18](o#1#22: Option<String>)
+	106: ImmBorrowLoc[18](o#1#22: Option<String>)
+	107: Call option::is_some<String>(&Option<String>): bool
+	108: BrFalse(113)
+B16:
+	109: MoveLoc[18](o#1#22: Option<String>)
+	110: Call option::destroy_some<String>(Option<String>): String
+	111: StLoc[5](%#11: String)
+	112: Branch(118)
+B17:
+	113: MoveLoc[18](o#1#22: Option<String>)
+	114: Call option::destroy_none<String>(Option<String>)
+	115: LdConst[32](vector<u8>: "" /..)
+	116: Call string::utf8(vector<u8>): String
+	117: StLoc[5](%#11: String)
+B18:
+	118: MoveLoc[5](%#11: String)
+	119: StLoc[4](%#10: String)
+	120: MoveLoc[10](%#16: UID)
+	121: MoveLoc[9](%#15: u8)
+	122: MoveLoc[8](%#14: String)
+	123: MoveLoc[7](%#13: String)
+	124: MoveLoc[6](%#12: String)
+	125: MoveLoc[4](%#10: String)
+	126: PackVariantGeneric(VariantInstantiationHandleIndex(0))
+	127: Call option::some<SupplyState<T>>(SupplyState<T>): Option<SupplyState<T>>
+	128: PackVariant(VariantHandleIndex(5))
+	129: Call option::none<ID>(): Option<ID>
+	130: PackVariant(VariantHandleIndex(1))
+	131: Call vec_map::empty<String, ExtraField>(): VecMap<String, ExtraField>
+	132: PackGeneric[1](Currency<T>)
+	133: Call transfer::share_object<Currency<T>>(Currency<T>)
+	134: Ret
+}
+
+public update_from_legacy_metadata<T>(currency#0#0: &mut Currency<T>, legacy#0#0: &CoinMetadata<T>) {
+L2:	%#3: Option<String>
+L3:	%#5: String
+L4:	o#1#1: Option<Url>
+L5:	o#1#3: Option<String>
+L6:	url#1#2: Url
+B0:
+	0: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	1: FreezeRef
+	2: Call is_metadata_cap_claimed<T>(&Currency<T>): bool
+	3: Not
+	4: BrFalse(6)
+B1:
+	5: Branch(12)
+B2:
+	6: MoveLoc[1](legacy#0#0: &CoinMetadata<T>)
+	7: Pop
+	8: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	9: Pop
+	10: LdU64(13836467380081393673)
+	11: Abort
+B3:
+	12: CopyLoc[1](legacy#0#0: &CoinMetadata<T>)
+	13: Call coin::get_name<T>(&CoinMetadata<T>): String
+	14: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	15: MutBorrowFieldGeneric[6](Currency.name: String)
+	16: WriteRef
+	17: CopyLoc[1](legacy#0#0: &CoinMetadata<T>)
+	18: Call coin::get_symbol<T>(&CoinMetadata<T>): String
+	19: Call string::from_ascii(String): String
+	20: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	21: MutBorrowFieldGeneric[10](Currency.symbol: String)
+	22: WriteRef
+	23: CopyLoc[1](legacy#0#0: &CoinMetadata<T>)
+	24: Call coin::get_description<T>(&CoinMetadata<T>): String
+	25: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	26: MutBorrowFieldGeneric[7](Currency.description: String)
+	27: WriteRef
+	28: CopyLoc[1](legacy#0#0: &CoinMetadata<T>)
+	29: Call coin::get_decimals<T>(&CoinMetadata<T>): u8
+	30: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	31: MutBorrowFieldGeneric[11](Currency.decimals: u8)
+	32: WriteRef
+	33: MoveLoc[1](legacy#0#0: &CoinMetadata<T>)
+	34: Call coin::get_icon_url<T>(&CoinMetadata<T>): Option<Url>
+	35: StLoc[4](o#1#1: Option<Url>)
+	36: ImmBorrowLoc[4](o#1#1: Option<Url>)
+	37: Call option::is_some<Url>(&Option<Url>): bool
+	38: BrFalse(48)
+B4:
+	39: MoveLoc[4](o#1#1: Option<Url>)
+	40: Call option::destroy_some<Url>(Option<Url>): Url
+	41: StLoc[6](url#1#2: Url)
+	42: ImmBorrowLoc[6](url#1#2: Url)
+	43: Call url::inner_url(&Url): String
+	44: Call string::from_ascii(String): String
+	45: Call option::some<String>(String): Option<String>
+	46: StLoc[2](%#3: Option<String>)
+	47: Branch(52)
+B5:
+	48: MoveLoc[4](o#1#1: Option<Url>)
+	49: Call option::destroy_none<Url>(Option<Url>)
+	50: Call option::none<String>(): Option<String>
+	51: StLoc[2](%#3: Option<String>)
+B6:
+	52: MoveLoc[2](%#3: Option<String>)
+	53: StLoc[5](o#1#3: Option<String>)
+	54: ImmBorrowLoc[5](o#1#3: Option<String>)
+	55: Call option::is_some<String>(&Option<String>): bool
+	56: BrFalse(61)
+B7:
+	57: MoveLoc[5](o#1#3: Option<String>)
+	58: Call option::destroy_some<String>(Option<String>): String
+	59: StLoc[3](%#5: String)
+	60: Branch(66)
+B8:
+	61: MoveLoc[5](o#1#3: Option<String>)
+	62: Call option::destroy_none<String>(Option<String>)
+	63: LdConst[32](vector<u8>: "" /..)
+	64: Call string::utf8(vector<u8>): String
+	65: StLoc[3](%#5: String)
+B9:
+	66: MoveLoc[3](%#5: String)
+	67: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	68: MutBorrowFieldGeneric[8](Currency.icon_url: String)
+	69: WriteRef
+	70: Ret
+}
+
+public delete_migrated_legacy_metadata<T>(_#0#0: &mut Currency<T>, _#1#0: CoinMetadata<T>) {
+B0:
+	0: LdU64(13838437756458893335)
+	1: Abort
+}
+
+public migrate_regulated_state_by_metadata<T>(currency#0#0: &mut Currency<T>, metadata#0#0: &RegulatedCoinMetadata<T>) {
+B0:
+	0: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	1: ImmBorrowFieldGeneric[2](Currency.regulated: RegulatedState)
+	2: ReadRef
+	3: PackVariant(VariantHandleIndex(5))
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(13)
+B2:
+	7: MoveLoc[1](metadata#0#0: &RegulatedCoinMetadata<T>)
+	8: Pop
+	9: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	10: Pop
+	11: LdU64(13835904524617121799)
+	12: Abort
+B3:
+	13: MoveLoc[1](metadata#0#0: &RegulatedCoinMetadata<T>)
+	14: Call coin::deny_cap_id<T>(&RegulatedCoinMetadata<T>): ID
+	15: Call option::none<bool>(): Option<bool>
+	16: LdConst[30](u8: 0)
+	17: PackVariant(VariantHandleIndex(3))
+	18: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	19: MutBorrowFieldGeneric[2](Currency.regulated: RegulatedState)
+	20: WriteRef
+	21: Ret
+}
+
+public migrate_regulated_state_by_cap<T>(currency#0#0: &mut Currency<T>, cap#0#0: &DenyCapV2<T>) {
+B0:
+	0: CopyLoc[1](cap#0#0: &DenyCapV2<T>)
+	1: Call object::id<DenyCapV2<T>>(&DenyCapV2<T>): ID
+	2: MoveLoc[1](cap#0#0: &DenyCapV2<T>)
+	3: Call coin::allow_global_pause<T>(&DenyCapV2<T>): bool
+	4: Call option::some<bool>(bool): Option<bool>
+	5: LdConst[30](u8: 0)
+	6: PackVariant(VariantHandleIndex(3))
+	7: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	8: MutBorrowFieldGeneric[2](Currency.regulated: RegulatedState)
+	9: WriteRef
+	10: Ret
+}
+
+public borrow_legacy_metadata<T>(currency#0#0: &mut Currency<T>, ctx#0#0: &mut TxContext): CoinMetadata<T> * Borrow<T> {
+L2:	legacy#1#0: CoinMetadata<T>
+L3:	legacy#2#0: CoinMetadata<T>
+B0:
+	0: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	1: FreezeRef
+	2: Call is_migrated_from_legacy<T>(&Currency<T>): bool
+	3: Not
+	4: BrFalse(6)
+B1:
+	5: Branch(12)
+B2:
+	6: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	7: Pop
+	8: MoveLoc[1](ctx#0#0: &mut TxContext)
+	9: Pop
+	10: LdU64(13839000878211268635)
+	11: Abort
+B3:
+	12: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	13: ImmBorrowFieldGeneric[12](Currency.id: UID)
+	14: LdFalse
+	15: Pack[3](LegacyMetadataKey)
+	16: Call dynamic_field::exists_<LegacyMetadataKey>(&UID, LegacyMetadataKey): bool
+	17: Not
+	18: BrFalse(31)
+B4:
+	19: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	20: FreezeRef
+	21: MoveLoc[1](ctx#0#0: &mut TxContext)
+	22: Call to_legacy_metadata<T>(&Currency<T>, &mut TxContext): CoinMetadata<T>
+	23: StLoc[2](legacy#1#0: CoinMetadata<T>)
+	24: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	25: MutBorrowFieldGeneric[12](Currency.id: UID)
+	26: LdFalse
+	27: Pack[3](LegacyMetadataKey)
+	28: MoveLoc[2](legacy#1#0: CoinMetadata<T>)
+	29: Call dynamic_field::add<LegacyMetadataKey, CoinMetadata<T>>(&mut UID, LegacyMetadataKey, CoinMetadata<T>)
+	30: Branch(33)
+B5:
+	31: MoveLoc[1](ctx#0#0: &mut TxContext)
+	32: Pop
+B6:
+	33: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	34: MutBorrowFieldGeneric[12](Currency.id: UID)
+	35: LdFalse
+	36: Pack[3](LegacyMetadataKey)
+	37: Call dynamic_field::remove<LegacyMetadataKey, CoinMetadata<T>>(&mut UID, LegacyMetadataKey): CoinMetadata<T>
+	38: StLoc[3](legacy#2#0: CoinMetadata<T>)
+	39: MutBorrowLoc[3](legacy#2#0: CoinMetadata<T>)
+	40: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	41: ImmBorrowFieldGeneric[6](Currency.name: String)
+	42: ReadRef
+	43: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	44: ImmBorrowFieldGeneric[10](Currency.symbol: String)
+	45: ReadRef
+	46: Call string::to_ascii(String): String
+	47: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	48: ImmBorrowFieldGeneric[7](Currency.description: String)
+	49: ReadRef
+	50: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	51: ImmBorrowFieldGeneric[8](Currency.icon_url: String)
+	52: ReadRef
+	53: Call string::to_ascii(String): String
+	54: Call coin::update_coin_metadata<T>(&mut CoinMetadata<T>, String, String, String, String)
+	55: MoveLoc[3](legacy#2#0: CoinMetadata<T>)
+	56: LdFalse
+	57: PackGeneric[4](Borrow<T>)
+	58: Ret
+}
+
+public return_borrowed_legacy_metadata<T>(currency#0#0: &mut Currency<T>, legacy#0#0: CoinMetadata<T>, borrow#0#0: Borrow<T>, _ctx#0#0: &mut TxContext) {
+B0:
+	0: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	1: ImmBorrowFieldGeneric[12](Currency.id: UID)
+	2: LdFalse
+	3: Pack[3](LegacyMetadataKey)
+	4: Call dynamic_field::exists_<LegacyMetadataKey>(&UID, LegacyMetadataKey): bool
+	5: Not
+	6: BrFalse(8)
+B1:
+	7: Branch(12)
+B2:
+	8: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	9: Pop
+	10: LdU64(13839282473447194653)
+	11: Abort
+B3:
+	12: MoveLoc[2](borrow#0#0: Borrow<T>)
+	13: UnpackGeneric[4](Borrow<T>)
+	14: Pop
+	15: MutBorrowLoc[1](legacy#0#0: CoinMetadata<T>)
+	16: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	17: ImmBorrowFieldGeneric[6](Currency.name: String)
+	18: ReadRef
+	19: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	20: ImmBorrowFieldGeneric[10](Currency.symbol: String)
+	21: ReadRef
+	22: Call string::to_ascii(String): String
+	23: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	24: ImmBorrowFieldGeneric[7](Currency.description: String)
+	25: ReadRef
+	26: CopyLoc[0](currency#0#0: &mut Currency<T>)
+	27: ImmBorrowFieldGeneric[8](Currency.icon_url: String)
+	28: ReadRef
+	29: Call string::to_ascii(String): String
+	30: Call coin::update_coin_metadata<T>(&mut CoinMetadata<T>, String, String, String, String)
+	31: MoveLoc[0](currency#0#0: &mut Currency<T>)
+	32: MutBorrowFieldGeneric[12](Currency.id: UID)
+	33: LdFalse
+	34: Pack[3](LegacyMetadataKey)
+	35: MoveLoc[1](legacy#0#0: CoinMetadata<T>)
+	36: Call dynamic_field::add<LegacyMetadataKey, CoinMetadata<T>>(&mut UID, LegacyMetadataKey, CoinMetadata<T>)
+	37: Ret
+}
+
+public decimals<T>(currency#0#0: &Currency<T>): u8 {
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[11](Currency.decimals: u8)
+	2: ReadRef
+	3: Ret
+}
+
+public name<T>(currency#0#0: &Currency<T>): String {
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[6](Currency.name: String)
+	2: ReadRef
+	3: Ret
+}
+
+public symbol<T>(currency#0#0: &Currency<T>): String {
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[10](Currency.symbol: String)
+	2: ReadRef
+	3: Ret
+}
+
+public description<T>(currency#0#0: &Currency<T>): String {
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[7](Currency.description: String)
+	2: ReadRef
+	3: Ret
+}
+
+public icon_url<T>(currency#0#0: &Currency<T>): String {
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[8](Currency.icon_url: String)
+	2: ReadRef
+	3: Ret
+}
+
+public is_metadata_cap_claimed<T>(currency#0#0: &Currency<T>): bool {
+L1:	%#5: bool
+L2:	__match_tmp%#match_subject#2#2#0: &MetadataCapState
+L3:	__match_tmp%#unpack_subject#1#1#0: MetadataCapState
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[0](Currency.metadata_cap_id: MetadataCapState)
+	2: ReadRef
+	3: StLoc[3](__match_tmp%#unpack_subject#1#1#0: MetadataCapState)
+	4: ImmBorrowLoc[3](__match_tmp%#unpack_subject#1#1#0: MetadataCapState)
+	5: StLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	6: CopyLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	7: VariantSwitch(VariantJumpTableIndex(0))
+B1:
+	8: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	9: UnpackVariantImmRef(VariantHandleIndex(2))
+	10: Pop
+	11: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: MetadataCapState)
+	12: UnpackVariant(VariantHandleIndex(2))
+	13: Pop
+	14: LdTrue
+	15: StLoc[1](%#5: bool)
+	16: Branch(28)
+B2:
+	17: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	18: Pop
+	19: LdFalse
+	20: StLoc[1](%#5: bool)
+	21: Branch(28)
+B3:
+	22: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	23: UnpackVariantImmRef(VariantHandleIndex(4))
+	24: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: MetadataCapState)
+	25: UnpackVariant(VariantHandleIndex(4))
+	26: LdTrue
+	27: StLoc[1](%#5: bool)
+B4:
+	28: MoveLoc[1](%#5: bool)
+	29: Ret
+Jump tables:
+[0]:	variant_switch MetadataCapState {
+		Claimed => jump 8
+		Unclaimed => jump 17
+		Deleted => jump 22
+	}
+}
+
+public is_metadata_cap_deleted<T>(currency#0#0: &Currency<T>): bool {
+L1:	%#3: bool
+L2:	__match_tmp%#match_subject#2#2#0: &MetadataCapState
+L3:	__match_tmp%#unpack_subject#1#1#0: MetadataCapState
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[0](Currency.metadata_cap_id: MetadataCapState)
+	2: ReadRef
+	3: StLoc[3](__match_tmp%#unpack_subject#1#1#0: MetadataCapState)
+	4: ImmBorrowLoc[3](__match_tmp%#unpack_subject#1#1#0: MetadataCapState)
+	5: StLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	6: CopyLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	7: VariantSwitch(VariantJumpTableIndex(0))
+B1:
+	8: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	9: Pop
+	10: LdFalse
+	11: StLoc[1](%#3: bool)
+	12: Branch(24)
+B2:
+	13: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	14: Pop
+	15: LdFalse
+	16: StLoc[1](%#3: bool)
+	17: Branch(24)
+B3:
+	18: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	19: UnpackVariantImmRef(VariantHandleIndex(4))
+	20: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: MetadataCapState)
+	21: UnpackVariant(VariantHandleIndex(4))
+	22: LdTrue
+	23: StLoc[1](%#3: bool)
+B4:
+	24: MoveLoc[1](%#3: bool)
+	25: Ret
+Jump tables:
+[0]:	variant_switch MetadataCapState {
+		Claimed => jump 8
+		Unclaimed => jump 13
+		Deleted => jump 18
+	}
+}
+
+public metadata_cap_id<T>(currency#0#0: &Currency<T>): Option<ID> {
+L1:	%#5: Option<ID>
+L2:	__match_tmp%#match_subject#2#2#0: &MetadataCapState
+L3:	__match_tmp%#unpack_subject#1#1#0: MetadataCapState
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[0](Currency.metadata_cap_id: MetadataCapState)
+	2: ReadRef
+	3: StLoc[3](__match_tmp%#unpack_subject#1#1#0: MetadataCapState)
+	4: ImmBorrowLoc[3](__match_tmp%#unpack_subject#1#1#0: MetadataCapState)
+	5: StLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	6: CopyLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	7: VariantSwitch(VariantJumpTableIndex(0))
+B1:
+	8: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	9: UnpackVariantImmRef(VariantHandleIndex(2))
+	10: Pop
+	11: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: MetadataCapState)
+	12: UnpackVariant(VariantHandleIndex(2))
+	13: Call option::some<ID>(ID): Option<ID>
+	14: StLoc[1](%#5: Option<ID>)
+	15: Branch(25)
+B2:
+	16: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	17: Pop
+	18: Call option::none<ID>(): Option<ID>
+	19: StLoc[1](%#5: Option<ID>)
+	20: Branch(25)
+B3:
+	21: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &MetadataCapState)
+	22: Pop
+	23: Call option::none<ID>(): Option<ID>
+	24: StLoc[1](%#5: Option<ID>)
+B4:
+	25: MoveLoc[1](%#5: Option<ID>)
+	26: Ret
+Jump tables:
+[0]:	variant_switch MetadataCapState {
+		Claimed => jump 8
+		Unclaimed => jump 16
+		Deleted => jump 21
+	}
+}
+
+public treasury_cap_id<T>(currency#0#0: &Currency<T>): Option<ID> {
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[9](Currency.treasury_cap_id: Option<ID>)
+	2: ReadRef
+	3: Ret
+}
+
+public deny_cap_id<T>(currency#0#0: &Currency<T>): Option<ID> {
+L1:	%#9: Option<ID>
+L2:	__match_tmp%#match_subject#2#2#0: &RegulatedState
+L3:	__match_tmp%#unpack_subject#1#1#0: RegulatedState
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[2](Currency.regulated: RegulatedState)
+	2: ReadRef
+	3: StLoc[3](__match_tmp%#unpack_subject#1#1#0: RegulatedState)
+	4: ImmBorrowLoc[3](__match_tmp%#unpack_subject#1#1#0: RegulatedState)
+	5: StLoc[2](__match_tmp%#match_subject#2#2#0: &RegulatedState)
+	6: CopyLoc[2](__match_tmp%#match_subject#2#2#0: &RegulatedState)
+	7: VariantSwitch(VariantJumpTableIndex(0))
+B1:
+	8: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &RegulatedState)
+	9: UnpackVariantImmRef(VariantHandleIndex(3))
+	10: Pop
+	11: Pop
+	12: Pop
+	13: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: RegulatedState)
+	14: UnpackVariant(VariantHandleIndex(3))
+	15: Pop
+	16: Pop
+	17: Call option::some<ID>(ID): Option<ID>
+	18: StLoc[1](%#9: Option<ID>)
+	19: Branch(33)
+B2:
+	20: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &RegulatedState)
+	21: UnpackVariantImmRef(VariantHandleIndex(0))
+	22: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: RegulatedState)
+	23: UnpackVariant(VariantHandleIndex(0))
+	24: Call option::none<ID>(): Option<ID>
+	25: StLoc[1](%#9: Option<ID>)
+	26: Branch(33)
+B3:
+	27: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &RegulatedState)
+	28: UnpackVariantImmRef(VariantHandleIndex(5))
+	29: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: RegulatedState)
+	30: UnpackVariant(VariantHandleIndex(5))
+	31: Call option::none<ID>(): Option<ID>
+	32: StLoc[1](%#9: Option<ID>)
+B4:
+	33: MoveLoc[1](%#9: Option<ID>)
+	34: Ret
+Jump tables:
+[0]:	variant_switch RegulatedState {
+		Regulated => jump 8
+		Unregulated => jump 20
+		Unknown => jump 27
+	}
+}
+
+public is_supply_fixed<T>(currency#0#0: &Currency<T>): bool {
+L1:	%#4: bool
+L2:	__match_tmp%#match_subject#2#2#0: &SupplyState<T>
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[3](Currency.supply: Option<SupplyState<T>>)
+	2: Call option::borrow<SupplyState<T>>(&Option<SupplyState<T>>): &SupplyState<T>
+	3: StLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	4: CopyLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	5: VariantSwitch(VariantJumpTableIndex(0))
+B1:
+	6: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	7: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(1))
+	8: Pop
+	9: LdTrue
+	10: StLoc[1](%#4: bool)
+	11: Branch(21)
+B2:
+	12: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	13: Pop
+	14: LdFalse
+	15: StLoc[1](%#4: bool)
+	16: Branch(21)
+B3:
+	17: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	18: Pop
+	19: LdFalse
+	20: StLoc[1](%#4: bool)
+B4:
+	21: MoveLoc[1](%#4: bool)
+	22: Ret
+Jump tables:
+[0]:	variant_switch SupplyState {
+		Fixed => jump 6
+		BurnOnly => jump 12
+		Unknown => jump 17
+	}
+}
+
+public is_supply_burn_only<T>(currency#0#0: &Currency<T>): bool {
+L1:	%#4: bool
+L2:	__match_tmp%#match_subject#2#2#0: &SupplyState<T>
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[3](Currency.supply: Option<SupplyState<T>>)
+	2: Call option::borrow<SupplyState<T>>(&Option<SupplyState<T>>): &SupplyState<T>
+	3: StLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	4: CopyLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	5: VariantSwitch(VariantJumpTableIndex(0))
+B1:
+	6: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	7: Pop
+	8: LdFalse
+	9: StLoc[1](%#4: bool)
+	10: Branch(21)
+B2:
+	11: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	12: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(2))
+	13: Pop
+	14: LdTrue
+	15: StLoc[1](%#4: bool)
+	16: Branch(21)
+B3:
+	17: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	18: Pop
+	19: LdFalse
+	20: StLoc[1](%#4: bool)
+B4:
+	21: MoveLoc[1](%#4: bool)
+	22: Ret
+Jump tables:
+[0]:	variant_switch SupplyState {
+		Fixed => jump 6
+		BurnOnly => jump 11
+		Unknown => jump 17
+	}
+}
+
+public is_regulated<T>(currency#0#0: &Currency<T>): bool {
+L1:	%#9: bool
+L2:	__match_tmp%#match_subject#2#2#0: &RegulatedState
+L3:	__match_tmp%#unpack_subject#1#1#0: RegulatedState
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[2](Currency.regulated: RegulatedState)
+	2: ReadRef
+	3: StLoc[3](__match_tmp%#unpack_subject#1#1#0: RegulatedState)
+	4: ImmBorrowLoc[3](__match_tmp%#unpack_subject#1#1#0: RegulatedState)
+	5: StLoc[2](__match_tmp%#match_subject#2#2#0: &RegulatedState)
+	6: CopyLoc[2](__match_tmp%#match_subject#2#2#0: &RegulatedState)
+	7: VariantSwitch(VariantJumpTableIndex(0))
+B1:
+	8: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &RegulatedState)
+	9: UnpackVariantImmRef(VariantHandleIndex(3))
+	10: Pop
+	11: Pop
+	12: Pop
+	13: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: RegulatedState)
+	14: UnpackVariant(VariantHandleIndex(3))
+	15: Pop
+	16: Pop
+	17: Pop
+	18: LdTrue
+	19: StLoc[1](%#9: bool)
+	20: Branch(30)
+B2:
+	21: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &RegulatedState)
+	22: Pop
+	23: LdFalse
+	24: StLoc[1](%#9: bool)
+	25: Branch(30)
+B3:
+	26: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &RegulatedState)
+	27: Pop
+	28: LdFalse
+	29: StLoc[1](%#9: bool)
+B4:
+	30: MoveLoc[1](%#9: bool)
+	31: Ret
+Jump tables:
+[0]:	variant_switch RegulatedState {
+		Regulated => jump 8
+		Unregulated => jump 21
+		Unknown => jump 26
+	}
+}
+
+public total_supply<T>(currency#0#0: &Currency<T>): Option<u64> {
+L1:	%#7: Option<u64>
+L2:	__match_tmp%#match_subject#2#2#0: &SupplyState<T>
+L3:	__match_tmp%#unpack_subject#1#1#0: &SupplyState<T>
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[3](Currency.supply: Option<SupplyState<T>>)
+	2: Call option::borrow<SupplyState<T>>(&Option<SupplyState<T>>): &SupplyState<T>
+	3: StLoc[3](__match_tmp%#unpack_subject#1#1#0: &SupplyState<T>)
+	4: CopyLoc[3](__match_tmp%#unpack_subject#1#1#0: &SupplyState<T>)
+	5: StLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	6: CopyLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	7: VariantSwitch(VariantJumpTableIndex(0))
+B1:
+	8: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	9: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(1))
+	10: Pop
+	11: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: &SupplyState<T>)
+	12: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(1))
+	13: Call balance::supply_value<T>(&Supply<T>): u64
+	14: Call option::some<u64>(u64): Option<u64>
+	15: StLoc[1](%#7: Option<u64>)
+	16: Branch(32)
+B2:
+	17: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	18: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(2))
+	19: Pop
+	20: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: &SupplyState<T>)
+	21: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(2))
+	22: Call balance::supply_value<T>(&Supply<T>): u64
+	23: Call option::some<u64>(u64): Option<u64>
+	24: StLoc[1](%#7: Option<u64>)
+	25: Branch(32)
+B3:
+	26: MoveLoc[3](__match_tmp%#unpack_subject#1#1#0: &SupplyState<T>)
+	27: Pop
+	28: MoveLoc[2](__match_tmp%#match_subject#2#2#0: &SupplyState<T>)
+	29: UnpackVariantGenericImmRef(VariantInstantiationHandleIndex(0))
+	30: Call option::none<u64>(): Option<u64>
+	31: StLoc[1](%#7: Option<u64>)
+B4:
+	32: MoveLoc[1](%#7: Option<u64>)
+	33: Ret
+Jump tables:
+[0]:	variant_switch SupplyState {
+		Fixed => jump 8
+		BurnOnly => jump 17
+		Unknown => jump 26
+	}
+}
+
+public exists<T>(registry#0#0: &CoinRegistry): bool {
+B0:
+	0: MoveLoc[0](registry#0#0: &CoinRegistry)
+	1: ImmBorrowField[0](CoinRegistry.id: UID)
+	2: LdFalse
+	3: PackGeneric[0](CurrencyKey<T>)
+	4: Call derived_object::exists<CurrencyKey<T>>(&UID, CurrencyKey<T>): bool
+	5: Ret
+}
+
+is_migrated_from_legacy<T>(currency#0#0: &Currency<T>): bool {
+L1:	%#1: String
+L2:	%#2: &VecMap<String, ExtraField>
+B0:
+	0: MoveLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[5](Currency.extra_fields: VecMap<String, ExtraField>)
+	2: StLoc[2](%#2: &VecMap<String, ExtraField>)
+	3: LdConst[31](vector<u8>: "is_..)
+	4: Call string::utf8(vector<u8>): String
+	5: StLoc[1](%#1: String)
+	6: MoveLoc[2](%#2: &VecMap<String, ExtraField>)
+	7: ImmBorrowLoc[1](%#1: String)
+	8: Call vec_map::contains<String, ExtraField>(&VecMap<String, ExtraField>, &String): bool
+	9: Not
+	10: Ret
+}
+
+to_legacy_metadata<T>(currency#0#0: &Currency<T>, ctx#0#0: &mut TxContext): CoinMetadata<T> {
+B0:
+	0: CopyLoc[0](currency#0#0: &Currency<T>)
+	1: ImmBorrowFieldGeneric[11](Currency.decimals: u8)
+	2: ReadRef
+	3: CopyLoc[0](currency#0#0: &Currency<T>)
+	4: ImmBorrowFieldGeneric[6](Currency.name: String)
+	5: ReadRef
+	6: CopyLoc[0](currency#0#0: &Currency<T>)
+	7: ImmBorrowFieldGeneric[10](Currency.symbol: String)
+	8: ReadRef
+	9: Call string::to_ascii(String): String
+	10: CopyLoc[0](currency#0#0: &Currency<T>)
+	11: ImmBorrowFieldGeneric[7](Currency.description: String)
+	12: ReadRef
+	13: MoveLoc[0](currency#0#0: &Currency<T>)
+	14: ImmBorrowFieldGeneric[8](Currency.icon_url: String)
+	15: ReadRef
+	16: Call string::to_ascii(String): String
+	17: MoveLoc[1](ctx#0#0: &mut TxContext)
+	18: Call coin::new_coin_metadata<T>(u8, String, String, String, String, &mut TxContext): CoinMetadata<T>
+	19: Ret
+}
+
+create(ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[0](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[33](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdU64(13835342395002191875)
+	7: Abort
+B3:
+	8: Call object::sui_coin_registry_object_id(): UID
+	9: Pack[0](CoinRegistry)
+	10: Call transfer::share_object<CoinRegistry>(CoinRegistry)
+	11: Ret
+}
+
+public create_coin_data_registry_for_testing(ctx#0#0: &mut TxContext): CoinRegistry {
+B0:
+	0: CopyLoc[0](ctx#0#0: &mut TxContext)
+	1: FreezeRef
+	2: Call tx_context::sender(&TxContext): address
+	3: LdConst[33](address: 0x00..)
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](ctx#0#0: &mut TxContext)
+	8: Pop
+	9: LdU64(13835342687059968003)
+	10: Abort
+B3:
+	11: MoveLoc[0](ctx#0#0: &mut TxContext)
+	12: Call object::new(&mut TxContext): UID
+	13: Pack[0](CoinRegistry)
+	14: Ret
+}
+
+public share_for_testing(registry#0#0: CoinRegistry) {
+B0:
+	0: MoveLoc[0](registry#0#0: CoinRegistry)
+	1: Call transfer::share_object<CoinRegistry>(CoinRegistry)
+	2: Ret
+}
+
+public unwrap_for_testing<T>(init#0#0: CurrencyInitializer<T>): Currency<T> {
+L1:	currency#1#0: Currency<T>
+L2:	extra_fields#1#0: Bag
+B0:
+	0: MoveLoc[0](init#0#0: CurrencyInitializer<T>)
+	1: UnpackGeneric[2](CurrencyInitializer<T>)
+	2: Pop
+	3: StLoc[2](extra_fields#1#0: Bag)
+	4: StLoc[1](currency#1#0: Currency<T>)
+	5: MoveLoc[2](extra_fields#1#0: Bag)
+	6: Call bag::destroy_empty(Bag)
+	7: MoveLoc[1](currency#1#0: Currency<T>)
+	8: Ret
+}
+
+public finalize_unwrap_for_testing<T>(builder#0#0: CurrencyInitializer<T>, ctx#0#0: &mut TxContext): Currency<T> * MetadataCap<T> {
+L2:	currency#1#1: Currency<T>
+L3:	extra_fields#1#1: Bag
+L4:	id#1#1: UID
+B0:
+	0: MoveLoc[0](builder#0#0: CurrencyInitializer<T>)
+	1: UnpackGeneric[2](CurrencyInitializer<T>)
+	2: Pop
+	3: StLoc[3](extra_fields#1#1: Bag)
+	4: StLoc[2](currency#1#1: Currency<T>)
+	5: MoveLoc[3](extra_fields#1#1: Bag)
+	6: Call bag::destroy_empty(Bag)
+	7: MoveLoc[1](ctx#0#0: &mut TxContext)
+	8: Call object::new(&mut TxContext): UID
+	9: StLoc[4](id#1#1: UID)
+	10: ImmBorrowLoc[4](id#1#1: UID)
+	11: Call object::uid_to_inner(&UID): ID
+	12: PackVariant(VariantHandleIndex(2))
+	13: MutBorrowLoc[2](currency#1#1: Currency<T>)
+	14: MutBorrowFieldGeneric[0](Currency.metadata_cap_id: MetadataCapState)
+	15: WriteRef
+	16: MutBorrowLoc[2](currency#1#1: Currency<T>)
+	17: MutBorrowFieldGeneric[5](Currency.extra_fields: VecMap<String, ExtraField>)
+	18: LdConst[31](vector<u8>: "is_..)
+	19: Call string::utf8(vector<u8>): String
+	20: Call type_name::with_original_ids<bool>(): TypeName
+	21: LdConst[31](vector<u8>: "is_..)
+	22: Pack[1](ExtraField)
+	23: Call vec_map::insert<String, ExtraField>(&mut VecMap<String, ExtraField>, String, ExtraField)
+	24: MoveLoc[2](currency#1#1: Currency<T>)
+	25: MoveLoc[4](id#1#1: UID)
+	26: PackGeneric[3](MetadataCap<T>)
+	27: Ret
+}
+
+public migrate_legacy_metadata_for_testing<T>(registry#0#0: &mut CoinRegistry, legacy#0#0: &CoinMetadata<T>, _ctx#0#0: &mut TxContext): Currency<T> {
+L3:	$stop#0#11: u64
+L4:	%#10: String
+L5:	%#11: String
+L6:	%#12: String
+L7:	%#13: String
+L8:	%#14: String
+L9:	%#15: u8
+L10:	%#16: UID
+L11:	%#3: String
+L12:	%#5: bool
+L13:	%#9: Option<String>
+L14:	i#1#14: u64
+L15:	i#1#17: u64
+L16:	legacy#1#1: &CoinMetadata<T>
+L17:	o#1#20: Option<Url>
+L18:	o#1#22: Option<String>
+L19:	registry#1#1: &mut CoinRegistry
+L20:	stop#1#14: u64
+L21:	url#1#21: Url
+L22:	v#1#8: &vector<u8>
+B0:
+	0: MoveLoc[0](registry#0#0: &mut CoinRegistry)
+	1: StLoc[19](registry#1#1: &mut CoinRegistry)
+	2: MoveLoc[1](legacy#0#0: &CoinMetadata<T>)
+	3: StLoc[16](legacy#1#1: &CoinMetadata<T>)
+	4: CopyLoc[19](registry#1#1: &mut CoinRegistry)
+	5: FreezeRef
+	6: Call exists<T>(&CoinRegistry): bool
+	7: Not
+	8: BrFalse(10)
+B1:
+	9: Branch(16)
+B2:
+	10: MoveLoc[19](registry#1#1: &mut CoinRegistry)
+	11: Pop
+	12: MoveLoc[16](legacy#1#1: &CoinMetadata<T>)
+	13: Pop
+	14: LdU64(13837312878753742863)
+	15: Abort
+B3:
+	16: CopyLoc[16](legacy#1#1: &CoinMetadata<T>)
+	17: Call coin::get_symbol<T>(&CoinMetadata<T>): String
+	18: Call string::from_ascii(String): String
+	19: StLoc[11](%#3: String)
+	20: ImmBorrowLoc[11](%#3: String)
+	21: Call string::as_bytes(&String): &vector<u8>
+	22: StLoc[22](v#1#8: &vector<u8>)
+	23: CopyLoc[22](v#1#8: &vector<u8>)
+	24: VecLen(26)
+	25: StLoc[3]($stop#0#11: u64)
+	26: LdU64(0)
+	27: StLoc[14](i#1#14: u64)
+	28: MoveLoc[3]($stop#0#11: u64)
+	29: StLoc[20](stop#1#14: u64)
+B4:
+	30: CopyLoc[14](i#1#14: u64)
+	31: CopyLoc[20](stop#1#14: u64)
+	32: Lt
+	33: BrFalse(53)
+B5:
+	34: CopyLoc[14](i#1#14: u64)
+	35: StLoc[15](i#1#17: u64)
+	36: CopyLoc[22](v#1#8: &vector<u8>)
+	37: MoveLoc[15](i#1#17: u64)
+	38: VecImmBorrow(26)
+	39: ReadRef
+	40: Call ascii::is_printable_char(u8): bool
+	41: Not
+	42: BrFalse(48)
+B6:
+	43: MoveLoc[22](v#1#8: &vector<u8>)
+	44: Pop
+	45: LdFalse
+	46: StLoc[12](%#5: bool)
+	47: Branch(57)
+B7:
+	48: MoveLoc[14](i#1#14: u64)
+	49: LdU64(1)
+	50: Add
+	51: StLoc[14](i#1#14: u64)
+	52: Branch(30)
+B8:
+	53: MoveLoc[22](v#1#8: &vector<u8>)
+	54: Pop
+	55: LdTrue
+	56: StLoc[12](%#5: bool)
+B9:
+	57: MoveLoc[12](%#5: bool)
+	58: BrFalse(60)
+B10:
+	59: Branch(66)
+B11:
+	60: MoveLoc[19](registry#1#1: &mut CoinRegistry)
+	61: Pop
+	62: MoveLoc[16](legacy#1#1: &CoinMetadata<T>)
+	63: Pop
+	64: LdU64(13836749933095026699)
+	65: Abort
+B12:
+	66: MoveLoc[19](registry#1#1: &mut CoinRegistry)
+	67: MutBorrowField[0](CoinRegistry.id: UID)
+	68: LdFalse
+	69: PackGeneric[0](CurrencyKey<T>)
+	70: Call derived_object::claim<CurrencyKey<T>>(&mut UID, CurrencyKey<T>): UID
+	71: StLoc[10](%#16: UID)
+	72: CopyLoc[16](legacy#1#1: &CoinMetadata<T>)
+	73: Call coin::get_decimals<T>(&CoinMetadata<T>): u8
+	74: StLoc[9](%#15: u8)
+	75: CopyLoc[16](legacy#1#1: &CoinMetadata<T>)
+	76: Call coin::get_name<T>(&CoinMetadata<T>): String
+	77: StLoc[8](%#14: String)
+	78: CopyLoc[16](legacy#1#1: &CoinMetadata<T>)
+	79: Call coin::get_symbol<T>(&CoinMetadata<T>): String
+	80: Call string::from_ascii(String): String
+	81: StLoc[7](%#13: String)
+	82: CopyLoc[16](legacy#1#1: &CoinMetadata<T>)
+	83: Call coin::get_description<T>(&CoinMetadata<T>): String
+	84: StLoc[6](%#12: String)
+	85: MoveLoc[16](legacy#1#1: &CoinMetadata<T>)
+	86: Call coin::get_icon_url<T>(&CoinMetadata<T>): Option<Url>
+	87: StLoc[17](o#1#20: Option<Url>)
+	88: ImmBorrowLoc[17](o#1#20: Option<Url>)
+	89: Call option::is_some<Url>(&Option<Url>): bool
+	90: BrFalse(100)
+B13:
+	91: MoveLoc[17](o#1#20: Option<Url>)
+	92: Call option::destroy_some<Url>(Option<Url>): Url
+	93: StLoc[21](url#1#21: Url)
+	94: ImmBorrowLoc[21](url#1#21: Url)
+	95: Call url::inner_url(&Url): String
+	96: Call string::from_ascii(String): String
+	97: Call option::some<String>(String): Option<String>
+	98: StLoc[13](%#9: Option<String>)
+	99: Branch(104)
+B14:
+	100: MoveLoc[17](o#1#20: Option<Url>)
+	101: Call option::destroy_none<Url>(Option<Url>)
+	102: Call option::none<String>(): Option<String>
+	103: StLoc[13](%#9: Option<String>)
+B15:
+	104: MoveLoc[13](%#9: Option<String>)
+	105: StLoc[18](o#1#22: Option<String>)
+	106: ImmBorrowLoc[18](o#1#22: Option<String>)
+	107: Call option::is_some<String>(&Option<String>): bool
+	108: BrFalse(113)
+B16:
+	109: MoveLoc[18](o#1#22: Option<String>)
+	110: Call option::destroy_some<String>(Option<String>): String
+	111: StLoc[5](%#11: String)
+	112: Branch(118)
+B17:
+	113: MoveLoc[18](o#1#22: Option<String>)
+	114: Call option::destroy_none<String>(Option<String>)
+	115: LdConst[32](vector<u8>: "" /..)
+	116: Call string::utf8(vector<u8>): String
+	117: StLoc[5](%#11: String)
+B18:
+	118: MoveLoc[5](%#11: String)
+	119: StLoc[4](%#10: String)
+	120: MoveLoc[10](%#16: UID)
+	121: MoveLoc[9](%#15: u8)
+	122: MoveLoc[8](%#14: String)
+	123: MoveLoc[7](%#13: String)
+	124: MoveLoc[6](%#12: String)
+	125: MoveLoc[4](%#10: String)
+	126: PackVariantGeneric(VariantInstantiationHandleIndex(0))
+	127: Call option::some<SupplyState<T>>(SupplyState<T>): Option<SupplyState<T>>
+	128: PackVariant(VariantHandleIndex(5))
+	129: Call option::none<ID>(): Option<ID>
+	130: PackVariant(VariantHandleIndex(1))
+	131: Call vec_map::empty<String, ExtraField>(): VecMap<String, ExtraField>
+	132: PackGeneric[1](Currency<T>)
+	133: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "EMetadataCapAlreadyClaimed" // interpreted as UTF8 string
+	1 => vector<u8>: "Metadata cap already claimed" // interpreted as UTF8 string
+	2 => vector<u8>: "ENotSystemAddress" // interpreted as UTF8 string
+	3 => vector<u8>: "Only the system can create the registry." // interpreted as UTF8 string
+	4 => vector<u8>: "ECurrencyAlreadyExists" // interpreted as UTF8 string
+	5 => vector<u8>: "Currency for this coin type already exists." // interpreted as UTF8 string
+	6 => vector<u8>: "EDenyListStateAlreadySet" // interpreted as UTF8 string
+	7 => vector<u8>: "Cannot set the deny list state as it has already been set." // interpreted as UTF8 string
+	8 => vector<u8>: "ECannotUpdateManagedMetadata" // interpreted as UTF8 string
+	9 => vector<u8>: "Cannot update metadata whose `MetadataCap` has already been claimed" // interpreted as UTF8 string
+	10 => vector<u8>: "EInvalidSymbol" // interpreted as UTF8 string
+	11 => vector<u8>: "Symbol has to be ASCII printable" // interpreted as UTF8 string
+	12 => vector<u8>: "EDenyCapAlreadyCreated" // interpreted as UTF8 string
+	13 => vector<u8>: "Cannot claim the deny cap twice" // interpreted as UTF8 string
+	14 => vector<u8>: "ECurrencyAlreadyRegistered" // interpreted as UTF8 string
+	15 => vector<u8>: "Currency already registered" // interpreted as UTF8 string
+	16 => vector<u8>: "EEmptySupply" // interpreted as UTF8 string
+	17 => vector<u8>: "Supply cannot be empty" // interpreted as UTF8 string
+	18 => vector<u8>: "ESupplyNotBurnOnly" // interpreted as UTF8 string
+	19 => vector<u8>: "Cannot burn on a non burn-only supply" // interpreted as UTF8 string
+	20 => vector<u8>: "EInvariantViolation" // interpreted as UTF8 string
+	21 => vector<u8>: "Code invariant violation" // interpreted as UTF8 string
+	22 => vector<u8>: "EDeletionNotSupported" // interpreted as UTF8 string
+	23 => vector<u8>: "Deleting legacy metadata is not supported" // interpreted as UTF8 string
+	24 => vector<u8>: "ENotOneTimeWitness" // interpreted as UTF8 string
+	25 => vector<u8>: "Type is expected to be OTW" // interpreted as UTF8 string
+	26 => vector<u8>: "EBorrowLegacyMetadata" // interpreted as UTF8 string
+	27 => vector<u8>: "Cannot borrow legacy metadata for migrated currency" // interpreted as UTF8 string
+	28 => vector<u8>: "EDuplicateBorrow" // interpreted as UTF8 string
+	29 => vector<u8>: "Attempt to return duplicate borrowed CoinMetadata" // interpreted as UTF8 string
+	30 => u8: 0
+	31 => vector<u8>: "is_new_currency" // interpreted as UTF8 string
+	32 => vector<u8>: "" // interpreted as UTF8 string
+	33 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

@@ -1,0 +1,65 @@
+// Move bytecode v6
+module 2.tx_context_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+test_id_generation() {
+L0:	ctx#1#0: TxContext
+L1:	id1#1#0: UID
+L2:	id2#1#0: UID
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](ctx#1#0: TxContext)
+	2: ImmBorrowLoc[0](ctx#1#0: TxContext)
+	3: Call tx_context::get_ids_created(&TxContext): u64
+	4: LdU64(0)
+	5: Eq
+	6: BrFalse(8)
+B1:
+	7: Branch(10)
+B2:
+	8: LdU64(13906834221588021247)
+	9: Abort
+B3:
+	10: MutBorrowLoc[0](ctx#1#0: TxContext)
+	11: Call object::new(&mut TxContext): UID
+	12: StLoc[1](id1#1#0: UID)
+	13: MutBorrowLoc[0](ctx#1#0: TxContext)
+	14: Call object::new(&mut TxContext): UID
+	15: StLoc[2](id2#1#0: UID)
+	16: ImmBorrowLoc[1](id1#1#0: UID)
+	17: ImmBorrowLoc[2](id2#1#0: UID)
+	18: Neq
+	19: BrFalse(21)
+B4:
+	20: Branch(23)
+B5:
+	21: LdU64(13906834247357825023)
+	22: Abort
+B6:
+	23: ImmBorrowLoc[0](ctx#1#0: TxContext)
+	24: Call tx_context::get_ids_created(&TxContext): u64
+	25: LdU64(2)
+	26: Eq
+	27: BrFalse(29)
+B7:
+	28: Branch(31)
+B8:
+	29: LdU64(13906834251652792319)
+	30: Abort
+B9:
+	31: MoveLoc[1](id1#1#0: UID)
+	32: Call object::delete(UID)
+	33: MoveLoc[2](id2#1#0: UID)
+	34: Call object::delete(UID)
+	35: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

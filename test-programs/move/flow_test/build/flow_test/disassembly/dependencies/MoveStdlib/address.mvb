@@ -1,0 +1,17 @@
+// Move bytecode v6
+module 1.address {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+public length(): u64 {
+B0:
+	0: LdU64(32)
+	1: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

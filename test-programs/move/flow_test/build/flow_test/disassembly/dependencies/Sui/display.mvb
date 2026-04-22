@@ -1,0 +1,373 @@
+// Move bytecode v6
+module 2.display {
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+use 0000000000000000000000000000000000000000000000000000000000000002::event;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::package;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::vec_map;
+
+struct Display<phantom T: key> has store, key {
+	id: UID,
+	fields: VecMap<String, String>,
+	version: u16
+}
+
+struct DisplayCreated<phantom T: key> has copy, drop {
+	id: ID
+}
+
+struct VersionUpdated<phantom T: key> has copy, drop {
+	id: ID,
+	version: u16,
+	fields: VecMap<String, String>
+}
+
+public new<T: key>(pub#0#0: &Publisher, ctx#0#0: &mut TxContext): Display<T> {
+B0:
+	0: MoveLoc[0](pub#0#0: &Publisher)
+	1: Call is_authorized<T>(&Publisher): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(8)
+B2:
+	4: MoveLoc[1](ctx#0#0: &mut TxContext)
+	5: Pop
+	6: LdConst[0](u64: 0)
+	7: Abort
+B3:
+	8: MoveLoc[1](ctx#0#0: &mut TxContext)
+	9: Call create_internal<T>(&mut TxContext): Display<T>
+	10: Ret
+}
+
+public new_with_fields<T: key>(pub#0#0: &Publisher, fields#0#0: vector<String>, values#0#0: vector<String>, ctx#0#0: &mut TxContext): Display<T> {
+L4:	$stop#0#7: u64
+L5:	display#1#0: Display<T>
+L6:	field#1#15: String
+L7:	i#1#10: u64
+L8:	stop#1#10: u64
+L9:	v#1#4: vector<String>
+L10:	v1#1#1: vector<String>
+L11:	v2#1#1: vector<String>
+L12:	value#1#15: String
+B0:
+	0: ImmBorrowLoc[1](fields#0#0: vector<String>)
+	1: VecLen(16)
+	2: ImmBorrowLoc[2](values#0#0: vector<String>)
+	3: VecLen(16)
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(13)
+B2:
+	7: MoveLoc[0](pub#0#0: &Publisher)
+	8: Pop
+	9: MoveLoc[3](ctx#0#0: &mut TxContext)
+	10: Pop
+	11: LdConst[1](u64: 1)
+	12: Abort
+B3:
+	13: MoveLoc[0](pub#0#0: &Publisher)
+	14: MoveLoc[3](ctx#0#0: &mut TxContext)
+	15: Call new<T>(&Publisher, &mut TxContext): Display<T>
+	16: StLoc[5](display#1#0: Display<T>)
+	17: MoveLoc[1](fields#0#0: vector<String>)
+	18: StLoc[10](v1#1#1: vector<String>)
+	19: MoveLoc[2](values#0#0: vector<String>)
+	20: StLoc[11](v2#1#1: vector<String>)
+	21: MutBorrowLoc[11](v2#1#1: vector<String>)
+	22: Call vector::reverse<String>(&mut vector<String>)
+	23: ImmBorrowLoc[10](v1#1#1: vector<String>)
+	24: VecLen(16)
+	25: ImmBorrowLoc[11](v2#1#1: vector<String>)
+	26: VecLen(16)
+	27: Eq
+	28: BrFalse(30)
+B4:
+	29: Branch(32)
+B5:
+	30: LdU64(13906834582365274111)
+	31: Abort
+B6:
+	32: MoveLoc[10](v1#1#1: vector<String>)
+	33: StLoc[9](v#1#4: vector<String>)
+	34: MutBorrowLoc[9](v#1#4: vector<String>)
+	35: Call vector::reverse<String>(&mut vector<String>)
+	36: ImmBorrowLoc[9](v#1#4: vector<String>)
+	37: VecLen(16)
+	38: StLoc[4]($stop#0#7: u64)
+	39: LdU64(0)
+	40: StLoc[7](i#1#10: u64)
+	41: MoveLoc[4]($stop#0#7: u64)
+	42: StLoc[8](stop#1#10: u64)
+B7:
+	43: CopyLoc[7](i#1#10: u64)
+	44: CopyLoc[8](stop#1#10: u64)
+	45: Lt
+	46: BrFalse(64)
+B8:
+	47: CopyLoc[7](i#1#10: u64)
+	48: Pop
+	49: MutBorrowLoc[9](v#1#4: vector<String>)
+	50: VecPopBack(16)
+	51: StLoc[6](field#1#15: String)
+	52: MutBorrowLoc[11](v2#1#1: vector<String>)
+	53: VecPopBack(16)
+	54: StLoc[12](value#1#15: String)
+	55: MutBorrowLoc[5](display#1#0: Display<T>)
+	56: MoveLoc[6](field#1#15: String)
+	57: MoveLoc[12](value#1#15: String)
+	58: Call add_internal<T>(&mut Display<T>, String, String)
+	59: MoveLoc[7](i#1#10: u64)
+	60: LdU64(1)
+	61: Add
+	62: StLoc[7](i#1#10: u64)
+	63: Branch(43)
+B9:
+	64: MoveLoc[9](v#1#4: vector<String>)
+	65: VecUnpack(16, 0)
+	66: MoveLoc[11](v2#1#1: vector<String>)
+	67: VecUnpack(16, 0)
+	68: MoveLoc[5](display#1#0: Display<T>)
+	69: Ret
+}
+
+entry public create_and_keep<T: key>(pub#0#0: &Publisher, ctx#0#0: &mut TxContext) {
+B0:
+	0: MoveLoc[0](pub#0#0: &Publisher)
+	1: CopyLoc[1](ctx#0#0: &mut TxContext)
+	2: Call new<T>(&Publisher, &mut TxContext): Display<T>
+	3: MoveLoc[1](ctx#0#0: &mut TxContext)
+	4: FreezeRef
+	5: Call tx_context::sender(&TxContext): address
+	6: Call transfer::public_transfer<Display<T>>(Display<T>, address)
+	7: Ret
+}
+
+entry public update_version<T: key>(display#0#0: &mut Display<T>) {
+L1:	%#1: u16
+L2:	%#2: VecMap<String, String>
+B0:
+	0: CopyLoc[0](display#0#0: &mut Display<T>)
+	1: ImmBorrowFieldGeneric[0](Display.version: u16)
+	2: ReadRef
+	3: LdU16(1)
+	4: Add
+	5: CopyLoc[0](display#0#0: &mut Display<T>)
+	6: MutBorrowFieldGeneric[0](Display.version: u16)
+	7: WriteRef
+	8: CopyLoc[0](display#0#0: &mut Display<T>)
+	9: ImmBorrowFieldGeneric[0](Display.version: u16)
+	10: ReadRef
+	11: StLoc[1](%#1: u16)
+	12: CopyLoc[0](display#0#0: &mut Display<T>)
+	13: ImmBorrowFieldGeneric[1](Display.fields: VecMap<String, String>)
+	14: ReadRef
+	15: StLoc[2](%#2: VecMap<String, String>)
+	16: MoveLoc[0](display#0#0: &mut Display<T>)
+	17: ImmBorrowFieldGeneric[2](Display.id: UID)
+	18: Call object::uid_to_inner(&UID): ID
+	19: MoveLoc[1](%#1: u16)
+	20: MoveLoc[2](%#2: VecMap<String, String>)
+	21: PackGeneric[0](VersionUpdated<T>)
+	22: Call event::emit<VersionUpdated<T>>(VersionUpdated<T>)
+	23: Ret
+}
+
+entry public add<T: key>(self#0#0: &mut Display<T>, name#0#0: String, value#0#0: String) {
+B0:
+	0: MoveLoc[0](self#0#0: &mut Display<T>)
+	1: MoveLoc[1](name#0#0: String)
+	2: MoveLoc[2](value#0#0: String)
+	3: Call add_internal<T>(&mut Display<T>, String, String)
+	4: Ret
+}
+
+entry public add_multiple<T: key>(self#0#0: &mut Display<T>, fields#0#0: vector<String>, values#0#0: vector<String>) {
+L3:	$stop#0#7: u64
+L4:	field#1#15: String
+L5:	i#1#10: u64
+L6:	stop#1#10: u64
+L7:	v#1#4: vector<String>
+L8:	v1#1#1: vector<String>
+L9:	v2#1#1: vector<String>
+L10:	value#1#15: String
+B0:
+	0: ImmBorrowLoc[1](fields#0#0: vector<String>)
+	1: VecLen(16)
+	2: ImmBorrowLoc[2](values#0#0: vector<String>)
+	3: VecLen(16)
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](self#0#0: &mut Display<T>)
+	8: Pop
+	9: LdConst[1](u64: 1)
+	10: Abort
+B3:
+	11: MoveLoc[1](fields#0#0: vector<String>)
+	12: StLoc[8](v1#1#1: vector<String>)
+	13: MoveLoc[2](values#0#0: vector<String>)
+	14: StLoc[9](v2#1#1: vector<String>)
+	15: MutBorrowLoc[9](v2#1#1: vector<String>)
+	16: Call vector::reverse<String>(&mut vector<String>)
+	17: ImmBorrowLoc[8](v1#1#1: vector<String>)
+	18: VecLen(16)
+	19: ImmBorrowLoc[9](v2#1#1: vector<String>)
+	20: VecLen(16)
+	21: Eq
+	22: BrFalse(24)
+B4:
+	23: Branch(28)
+B5:
+	24: MoveLoc[0](self#0#0: &mut Display<T>)
+	25: Pop
+	26: LdU64(13906834754163965951)
+	27: Abort
+B6:
+	28: MoveLoc[8](v1#1#1: vector<String>)
+	29: StLoc[7](v#1#4: vector<String>)
+	30: MutBorrowLoc[7](v#1#4: vector<String>)
+	31: Call vector::reverse<String>(&mut vector<String>)
+	32: ImmBorrowLoc[7](v#1#4: vector<String>)
+	33: VecLen(16)
+	34: StLoc[3]($stop#0#7: u64)
+	35: LdU64(0)
+	36: StLoc[5](i#1#10: u64)
+	37: MoveLoc[3]($stop#0#7: u64)
+	38: StLoc[6](stop#1#10: u64)
+B7:
+	39: CopyLoc[5](i#1#10: u64)
+	40: CopyLoc[6](stop#1#10: u64)
+	41: Lt
+	42: BrFalse(60)
+B8:
+	43: CopyLoc[5](i#1#10: u64)
+	44: Pop
+	45: MutBorrowLoc[7](v#1#4: vector<String>)
+	46: VecPopBack(16)
+	47: StLoc[4](field#1#15: String)
+	48: MutBorrowLoc[9](v2#1#1: vector<String>)
+	49: VecPopBack(16)
+	50: StLoc[10](value#1#15: String)
+	51: CopyLoc[0](self#0#0: &mut Display<T>)
+	52: MoveLoc[4](field#1#15: String)
+	53: MoveLoc[10](value#1#15: String)
+	54: Call add_internal<T>(&mut Display<T>, String, String)
+	55: MoveLoc[5](i#1#10: u64)
+	56: LdU64(1)
+	57: Add
+	58: StLoc[5](i#1#10: u64)
+	59: Branch(39)
+B9:
+	60: MoveLoc[0](self#0#0: &mut Display<T>)
+	61: Pop
+	62: MoveLoc[7](v#1#4: vector<String>)
+	63: VecUnpack(16, 0)
+	64: MoveLoc[9](v2#1#1: vector<String>)
+	65: VecUnpack(16, 0)
+	66: Ret
+}
+
+entry public edit<T: key>(self#0#0: &mut Display<T>, name#0#0: String, value#0#0: String) {
+B0:
+	0: CopyLoc[0](self#0#0: &mut Display<T>)
+	1: MutBorrowFieldGeneric[1](Display.fields: VecMap<String, String>)
+	2: ImmBorrowLoc[1](name#0#0: String)
+	3: Call vec_map::remove<String, String>(&mut VecMap<String, String>, &String): String * String
+	4: Pop
+	5: Pop
+	6: MoveLoc[0](self#0#0: &mut Display<T>)
+	7: MoveLoc[1](name#0#0: String)
+	8: MoveLoc[2](value#0#0: String)
+	9: Call add_internal<T>(&mut Display<T>, String, String)
+	10: Ret
+}
+
+entry public remove<T: key>(self#0#0: &mut Display<T>, name#0#0: String) {
+B0:
+	0: MoveLoc[0](self#0#0: &mut Display<T>)
+	1: MutBorrowFieldGeneric[1](Display.fields: VecMap<String, String>)
+	2: ImmBorrowLoc[1](name#0#0: String)
+	3: Call vec_map::remove<String, String>(&mut VecMap<String, String>, &String): String * String
+	4: Pop
+	5: Pop
+	6: Ret
+}
+
+public is_authorized<T: key>(pub#0#0: &Publisher): bool {
+B0:
+	0: MoveLoc[0](pub#0#0: &Publisher)
+	1: Call package::from_package<T>(&Publisher): bool
+	2: Ret
+}
+
+public version<T: key>(d#0#0: &Display<T>): u16 {
+B0:
+	0: MoveLoc[0](d#0#0: &Display<T>)
+	1: ImmBorrowFieldGeneric[0](Display.version: u16)
+	2: ReadRef
+	3: Ret
+}
+
+public fields<T: key>(d#0#0: &Display<T>): &VecMap<String, String> {
+B0:
+	0: MoveLoc[0](d#0#0: &Display<T>)
+	1: ImmBorrowFieldGeneric[1](Display.fields: VecMap<String, String>)
+	2: Ret
+}
+
+public(friend) destroy<T: key>(display#0#0: Display<T>) {
+B0:
+	0: MoveLoc[0](display#0#0: Display<T>)
+	1: UnpackGeneric[1](Display<T>)
+	2: Pop
+	3: Pop
+	4: Call object::delete(UID)
+	5: Ret
+}
+
+create_internal<T: key>(ctx#0#0: &mut TxContext): Display<T> {
+L1:	uid#1#0: UID
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: StLoc[1](uid#1#0: UID)
+	3: ImmBorrowLoc[1](uid#1#0: UID)
+	4: Call object::uid_to_inner(&UID): ID
+	5: PackGeneric[2](DisplayCreated<T>)
+	6: Call event::emit<DisplayCreated<T>>(DisplayCreated<T>)
+	7: MoveLoc[1](uid#1#0: UID)
+	8: Call vec_map::empty<String, String>(): VecMap<String, String>
+	9: LdU16(0)
+	10: PackGeneric[1](Display<T>)
+	11: Ret
+}
+
+add_internal<T: key>(display#0#0: &mut Display<T>, name#0#0: String, value#0#0: String) {
+B0:
+	0: MoveLoc[0](display#0#0: &mut Display<T>)
+	1: MutBorrowFieldGeneric[1](Display.fields: VecMap<String, String>)
+	2: MoveLoc[1](name#0#0: String)
+	3: MoveLoc[2](value#0#0: String)
+	4: Call vec_map::insert<String, String>(&mut VecMap<String, String>, String, String)
+	5: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+]
+}

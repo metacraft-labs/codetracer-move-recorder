@@ -1,0 +1,163 @@
+// Move bytecode v6
+module 2.deny_list_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::ascii;
+use 0000000000000000000000000000000000000000000000000000000000000001::type_name;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::deny_list;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct X {
+	dummy_field: bool
+}
+
+add_zero() {
+L0:	%#1: vector<address>
+L1:	%#2: vector<u8>
+L2:	%#4: &mut DenyList
+L3:	ctx#1#0: TxContext
+L4:	dl#1#0: DenyList
+L5:	ty#1#0: vector<u8>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[3](ctx#1#0: TxContext)
+	2: MutBorrowLoc[3](ctx#1#0: TxContext)
+	3: Call deny_list::new_for_testing(&mut TxContext): DenyList
+	4: StLoc[4](dl#1#0: DenyList)
+	5: Call type_name::with_original_ids<X>(): TypeName
+	6: Call type_name::into_string(TypeName): String
+	7: Call ascii::into_bytes(String): vector<u8>
+	8: StLoc[5](ty#1#0: vector<u8>)
+	9: MutBorrowLoc[4](dl#1#0: DenyList)
+	10: StLoc[2](%#4: &mut DenyList)
+	11: MoveLoc[5](ty#1#0: vector<u8>)
+	12: StLoc[1](%#2: vector<u8>)
+	13: Call deny_list::reserved_addresses(): vector<address>
+	14: StLoc[0](%#1: vector<address>)
+	15: MoveLoc[2](%#4: &mut DenyList)
+	16: LdU64(1)
+	17: MoveLoc[1](%#2: vector<u8>)
+	18: ImmBorrowLoc[0](%#1: vector<address>)
+	19: LdU64(0)
+	20: VecImmBorrow(10)
+	21: ReadRef
+	22: Call deny_list::v1_add(&mut DenyList, u64, vector<u8>, address)
+	23: LdU64(0)
+	24: Abort
+}
+
+remove_zero() {
+L0:	%#1: vector<address>
+L1:	%#2: vector<u8>
+L2:	%#4: &mut DenyList
+L3:	ctx#1#0: TxContext
+L4:	dl#1#0: DenyList
+L5:	ty#1#0: vector<u8>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[3](ctx#1#0: TxContext)
+	2: MutBorrowLoc[3](ctx#1#0: TxContext)
+	3: Call deny_list::new_for_testing(&mut TxContext): DenyList
+	4: StLoc[4](dl#1#0: DenyList)
+	5: Call type_name::with_original_ids<X>(): TypeName
+	6: Call type_name::into_string(TypeName): String
+	7: Call ascii::into_bytes(String): vector<u8>
+	8: StLoc[5](ty#1#0: vector<u8>)
+	9: MutBorrowLoc[4](dl#1#0: DenyList)
+	10: StLoc[2](%#4: &mut DenyList)
+	11: MoveLoc[5](ty#1#0: vector<u8>)
+	12: StLoc[1](%#2: vector<u8>)
+	13: Call deny_list::reserved_addresses(): vector<address>
+	14: StLoc[0](%#1: vector<address>)
+	15: MoveLoc[2](%#4: &mut DenyList)
+	16: LdU64(1)
+	17: MoveLoc[1](%#2: vector<u8>)
+	18: ImmBorrowLoc[0](%#1: vector<address>)
+	19: LdU64(1)
+	20: VecImmBorrow(10)
+	21: ReadRef
+	22: Call deny_list::v1_add(&mut DenyList, u64, vector<u8>, address)
+	23: LdU64(0)
+	24: Abort
+}
+
+contains_zero() {
+L0:	dl#1#0: DenyList
+L1:	i#1#0: u64
+L2:	n#1#0: u64
+L3:	reserved#1#0: vector<address>
+L4:	scenario#1#0: Scenario
+L5:	ty#1#0: vector<u8>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[4](scenario#1#0: Scenario)
+	3: MutBorrowLoc[4](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[4](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[4](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	12: StLoc[0](dl#1#0: DenyList)
+	13: Call type_name::with_original_ids<X>(): TypeName
+	14: Call type_name::into_string(TypeName): String
+	15: Call ascii::into_bytes(String): vector<u8>
+	16: StLoc[5](ty#1#0: vector<u8>)
+	17: Call deny_list::reserved_addresses(): vector<address>
+	18: StLoc[3](reserved#1#0: vector<address>)
+	19: LdU64(0)
+	20: StLoc[1](i#1#0: u64)
+	21: ImmBorrowLoc[3](reserved#1#0: vector<address>)
+	22: VecLen(10)
+	23: StLoc[2](n#1#0: u64)
+B1:
+	24: CopyLoc[1](i#1#0: u64)
+	25: CopyLoc[2](n#1#0: u64)
+	26: Lt
+	27: BrFalse(47)
+B2:
+	28: Branch(29)
+B3:
+	29: ImmBorrowLoc[0](dl#1#0: DenyList)
+	30: LdU64(1)
+	31: CopyLoc[5](ty#1#0: vector<u8>)
+	32: ImmBorrowLoc[3](reserved#1#0: vector<address>)
+	33: CopyLoc[1](i#1#0: u64)
+	34: VecImmBorrow(10)
+	35: ReadRef
+	36: Call deny_list::v1_contains(&DenyList, u64, vector<u8>, address): bool
+	37: Not
+	38: BrFalse(40)
+B4:
+	39: Branch(42)
+B5:
+	40: LdU64(13906834359026974719)
+	41: Abort
+B6:
+	42: MoveLoc[1](i#1#0: u64)
+	43: LdU64(1)
+	44: Add
+	45: StLoc[1](i#1#0: u64)
+	46: Branch(24)
+B7:
+	47: MoveLoc[0](dl#1#0: DenyList)
+	48: Call test_scenario::return_shared<DenyList>(DenyList)
+	49: MoveLoc[4](scenario#1#0: Scenario)
+	50: Call test_scenario::end(Scenario): TransactionEffects
+	51: Pop
+	52: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

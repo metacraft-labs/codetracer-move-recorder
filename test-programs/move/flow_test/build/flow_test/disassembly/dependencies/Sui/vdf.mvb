@@ -1,0 +1,35 @@
+// Move bytecode v6
+module 2.vdf {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+public hash_to_input(message#0#0: &vector<u8>): vector<u8> {
+B0:
+	0: MoveLoc[0](message#0#0: &vector<u8>)
+	1: Call hash_to_input_internal(&vector<u8>): vector<u8>
+	2: Ret
+}
+
+native hash_to_input_internal(message#0#0: &vector<u8>): vector<u8>;
+
+public vdf_verify(input#0#0: &vector<u8>, output#0#0: &vector<u8>, proof#0#0: &vector<u8>, iterations#0#0: u64): bool {
+B0:
+	0: MoveLoc[0](input#0#0: &vector<u8>)
+	1: MoveLoc[1](output#0#0: &vector<u8>)
+	2: MoveLoc[2](proof#0#0: &vector<u8>)
+	3: MoveLoc[3](iterations#0#0: u64)
+	4: Call vdf_verify_internal(&vector<u8>, &vector<u8>, &vector<u8>, u64): bool
+	5: Ret
+}
+
+native vdf_verify_internal(input#0#0: &vector<u8>, output#0#0: &vector<u8>, proof#0#0: &vector<u8>, iterations#0#0: u64): bool;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+]
+}

@@ -1,0 +1,401 @@
+// Move bytecode v6
+module 2.group_ops {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+use 0000000000000000000000000000000000000000000000000000000000000002::bcs;
+
+struct Element<phantom T> has copy, drop, store {
+	bytes: vector<u8>
+}
+
+public bytes<G>(e#0#0: &Element<G>): &vector<u8> {
+B0:
+	0: MoveLoc[0](e#0#0: &Element<G>)
+	1: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	2: Ret
+}
+
+public equal<G>(e1#0#0: &Element<G>, e2#0#0: &Element<G>): bool {
+B0:
+	0: MoveLoc[0](e1#0#0: &Element<G>)
+	1: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	2: MoveLoc[1](e2#0#0: &Element<G>)
+	3: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	4: Eq
+	5: Ret
+}
+
+public(friend) from_bytes<G>(type_#0#0: u8, bytes#0#0: vector<u8>, is_trusted#0#0: bool): Element<G> {
+L3:	%#1: bool
+B0:
+	0: MoveLoc[2](is_trusted#0#0: bool)
+	1: BrFalse(5)
+B1:
+	2: LdTrue
+	3: StLoc[3](%#1: bool)
+	4: Branch(9)
+B2:
+	5: MoveLoc[0](type_#0#0: u8)
+	6: ImmBorrowLoc[1](bytes#0#0: vector<u8>)
+	7: Call internal_validate(u8, &vector<u8>): bool
+	8: StLoc[3](%#1: bool)
+B3:
+	9: MoveLoc[3](%#1: bool)
+	10: BrFalse(12)
+B4:
+	11: Branch(14)
+B5:
+	12: LdConst[1](u64: 1)
+	13: Abort
+B6:
+	14: MoveLoc[1](bytes#0#0: vector<u8>)
+	15: PackGeneric[0](Element<G>)
+	16: Ret
+}
+
+public(friend) add<G>(type_#0#0: u8, e1#0#0: &Element<G>, e2#0#0: &Element<G>): Element<G> {
+B0:
+	0: MoveLoc[0](type_#0#0: u8)
+	1: MoveLoc[1](e1#0#0: &Element<G>)
+	2: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	3: MoveLoc[2](e2#0#0: &Element<G>)
+	4: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	5: Call internal_add(u8, &vector<u8>, &vector<u8>): vector<u8>
+	6: PackGeneric[0](Element<G>)
+	7: Ret
+}
+
+public(friend) sub<G>(type_#0#0: u8, e1#0#0: &Element<G>, e2#0#0: &Element<G>): Element<G> {
+B0:
+	0: MoveLoc[0](type_#0#0: u8)
+	1: MoveLoc[1](e1#0#0: &Element<G>)
+	2: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	3: MoveLoc[2](e2#0#0: &Element<G>)
+	4: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	5: Call internal_sub(u8, &vector<u8>, &vector<u8>): vector<u8>
+	6: PackGeneric[0](Element<G>)
+	7: Ret
+}
+
+public(friend) mul<S, G>(type_#0#0: u8, scalar#0#0: &Element<S>, e#0#0: &Element<G>): Element<G> {
+B0:
+	0: MoveLoc[0](type_#0#0: u8)
+	1: MoveLoc[1](scalar#0#0: &Element<S>)
+	2: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	3: MoveLoc[2](e#0#0: &Element<G>)
+	4: ImmBorrowFieldGeneric[1](Element.bytes: vector<u8>)
+	5: Call internal_mul(u8, &vector<u8>, &vector<u8>): vector<u8>
+	6: PackGeneric[1](Element<G>)
+	7: Ret
+}
+
+public(friend) div<S, G>(type_#0#0: u8, scalar#0#0: &Element<S>, e#0#0: &Element<G>): Element<G> {
+B0:
+	0: MoveLoc[0](type_#0#0: u8)
+	1: MoveLoc[1](scalar#0#0: &Element<S>)
+	2: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	3: MoveLoc[2](e#0#0: &Element<G>)
+	4: ImmBorrowFieldGeneric[1](Element.bytes: vector<u8>)
+	5: Call internal_div(u8, &vector<u8>, &vector<u8>): vector<u8>
+	6: PackGeneric[1](Element<G>)
+	7: Ret
+}
+
+public(friend) hash_to<G>(type_#0#0: u8, m#0#0: &vector<u8>): Element<G> {
+B0:
+	0: MoveLoc[0](type_#0#0: u8)
+	1: MoveLoc[1](m#0#0: &vector<u8>)
+	2: Call internal_hash_to(u8, &vector<u8>): vector<u8>
+	3: PackGeneric[0](Element<G>)
+	4: Ret
+}
+
+public(friend) multi_scalar_multiplication<S, G>(type_#0#0: u8, scalars#0#0: &vector<Element<S>>, elements#0#0: &vector<Element<G>>): Element<G> {
+L3:	element_vec#1#0: Element<G>
+L4:	elements_bytes#1#0: vector<u8>
+L5:	i#1#0: u64
+L6:	scalar_vec#1#0: Element<S>
+L7:	scalars_bytes#1#0: vector<u8>
+B0:
+	0: CopyLoc[1](scalars#0#0: &vector<Element<S>>)
+	1: VecLen(5)
+	2: LdU64(0)
+	3: Gt
+	4: BrFalse(6)
+B1:
+	5: Branch(12)
+B2:
+	6: MoveLoc[1](scalars#0#0: &vector<Element<S>>)
+	7: Pop
+	8: MoveLoc[2](elements#0#0: &vector<Element<G>>)
+	9: Pop
+	10: LdConst[1](u64: 1)
+	11: Abort
+B3:
+	12: CopyLoc[1](scalars#0#0: &vector<Element<S>>)
+	13: VecLen(5)
+	14: CopyLoc[2](elements#0#0: &vector<Element<G>>)
+	15: VecLen(8)
+	16: Eq
+	17: BrFalse(19)
+B4:
+	18: Branch(25)
+B5:
+	19: MoveLoc[1](scalars#0#0: &vector<Element<S>>)
+	20: Pop
+	21: MoveLoc[2](elements#0#0: &vector<Element<G>>)
+	22: Pop
+	23: LdConst[1](u64: 1)
+	24: Abort
+B6:
+	25: LdConst[4](vector<u8>: "" /..)
+	26: StLoc[7](scalars_bytes#1#0: vector<u8>)
+	27: LdConst[4](vector<u8>: "" /..)
+	28: StLoc[4](elements_bytes#1#0: vector<u8>)
+	29: LdU64(0)
+	30: StLoc[5](i#1#0: u64)
+B7:
+	31: CopyLoc[5](i#1#0: u64)
+	32: CopyLoc[1](scalars#0#0: &vector<Element<S>>)
+	33: VecLen(5)
+	34: Lt
+	35: BrFalse(61)
+B8:
+	36: CopyLoc[1](scalars#0#0: &vector<Element<S>>)
+	37: CopyLoc[5](i#1#0: u64)
+	38: VecImmBorrow(5)
+	39: ReadRef
+	40: StLoc[6](scalar_vec#1#0: Element<S>)
+	41: MutBorrowLoc[7](scalars_bytes#1#0: vector<u8>)
+	42: ImmBorrowLoc[6](scalar_vec#1#0: Element<S>)
+	43: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	44: ReadRef
+	45: Call vector::append<u8>(&mut vector<u8>, vector<u8>)
+	46: CopyLoc[2](elements#0#0: &vector<Element<G>>)
+	47: CopyLoc[5](i#1#0: u64)
+	48: VecImmBorrow(8)
+	49: ReadRef
+	50: StLoc[3](element_vec#1#0: Element<G>)
+	51: MutBorrowLoc[4](elements_bytes#1#0: vector<u8>)
+	52: ImmBorrowLoc[3](element_vec#1#0: Element<G>)
+	53: ImmBorrowFieldGeneric[1](Element.bytes: vector<u8>)
+	54: ReadRef
+	55: Call vector::append<u8>(&mut vector<u8>, vector<u8>)
+	56: MoveLoc[5](i#1#0: u64)
+	57: LdU64(1)
+	58: Add
+	59: StLoc[5](i#1#0: u64)
+	60: Branch(31)
+B9:
+	61: MoveLoc[1](scalars#0#0: &vector<Element<S>>)
+	62: Pop
+	63: MoveLoc[2](elements#0#0: &vector<Element<G>>)
+	64: Pop
+	65: MoveLoc[0](type_#0#0: u8)
+	66: ImmBorrowLoc[7](scalars_bytes#1#0: vector<u8>)
+	67: ImmBorrowLoc[4](elements_bytes#1#0: vector<u8>)
+	68: Call internal_multi_scalar_mul(u8, &vector<u8>, &vector<u8>): vector<u8>
+	69: PackGeneric[1](Element<G>)
+	70: Ret
+}
+
+public(friend) pairing<G1, G2, G3>(type_#0#0: u8, e1#0#0: &Element<G1>, e2#0#0: &Element<G2>): Element<G3> {
+B0:
+	0: MoveLoc[0](type_#0#0: u8)
+	1: MoveLoc[1](e1#0#0: &Element<G1>)
+	2: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	3: MoveLoc[2](e2#0#0: &Element<G2>)
+	4: ImmBorrowFieldGeneric[1](Element.bytes: vector<u8>)
+	5: Call internal_pairing(u8, &vector<u8>, &vector<u8>): vector<u8>
+	6: PackGeneric[2](Element<G3>)
+	7: Ret
+}
+
+public(friend) convert<From, To>(from_type_#0#0: u8, to_type_#0#0: u8, e#0#0: &Element<From>): Element<To> {
+B0:
+	0: MoveLoc[0](from_type_#0#0: u8)
+	1: MoveLoc[1](to_type_#0#0: u8)
+	2: MoveLoc[2](e#0#0: &Element<From>)
+	3: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	4: Call internal_convert(u8, u8, &vector<u8>): vector<u8>
+	5: PackGeneric[1](Element<To>)
+	6: Ret
+}
+
+public(friend) sum<G>(type_#0#0: u8, terms#0#0: &vector<Element<G>>): Element<G> {
+L2:	$stop#0#6: u64
+L3:	%#2: vector<u8>
+L4:	%#3: &mut vector<vector<u8>>
+L5:	%#4: vector<vector<u8>>
+L6:	%#5: u8
+L7:	e#1#13: Element<G>
+L8:	i#1#9: u64
+L9:	r#1#1: vector<vector<u8>>
+L10:	stop#1#9: u64
+L11:	v#1#1: vector<Element<G>>
+L12:	v#1#3: vector<Element<G>>
+L13:	x#1#14: Element<G>
+B0:
+	0: MoveLoc[0](type_#0#0: u8)
+	1: StLoc[6](%#5: u8)
+	2: MoveLoc[1](terms#0#0: &vector<Element<G>>)
+	3: ReadRef
+	4: StLoc[11](v#1#1: vector<Element<G>>)
+	5: LdConst[5](vector<vector<u8>>: 00)
+	6: StLoc[9](r#1#1: vector<vector<u8>>)
+	7: MoveLoc[11](v#1#1: vector<Element<G>>)
+	8: StLoc[12](v#1#3: vector<Element<G>>)
+	9: MutBorrowLoc[12](v#1#3: vector<Element<G>>)
+	10: Call vector::reverse<Element<G>>(&mut vector<Element<G>>)
+	11: ImmBorrowLoc[12](v#1#3: vector<Element<G>>)
+	12: VecLen(5)
+	13: StLoc[2]($stop#0#6: u64)
+	14: LdU64(0)
+	15: StLoc[8](i#1#9: u64)
+	16: MoveLoc[2]($stop#0#6: u64)
+	17: StLoc[10](stop#1#9: u64)
+B1:
+	18: CopyLoc[8](i#1#9: u64)
+	19: CopyLoc[10](stop#1#9: u64)
+	20: Lt
+	21: BrFalse(43)
+B2:
+	22: CopyLoc[8](i#1#9: u64)
+	23: Pop
+	24: MutBorrowLoc[12](v#1#3: vector<Element<G>>)
+	25: VecPopBack(5)
+	26: StLoc[7](e#1#13: Element<G>)
+	27: MutBorrowLoc[9](r#1#1: vector<vector<u8>>)
+	28: StLoc[4](%#3: &mut vector<vector<u8>>)
+	29: MoveLoc[7](e#1#13: Element<G>)
+	30: StLoc[13](x#1#14: Element<G>)
+	31: ImmBorrowLoc[13](x#1#14: Element<G>)
+	32: ImmBorrowFieldGeneric[0](Element.bytes: vector<u8>)
+	33: ReadRef
+	34: StLoc[3](%#2: vector<u8>)
+	35: MoveLoc[4](%#3: &mut vector<vector<u8>>)
+	36: MoveLoc[3](%#2: vector<u8>)
+	37: VecPushBack(15)
+	38: MoveLoc[8](i#1#9: u64)
+	39: LdU64(1)
+	40: Add
+	41: StLoc[8](i#1#9: u64)
+	42: Branch(18)
+B3:
+	43: MoveLoc[12](v#1#3: vector<Element<G>>)
+	44: VecUnpack(5, 0)
+	45: MoveLoc[9](r#1#1: vector<vector<u8>>)
+	46: StLoc[5](%#4: vector<vector<u8>>)
+	47: MoveLoc[6](%#5: u8)
+	48: ImmBorrowLoc[5](%#4: vector<vector<u8>>)
+	49: Call internal_sum(u8, &vector<vector<u8>>): vector<u8>
+	50: PackGeneric[0](Element<G>)
+	51: Ret
+}
+
+native internal_validate(type_#0#0: u8, bytes#0#0: &vector<u8>): bool;
+
+native internal_add(type_#0#0: u8, e1#0#0: &vector<u8>, e2#0#0: &vector<u8>): vector<u8>;
+
+native internal_sub(type_#0#0: u8, e1#0#0: &vector<u8>, e2#0#0: &vector<u8>): vector<u8>;
+
+native internal_mul(type_#0#0: u8, e1#0#0: &vector<u8>, e2#0#0: &vector<u8>): vector<u8>;
+
+native internal_div(type_#0#0: u8, e1#0#0: &vector<u8>, e2#0#0: &vector<u8>): vector<u8>;
+
+native internal_hash_to(type_#0#0: u8, m#0#0: &vector<u8>): vector<u8>;
+
+native internal_multi_scalar_mul(type_#0#0: u8, scalars#0#0: &vector<u8>, elements#0#0: &vector<u8>): vector<u8>;
+
+native internal_pairing(type_#0#0: u8, e1#0#0: &vector<u8>, e2#0#0: &vector<u8>): vector<u8>;
+
+native internal_convert(from_type_#0#0: u8, to_type_#0#0: u8, e#0#0: &vector<u8>): vector<u8>;
+
+native internal_sum(type_#0#0: u8, e#0#0: &vector<vector<u8>>): vector<u8>;
+
+public(friend) set_as_prefix(x#0#0: u64, big_endian#0#0: bool, buffer#0#0: &mut vector<u8>) {
+L3:	%#1: u64
+L4:	buffer_len#1#0: u64
+L5:	i#1#0: u64
+L6:	position#1#0: u64
+L7:	x_as_bytes#1#0: vector<u8>
+B0:
+	0: CopyLoc[2](buffer#0#0: &mut vector<u8>)
+	1: FreezeRef
+	2: VecLen(23)
+	3: StLoc[4](buffer_len#1#0: u64)
+	4: CopyLoc[4](buffer_len#1#0: u64)
+	5: LdU64(7)
+	6: Gt
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[2](buffer#0#0: &mut vector<u8>)
+	10: Pop
+	11: LdConst[3](u64: 3)
+	12: Abort
+B3:
+	13: ImmBorrowLoc[0](x#0#0: u64)
+	14: Call bcs::to_bytes<u64>(&u64): vector<u8>
+	15: StLoc[7](x_as_bytes#1#0: vector<u8>)
+	16: LdU64(0)
+	17: StLoc[5](i#1#0: u64)
+B4:
+	18: CopyLoc[5](i#1#0: u64)
+	19: LdU64(8)
+	20: Lt
+	21: BrFalse(49)
+B5:
+	22: CopyLoc[1](big_endian#0#0: bool)
+	23: BrFalse(32)
+B6:
+	24: Branch(25)
+B7:
+	25: CopyLoc[4](buffer_len#1#0: u64)
+	26: CopyLoc[5](i#1#0: u64)
+	27: Sub
+	28: LdU64(1)
+	29: Sub
+	30: StLoc[3](%#1: u64)
+	31: Branch(34)
+B8:
+	32: CopyLoc[5](i#1#0: u64)
+	33: StLoc[3](%#1: u64)
+B9:
+	34: MoveLoc[3](%#1: u64)
+	35: StLoc[6](position#1#0: u64)
+	36: ImmBorrowLoc[7](x_as_bytes#1#0: vector<u8>)
+	37: CopyLoc[5](i#1#0: u64)
+	38: VecImmBorrow(23)
+	39: ReadRef
+	40: CopyLoc[2](buffer#0#0: &mut vector<u8>)
+	41: MoveLoc[6](position#1#0: u64)
+	42: VecMutBorrow(23)
+	43: WriteRef
+	44: MoveLoc[5](i#1#0: u64)
+	45: LdU64(1)
+	46: Add
+	47: StLoc[5](i#1#0: u64)
+	48: Branch(18)
+B10:
+	49: MoveLoc[2](buffer#0#0: &mut vector<u8>)
+	50: Pop
+	51: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => u64: 3
+	4 => vector<u8>: "" // interpreted as UTF8 string
+	5 => vector<vector<u8>>: 00
+]
+}

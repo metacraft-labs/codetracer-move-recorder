@@ -1,0 +1,386 @@
+// Move bytecode v6
+module 2.kiosk_extension {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::bag;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::kiosk;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Extension has store {
+	storage: Bag,
+	permissions: u128,
+	is_enabled: bool
+}
+
+struct ExtensionKey<phantom Ext> has copy, drop, store {
+	dummy_field: bool
+}
+
+public add<Ext: drop>(_ext#0#0: Ext, self#0#0: &mut Kiosk, cap#0#0: &KioskOwnerCap, permissions#0#0: u128, ctx#0#0: &mut TxContext) {
+B0:
+	0: CopyLoc[1](self#0#0: &mut Kiosk)
+	1: CopyLoc[2](cap#0#0: &KioskOwnerCap)
+	2: Call kiosk::has_access(&mut Kiosk, &KioskOwnerCap): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(13)
+B2:
+	5: MoveLoc[1](self#0#0: &mut Kiosk)
+	6: Pop
+	7: MoveLoc[4](ctx#0#0: &mut TxContext)
+	8: Pop
+	9: MoveLoc[2](cap#0#0: &KioskOwnerCap)
+	10: Pop
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: MoveLoc[1](self#0#0: &mut Kiosk)
+	14: MoveLoc[2](cap#0#0: &KioskOwnerCap)
+	15: Call kiosk::uid_mut_as_owner(&mut Kiosk, &KioskOwnerCap): &mut UID
+	16: LdFalse
+	17: PackGeneric[0](ExtensionKey<Ext>)
+	18: MoveLoc[4](ctx#0#0: &mut TxContext)
+	19: Call bag::new(&mut TxContext): Bag
+	20: MoveLoc[3](permissions#0#0: u128)
+	21: LdTrue
+	22: Pack[0](Extension)
+	23: Call dynamic_field::add<ExtensionKey<Ext>, Extension>(&mut UID, ExtensionKey<Ext>, Extension)
+	24: Ret
+}
+
+public disable<Ext: drop>(self#0#0: &mut Kiosk, cap#0#0: &KioskOwnerCap) {
+B0:
+	0: CopyLoc[0](self#0#0: &mut Kiosk)
+	1: MoveLoc[1](cap#0#0: &KioskOwnerCap)
+	2: Call kiosk::has_access(&mut Kiosk, &KioskOwnerCap): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[0](self#0#0: &mut Kiosk)
+	6: Pop
+	7: LdConst[0](u64: 0)
+	8: Abort
+B3:
+	9: CopyLoc[0](self#0#0: &mut Kiosk)
+	10: FreezeRef
+	11: Call is_installed<Ext>(&Kiosk): bool
+	12: BrFalse(14)
+B4:
+	13: Branch(18)
+B5:
+	14: MoveLoc[0](self#0#0: &mut Kiosk)
+	15: Pop
+	16: LdConst[2](u64: 3)
+	17: Abort
+B6:
+	18: LdFalse
+	19: MoveLoc[0](self#0#0: &mut Kiosk)
+	20: Call extension_mut<Ext>(&mut Kiosk): &mut Extension
+	21: MutBorrowField[0](Extension.is_enabled: bool)
+	22: WriteRef
+	23: Ret
+}
+
+public enable<Ext: drop>(self#0#0: &mut Kiosk, cap#0#0: &KioskOwnerCap) {
+B0:
+	0: CopyLoc[0](self#0#0: &mut Kiosk)
+	1: MoveLoc[1](cap#0#0: &KioskOwnerCap)
+	2: Call kiosk::has_access(&mut Kiosk, &KioskOwnerCap): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[0](self#0#0: &mut Kiosk)
+	6: Pop
+	7: LdConst[0](u64: 0)
+	8: Abort
+B3:
+	9: CopyLoc[0](self#0#0: &mut Kiosk)
+	10: FreezeRef
+	11: Call is_installed<Ext>(&Kiosk): bool
+	12: BrFalse(14)
+B4:
+	13: Branch(18)
+B5:
+	14: MoveLoc[0](self#0#0: &mut Kiosk)
+	15: Pop
+	16: LdConst[2](u64: 3)
+	17: Abort
+B6:
+	18: LdTrue
+	19: MoveLoc[0](self#0#0: &mut Kiosk)
+	20: Call extension_mut<Ext>(&mut Kiosk): &mut Extension
+	21: MutBorrowField[0](Extension.is_enabled: bool)
+	22: WriteRef
+	23: Ret
+}
+
+public remove<Ext: drop>(self#0#0: &mut Kiosk, cap#0#0: &KioskOwnerCap) {
+B0:
+	0: CopyLoc[0](self#0#0: &mut Kiosk)
+	1: CopyLoc[1](cap#0#0: &KioskOwnerCap)
+	2: Call kiosk::has_access(&mut Kiosk, &KioskOwnerCap): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(11)
+B2:
+	5: MoveLoc[0](self#0#0: &mut Kiosk)
+	6: Pop
+	7: MoveLoc[1](cap#0#0: &KioskOwnerCap)
+	8: Pop
+	9: LdConst[0](u64: 0)
+	10: Abort
+B3:
+	11: CopyLoc[0](self#0#0: &mut Kiosk)
+	12: FreezeRef
+	13: Call is_installed<Ext>(&Kiosk): bool
+	14: BrFalse(16)
+B4:
+	15: Branch(22)
+B5:
+	16: MoveLoc[0](self#0#0: &mut Kiosk)
+	17: Pop
+	18: MoveLoc[1](cap#0#0: &KioskOwnerCap)
+	19: Pop
+	20: LdConst[2](u64: 3)
+	21: Abort
+B6:
+	22: MoveLoc[0](self#0#0: &mut Kiosk)
+	23: MoveLoc[1](cap#0#0: &KioskOwnerCap)
+	24: Call kiosk::uid_mut_as_owner(&mut Kiosk, &KioskOwnerCap): &mut UID
+	25: LdFalse
+	26: PackGeneric[0](ExtensionKey<Ext>)
+	27: Call dynamic_field::remove<ExtensionKey<Ext>, Extension>(&mut UID, ExtensionKey<Ext>): Extension
+	28: Unpack[0](Extension)
+	29: Pop
+	30: Pop
+	31: Call bag::destroy_empty(Bag)
+	32: Ret
+}
+
+public storage<Ext: drop>(_ext#0#0: Ext, self#0#0: &Kiosk): &Bag {
+B0:
+	0: CopyLoc[1](self#0#0: &Kiosk)
+	1: Call is_installed<Ext>(&Kiosk): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(8)
+B2:
+	4: MoveLoc[1](self#0#0: &Kiosk)
+	5: Pop
+	6: LdConst[2](u64: 3)
+	7: Abort
+B3:
+	8: MoveLoc[1](self#0#0: &Kiosk)
+	9: Call extension<Ext>(&Kiosk): &Extension
+	10: ImmBorrowField[1](Extension.storage: Bag)
+	11: Ret
+}
+
+public storage_mut<Ext: drop>(_ext#0#0: Ext, self#0#0: &mut Kiosk): &mut Bag {
+B0:
+	0: CopyLoc[1](self#0#0: &mut Kiosk)
+	1: FreezeRef
+	2: Call is_installed<Ext>(&Kiosk): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[1](self#0#0: &mut Kiosk)
+	6: Pop
+	7: LdConst[2](u64: 3)
+	8: Abort
+B3:
+	9: MoveLoc[1](self#0#0: &mut Kiosk)
+	10: Call extension_mut<Ext>(&mut Kiosk): &mut Extension
+	11: MutBorrowField[1](Extension.storage: Bag)
+	12: Ret
+}
+
+public place<Ext: drop, T: store + key>(_ext#0#0: Ext, self#0#0: &mut Kiosk, item#0#0: T, _policy#0#0: &TransferPolicy<T>) {
+L4:	%#1: bool
+B0:
+	0: CopyLoc[1](self#0#0: &mut Kiosk)
+	1: FreezeRef
+	2: Call is_installed<Ext>(&Kiosk): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[1](self#0#0: &mut Kiosk)
+	6: Pop
+	7: LdConst[2](u64: 3)
+	8: Abort
+B3:
+	9: CopyLoc[1](self#0#0: &mut Kiosk)
+	10: FreezeRef
+	11: Call can_place<Ext>(&Kiosk): bool
+	12: BrFalse(16)
+B4:
+	13: LdTrue
+	14: StLoc[4](%#1: bool)
+	15: Branch(20)
+B5:
+	16: CopyLoc[1](self#0#0: &mut Kiosk)
+	17: FreezeRef
+	18: Call can_lock<Ext>(&Kiosk): bool
+	19: StLoc[4](%#1: bool)
+B6:
+	20: MoveLoc[4](%#1: bool)
+	21: BrFalse(23)
+B7:
+	22: Branch(27)
+B8:
+	23: MoveLoc[1](self#0#0: &mut Kiosk)
+	24: Pop
+	25: LdConst[1](u64: 2)
+	26: Abort
+B9:
+	27: MoveLoc[1](self#0#0: &mut Kiosk)
+	28: MoveLoc[2](item#0#0: T)
+	29: Call kiosk::place_internal<T>(&mut Kiosk, T)
+	30: Ret
+}
+
+public lock<Ext: drop, T: store + key>(_ext#0#0: Ext, self#0#0: &mut Kiosk, item#0#0: T, _policy#0#0: &TransferPolicy<T>) {
+B0:
+	0: CopyLoc[1](self#0#0: &mut Kiosk)
+	1: FreezeRef
+	2: Call is_installed<Ext>(&Kiosk): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[1](self#0#0: &mut Kiosk)
+	6: Pop
+	7: LdConst[2](u64: 3)
+	8: Abort
+B3:
+	9: CopyLoc[1](self#0#0: &mut Kiosk)
+	10: FreezeRef
+	11: Call can_lock<Ext>(&Kiosk): bool
+	12: BrFalse(14)
+B4:
+	13: Branch(18)
+B5:
+	14: MoveLoc[1](self#0#0: &mut Kiosk)
+	15: Pop
+	16: LdConst[1](u64: 2)
+	17: Abort
+B6:
+	18: MoveLoc[1](self#0#0: &mut Kiosk)
+	19: MoveLoc[2](item#0#0: T)
+	20: Call kiosk::lock_internal<T>(&mut Kiosk, T)
+	21: Ret
+}
+
+public is_installed<Ext: drop>(self#0#0: &Kiosk): bool {
+B0:
+	0: MoveLoc[0](self#0#0: &Kiosk)
+	1: Call kiosk::uid(&Kiosk): &UID
+	2: LdFalse
+	3: PackGeneric[0](ExtensionKey<Ext>)
+	4: Call dynamic_field::exists_<ExtensionKey<Ext>>(&UID, ExtensionKey<Ext>): bool
+	5: Ret
+}
+
+public is_enabled<Ext: drop>(self#0#0: &Kiosk): bool {
+B0:
+	0: MoveLoc[0](self#0#0: &Kiosk)
+	1: Call extension<Ext>(&Kiosk): &Extension
+	2: ImmBorrowField[0](Extension.is_enabled: bool)
+	3: ReadRef
+	4: Ret
+}
+
+public can_place<Ext: drop>(self#0#0: &Kiosk): bool {
+L1:	%#1: bool
+B0:
+	0: CopyLoc[0](self#0#0: &Kiosk)
+	1: Call is_enabled<Ext>(&Kiosk): bool
+	2: BrFalse(13)
+B1:
+	3: MoveLoc[0](self#0#0: &Kiosk)
+	4: Call extension<Ext>(&Kiosk): &Extension
+	5: ImmBorrowField[2](Extension.permissions: u128)
+	6: ReadRef
+	7: LdConst[3](u128: 1)
+	8: BitAnd
+	9: LdU128(0)
+	10: Neq
+	11: StLoc[1](%#1: bool)
+	12: Branch(17)
+B2:
+	13: MoveLoc[0](self#0#0: &Kiosk)
+	14: Pop
+	15: LdFalse
+	16: StLoc[1](%#1: bool)
+B3:
+	17: MoveLoc[1](%#1: bool)
+	18: Ret
+}
+
+public can_lock<Ext: drop>(self#0#0: &Kiosk): bool {
+L1:	%#1: bool
+B0:
+	0: CopyLoc[0](self#0#0: &Kiosk)
+	1: Call is_enabled<Ext>(&Kiosk): bool
+	2: BrFalse(13)
+B1:
+	3: MoveLoc[0](self#0#0: &Kiosk)
+	4: Call extension<Ext>(&Kiosk): &Extension
+	5: ImmBorrowField[2](Extension.permissions: u128)
+	6: ReadRef
+	7: LdConst[4](u128: 2)
+	8: BitAnd
+	9: LdU128(0)
+	10: Neq
+	11: StLoc[1](%#1: bool)
+	12: Branch(17)
+B2:
+	13: MoveLoc[0](self#0#0: &Kiosk)
+	14: Pop
+	15: LdFalse
+	16: StLoc[1](%#1: bool)
+B3:
+	17: MoveLoc[1](%#1: bool)
+	18: Ret
+}
+
+extension<Ext: drop>(self#0#0: &Kiosk): &Extension {
+B0:
+	0: MoveLoc[0](self#0#0: &Kiosk)
+	1: Call kiosk::uid(&Kiosk): &UID
+	2: LdFalse
+	3: PackGeneric[0](ExtensionKey<Ext>)
+	4: Call dynamic_field::borrow<ExtensionKey<Ext>, Extension>(&UID, ExtensionKey<Ext>): &Extension
+	5: Ret
+}
+
+extension_mut<Ext: drop>(self#0#0: &mut Kiosk): &mut Extension {
+B0:
+	0: MoveLoc[0](self#0#0: &mut Kiosk)
+	1: Call kiosk::uid_mut_internal(&mut Kiosk): &mut UID
+	2: LdFalse
+	3: PackGeneric[0](ExtensionKey<Ext>)
+	4: Call dynamic_field::borrow_mut<ExtensionKey<Ext>, Extension>(&mut UID, ExtensionKey<Ext>): &mut Extension
+	5: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 2
+	2 => u64: 3
+	3 => u128: 1
+	4 => u128: 2
+]
+}

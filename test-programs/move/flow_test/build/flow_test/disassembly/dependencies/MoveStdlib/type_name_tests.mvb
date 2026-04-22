@@ -1,0 +1,1406 @@
+// Move bytecode v7
+module a.type_name_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::ascii;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::type_name;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+struct TestStruct {
+	dummy_field: bool
+}
+
+struct TestGenerics<phantom T> {
+	dummy_field: bool
+}
+
+struct TestMultiGenerics<phantom T1, phantom T2, phantom T3> {
+	dummy_field: bool
+}
+
+enum TestEnum {
+	V {  }
+}
+
+enum TestGenericsEnum<phantom T> {
+	V {  }
+}
+
+enum TestMultiGenericsEnum<phantom T1, phantom T2, phantom T3> {
+	V {  }
+}
+
+test_primitive_types() {
+L0:	%#1: TypeName
+L1:	%#10: TypeName
+L2:	%#11: vector<u8>
+L3:	%#12: &vector<u8>
+L4:	%#13: TypeName
+L5:	%#14: vector<u8>
+L6:	%#15: &vector<u8>
+L7:	%#16: TypeName
+L8:	%#17: vector<u8>
+L9:	%#18: &vector<u8>
+L10:	%#19: TypeName
+L11:	%#2: vector<u8>
+L12:	%#20: vector<u8>
+L13:	%#21: &vector<u8>
+L14:	%#22: TypeName
+L15:	%#23: vector<u8>
+L16:	%#24: &vector<u8>
+L17:	%#25: TypeName
+L18:	%#26: vector<u8>
+L19:	%#27: &vector<u8>
+L20:	%#28: TypeName
+L21:	%#29: vector<u8>
+L22:	%#3: &vector<u8>
+L23:	%#30: &vector<u8>
+L24:	%#4: TypeName
+L25:	%#5: vector<u8>
+L26:	%#6: &vector<u8>
+L27:	%#7: TypeName
+L28:	%#8: vector<u8>
+L29:	%#9: &vector<u8>
+B0:
+	0: Call type_name::with_defining_ids<u8>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::as_string(&TypeName): &String
+	4: Call ascii::as_bytes(&String): &vector<u8>
+	5: StLoc[22](%#3: &vector<u8>)
+	6: LdConst[0](vector<u8>: "u8"..)
+	7: StLoc[11](%#2: vector<u8>)
+	8: MoveLoc[22](%#3: &vector<u8>)
+	9: ImmBorrowLoc[11](%#2: vector<u8>)
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834298897432575)
+	14: Abort
+B3:
+	15: Call type_name::with_defining_ids<u16>(): TypeName
+	16: StLoc[24](%#4: TypeName)
+	17: ImmBorrowLoc[24](%#4: TypeName)
+	18: Call type_name::as_string(&TypeName): &String
+	19: Call ascii::as_bytes(&String): &vector<u8>
+	20: StLoc[26](%#6: &vector<u8>)
+	21: LdConst[1](vector<u8>: "u16..)
+	22: StLoc[25](%#5: vector<u8>)
+	23: MoveLoc[26](%#6: &vector<u8>)
+	24: ImmBorrowLoc[25](%#5: vector<u8>)
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdU64(13906834303192399871)
+	29: Abort
+B6:
+	30: Call type_name::with_defining_ids<u32>(): TypeName
+	31: StLoc[27](%#7: TypeName)
+	32: ImmBorrowLoc[27](%#7: TypeName)
+	33: Call type_name::as_string(&TypeName): &String
+	34: Call ascii::as_bytes(&String): &vector<u8>
+	35: StLoc[29](%#9: &vector<u8>)
+	36: LdConst[2](vector<u8>: "u32..)
+	37: StLoc[28](%#8: vector<u8>)
+	38: MoveLoc[29](%#9: &vector<u8>)
+	39: ImmBorrowLoc[28](%#8: vector<u8>)
+	40: Eq
+	41: BrFalse(43)
+B7:
+	42: Branch(45)
+B8:
+	43: LdU64(13906834307487367167)
+	44: Abort
+B9:
+	45: Call type_name::with_defining_ids<u64>(): TypeName
+	46: StLoc[1](%#10: TypeName)
+	47: ImmBorrowLoc[1](%#10: TypeName)
+	48: Call type_name::as_string(&TypeName): &String
+	49: Call ascii::as_bytes(&String): &vector<u8>
+	50: StLoc[3](%#12: &vector<u8>)
+	51: LdConst[3](vector<u8>: "u64..)
+	52: StLoc[2](%#11: vector<u8>)
+	53: MoveLoc[3](%#12: &vector<u8>)
+	54: ImmBorrowLoc[2](%#11: vector<u8>)
+	55: Eq
+	56: BrFalse(58)
+B10:
+	57: Branch(60)
+B11:
+	58: LdU64(13906834311782334463)
+	59: Abort
+B12:
+	60: Call type_name::with_defining_ids<u128>(): TypeName
+	61: StLoc[4](%#13: TypeName)
+	62: ImmBorrowLoc[4](%#13: TypeName)
+	63: Call type_name::as_string(&TypeName): &String
+	64: Call ascii::as_bytes(&String): &vector<u8>
+	65: StLoc[6](%#15: &vector<u8>)
+	66: LdConst[4](vector<u8>: "u12..)
+	67: StLoc[5](%#14: vector<u8>)
+	68: MoveLoc[6](%#15: &vector<u8>)
+	69: ImmBorrowLoc[5](%#14: vector<u8>)
+	70: Eq
+	71: BrFalse(73)
+B13:
+	72: Branch(75)
+B14:
+	73: LdU64(13906834316077301759)
+	74: Abort
+B15:
+	75: Call type_name::with_defining_ids<u256>(): TypeName
+	76: StLoc[7](%#16: TypeName)
+	77: ImmBorrowLoc[7](%#16: TypeName)
+	78: Call type_name::as_string(&TypeName): &String
+	79: Call ascii::as_bytes(&String): &vector<u8>
+	80: StLoc[9](%#18: &vector<u8>)
+	81: LdConst[5](vector<u8>: "u25..)
+	82: StLoc[8](%#17: vector<u8>)
+	83: MoveLoc[9](%#18: &vector<u8>)
+	84: ImmBorrowLoc[8](%#17: vector<u8>)
+	85: Eq
+	86: BrFalse(88)
+B16:
+	87: Branch(90)
+B17:
+	88: LdU64(13906834320372269055)
+	89: Abort
+B18:
+	90: Call type_name::with_defining_ids<address>(): TypeName
+	91: StLoc[10](%#19: TypeName)
+	92: ImmBorrowLoc[10](%#19: TypeName)
+	93: Call type_name::as_string(&TypeName): &String
+	94: Call ascii::as_bytes(&String): &vector<u8>
+	95: StLoc[13](%#21: &vector<u8>)
+	96: LdConst[6](vector<u8>: "add..)
+	97: StLoc[12](%#20: vector<u8>)
+	98: MoveLoc[13](%#21: &vector<u8>)
+	99: ImmBorrowLoc[12](%#20: vector<u8>)
+	100: Eq
+	101: BrFalse(103)
+B19:
+	102: Branch(105)
+B20:
+	103: LdU64(13906834324667236351)
+	104: Abort
+B21:
+	105: Call type_name::with_defining_ids<vector<u8>>(): TypeName
+	106: StLoc[14](%#22: TypeName)
+	107: ImmBorrowLoc[14](%#22: TypeName)
+	108: Call type_name::as_string(&TypeName): &String
+	109: Call ascii::as_bytes(&String): &vector<u8>
+	110: StLoc[16](%#24: &vector<u8>)
+	111: LdConst[7](vector<u8>: "vec..)
+	112: StLoc[15](%#23: vector<u8>)
+	113: MoveLoc[16](%#24: &vector<u8>)
+	114: ImmBorrowLoc[15](%#23: vector<u8>)
+	115: Eq
+	116: BrFalse(118)
+B22:
+	117: Branch(120)
+B23:
+	118: LdU64(13906834328962203647)
+	119: Abort
+B24:
+	120: Call type_name::with_defining_ids<vector<vector<u8>>>(): TypeName
+	121: StLoc[17](%#25: TypeName)
+	122: ImmBorrowLoc[17](%#25: TypeName)
+	123: Call type_name::as_string(&TypeName): &String
+	124: Call ascii::as_bytes(&String): &vector<u8>
+	125: StLoc[19](%#27: &vector<u8>)
+	126: LdConst[8](vector<u8>: "vec..)
+	127: StLoc[18](%#26: vector<u8>)
+	128: MoveLoc[19](%#27: &vector<u8>)
+	129: ImmBorrowLoc[18](%#26: vector<u8>)
+	130: Eq
+	131: BrFalse(133)
+B25:
+	132: Branch(135)
+B26:
+	133: LdU64(13906834333257170943)
+	134: Abort
+B27:
+	135: Call type_name::with_defining_ids<vector<vector<String>>>(): TypeName
+	136: StLoc[20](%#28: TypeName)
+	137: ImmBorrowLoc[20](%#28: TypeName)
+	138: Call type_name::as_string(&TypeName): &String
+	139: Call ascii::as_bytes(&String): &vector<u8>
+	140: StLoc[23](%#30: &vector<u8>)
+	141: LdConst[9](vector<u8>: "vec..)
+	142: StLoc[21](%#29: vector<u8>)
+	143: MoveLoc[23](%#30: &vector<u8>)
+	144: ImmBorrowLoc[21](%#29: vector<u8>)
+	145: Eq
+	146: BrFalse(148)
+B28:
+	147: Branch(150)
+B29:
+	148: LdU64(13906834346142072831)
+	149: Abort
+B30:
+	150: Ret
+}
+
+test_is_primitive() {
+L0:	%#1: TypeName
+L1:	%#10: TypeName
+L2:	%#11: TypeName
+L3:	%#12: TypeName
+L4:	%#13: TypeName
+L5:	%#14: TypeName
+L6:	%#2: TypeName
+L7:	%#3: TypeName
+L8:	%#4: TypeName
+L9:	%#5: TypeName
+L10:	%#6: TypeName
+L11:	%#7: TypeName
+L12:	%#8: TypeName
+L13:	%#9: TypeName
+B0:
+	0: Call type_name::with_defining_ids<u8>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::is_primitive(&TypeName): bool
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdU64(13906834376206843903)
+	7: Abort
+B3:
+	8: Call type_name::with_defining_ids<u16>(): TypeName
+	9: StLoc[6](%#2: TypeName)
+	10: ImmBorrowLoc[6](%#2: TypeName)
+	11: Call type_name::is_primitive(&TypeName): bool
+	12: BrFalse(14)
+B4:
+	13: Branch(16)
+B5:
+	14: LdU64(13906834380501811199)
+	15: Abort
+B6:
+	16: Call type_name::with_defining_ids<u32>(): TypeName
+	17: StLoc[7](%#3: TypeName)
+	18: ImmBorrowLoc[7](%#3: TypeName)
+	19: Call type_name::is_primitive(&TypeName): bool
+	20: BrFalse(22)
+B7:
+	21: Branch(24)
+B8:
+	22: LdU64(13906834384796778495)
+	23: Abort
+B9:
+	24: Call type_name::with_defining_ids<u64>(): TypeName
+	25: StLoc[8](%#4: TypeName)
+	26: ImmBorrowLoc[8](%#4: TypeName)
+	27: Call type_name::is_primitive(&TypeName): bool
+	28: BrFalse(30)
+B10:
+	29: Branch(32)
+B11:
+	30: LdU64(13906834389091745791)
+	31: Abort
+B12:
+	32: Call type_name::with_defining_ids<u128>(): TypeName
+	33: StLoc[9](%#5: TypeName)
+	34: ImmBorrowLoc[9](%#5: TypeName)
+	35: Call type_name::is_primitive(&TypeName): bool
+	36: BrFalse(38)
+B13:
+	37: Branch(40)
+B14:
+	38: LdU64(13906834393386713087)
+	39: Abort
+B15:
+	40: Call type_name::with_defining_ids<u32>(): TypeName
+	41: StLoc[10](%#6: TypeName)
+	42: ImmBorrowLoc[10](%#6: TypeName)
+	43: Call type_name::is_primitive(&TypeName): bool
+	44: BrFalse(46)
+B16:
+	45: Branch(48)
+B17:
+	46: LdU64(13906834397681680383)
+	47: Abort
+B18:
+	48: Call type_name::with_defining_ids<address>(): TypeName
+	49: StLoc[11](%#7: TypeName)
+	50: ImmBorrowLoc[11](%#7: TypeName)
+	51: Call type_name::is_primitive(&TypeName): bool
+	52: BrFalse(54)
+B19:
+	53: Branch(56)
+B20:
+	54: LdU64(13906834401976647679)
+	55: Abort
+B21:
+	56: Call type_name::with_defining_ids<vector<u8>>(): TypeName
+	57: StLoc[12](%#8: TypeName)
+	58: ImmBorrowLoc[12](%#8: TypeName)
+	59: Call type_name::is_primitive(&TypeName): bool
+	60: BrFalse(62)
+B22:
+	61: Branch(64)
+B23:
+	62: LdU64(13906834406271614975)
+	63: Abort
+B24:
+	64: Call type_name::with_defining_ids<vector<vector<u8>>>(): TypeName
+	65: StLoc[13](%#9: TypeName)
+	66: ImmBorrowLoc[13](%#9: TypeName)
+	67: Call type_name::is_primitive(&TypeName): bool
+	68: BrFalse(70)
+B25:
+	69: Branch(72)
+B26:
+	70: LdU64(13906834410566582271)
+	71: Abort
+B27:
+	72: Call type_name::with_defining_ids<vector<vector<String>>>(): TypeName
+	73: StLoc[1](%#10: TypeName)
+	74: ImmBorrowLoc[1](%#10: TypeName)
+	75: Call type_name::is_primitive(&TypeName): bool
+	76: BrFalse(78)
+B28:
+	77: Branch(80)
+B29:
+	78: LdU64(13906834414861549567)
+	79: Abort
+B30:
+	80: Call type_name::with_defining_ids<TestStruct>(): TypeName
+	81: StLoc[2](%#11: TypeName)
+	82: ImmBorrowLoc[2](%#11: TypeName)
+	83: Call type_name::is_primitive(&TypeName): bool
+	84: Not
+	85: BrFalse(87)
+B31:
+	86: Branch(89)
+B32:
+	87: LdU64(13906834423451484159)
+	88: Abort
+B33:
+	89: Call type_name::with_defining_ids<TestGenerics<u64>>(): TypeName
+	90: StLoc[3](%#12: TypeName)
+	91: ImmBorrowLoc[3](%#12: TypeName)
+	92: Call type_name::is_primitive(&TypeName): bool
+	93: Not
+	94: BrFalse(96)
+B34:
+	95: Branch(98)
+B35:
+	96: LdU64(13906834427746451455)
+	97: Abort
+B36:
+	98: Call type_name::with_defining_ids<TestEnum>(): TypeName
+	99: StLoc[4](%#13: TypeName)
+	100: ImmBorrowLoc[4](%#13: TypeName)
+	101: Call type_name::is_primitive(&TypeName): bool
+	102: Not
+	103: BrFalse(105)
+B37:
+	104: Branch(107)
+B38:
+	105: LdU64(13906834432041418751)
+	106: Abort
+B39:
+	107: Call type_name::with_defining_ids<TestGenericsEnum<u64>>(): TypeName
+	108: StLoc[5](%#14: TypeName)
+	109: ImmBorrowLoc[5](%#14: TypeName)
+	110: Call type_name::is_primitive(&TypeName): bool
+	111: Not
+	112: BrFalse(114)
+B40:
+	113: Branch(116)
+B41:
+	114: LdU64(13906834436336386047)
+	115: Abort
+B42:
+	116: Ret
+}
+
+test_structs() {
+L0:	%#1: TypeName
+L1:	%#10: TypeName
+L2:	%#11: vector<u8>
+L3:	%#12: &vector<u8>
+L4:	%#2: vector<u8>
+L5:	%#3: &vector<u8>
+L6:	%#4: TypeName
+L7:	%#5: vector<u8>
+L8:	%#6: &vector<u8>
+L9:	%#7: TypeName
+L10:	%#8: vector<u8>
+L11:	%#9: &vector<u8>
+B0:
+	0: Call type_name::with_defining_ids<TestStruct>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::as_string(&TypeName): &String
+	4: Call ascii::as_bytes(&String): &vector<u8>
+	5: StLoc[5](%#3: &vector<u8>)
+	6: LdConst[10](vector<u8>: "000..)
+	7: StLoc[4](%#2: vector<u8>)
+	8: MoveLoc[5](%#3: &vector<u8>)
+	9: ImmBorrowLoc[4](%#2: vector<u8>)
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834462106189823)
+	14: Abort
+B3:
+	15: Call type_name::with_defining_ids<String>(): TypeName
+	16: StLoc[6](%#4: TypeName)
+	17: ImmBorrowLoc[6](%#4: TypeName)
+	18: Call type_name::as_string(&TypeName): &String
+	19: Call ascii::as_bytes(&String): &vector<u8>
+	20: StLoc[8](%#6: &vector<u8>)
+	21: LdConst[11](vector<u8>: "000..)
+	22: StLoc[7](%#5: vector<u8>)
+	23: MoveLoc[8](%#6: &vector<u8>)
+	24: ImmBorrowLoc[7](%#5: vector<u8>)
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdU64(13906834474991091711)
+	29: Abort
+B6:
+	30: Call type_name::with_defining_ids<Option<u64>>(): TypeName
+	31: StLoc[9](%#7: TypeName)
+	32: ImmBorrowLoc[9](%#7: TypeName)
+	33: Call type_name::as_string(&TypeName): &String
+	34: Call ascii::as_bytes(&String): &vector<u8>
+	35: StLoc[11](%#9: &vector<u8>)
+	36: LdConst[12](vector<u8>: "000..)
+	37: StLoc[10](%#8: vector<u8>)
+	38: MoveLoc[11](%#9: &vector<u8>)
+	39: ImmBorrowLoc[10](%#8: vector<u8>)
+	40: Eq
+	41: BrFalse(43)
+B7:
+	42: Branch(45)
+B8:
+	43: LdU64(13906834487875993599)
+	44: Abort
+B9:
+	45: Call type_name::with_defining_ids<String>(): TypeName
+	46: StLoc[1](%#10: TypeName)
+	47: ImmBorrowLoc[1](%#10: TypeName)
+	48: Call type_name::as_string(&TypeName): &String
+	49: Call ascii::as_bytes(&String): &vector<u8>
+	50: StLoc[3](%#12: &vector<u8>)
+	51: LdConst[13](vector<u8>: "000..)
+	52: StLoc[2](%#11: vector<u8>)
+	53: MoveLoc[3](%#12: &vector<u8>)
+	54: ImmBorrowLoc[2](%#11: vector<u8>)
+	55: Eq
+	56: BrFalse(58)
+B10:
+	57: Branch(60)
+B11:
+	58: LdU64(13906834500760895487)
+	59: Abort
+B12:
+	60: Ret
+}
+
+test_enums() {
+L0:	%#1: TypeName
+L1:	%#2: vector<u8>
+L2:	%#3: &vector<u8>
+B0:
+	0: Call type_name::with_defining_ids<TestEnum>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::as_string(&TypeName): &String
+	4: Call ascii::as_bytes(&String): &vector<u8>
+	5: StLoc[2](%#3: &vector<u8>)
+	6: LdConst[14](vector<u8>: "000..)
+	7: StLoc[1](%#2: vector<u8>)
+	8: MoveLoc[2](%#3: &vector<u8>)
+	9: ImmBorrowLoc[1](%#2: vector<u8>)
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834535120633855)
+	14: Abort
+B3:
+	15: Ret
+}
+
+test_generics() {
+L0:	%#1: TypeName
+L1:	%#2: vector<u8>
+L2:	%#3: &vector<u8>
+L3:	%#4: TypeName
+L4:	%#5: vector<u8>
+L5:	%#6: &vector<u8>
+L6:	%#7: TypeName
+L7:	%#8: vector<u8>
+L8:	%#9: &vector<u8>
+B0:
+	0: Call type_name::with_defining_ids<TestGenerics<String>>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::as_string(&TypeName): &String
+	4: Call ascii::as_bytes(&String): &vector<u8>
+	5: StLoc[2](%#3: &vector<u8>)
+	6: LdConst[15](vector<u8>: "000..)
+	7: StLoc[1](%#2: vector<u8>)
+	8: MoveLoc[2](%#3: &vector<u8>)
+	9: ImmBorrowLoc[1](%#2: vector<u8>)
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834569480372223)
+	14: Abort
+B3:
+	15: Call type_name::with_defining_ids<vector<TestGenerics<u64>>>(): TypeName
+	16: StLoc[3](%#4: TypeName)
+	17: ImmBorrowLoc[3](%#4: TypeName)
+	18: Call type_name::as_string(&TypeName): &String
+	19: Call ascii::as_bytes(&String): &vector<u8>
+	20: StLoc[5](%#6: &vector<u8>)
+	21: LdConst[16](vector<u8>: "vec..)
+	22: StLoc[4](%#5: vector<u8>)
+	23: MoveLoc[5](%#6: &vector<u8>)
+	24: ImmBorrowLoc[4](%#5: vector<u8>)
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdU64(13906834582365274111)
+	29: Abort
+B6:
+	30: Call type_name::with_defining_ids<Option<TestGenerics<u8>>>(): TypeName
+	31: StLoc[6](%#7: TypeName)
+	32: ImmBorrowLoc[6](%#7: TypeName)
+	33: Call type_name::as_string(&TypeName): &String
+	34: Call ascii::as_bytes(&String): &vector<u8>
+	35: StLoc[8](%#9: &vector<u8>)
+	36: LdConst[17](vector<u8>: "000..)
+	37: StLoc[7](%#8: vector<u8>)
+	38: MoveLoc[8](%#9: &vector<u8>)
+	39: ImmBorrowLoc[7](%#8: vector<u8>)
+	40: Eq
+	41: BrFalse(43)
+B7:
+	42: Branch(45)
+B8:
+	43: LdU64(13906834595250175999)
+	44: Abort
+B9:
+	45: Ret
+}
+
+test_generics_enum() {
+L0:	%#1: TypeName
+L1:	%#2: vector<u8>
+L2:	%#3: &vector<u8>
+L3:	%#4: TypeName
+L4:	%#5: vector<u8>
+L5:	%#6: &vector<u8>
+L6:	%#7: TypeName
+L7:	%#8: vector<u8>
+L8:	%#9: &vector<u8>
+B0:
+	0: Call type_name::with_defining_ids<TestGenericsEnum<String>>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::as_string(&TypeName): &String
+	4: Call ascii::as_bytes(&String): &vector<u8>
+	5: StLoc[2](%#3: &vector<u8>)
+	6: LdConst[18](vector<u8>: "000..)
+	7: StLoc[1](%#2: vector<u8>)
+	8: MoveLoc[2](%#3: &vector<u8>)
+	9: ImmBorrowLoc[1](%#2: vector<u8>)
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834629609914367)
+	14: Abort
+B3:
+	15: Call type_name::with_defining_ids<vector<TestGenericsEnum<u64>>>(): TypeName
+	16: StLoc[3](%#4: TypeName)
+	17: ImmBorrowLoc[3](%#4: TypeName)
+	18: Call type_name::as_string(&TypeName): &String
+	19: Call ascii::as_bytes(&String): &vector<u8>
+	20: StLoc[5](%#6: &vector<u8>)
+	21: LdConst[19](vector<u8>: "vec..)
+	22: StLoc[4](%#5: vector<u8>)
+	23: MoveLoc[5](%#6: &vector<u8>)
+	24: ImmBorrowLoc[4](%#5: vector<u8>)
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdU64(13906834642494816255)
+	29: Abort
+B6:
+	30: Call type_name::with_defining_ids<Option<TestGenericsEnum<u8>>>(): TypeName
+	31: StLoc[6](%#7: TypeName)
+	32: ImmBorrowLoc[6](%#7: TypeName)
+	33: Call type_name::as_string(&TypeName): &String
+	34: Call ascii::as_bytes(&String): &vector<u8>
+	35: StLoc[8](%#9: &vector<u8>)
+	36: LdConst[20](vector<u8>: "000..)
+	37: StLoc[7](%#8: vector<u8>)
+	38: MoveLoc[8](%#9: &vector<u8>)
+	39: ImmBorrowLoc[7](%#8: vector<u8>)
+	40: Eq
+	41: BrFalse(43)
+B7:
+	42: Branch(45)
+B8:
+	43: LdU64(13906834655379718143)
+	44: Abort
+B9:
+	45: Ret
+}
+
+test_multi_generics() {
+L0:	%#1: TypeName
+L1:	%#2: vector<u8>
+L2:	%#3: &vector<u8>
+L3:	%#4: TypeName
+L4:	%#5: vector<u8>
+L5:	%#6: &vector<u8>
+B0:
+	0: Call type_name::with_defining_ids<TestMultiGenerics<bool, u64, u128>>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::as_string(&TypeName): &String
+	4: Call ascii::as_bytes(&String): &vector<u8>
+	5: StLoc[2](%#3: &vector<u8>)
+	6: LdConst[21](vector<u8>: "000..)
+	7: StLoc[1](%#2: vector<u8>)
+	8: MoveLoc[2](%#3: &vector<u8>)
+	9: ImmBorrowLoc[1](%#2: vector<u8>)
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834689739456511)
+	14: Abort
+B3:
+	15: Call type_name::with_defining_ids<TestMultiGenerics<bool, vector<u64>, TestGenerics<u128>>>(): TypeName
+	16: StLoc[3](%#4: TypeName)
+	17: ImmBorrowLoc[3](%#4: TypeName)
+	18: Call type_name::as_string(&TypeName): &String
+	19: Call ascii::as_bytes(&String): &vector<u8>
+	20: StLoc[5](%#6: &vector<u8>)
+	21: LdConst[22](vector<u8>: "000..)
+	22: StLoc[4](%#5: vector<u8>)
+	23: MoveLoc[5](%#6: &vector<u8>)
+	24: ImmBorrowLoc[4](%#5: vector<u8>)
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdU64(13906834702624358399)
+	29: Abort
+B6:
+	30: Ret
+}
+
+test_multi_generics_enum() {
+L0:	%#1: TypeName
+L1:	%#2: vector<u8>
+L2:	%#3: &vector<u8>
+L3:	%#4: TypeName
+L4:	%#5: vector<u8>
+L5:	%#6: &vector<u8>
+B0:
+	0: Call type_name::with_defining_ids<TestMultiGenericsEnum<bool, u64, u128>>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::as_string(&TypeName): &String
+	4: Call ascii::as_bytes(&String): &vector<u8>
+	5: StLoc[2](%#3: &vector<u8>)
+	6: LdConst[23](vector<u8>: "000..)
+	7: StLoc[1](%#2: vector<u8>)
+	8: MoveLoc[2](%#3: &vector<u8>)
+	9: ImmBorrowLoc[1](%#2: vector<u8>)
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834736984096767)
+	14: Abort
+B3:
+	15: Call type_name::with_defining_ids<TestMultiGenericsEnum<bool, vector<u64>, TestGenericsEnum<u128>>>(): TypeName
+	16: StLoc[3](%#4: TypeName)
+	17: ImmBorrowLoc[3](%#4: TypeName)
+	18: Call type_name::as_string(&TypeName): &String
+	19: Call ascii::as_bytes(&String): &vector<u8>
+	20: StLoc[5](%#6: &vector<u8>)
+	21: LdConst[24](vector<u8>: "000..)
+	22: StLoc[4](%#5: vector<u8>)
+	23: MoveLoc[5](%#6: &vector<u8>)
+	24: ImmBorrowLoc[4](%#5: vector<u8>)
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdU64(13906834749868998655)
+	29: Abort
+B6:
+	30: Ret
+}
+
+test_get_address() {
+L0:	%#1: TypeName
+L1:	%#10: String
+L2:	%#11: vector<u8>
+L3:	%#12: &vector<u8>
+L4:	%#13: TypeName
+L5:	%#14: String
+L6:	%#15: vector<u8>
+L7:	%#16: &vector<u8>
+L8:	%#17: TypeName
+L9:	%#18: String
+L10:	%#19: vector<u8>
+L11:	%#2: String
+L12:	%#20: &vector<u8>
+L13:	%#3: vector<u8>
+L14:	%#4: &vector<u8>
+L15:	%#5: TypeName
+L16:	%#6: String
+L17:	%#7: vector<u8>
+L18:	%#8: &vector<u8>
+L19:	%#9: TypeName
+B0:
+	0: Call type_name::with_defining_ids<String>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::address_string(&TypeName): String
+	4: StLoc[11](%#2: String)
+	5: ImmBorrowLoc[11](%#2: String)
+	6: Call ascii::as_bytes(&String): &vector<u8>
+	7: StLoc[14](%#4: &vector<u8>)
+	8: LdConst[25](vector<u8>: "000..)
+	9: StLoc[13](%#3: vector<u8>)
+	10: MoveLoc[14](%#4: &vector<u8>)
+	11: ImmBorrowLoc[13](%#3: vector<u8>)
+	12: Eq
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834779933769727)
+	16: Abort
+B3:
+	17: Call type_name::with_defining_ids<TestStruct>(): TypeName
+	18: StLoc[15](%#5: TypeName)
+	19: ImmBorrowLoc[15](%#5: TypeName)
+	20: Call type_name::address_string(&TypeName): String
+	21: StLoc[16](%#6: String)
+	22: ImmBorrowLoc[16](%#6: String)
+	23: Call ascii::as_bytes(&String): &vector<u8>
+	24: StLoc[18](%#8: &vector<u8>)
+	25: LdConst[26](vector<u8>: "000..)
+	26: StLoc[17](%#7: vector<u8>)
+	27: MoveLoc[18](%#8: &vector<u8>)
+	28: ImmBorrowLoc[17](%#7: vector<u8>)
+	29: Eq
+	30: BrFalse(32)
+B4:
+	31: Branch(34)
+B5:
+	32: LdU64(13906834792818671615)
+	33: Abort
+B6:
+	34: Call type_name::with_defining_ids<TestGenerics<String>>(): TypeName
+	35: StLoc[19](%#9: TypeName)
+	36: ImmBorrowLoc[19](%#9: TypeName)
+	37: Call type_name::address_string(&TypeName): String
+	38: StLoc[1](%#10: String)
+	39: ImmBorrowLoc[1](%#10: String)
+	40: Call ascii::as_bytes(&String): &vector<u8>
+	41: StLoc[3](%#12: &vector<u8>)
+	42: LdConst[26](vector<u8>: "000..)
+	43: StLoc[2](%#11: vector<u8>)
+	44: MoveLoc[3](%#12: &vector<u8>)
+	45: ImmBorrowLoc[2](%#11: vector<u8>)
+	46: Eq
+	47: BrFalse(49)
+B7:
+	48: Branch(51)
+B8:
+	49: LdU64(13906834805703573503)
+	50: Abort
+B9:
+	51: Call type_name::with_defining_ids<TestEnum>(): TypeName
+	52: StLoc[4](%#13: TypeName)
+	53: ImmBorrowLoc[4](%#13: TypeName)
+	54: Call type_name::address_string(&TypeName): String
+	55: StLoc[5](%#14: String)
+	56: ImmBorrowLoc[5](%#14: String)
+	57: Call ascii::as_bytes(&String): &vector<u8>
+	58: StLoc[7](%#16: &vector<u8>)
+	59: LdConst[26](vector<u8>: "000..)
+	60: StLoc[6](%#15: vector<u8>)
+	61: MoveLoc[7](%#16: &vector<u8>)
+	62: ImmBorrowLoc[6](%#15: vector<u8>)
+	63: Eq
+	64: BrFalse(66)
+B10:
+	65: Branch(68)
+B11:
+	66: LdU64(13906834818588475391)
+	67: Abort
+B12:
+	68: Call type_name::with_defining_ids<TestGenericsEnum<String>>(): TypeName
+	69: StLoc[8](%#17: TypeName)
+	70: ImmBorrowLoc[8](%#17: TypeName)
+	71: Call type_name::address_string(&TypeName): String
+	72: StLoc[9](%#18: String)
+	73: ImmBorrowLoc[9](%#18: String)
+	74: Call ascii::as_bytes(&String): &vector<u8>
+	75: StLoc[12](%#20: &vector<u8>)
+	76: LdConst[26](vector<u8>: "000..)
+	77: StLoc[10](%#19: vector<u8>)
+	78: MoveLoc[12](%#20: &vector<u8>)
+	79: ImmBorrowLoc[10](%#19: vector<u8>)
+	80: Eq
+	81: BrFalse(83)
+B13:
+	82: Branch(85)
+B14:
+	83: LdU64(13906834831473377279)
+	84: Abort
+B15:
+	85: Ret
+}
+
+test_get_module() {
+L0:	%#1: TypeName
+L1:	%#10: String
+L2:	%#11: vector<u8>
+L3:	%#12: &vector<u8>
+L4:	%#13: TypeName
+L5:	%#14: String
+L6:	%#15: vector<u8>
+L7:	%#16: &vector<u8>
+L8:	%#17: TypeName
+L9:	%#18: String
+L10:	%#19: vector<u8>
+L11:	%#2: String
+L12:	%#20: &vector<u8>
+L13:	%#3: vector<u8>
+L14:	%#4: &vector<u8>
+L15:	%#5: TypeName
+L16:	%#6: String
+L17:	%#7: vector<u8>
+L18:	%#8: &vector<u8>
+L19:	%#9: TypeName
+B0:
+	0: Call type_name::with_defining_ids<String>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::module_string(&TypeName): String
+	4: StLoc[11](%#2: String)
+	5: ImmBorrowLoc[11](%#2: String)
+	6: Call ascii::as_bytes(&String): &vector<u8>
+	7: StLoc[14](%#4: &vector<u8>)
+	8: LdConst[27](vector<u8>: "asc..)
+	9: StLoc[13](%#3: vector<u8>)
+	10: MoveLoc[14](%#4: &vector<u8>)
+	11: ImmBorrowLoc[13](%#3: vector<u8>)
+	12: Eq
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834861538148351)
+	16: Abort
+B3:
+	17: Call type_name::with_defining_ids<TestStruct>(): TypeName
+	18: StLoc[15](%#5: TypeName)
+	19: ImmBorrowLoc[15](%#5: TypeName)
+	20: Call type_name::module_string(&TypeName): String
+	21: StLoc[16](%#6: String)
+	22: ImmBorrowLoc[16](%#6: String)
+	23: Call ascii::as_bytes(&String): &vector<u8>
+	24: StLoc[18](%#8: &vector<u8>)
+	25: LdConst[28](vector<u8>: "typ..)
+	26: StLoc[17](%#7: vector<u8>)
+	27: MoveLoc[18](%#8: &vector<u8>)
+	28: ImmBorrowLoc[17](%#7: vector<u8>)
+	29: Eq
+	30: BrFalse(32)
+B4:
+	31: Branch(34)
+B5:
+	32: LdU64(13906834865833115647)
+	33: Abort
+B6:
+	34: Call type_name::with_defining_ids<TestGenerics<String>>(): TypeName
+	35: StLoc[19](%#9: TypeName)
+	36: ImmBorrowLoc[19](%#9: TypeName)
+	37: Call type_name::module_string(&TypeName): String
+	38: StLoc[1](%#10: String)
+	39: ImmBorrowLoc[1](%#10: String)
+	40: Call ascii::as_bytes(&String): &vector<u8>
+	41: StLoc[3](%#12: &vector<u8>)
+	42: LdConst[28](vector<u8>: "typ..)
+	43: StLoc[2](%#11: vector<u8>)
+	44: MoveLoc[3](%#12: &vector<u8>)
+	45: ImmBorrowLoc[2](%#11: vector<u8>)
+	46: Eq
+	47: BrFalse(49)
+B7:
+	48: Branch(51)
+B8:
+	49: LdU64(13906834870128082943)
+	50: Abort
+B9:
+	51: Call type_name::with_defining_ids<TestEnum>(): TypeName
+	52: StLoc[4](%#13: TypeName)
+	53: ImmBorrowLoc[4](%#13: TypeName)
+	54: Call type_name::module_string(&TypeName): String
+	55: StLoc[5](%#14: String)
+	56: ImmBorrowLoc[5](%#14: String)
+	57: Call ascii::as_bytes(&String): &vector<u8>
+	58: StLoc[7](%#16: &vector<u8>)
+	59: LdConst[28](vector<u8>: "typ..)
+	60: StLoc[6](%#15: vector<u8>)
+	61: MoveLoc[7](%#16: &vector<u8>)
+	62: ImmBorrowLoc[6](%#15: vector<u8>)
+	63: Eq
+	64: BrFalse(66)
+B10:
+	65: Branch(68)
+B11:
+	66: LdU64(13906834883012984831)
+	67: Abort
+B12:
+	68: Call type_name::with_defining_ids<TestGenericsEnum<String>>(): TypeName
+	69: StLoc[8](%#17: TypeName)
+	70: ImmBorrowLoc[8](%#17: TypeName)
+	71: Call type_name::module_string(&TypeName): String
+	72: StLoc[9](%#18: String)
+	73: ImmBorrowLoc[9](%#18: String)
+	74: Call ascii::as_bytes(&String): &vector<u8>
+	75: StLoc[12](%#20: &vector<u8>)
+	76: LdConst[28](vector<u8>: "typ..)
+	77: StLoc[10](%#19: vector<u8>)
+	78: MoveLoc[12](%#20: &vector<u8>)
+	79: ImmBorrowLoc[10](%#19: vector<u8>)
+	80: Eq
+	81: BrFalse(83)
+B13:
+	82: Branch(85)
+B14:
+	83: LdU64(13906834887307952127)
+	84: Abort
+B15:
+	85: Ret
+}
+
+test_get_datatype() {
+L0:	%#1: TypeName
+L1:	%#10: String
+L2:	%#11: vector<u8>
+L3:	%#12: &vector<u8>
+L4:	%#13: TypeName
+L5:	%#14: String
+L6:	%#15: vector<u8>
+L7:	%#16: &vector<u8>
+L8:	%#17: TypeName
+L9:	%#18: String
+L10:	%#19: vector<u8>
+L11:	%#2: String
+L12:	%#20: &vector<u8>
+L13:	%#21: TypeName
+L14:	%#22: String
+L15:	%#23: vector<u8>
+L16:	%#24: &vector<u8>
+L17:	%#25: TypeName
+L18:	%#26: String
+L19:	%#27: vector<u8>
+L20:	%#28: &vector<u8>
+L21:	%#29: TypeName
+L22:	%#3: vector<u8>
+L23:	%#30: String
+L24:	%#31: vector<u8>
+L25:	%#32: &vector<u8>
+L26:	%#4: &vector<u8>
+L27:	%#5: TypeName
+L28:	%#6: String
+L29:	%#7: vector<u8>
+L30:	%#8: &vector<u8>
+L31:	%#9: TypeName
+B0:
+	0: Call type_name::with_defining_ids<String>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::datatype_string(&TypeName): String
+	4: StLoc[11](%#2: String)
+	5: ImmBorrowLoc[11](%#2: String)
+	6: Call ascii::as_bytes(&String): &vector<u8>
+	7: StLoc[26](%#4: &vector<u8>)
+	8: LdConst[29](vector<u8>: "Str..)
+	9: StLoc[22](%#3: vector<u8>)
+	10: MoveLoc[26](%#4: &vector<u8>)
+	11: ImmBorrowLoc[22](%#3: vector<u8>)
+	12: Eq
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834917372723199)
+	16: Abort
+B3:
+	17: Call type_name::with_defining_ids<TestStruct>(): TypeName
+	18: StLoc[27](%#5: TypeName)
+	19: ImmBorrowLoc[27](%#5: TypeName)
+	20: Call type_name::datatype_string(&TypeName): String
+	21: StLoc[28](%#6: String)
+	22: ImmBorrowLoc[28](%#6: String)
+	23: Call ascii::as_bytes(&String): &vector<u8>
+	24: StLoc[30](%#8: &vector<u8>)
+	25: LdConst[30](vector<u8>: "Tes..)
+	26: StLoc[29](%#7: vector<u8>)
+	27: MoveLoc[30](%#8: &vector<u8>)
+	28: ImmBorrowLoc[29](%#7: vector<u8>)
+	29: Eq
+	30: BrFalse(32)
+B4:
+	31: Branch(34)
+B5:
+	32: LdU64(13906834921667690495)
+	33: Abort
+B6:
+	34: Call type_name::with_defining_ids<TestGenerics<String>>(): TypeName
+	35: StLoc[31](%#9: TypeName)
+	36: ImmBorrowLoc[31](%#9: TypeName)
+	37: Call type_name::datatype_string(&TypeName): String
+	38: StLoc[1](%#10: String)
+	39: ImmBorrowLoc[1](%#10: String)
+	40: Call ascii::as_bytes(&String): &vector<u8>
+	41: StLoc[3](%#12: &vector<u8>)
+	42: LdConst[31](vector<u8>: "Tes..)
+	43: StLoc[2](%#11: vector<u8>)
+	44: MoveLoc[3](%#12: &vector<u8>)
+	45: ImmBorrowLoc[2](%#11: vector<u8>)
+	46: Eq
+	47: BrFalse(49)
+B7:
+	48: Branch(51)
+B8:
+	49: LdU64(13906834925962657791)
+	50: Abort
+B9:
+	51: Call type_name::with_defining_ids<TestMultiGenerics<bool, u64, u128>>(): TypeName
+	52: StLoc[4](%#13: TypeName)
+	53: ImmBorrowLoc[4](%#13: TypeName)
+	54: Call type_name::datatype_string(&TypeName): String
+	55: StLoc[5](%#14: String)
+	56: ImmBorrowLoc[5](%#14: String)
+	57: Call ascii::as_bytes(&String): &vector<u8>
+	58: StLoc[7](%#16: &vector<u8>)
+	59: LdConst[32](vector<u8>: "Tes..)
+	60: StLoc[6](%#15: vector<u8>)
+	61: MoveLoc[7](%#16: &vector<u8>)
+	62: ImmBorrowLoc[6](%#15: vector<u8>)
+	63: Eq
+	64: BrFalse(66)
+B10:
+	65: Branch(68)
+B11:
+	66: LdU64(13906834938847559679)
+	67: Abort
+B12:
+	68: Call type_name::with_defining_ids<Option<u64>>(): TypeName
+	69: StLoc[8](%#17: TypeName)
+	70: ImmBorrowLoc[8](%#17: TypeName)
+	71: Call type_name::datatype_string(&TypeName): String
+	72: StLoc[9](%#18: String)
+	73: ImmBorrowLoc[9](%#18: String)
+	74: Call ascii::as_bytes(&String): &vector<u8>
+	75: StLoc[12](%#20: &vector<u8>)
+	76: LdConst[33](vector<u8>: "Opt..)
+	77: StLoc[10](%#19: vector<u8>)
+	78: MoveLoc[12](%#20: &vector<u8>)
+	79: ImmBorrowLoc[10](%#19: vector<u8>)
+	80: Eq
+	81: BrFalse(83)
+B13:
+	82: Branch(85)
+B14:
+	83: LdU64(13906834951732461567)
+	84: Abort
+B15:
+	85: Call type_name::with_defining_ids<TestEnum>(): TypeName
+	86: StLoc[13](%#21: TypeName)
+	87: ImmBorrowLoc[13](%#21: TypeName)
+	88: Call type_name::datatype_string(&TypeName): String
+	89: StLoc[14](%#22: String)
+	90: ImmBorrowLoc[14](%#22: String)
+	91: Call ascii::as_bytes(&String): &vector<u8>
+	92: StLoc[16](%#24: &vector<u8>)
+	93: LdConst[34](vector<u8>: "Tes..)
+	94: StLoc[15](%#23: vector<u8>)
+	95: MoveLoc[16](%#24: &vector<u8>)
+	96: ImmBorrowLoc[15](%#23: vector<u8>)
+	97: Eq
+	98: BrFalse(100)
+B16:
+	99: Branch(102)
+B17:
+	100: LdU64(13906834964617363455)
+	101: Abort
+B18:
+	102: Call type_name::with_defining_ids<TestGenericsEnum<String>>(): TypeName
+	103: StLoc[17](%#25: TypeName)
+	104: ImmBorrowLoc[17](%#25: TypeName)
+	105: Call type_name::datatype_string(&TypeName): String
+	106: StLoc[18](%#26: String)
+	107: ImmBorrowLoc[18](%#26: String)
+	108: Call ascii::as_bytes(&String): &vector<u8>
+	109: StLoc[20](%#28: &vector<u8>)
+	110: LdConst[35](vector<u8>: "Tes..)
+	111: StLoc[19](%#27: vector<u8>)
+	112: MoveLoc[20](%#28: &vector<u8>)
+	113: ImmBorrowLoc[19](%#27: vector<u8>)
+	114: Eq
+	115: BrFalse(117)
+B19:
+	116: Branch(119)
+B20:
+	117: LdU64(13906834968912330751)
+	118: Abort
+B21:
+	119: Call type_name::with_defining_ids<TestMultiGenericsEnum<bool, u64, u128>>(): TypeName
+	120: StLoc[21](%#29: TypeName)
+	121: ImmBorrowLoc[21](%#29: TypeName)
+	122: Call type_name::datatype_string(&TypeName): String
+	123: StLoc[23](%#30: String)
+	124: ImmBorrowLoc[23](%#30: String)
+	125: Call ascii::as_bytes(&String): &vector<u8>
+	126: StLoc[25](%#32: &vector<u8>)
+	127: LdConst[36](vector<u8>: "Tes..)
+	128: StLoc[24](%#31: vector<u8>)
+	129: MoveLoc[25](%#32: &vector<u8>)
+	130: ImmBorrowLoc[24](%#31: vector<u8>)
+	131: Eq
+	132: BrFalse(134)
+B22:
+	133: Branch(136)
+B23:
+	134: LdU64(13906834981797232639)
+	135: Abort
+B24:
+	136: Ret
+}
+
+test_get_address_aborts_with_primitive() {
+L0:	%#1: TypeName
+B0:
+	0: Call type_name::with_defining_ids<u8>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::address_string(&TypeName): String
+	4: Pop
+	5: Ret
+}
+
+test_get_module_aborts_with_primitive() {
+L0:	%#1: TypeName
+B0:
+	0: Call type_name::with_defining_ids<bool>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::module_string(&TypeName): String
+	4: Pop
+	5: Ret
+}
+
+test_get_address_aborts_with_primitive_generic() {
+L0:	%#1: TypeName
+B0:
+	0: Call type_name::with_defining_ids<vector<String>>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::address_string(&TypeName): String
+	4: Pop
+	5: Ret
+}
+
+test_get_module_aborts_with_primitive_generic() {
+L0:	%#1: TypeName
+B0:
+	0: Call type_name::with_defining_ids<vector<TestGenerics<String>>>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::module_string(&TypeName): String
+	4: Pop
+	5: Ret
+}
+
+test_get_datatype_aborts_with_primitive() {
+L0:	%#1: TypeName
+B0:
+	0: Call type_name::with_defining_ids<bool>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::datatype_string(&TypeName): String
+	4: Pop
+	5: Ret
+}
+
+test_get_datatype_aborts_with_primitive_generic() {
+L0:	%#1: TypeName
+B0:
+	0: Call type_name::with_defining_ids<vector<TestGenerics<String>>>(): TypeName
+	1: StLoc[0](%#1: TypeName)
+	2: ImmBorrowLoc[0](%#1: TypeName)
+	3: Call type_name::datatype_string(&TypeName): String
+	4: Pop
+	5: Ret
+}
+
+test_defining_id() {
+B0:
+	0: Call type_name::defining_id<String>(): address
+	1: LdConst[37](address: 0x00..)
+	2: Eq
+	3: BrFalse(5)
+B1:
+	4: Branch(7)
+B2:
+	5: LdU64(13906835140711022591)
+	6: Abort
+B3:
+	7: Call type_name::defining_id<TestStruct>(): address
+	8: LdConst[38](address: 0x00..)
+	9: Eq
+	10: BrFalse(12)
+B4:
+	11: Branch(14)
+B5:
+	12: LdU64(13906835145005989887)
+	13: Abort
+B6:
+	14: Call type_name::defining_id<TestGenerics<String>>(): address
+	15: LdConst[38](address: 0x00..)
+	16: Eq
+	17: BrFalse(19)
+B7:
+	18: Branch(21)
+B8:
+	19: LdU64(13906835149300957183)
+	20: Abort
+B9:
+	21: Call type_name::defining_id<TestEnum>(): address
+	22: LdConst[38](address: 0x00..)
+	23: Eq
+	24: BrFalse(26)
+B10:
+	25: Branch(28)
+B11:
+	26: LdU64(13906835153595924479)
+	27: Abort
+B12:
+	28: Call type_name::defining_id<TestGenericsEnum<String>>(): address
+	29: LdConst[38](address: 0x00..)
+	30: Eq
+	31: BrFalse(33)
+B13:
+	32: Branch(35)
+B14:
+	33: LdU64(13906835157890891775)
+	34: Abort
+B15:
+	35: Ret
+}
+
+test_defining_id_aborts_with_primitive() {
+B0:
+	0: Call type_name::defining_id<u8>(): address
+	1: Pop
+	2: Ret
+}
+
+test_defining_id_aborts_with_primitive_generic() {
+B0:
+	0: Call type_name::defining_id<vector<String>>(): address
+	1: Pop
+	2: Ret
+}
+
+test_defining_id_aborts_with_primitive_generic_nested() {
+B0:
+	0: Call type_name::defining_id<vector<TestGenerics<String>>>(): address
+	1: Pop
+	2: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "u8" // interpreted as UTF8 string
+	1 => vector<u8>: "u16" // interpreted as UTF8 string
+	2 => vector<u8>: "u32" // interpreted as UTF8 string
+	3 => vector<u8>: "u64" // interpreted as UTF8 string
+	4 => vector<u8>: "u128" // interpreted as UTF8 string
+	5 => vector<u8>: "u256" // interpreted as UTF8 string
+	6 => vector<u8>: "address" // interpreted as UTF8 string
+	7 => vector<u8>: "vector<u8>" // interpreted as UTF8 string
+	8 => vector<u8>: "vector<vector<u8>>" // interpreted as UTF8 string
+	9 => vector<u8>: "vector<vector<0000000000000000000000000000000000000000000000000000000000000001::string::String>>" // interpreted as UTF8 string
+	10 => vector<u8>: "000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestStruct" // interpreted as UTF8 string
+	11 => vector<u8>: "0000000000000000000000000000000000000000000000000000000000000001::ascii::String" // interpreted as UTF8 string
+	12 => vector<u8>: "0000000000000000000000000000000000000000000000000000000000000001::option::Option<u64>" // interpreted as UTF8 string
+	13 => vector<u8>: "0000000000000000000000000000000000000000000000000000000000000001::string::String" // interpreted as UTF8 string
+	14 => vector<u8>: "000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestEnum" // interpreted as UTF8 string
+	15 => vector<u8>: "000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestGenerics<0000000000000000000000000000000000000000000000000000000000000001::string::String>" // interpreted as UTF8 string
+	16 => vector<u8>: "vector<000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestGenerics<u64>>" // interpreted as UTF8 string
+	17 => vector<u8>: "0000000000000000000000000000000000000000000000000000000000000001::option::Option<000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestGenerics<u8>>" // interpreted as UTF8 string
+	18 => vector<u8>: "000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestGenericsEnum<0000000000000000000000000000000000000000000000000000000000000001::string::String>" // interpreted as UTF8 string
+	19 => vector<u8>: "vector<000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestGenericsEnum<u64>>" // interpreted as UTF8 string
+	20 => vector<u8>: "0000000000000000000000000000000000000000000000000000000000000001::option::Option<000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestGenericsEnum<u8>>" // interpreted as UTF8 string
+	21 => vector<u8>: "000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestMultiGenerics<bool,u64,u128>" // interpreted as UTF8 string
+	22 => vector<u8>: "000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestMultiGenerics<bool,vector<u64>,000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestGenerics<u128>>" // interpreted as UTF8 string
+	23 => vector<u8>: "000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestMultiGenericsEnum<bool,u64,u128>" // interpreted as UTF8 string
+	24 => vector<u8>: "000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestMultiGenericsEnum<bool,vector<u64>,000000000000000000000000000000000000000000000000000000000000000a::type_name_tests::TestGenericsEnum<u128>>" // interpreted as UTF8 string
+	25 => vector<u8>: "0000000000000000000000000000000000000000000000000000000000000001" // interpreted as UTF8 string
+	26 => vector<u8>: "000000000000000000000000000000000000000000000000000000000000000a" // interpreted as UTF8 string
+	27 => vector<u8>: "ascii" // interpreted as UTF8 string
+	28 => vector<u8>: "type_name_tests" // interpreted as UTF8 string
+	29 => vector<u8>: "String" // interpreted as UTF8 string
+	30 => vector<u8>: "TestStruct" // interpreted as UTF8 string
+	31 => vector<u8>: "TestGenerics" // interpreted as UTF8 string
+	32 => vector<u8>: "TestMultiGenerics" // interpreted as UTF8 string
+	33 => vector<u8>: "Option" // interpreted as UTF8 string
+	34 => vector<u8>: "TestEnum" // interpreted as UTF8 string
+	35 => vector<u8>: "TestGenericsEnum" // interpreted as UTF8 string
+	36 => vector<u8>: "TestMultiGenericsEnum" // interpreted as UTF8 string
+	37 => address: 0x0000000000000000000000000000000000000000000000000000000000000001
+	38 => address: 0x000000000000000000000000000000000000000000000000000000000000000a
+]
+}

@@ -1,0 +1,1092 @@
+// Move bytecode v6
+module 2.token {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::type_name;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::balance;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::event;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::vec_map;
+use 0000000000000000000000000000000000000000000000000000000000000002::vec_set;
+
+struct Token<phantom T> has key {
+	id: UID,
+	balance: Balance<T>
+}
+
+struct TokenPolicyCap<phantom T> has store, key {
+	id: UID,
+	for: ID
+}
+
+struct TokenPolicy<phantom T> has key {
+	id: UID,
+	spent_balance: Balance<T>,
+	rules: VecMap<String, VecSet<TypeName>>
+}
+
+struct ActionRequest<phantom T> {
+	name: String,
+	amount: u64,
+	sender: address,
+	recipient: Option<address>,
+	spent_balance: Option<Balance<T>>,
+	approvals: VecSet<TypeName>
+}
+
+struct RuleKey<phantom T> has copy, drop, store {
+	is_protected: bool
+}
+
+struct TokenPolicyCreated<phantom T> has copy, drop {
+	id: ID,
+	is_mutable: bool
+}
+
+public new_policy<T>(_treasury_cap#0#0: &TreasuryCap<T>, ctx#0#0: &mut TxContext): TokenPolicy<T> * TokenPolicyCap<T> {
+L2:	cap#1#0: TokenPolicyCap<T>
+L3:	policy#1#0: TokenPolicy<T>
+B0:
+	0: CopyLoc[1](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: Call balance::zero<T>(): Balance<T>
+	3: Call vec_map::empty<String, VecSet<TypeName>>(): VecMap<String, VecSet<TypeName>>
+	4: PackGeneric[0](TokenPolicy<T>)
+	5: StLoc[3](policy#1#0: TokenPolicy<T>)
+	6: MoveLoc[1](ctx#0#0: &mut TxContext)
+	7: Call object::new(&mut TxContext): UID
+	8: ImmBorrowLoc[3](policy#1#0: TokenPolicy<T>)
+	9: Call object::id<TokenPolicy<T>>(&TokenPolicy<T>): ID
+	10: PackGeneric[1](TokenPolicyCap<T>)
+	11: StLoc[2](cap#1#0: TokenPolicyCap<T>)
+	12: MoveLoc[3](policy#1#0: TokenPolicy<T>)
+	13: MoveLoc[2](cap#1#0: TokenPolicyCap<T>)
+	14: Ret
+}
+
+public share_policy<T>(policy#0#0: TokenPolicy<T>) {
+B0:
+	0: ImmBorrowLoc[0](policy#0#0: TokenPolicy<T>)
+	1: Call object::id<TokenPolicy<T>>(&TokenPolicy<T>): ID
+	2: LdTrue
+	3: PackGeneric[2](TokenPolicyCreated<T>)
+	4: Call event::emit<TokenPolicyCreated<T>>(TokenPolicyCreated<T>)
+	5: MoveLoc[0](policy#0#0: TokenPolicy<T>)
+	6: Call transfer::share_object<TokenPolicy<T>>(TokenPolicy<T>)
+	7: Ret
+}
+
+public transfer<T>(t#0#0: Token<T>, recipient#0#0: address, ctx#0#0: &mut TxContext): ActionRequest<T> {
+L3:	amount#1#0: u64
+B0:
+	0: ImmBorrowLoc[0](t#0#0: Token<T>)
+	1: ImmBorrowFieldGeneric[0](Token.balance: Balance<T>)
+	2: Call balance::value<T>(&Balance<T>): u64
+	3: StLoc[3](amount#1#0: u64)
+	4: MoveLoc[0](t#0#0: Token<T>)
+	5: CopyLoc[1](recipient#0#0: address)
+	6: Call transfer::transfer<Token<T>>(Token<T>, address)
+	7: Call transfer_action(): String
+	8: MoveLoc[3](amount#1#0: u64)
+	9: MoveLoc[1](recipient#0#0: address)
+	10: Call option::some<address>(address): Option<address>
+	11: Call option::none<Balance<T>>(): Option<Balance<T>>
+	12: MoveLoc[2](ctx#0#0: &mut TxContext)
+	13: FreezeRef
+	14: Call new_request<T>(String, u64, Option<address>, Option<Balance<T>>, &TxContext): ActionRequest<T>
+	15: Ret
+}
+
+public spend<T>(t#0#0: Token<T>, ctx#0#0: &mut TxContext): ActionRequest<T> {
+L2:	balance#1#0: Balance<T>
+B0:
+	0: MoveLoc[0](t#0#0: Token<T>)
+	1: UnpackGeneric[3](Token<T>)
+	2: StLoc[2](balance#1#0: Balance<T>)
+	3: Call object::delete(UID)
+	4: Call spend_action(): String
+	5: ImmBorrowLoc[2](balance#1#0: Balance<T>)
+	6: Call balance::value<T>(&Balance<T>): u64
+	7: Call option::none<address>(): Option<address>
+	8: MoveLoc[2](balance#1#0: Balance<T>)
+	9: Call option::some<Balance<T>>(Balance<T>): Option<Balance<T>>
+	10: MoveLoc[1](ctx#0#0: &mut TxContext)
+	11: FreezeRef
+	12: Call new_request<T>(String, u64, Option<address>, Option<Balance<T>>, &TxContext): ActionRequest<T>
+	13: Ret
+}
+
+public to_coin<T>(t#0#0: Token<T>, ctx#0#0: &mut TxContext): Coin<T> * ActionRequest<T> {
+L2:	amount#1#0: u64
+L3:	balance#1#0: Balance<T>
+L4:	id#1#0: UID
+B0:
+	0: MoveLoc[0](t#0#0: Token<T>)
+	1: UnpackGeneric[3](Token<T>)
+	2: StLoc[3](balance#1#0: Balance<T>)
+	3: StLoc[4](id#1#0: UID)
+	4: ImmBorrowLoc[3](balance#1#0: Balance<T>)
+	5: Call balance::value<T>(&Balance<T>): u64
+	6: StLoc[2](amount#1#0: u64)
+	7: MoveLoc[4](id#1#0: UID)
+	8: Call object::delete(UID)
+	9: MoveLoc[3](balance#1#0: Balance<T>)
+	10: CopyLoc[1](ctx#0#0: &mut TxContext)
+	11: Call coin::from_balance<T>(Balance<T>, &mut TxContext): Coin<T>
+	12: Call to_coin_action(): String
+	13: MoveLoc[2](amount#1#0: u64)
+	14: Call option::none<address>(): Option<address>
+	15: Call option::none<Balance<T>>(): Option<Balance<T>>
+	16: MoveLoc[1](ctx#0#0: &mut TxContext)
+	17: FreezeRef
+	18: Call new_request<T>(String, u64, Option<address>, Option<Balance<T>>, &TxContext): ActionRequest<T>
+	19: Ret
+}
+
+public from_coin<T>(coin#0#0: Coin<T>, ctx#0#0: &mut TxContext): Token<T> * ActionRequest<T> {
+L2:	amount#1#0: u64
+B0:
+	0: ImmBorrowLoc[0](coin#0#0: Coin<T>)
+	1: Call coin::value<T>(&Coin<T>): u64
+	2: StLoc[2](amount#1#0: u64)
+	3: CopyLoc[1](ctx#0#0: &mut TxContext)
+	4: Call object::new(&mut TxContext): UID
+	5: MoveLoc[0](coin#0#0: Coin<T>)
+	6: Call coin::into_balance<T>(Coin<T>): Balance<T>
+	7: PackGeneric[3](Token<T>)
+	8: Call from_coin_action(): String
+	9: MoveLoc[2](amount#1#0: u64)
+	10: Call option::none<address>(): Option<address>
+	11: Call option::none<Balance<T>>(): Option<Balance<T>>
+	12: MoveLoc[1](ctx#0#0: &mut TxContext)
+	13: FreezeRef
+	14: Call new_request<T>(String, u64, Option<address>, Option<Balance<T>>, &TxContext): ActionRequest<T>
+	15: Ret
+}
+
+public join<T>(token#0#0: &mut Token<T>, another#0#0: Token<T>) {
+L2:	balance#1#0: Balance<T>
+L3:	id#1#0: UID
+B0:
+	0: MoveLoc[1](another#0#0: Token<T>)
+	1: UnpackGeneric[3](Token<T>)
+	2: StLoc[2](balance#1#0: Balance<T>)
+	3: StLoc[3](id#1#0: UID)
+	4: MoveLoc[0](token#0#0: &mut Token<T>)
+	5: MutBorrowFieldGeneric[0](Token.balance: Balance<T>)
+	6: MoveLoc[2](balance#1#0: Balance<T>)
+	7: Call balance::join<T>(&mut Balance<T>, Balance<T>): u64
+	8: Pop
+	9: MoveLoc[3](id#1#0: UID)
+	10: Call object::delete(UID)
+	11: Ret
+}
+
+public split<T>(token#0#0: &mut Token<T>, amount#0#0: u64, ctx#0#0: &mut TxContext): Token<T> {
+B0:
+	0: CopyLoc[0](token#0#0: &mut Token<T>)
+	1: ImmBorrowFieldGeneric[0](Token.balance: Balance<T>)
+	2: Call balance::value<T>(&Balance<T>): u64
+	3: CopyLoc[1](amount#0#0: u64)
+	4: Ge
+	5: BrFalse(7)
+B1:
+	6: Branch(13)
+B2:
+	7: MoveLoc[0](token#0#0: &mut Token<T>)
+	8: Pop
+	9: MoveLoc[2](ctx#0#0: &mut TxContext)
+	10: Pop
+	11: LdConst[3](u64: 3)
+	12: Abort
+B3:
+	13: MoveLoc[2](ctx#0#0: &mut TxContext)
+	14: Call object::new(&mut TxContext): UID
+	15: MoveLoc[0](token#0#0: &mut Token<T>)
+	16: MutBorrowFieldGeneric[0](Token.balance: Balance<T>)
+	17: MoveLoc[1](amount#0#0: u64)
+	18: Call balance::split<T>(&mut Balance<T>, u64): Balance<T>
+	19: PackGeneric[3](Token<T>)
+	20: Ret
+}
+
+public zero<T>(ctx#0#0: &mut TxContext): Token<T> {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: Call balance::zero<T>(): Balance<T>
+	3: PackGeneric[3](Token<T>)
+	4: Ret
+}
+
+public destroy_zero<T>(token#0#0: Token<T>) {
+L1:	balance#1#0: Balance<T>
+L2:	id#1#0: UID
+B0:
+	0: MoveLoc[0](token#0#0: Token<T>)
+	1: UnpackGeneric[3](Token<T>)
+	2: StLoc[1](balance#1#0: Balance<T>)
+	3: StLoc[2](id#1#0: UID)
+	4: ImmBorrowLoc[1](balance#1#0: Balance<T>)
+	5: Call balance::value<T>(&Balance<T>): u64
+	6: LdU64(0)
+	7: Eq
+	8: BrFalse(10)
+B1:
+	9: Branch(12)
+B2:
+	10: LdConst[4](u64: 4)
+	11: Abort
+B3:
+	12: MoveLoc[1](balance#1#0: Balance<T>)
+	13: Call balance::destroy_zero<T>(Balance<T>)
+	14: MoveLoc[2](id#1#0: UID)
+	15: Call object::delete(UID)
+	16: Ret
+}
+
+public keep<T>(token#0#0: Token<T>, ctx#0#0: &mut TxContext) {
+B0:
+	0: MoveLoc[0](token#0#0: Token<T>)
+	1: MoveLoc[1](ctx#0#0: &mut TxContext)
+	2: FreezeRef
+	3: Call tx_context::sender(&TxContext): address
+	4: Call transfer::transfer<Token<T>>(Token<T>, address)
+	5: Ret
+}
+
+public new_request<T>(name#0#0: String, amount#0#0: u64, recipient#0#0: Option<address>, spent_balance#0#0: Option<Balance<T>>, ctx#0#0: &TxContext): ActionRequest<T> {
+L5:	%#1: String
+L6:	%#2: u64
+L7:	%#3: Option<address>
+L8:	%#4: Option<Balance<T>>
+L9:	%#5: address
+L10:	%#6: VecSet<TypeName>
+B0:
+	0: MoveLoc[0](name#0#0: String)
+	1: StLoc[5](%#1: String)
+	2: MoveLoc[1](amount#0#0: u64)
+	3: StLoc[6](%#2: u64)
+	4: MoveLoc[2](recipient#0#0: Option<address>)
+	5: StLoc[7](%#3: Option<address>)
+	6: MoveLoc[3](spent_balance#0#0: Option<Balance<T>>)
+	7: StLoc[8](%#4: Option<Balance<T>>)
+	8: MoveLoc[4](ctx#0#0: &TxContext)
+	9: Call tx_context::sender(&TxContext): address
+	10: StLoc[9](%#5: address)
+	11: Call vec_set::empty<TypeName>(): VecSet<TypeName>
+	12: StLoc[10](%#6: VecSet<TypeName>)
+	13: MoveLoc[5](%#1: String)
+	14: MoveLoc[6](%#2: u64)
+	15: MoveLoc[9](%#5: address)
+	16: MoveLoc[7](%#3: Option<address>)
+	17: MoveLoc[8](%#4: Option<Balance<T>>)
+	18: MoveLoc[10](%#6: VecSet<TypeName>)
+	19: PackGeneric[4](ActionRequest<T>)
+	20: Ret
+}
+
+public confirm_request<T>(policy#0#0: &TokenPolicy<T>, request#0#0: ActionRequest<T>, _ctx#0#0: &mut TxContext): String * u64 * address * Option<address> {
+L3:	%#1: vector<TypeName>
+L4:	amount#1#0: u64
+L5:	approvals#1#0: VecSet<TypeName>
+L6:	i#1#0: u64
+L7:	name#1#0: String
+L8:	recipient#1#0: Option<address>
+L9:	rule#1#0: &TypeName
+L10:	rules#1#0: &vector<TypeName>
+L11:	rules_len#1#0: u64
+L12:	sender#1#0: address
+L13:	spent_balance#1#0: Option<Balance<T>>
+B0:
+	0: ImmBorrowLoc[1](request#0#0: ActionRequest<T>)
+	1: ImmBorrowFieldGeneric[1](ActionRequest.spent_balance: Option<Balance<T>>)
+	2: Call option::is_none<Balance<T>>(&Option<Balance<T>>): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(9)
+B2:
+	5: MoveLoc[0](policy#0#0: &TokenPolicy<T>)
+	6: Pop
+	7: LdConst[5](u64: 5)
+	8: Abort
+B3:
+	9: CopyLoc[0](policy#0#0: &TokenPolicy<T>)
+	10: ImmBorrowFieldGeneric[2](TokenPolicy.rules: VecMap<String, VecSet<TypeName>>)
+	11: ImmBorrowLoc[1](request#0#0: ActionRequest<T>)
+	12: ImmBorrowFieldGeneric[3](ActionRequest.name: String)
+	13: Call vec_map::contains<String, VecSet<TypeName>>(&VecMap<String, VecSet<TypeName>>, &String): bool
+	14: BrFalse(16)
+B4:
+	15: Branch(20)
+B5:
+	16: MoveLoc[0](policy#0#0: &TokenPolicy<T>)
+	17: Pop
+	18: LdConst[0](u64: 0)
+	19: Abort
+B6:
+	20: MoveLoc[1](request#0#0: ActionRequest<T>)
+	21: UnpackGeneric[4](ActionRequest<T>)
+	22: StLoc[5](approvals#1#0: VecSet<TypeName>)
+	23: StLoc[13](spent_balance#1#0: Option<Balance<T>>)
+	24: StLoc[8](recipient#1#0: Option<address>)
+	25: StLoc[12](sender#1#0: address)
+	26: StLoc[4](amount#1#0: u64)
+	27: StLoc[7](name#1#0: String)
+	28: MoveLoc[13](spent_balance#1#0: Option<Balance<T>>)
+	29: Call option::destroy_none<Balance<T>>(Option<Balance<T>>)
+	30: MoveLoc[0](policy#0#0: &TokenPolicy<T>)
+	31: ImmBorrowFieldGeneric[2](TokenPolicy.rules: VecMap<String, VecSet<TypeName>>)
+	32: ImmBorrowLoc[7](name#1#0: String)
+	33: Call vec_map::get<String, VecSet<TypeName>>(&VecMap<String, VecSet<TypeName>>, &String): &VecSet<TypeName>
+	34: ReadRef
+	35: Call vec_set::into_keys<TypeName>(VecSet<TypeName>): vector<TypeName>
+	36: StLoc[3](%#1: vector<TypeName>)
+	37: ImmBorrowLoc[3](%#1: vector<TypeName>)
+	38: StLoc[10](rules#1#0: &vector<TypeName>)
+	39: CopyLoc[10](rules#1#0: &vector<TypeName>)
+	40: VecLen(66)
+	41: StLoc[11](rules_len#1#0: u64)
+	42: LdU64(0)
+	43: StLoc[6](i#1#0: u64)
+B7:
+	44: CopyLoc[6](i#1#0: u64)
+	45: CopyLoc[11](rules_len#1#0: u64)
+	46: Lt
+	47: BrFalse(66)
+B8:
+	48: CopyLoc[10](rules#1#0: &vector<TypeName>)
+	49: CopyLoc[6](i#1#0: u64)
+	50: VecImmBorrow(66)
+	51: StLoc[9](rule#1#0: &TypeName)
+	52: ImmBorrowLoc[5](approvals#1#0: VecSet<TypeName>)
+	53: MoveLoc[9](rule#1#0: &TypeName)
+	54: Call vec_set::contains<TypeName>(&VecSet<TypeName>, &TypeName): bool
+	55: BrFalse(57)
+B9:
+	56: Branch(61)
+B10:
+	57: MoveLoc[10](rules#1#0: &vector<TypeName>)
+	58: Pop
+	59: LdConst[1](u64: 1)
+	60: Abort
+B11:
+	61: MoveLoc[6](i#1#0: u64)
+	62: LdU64(1)
+	63: Add
+	64: StLoc[6](i#1#0: u64)
+	65: Branch(44)
+B12:
+	66: MoveLoc[10](rules#1#0: &vector<TypeName>)
+	67: Pop
+	68: MoveLoc[7](name#1#0: String)
+	69: MoveLoc[4](amount#1#0: u64)
+	70: MoveLoc[12](sender#1#0: address)
+	71: MoveLoc[8](recipient#1#0: Option<address>)
+	72: Ret
+}
+
+public confirm_request_mut<T>(policy#0#0: &mut TokenPolicy<T>, request#0#0: ActionRequest<T>, ctx#0#0: &mut TxContext): String * u64 * address * Option<address> {
+B0:
+	0: CopyLoc[0](policy#0#0: &mut TokenPolicy<T>)
+	1: ImmBorrowFieldGeneric[2](TokenPolicy.rules: VecMap<String, VecSet<TypeName>>)
+	2: ImmBorrowLoc[1](request#0#0: ActionRequest<T>)
+	3: ImmBorrowFieldGeneric[3](ActionRequest.name: String)
+	4: Call vec_map::contains<String, VecSet<TypeName>>(&VecMap<String, VecSet<TypeName>>, &String): bool
+	5: BrFalse(7)
+B1:
+	6: Branch(13)
+B2:
+	7: MoveLoc[0](policy#0#0: &mut TokenPolicy<T>)
+	8: Pop
+	9: MoveLoc[2](ctx#0#0: &mut TxContext)
+	10: Pop
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: ImmBorrowLoc[1](request#0#0: ActionRequest<T>)
+	14: ImmBorrowFieldGeneric[1](ActionRequest.spent_balance: Option<Balance<T>>)
+	15: Call option::is_some<Balance<T>>(&Option<Balance<T>>): bool
+	16: BrFalse(18)
+B4:
+	17: Branch(24)
+B5:
+	18: MoveLoc[0](policy#0#0: &mut TokenPolicy<T>)
+	19: Pop
+	20: MoveLoc[2](ctx#0#0: &mut TxContext)
+	21: Pop
+	22: LdConst[7](u64: 7)
+	23: Abort
+B6:
+	24: CopyLoc[0](policy#0#0: &mut TokenPolicy<T>)
+	25: MutBorrowFieldGeneric[4](TokenPolicy.spent_balance: Balance<T>)
+	26: MutBorrowLoc[1](request#0#0: ActionRequest<T>)
+	27: MutBorrowFieldGeneric[1](ActionRequest.spent_balance: Option<Balance<T>>)
+	28: Call option::extract<Balance<T>>(&mut Option<Balance<T>>): Balance<T>
+	29: Call balance::join<T>(&mut Balance<T>, Balance<T>): u64
+	30: Pop
+	31: MoveLoc[0](policy#0#0: &mut TokenPolicy<T>)
+	32: FreezeRef
+	33: MoveLoc[1](request#0#0: ActionRequest<T>)
+	34: MoveLoc[2](ctx#0#0: &mut TxContext)
+	35: Call confirm_request<T>(&TokenPolicy<T>, ActionRequest<T>, &mut TxContext): String * u64 * address * Option<address>
+	36: Ret
+}
+
+public confirm_with_policy_cap<T>(_policy_cap#0#0: &TokenPolicyCap<T>, request#0#0: ActionRequest<T>, _ctx#0#0: &mut TxContext): String * u64 * address * Option<address> {
+L3:	amount#1#0: u64
+L4:	name#1#0: String
+L5:	recipient#1#0: Option<address>
+L6:	sender#1#0: address
+L7:	spent_balance#1#0: Option<Balance<T>>
+B0:
+	0: ImmBorrowLoc[1](request#0#0: ActionRequest<T>)
+	1: ImmBorrowFieldGeneric[1](ActionRequest.spent_balance: Option<Balance<T>>)
+	2: Call option::is_none<Balance<T>>(&Option<Balance<T>>): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(7)
+B2:
+	5: LdConst[5](u64: 5)
+	6: Abort
+B3:
+	7: MoveLoc[1](request#0#0: ActionRequest<T>)
+	8: UnpackGeneric[4](ActionRequest<T>)
+	9: Pop
+	10: StLoc[7](spent_balance#1#0: Option<Balance<T>>)
+	11: StLoc[5](recipient#1#0: Option<address>)
+	12: StLoc[6](sender#1#0: address)
+	13: StLoc[3](amount#1#0: u64)
+	14: StLoc[4](name#1#0: String)
+	15: MoveLoc[7](spent_balance#1#0: Option<Balance<T>>)
+	16: Call option::destroy_none<Balance<T>>(Option<Balance<T>>)
+	17: MoveLoc[4](name#1#0: String)
+	18: MoveLoc[3](amount#1#0: u64)
+	19: MoveLoc[6](sender#1#0: address)
+	20: MoveLoc[5](recipient#1#0: Option<address>)
+	21: Ret
+}
+
+public confirm_with_treasury_cap<T>(treasury_cap#0#0: &mut TreasuryCap<T>, request#0#0: ActionRequest<T>, _ctx#0#0: &mut TxContext): String * u64 * address * Option<address> {
+L3:	amount#1#0: u64
+L4:	name#1#0: String
+L5:	recipient#1#0: Option<address>
+L6:	sender#1#0: address
+L7:	spent_balance#1#0: Option<Balance<T>>
+B0:
+	0: MoveLoc[1](request#0#0: ActionRequest<T>)
+	1: UnpackGeneric[4](ActionRequest<T>)
+	2: Pop
+	3: StLoc[7](spent_balance#1#0: Option<Balance<T>>)
+	4: StLoc[5](recipient#1#0: Option<address>)
+	5: StLoc[6](sender#1#0: address)
+	6: StLoc[3](amount#1#0: u64)
+	7: StLoc[4](name#1#0: String)
+	8: ImmBorrowLoc[7](spent_balance#1#0: Option<Balance<T>>)
+	9: Call option::is_some<Balance<T>>(&Option<Balance<T>>): bool
+	10: BrFalse(18)
+B1:
+	11: MoveLoc[0](treasury_cap#0#0: &mut TreasuryCap<T>)
+	12: Call coin::supply_mut<T>(&mut TreasuryCap<T>): &mut Supply<T>
+	13: MoveLoc[7](spent_balance#1#0: Option<Balance<T>>)
+	14: Call option::destroy_some<Balance<T>>(Option<Balance<T>>): Balance<T>
+	15: Call balance::decrease_supply<T>(&mut Supply<T>, Balance<T>): u64
+	16: Pop
+	17: Branch(22)
+B2:
+	18: MoveLoc[0](treasury_cap#0#0: &mut TreasuryCap<T>)
+	19: Pop
+	20: MoveLoc[7](spent_balance#1#0: Option<Balance<T>>)
+	21: Call option::destroy_none<Balance<T>>(Option<Balance<T>>)
+B3:
+	22: MoveLoc[4](name#1#0: String)
+	23: MoveLoc[3](amount#1#0: u64)
+	24: MoveLoc[6](sender#1#0: address)
+	25: MoveLoc[5](recipient#1#0: Option<address>)
+	26: Ret
+}
+
+public add_approval<T, W: drop>(_t#0#0: W, request#0#0: &mut ActionRequest<T>, _ctx#0#0: &mut TxContext) {
+B0:
+	0: MoveLoc[1](request#0#0: &mut ActionRequest<T>)
+	1: MutBorrowFieldGeneric[5](ActionRequest.approvals: VecSet<TypeName>)
+	2: Call type_name::with_defining_ids<W>(): TypeName
+	3: Call vec_set::insert<TypeName>(&mut VecSet<TypeName>, TypeName)
+	4: Ret
+}
+
+public add_rule_config<T, Rule: drop, Config: store>(_rule#0#0: Rule, self#0#0: &mut TokenPolicy<T>, cap#0#0: &TokenPolicyCap<T>, config#0#0: Config, _ctx#0#0: &mut TxContext) {
+B0:
+	0: CopyLoc[1](self#0#0: &mut TokenPolicy<T>)
+	1: FreezeRef
+	2: Call object::id<TokenPolicy<T>>(&TokenPolicy<T>): ID
+	3: MoveLoc[2](cap#0#0: &TokenPolicyCap<T>)
+	4: ImmBorrowFieldGeneric[6](TokenPolicyCap.for: ID)
+	5: ReadRef
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[1](self#0#0: &mut TokenPolicy<T>)
+	10: Pop
+	11: LdConst[2](u64: 2)
+	12: Abort
+B3:
+	13: MoveLoc[1](self#0#0: &mut TokenPolicy<T>)
+	14: MutBorrowFieldGeneric[7](TokenPolicy.id: UID)
+	15: Call key<Rule>(): RuleKey<Rule>
+	16: MoveLoc[3](config#0#0: Config)
+	17: Call dynamic_field::add<RuleKey<Rule>, Config>(&mut UID, RuleKey<Rule>, Config)
+	18: Ret
+}
+
+public rule_config<T, Rule: drop, Config: store>(_rule#0#0: Rule, self#0#0: &TokenPolicy<T>): &Config {
+B0:
+	0: CopyLoc[1](self#0#0: &TokenPolicy<T>)
+	1: Call has_rule_config_with_type<T, Rule, Config>(&TokenPolicy<T>): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(8)
+B2:
+	4: MoveLoc[1](self#0#0: &TokenPolicy<T>)
+	5: Pop
+	6: LdConst[6](u64: 6)
+	7: Abort
+B3:
+	8: MoveLoc[1](self#0#0: &TokenPolicy<T>)
+	9: ImmBorrowFieldGeneric[7](TokenPolicy.id: UID)
+	10: Call key<Rule>(): RuleKey<Rule>
+	11: Call dynamic_field::borrow<RuleKey<Rule>, Config>(&UID, RuleKey<Rule>): &Config
+	12: Ret
+}
+
+public rule_config_mut<T, Rule: drop, Config: store>(_rule#0#0: Rule, self#0#0: &mut TokenPolicy<T>, cap#0#0: &TokenPolicyCap<T>): &mut Config {
+B0:
+	0: CopyLoc[1](self#0#0: &mut TokenPolicy<T>)
+	1: FreezeRef
+	2: Call has_rule_config_with_type<T, Rule, Config>(&TokenPolicy<T>): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(11)
+B2:
+	5: MoveLoc[1](self#0#0: &mut TokenPolicy<T>)
+	6: Pop
+	7: MoveLoc[2](cap#0#0: &TokenPolicyCap<T>)
+	8: Pop
+	9: LdConst[6](u64: 6)
+	10: Abort
+B3:
+	11: CopyLoc[1](self#0#0: &mut TokenPolicy<T>)
+	12: FreezeRef
+	13: Call object::id<TokenPolicy<T>>(&TokenPolicy<T>): ID
+	14: MoveLoc[2](cap#0#0: &TokenPolicyCap<T>)
+	15: ImmBorrowFieldGeneric[6](TokenPolicyCap.for: ID)
+	16: ReadRef
+	17: Eq
+	18: BrFalse(20)
+B4:
+	19: Branch(24)
+B5:
+	20: MoveLoc[1](self#0#0: &mut TokenPolicy<T>)
+	21: Pop
+	22: LdConst[2](u64: 2)
+	23: Abort
+B6:
+	24: MoveLoc[1](self#0#0: &mut TokenPolicy<T>)
+	25: MutBorrowFieldGeneric[7](TokenPolicy.id: UID)
+	26: Call key<Rule>(): RuleKey<Rule>
+	27: Call dynamic_field::borrow_mut<RuleKey<Rule>, Config>(&mut UID, RuleKey<Rule>): &mut Config
+	28: Ret
+}
+
+public remove_rule_config<T, Rule, Config: store>(self#0#0: &mut TokenPolicy<T>, cap#0#0: &TokenPolicyCap<T>, _ctx#0#0: &mut TxContext): Config {
+B0:
+	0: CopyLoc[0](self#0#0: &mut TokenPolicy<T>)
+	1: FreezeRef
+	2: Call has_rule_config_with_type<T, Rule, Config>(&TokenPolicy<T>): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(11)
+B2:
+	5: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	6: Pop
+	7: MoveLoc[1](cap#0#0: &TokenPolicyCap<T>)
+	8: Pop
+	9: LdConst[6](u64: 6)
+	10: Abort
+B3:
+	11: CopyLoc[0](self#0#0: &mut TokenPolicy<T>)
+	12: FreezeRef
+	13: Call object::id<TokenPolicy<T>>(&TokenPolicy<T>): ID
+	14: MoveLoc[1](cap#0#0: &TokenPolicyCap<T>)
+	15: ImmBorrowFieldGeneric[6](TokenPolicyCap.for: ID)
+	16: ReadRef
+	17: Eq
+	18: BrFalse(20)
+B4:
+	19: Branch(24)
+B5:
+	20: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	21: Pop
+	22: LdConst[2](u64: 2)
+	23: Abort
+B6:
+	24: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	25: MutBorrowFieldGeneric[7](TokenPolicy.id: UID)
+	26: Call key<Rule>(): RuleKey<Rule>
+	27: Call dynamic_field::remove<RuleKey<Rule>, Config>(&mut UID, RuleKey<Rule>): Config
+	28: Ret
+}
+
+public has_rule_config<T, Rule>(self#0#0: &TokenPolicy<T>): bool {
+B0:
+	0: MoveLoc[0](self#0#0: &TokenPolicy<T>)
+	1: ImmBorrowFieldGeneric[7](TokenPolicy.id: UID)
+	2: Call key<Rule>(): RuleKey<Rule>
+	3: Call dynamic_field::exists_<RuleKey<Rule>>(&UID, RuleKey<Rule>): bool
+	4: Ret
+}
+
+public has_rule_config_with_type<T, Rule, Config: store>(self#0#0: &TokenPolicy<T>): bool {
+B0:
+	0: MoveLoc[0](self#0#0: &TokenPolicy<T>)
+	1: ImmBorrowFieldGeneric[7](TokenPolicy.id: UID)
+	2: Call key<Rule>(): RuleKey<Rule>
+	3: Call dynamic_field::exists_with_type<RuleKey<Rule>, Config>(&UID, RuleKey<Rule>): bool
+	4: Ret
+}
+
+public allow<T>(self#0#0: &mut TokenPolicy<T>, cap#0#0: &TokenPolicyCap<T>, action#0#0: String, _ctx#0#0: &mut TxContext) {
+B0:
+	0: CopyLoc[0](self#0#0: &mut TokenPolicy<T>)
+	1: FreezeRef
+	2: Call object::id<TokenPolicy<T>>(&TokenPolicy<T>): ID
+	3: MoveLoc[1](cap#0#0: &TokenPolicyCap<T>)
+	4: ImmBorrowFieldGeneric[6](TokenPolicyCap.for: ID)
+	5: ReadRef
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	10: Pop
+	11: LdConst[2](u64: 2)
+	12: Abort
+B3:
+	13: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	14: MutBorrowFieldGeneric[2](TokenPolicy.rules: VecMap<String, VecSet<TypeName>>)
+	15: MoveLoc[2](action#0#0: String)
+	16: Call vec_set::empty<TypeName>(): VecSet<TypeName>
+	17: Call vec_map::insert<String, VecSet<TypeName>>(&mut VecMap<String, VecSet<TypeName>>, String, VecSet<TypeName>)
+	18: Ret
+}
+
+public disallow<T>(self#0#0: &mut TokenPolicy<T>, cap#0#0: &TokenPolicyCap<T>, action#0#0: String, _ctx#0#0: &mut TxContext) {
+B0:
+	0: CopyLoc[0](self#0#0: &mut TokenPolicy<T>)
+	1: FreezeRef
+	2: Call object::id<TokenPolicy<T>>(&TokenPolicy<T>): ID
+	3: MoveLoc[1](cap#0#0: &TokenPolicyCap<T>)
+	4: ImmBorrowFieldGeneric[6](TokenPolicyCap.for: ID)
+	5: ReadRef
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	10: Pop
+	11: LdConst[2](u64: 2)
+	12: Abort
+B3:
+	13: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	14: MutBorrowFieldGeneric[2](TokenPolicy.rules: VecMap<String, VecSet<TypeName>>)
+	15: ImmBorrowLoc[2](action#0#0: String)
+	16: Call vec_map::remove<String, VecSet<TypeName>>(&mut VecMap<String, VecSet<TypeName>>, &String): String * VecSet<TypeName>
+	17: Pop
+	18: Pop
+	19: Ret
+}
+
+public add_rule_for_action<T, Rule: drop>(self#0#0: &mut TokenPolicy<T>, cap#0#0: &TokenPolicyCap<T>, action#0#0: String, ctx#0#0: &mut TxContext) {
+B0:
+	0: CopyLoc[0](self#0#0: &mut TokenPolicy<T>)
+	1: FreezeRef
+	2: Call object::id<TokenPolicy<T>>(&TokenPolicy<T>): ID
+	3: CopyLoc[1](cap#0#0: &TokenPolicyCap<T>)
+	4: ImmBorrowFieldGeneric[6](TokenPolicyCap.for: ID)
+	5: ReadRef
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(17)
+B2:
+	9: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	10: Pop
+	11: MoveLoc[3](ctx#0#0: &mut TxContext)
+	12: Pop
+	13: MoveLoc[1](cap#0#0: &TokenPolicyCap<T>)
+	14: Pop
+	15: LdConst[2](u64: 2)
+	16: Abort
+B3:
+	17: CopyLoc[0](self#0#0: &mut TokenPolicy<T>)
+	18: ImmBorrowFieldGeneric[2](TokenPolicy.rules: VecMap<String, VecSet<TypeName>>)
+	19: ImmBorrowLoc[2](action#0#0: String)
+	20: Call vec_map::contains<String, VecSet<TypeName>>(&VecMap<String, VecSet<TypeName>>, &String): bool
+	21: Not
+	22: BrFalse(29)
+B4:
+	23: CopyLoc[0](self#0#0: &mut TokenPolicy<T>)
+	24: MoveLoc[1](cap#0#0: &TokenPolicyCap<T>)
+	25: CopyLoc[2](action#0#0: String)
+	26: MoveLoc[3](ctx#0#0: &mut TxContext)
+	27: Call allow<T>(&mut TokenPolicy<T>, &TokenPolicyCap<T>, String, &mut TxContext)
+	28: Branch(33)
+B5:
+	29: MoveLoc[3](ctx#0#0: &mut TxContext)
+	30: Pop
+	31: MoveLoc[1](cap#0#0: &TokenPolicyCap<T>)
+	32: Pop
+B6:
+	33: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	34: MutBorrowFieldGeneric[2](TokenPolicy.rules: VecMap<String, VecSet<TypeName>>)
+	35: ImmBorrowLoc[2](action#0#0: String)
+	36: Call vec_map::get_mut<String, VecSet<TypeName>>(&mut VecMap<String, VecSet<TypeName>>, &String): &mut VecSet<TypeName>
+	37: Call type_name::with_defining_ids<Rule>(): TypeName
+	38: Call vec_set::insert<TypeName>(&mut VecSet<TypeName>, TypeName)
+	39: Ret
+}
+
+public remove_rule_for_action<T, Rule: drop>(self#0#0: &mut TokenPolicy<T>, cap#0#0: &TokenPolicyCap<T>, action#0#0: String, _ctx#0#0: &mut TxContext) {
+L4:	%#1: TypeName
+L5:	%#2: &mut VecSet<TypeName>
+B0:
+	0: CopyLoc[0](self#0#0: &mut TokenPolicy<T>)
+	1: FreezeRef
+	2: Call object::id<TokenPolicy<T>>(&TokenPolicy<T>): ID
+	3: MoveLoc[1](cap#0#0: &TokenPolicyCap<T>)
+	4: ImmBorrowFieldGeneric[6](TokenPolicyCap.for: ID)
+	5: ReadRef
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	10: Pop
+	11: LdConst[2](u64: 2)
+	12: Abort
+B3:
+	13: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	14: MutBorrowFieldGeneric[2](TokenPolicy.rules: VecMap<String, VecSet<TypeName>>)
+	15: ImmBorrowLoc[2](action#0#0: String)
+	16: Call vec_map::get_mut<String, VecSet<TypeName>>(&mut VecMap<String, VecSet<TypeName>>, &String): &mut VecSet<TypeName>
+	17: StLoc[5](%#2: &mut VecSet<TypeName>)
+	18: Call type_name::with_defining_ids<Rule>(): TypeName
+	19: StLoc[4](%#1: TypeName)
+	20: MoveLoc[5](%#2: &mut VecSet<TypeName>)
+	21: ImmBorrowLoc[4](%#1: TypeName)
+	22: Call vec_set::remove<TypeName>(&mut VecSet<TypeName>, &TypeName)
+	23: Ret
+}
+
+public mint<T>(cap#0#0: &mut TreasuryCap<T>, amount#0#0: u64, ctx#0#0: &mut TxContext): Token<T> {
+L3:	balance#1#0: Balance<T>
+B0:
+	0: MoveLoc[0](cap#0#0: &mut TreasuryCap<T>)
+	1: Call coin::supply_mut<T>(&mut TreasuryCap<T>): &mut Supply<T>
+	2: MoveLoc[1](amount#0#0: u64)
+	3: Call balance::increase_supply<T>(&mut Supply<T>, u64): Balance<T>
+	4: StLoc[3](balance#1#0: Balance<T>)
+	5: MoveLoc[2](ctx#0#0: &mut TxContext)
+	6: Call object::new(&mut TxContext): UID
+	7: MoveLoc[3](balance#1#0: Balance<T>)
+	8: PackGeneric[3](Token<T>)
+	9: Ret
+}
+
+public burn<T>(cap#0#0: &mut TreasuryCap<T>, token#0#0: Token<T>) {
+L2:	balance#1#0: Balance<T>
+L3:	id#1#0: UID
+B0:
+	0: MoveLoc[1](token#0#0: Token<T>)
+	1: UnpackGeneric[3](Token<T>)
+	2: StLoc[2](balance#1#0: Balance<T>)
+	3: StLoc[3](id#1#0: UID)
+	4: MoveLoc[0](cap#0#0: &mut TreasuryCap<T>)
+	5: Call coin::supply_mut<T>(&mut TreasuryCap<T>): &mut Supply<T>
+	6: MoveLoc[2](balance#1#0: Balance<T>)
+	7: Call balance::decrease_supply<T>(&mut Supply<T>, Balance<T>): u64
+	8: Pop
+	9: MoveLoc[3](id#1#0: UID)
+	10: Call object::delete(UID)
+	11: Ret
+}
+
+public flush<T>(self#0#0: &mut TokenPolicy<T>, cap#0#0: &mut TreasuryCap<T>, _ctx#0#0: &mut TxContext): u64 {
+L3:	amount#1#0: u64
+L4:	balance#1#0: Balance<T>
+B0:
+	0: CopyLoc[0](self#0#0: &mut TokenPolicy<T>)
+	1: ImmBorrowFieldGeneric[4](TokenPolicy.spent_balance: Balance<T>)
+	2: Call balance::value<T>(&Balance<T>): u64
+	3: StLoc[3](amount#1#0: u64)
+	4: MoveLoc[0](self#0#0: &mut TokenPolicy<T>)
+	5: MutBorrowFieldGeneric[4](TokenPolicy.spent_balance: Balance<T>)
+	6: MoveLoc[3](amount#1#0: u64)
+	7: Call balance::split<T>(&mut Balance<T>, u64): Balance<T>
+	8: StLoc[4](balance#1#0: Balance<T>)
+	9: MoveLoc[1](cap#0#0: &mut TreasuryCap<T>)
+	10: Call coin::supply_mut<T>(&mut TreasuryCap<T>): &mut Supply<T>
+	11: MoveLoc[4](balance#1#0: Balance<T>)
+	12: Call balance::decrease_supply<T>(&mut Supply<T>, Balance<T>): u64
+	13: Ret
+}
+
+public is_allowed<T>(self#0#0: &TokenPolicy<T>, action#0#0: &String): bool {
+B0:
+	0: MoveLoc[0](self#0#0: &TokenPolicy<T>)
+	1: ImmBorrowFieldGeneric[2](TokenPolicy.rules: VecMap<String, VecSet<TypeName>>)
+	2: MoveLoc[1](action#0#0: &String)
+	3: Call vec_map::contains<String, VecSet<TypeName>>(&VecMap<String, VecSet<TypeName>>, &String): bool
+	4: Ret
+}
+
+public rules<T>(self#0#0: &TokenPolicy<T>, action#0#0: &String): VecSet<TypeName> {
+B0:
+	0: MoveLoc[0](self#0#0: &TokenPolicy<T>)
+	1: ImmBorrowFieldGeneric[2](TokenPolicy.rules: VecMap<String, VecSet<TypeName>>)
+	2: MoveLoc[1](action#0#0: &String)
+	3: Call vec_map::get<String, VecSet<TypeName>>(&VecMap<String, VecSet<TypeName>>, &String): &VecSet<TypeName>
+	4: ReadRef
+	5: Ret
+}
+
+public spent_balance<T>(self#0#0: &TokenPolicy<T>): u64 {
+B0:
+	0: MoveLoc[0](self#0#0: &TokenPolicy<T>)
+	1: ImmBorrowFieldGeneric[4](TokenPolicy.spent_balance: Balance<T>)
+	2: Call balance::value<T>(&Balance<T>): u64
+	3: Ret
+}
+
+public value<T>(t#0#0: &Token<T>): u64 {
+B0:
+	0: MoveLoc[0](t#0#0: &Token<T>)
+	1: ImmBorrowFieldGeneric[0](Token.balance: Balance<T>)
+	2: Call balance::value<T>(&Balance<T>): u64
+	3: Ret
+}
+
+public transfer_action(): String {
+B0:
+	0: LdConst[9](vector<u8>: "tra..)
+	1: Call string::utf8(vector<u8>): String
+	2: Ret
+}
+
+public spend_action(): String {
+B0:
+	0: LdConst[8](vector<u8>: "spe..)
+	1: Call string::utf8(vector<u8>): String
+	2: Ret
+}
+
+public to_coin_action(): String {
+B0:
+	0: LdConst[10](vector<u8>: "to_..)
+	1: Call string::utf8(vector<u8>): String
+	2: Ret
+}
+
+public from_coin_action(): String {
+B0:
+	0: LdConst[11](vector<u8>: "fro..)
+	1: Call string::utf8(vector<u8>): String
+	2: Ret
+}
+
+public action<T>(self#0#0: &ActionRequest<T>): String {
+B0:
+	0: MoveLoc[0](self#0#0: &ActionRequest<T>)
+	1: ImmBorrowFieldGeneric[3](ActionRequest.name: String)
+	2: ReadRef
+	3: Ret
+}
+
+public amount<T>(self#0#0: &ActionRequest<T>): u64 {
+B0:
+	0: MoveLoc[0](self#0#0: &ActionRequest<T>)
+	1: ImmBorrowFieldGeneric[8](ActionRequest.amount: u64)
+	2: ReadRef
+	3: Ret
+}
+
+public sender<T>(self#0#0: &ActionRequest<T>): address {
+B0:
+	0: MoveLoc[0](self#0#0: &ActionRequest<T>)
+	1: ImmBorrowFieldGeneric[9](ActionRequest.sender: address)
+	2: ReadRef
+	3: Ret
+}
+
+public recipient<T>(self#0#0: &ActionRequest<T>): Option<address> {
+B0:
+	0: MoveLoc[0](self#0#0: &ActionRequest<T>)
+	1: ImmBorrowFieldGeneric[10](ActionRequest.recipient: Option<address>)
+	2: ReadRef
+	3: Ret
+}
+
+public approvals<T>(self#0#0: &ActionRequest<T>): VecSet<TypeName> {
+B0:
+	0: MoveLoc[0](self#0#0: &ActionRequest<T>)
+	1: ImmBorrowFieldGeneric[5](ActionRequest.approvals: VecSet<TypeName>)
+	2: ReadRef
+	3: Ret
+}
+
+public spent<T>(self#0#0: &ActionRequest<T>): Option<u64> {
+L1:	%#1: Option<u64>
+B0:
+	0: CopyLoc[0](self#0#0: &ActionRequest<T>)
+	1: ImmBorrowFieldGeneric[1](ActionRequest.spent_balance: Option<Balance<T>>)
+	2: Call option::is_some<Balance<T>>(&Option<Balance<T>>): bool
+	3: BrFalse(11)
+B1:
+	4: MoveLoc[0](self#0#0: &ActionRequest<T>)
+	5: ImmBorrowFieldGeneric[1](ActionRequest.spent_balance: Option<Balance<T>>)
+	6: Call option::borrow<Balance<T>>(&Option<Balance<T>>): &Balance<T>
+	7: Call balance::value<T>(&Balance<T>): u64
+	8: Call option::some<u64>(u64): Option<u64>
+	9: StLoc[1](%#1: Option<u64>)
+	10: Branch(15)
+B2:
+	11: MoveLoc[0](self#0#0: &ActionRequest<T>)
+	12: Pop
+	13: Call option::none<u64>(): Option<u64>
+	14: StLoc[1](%#1: Option<u64>)
+B3:
+	15: MoveLoc[1](%#1: Option<u64>)
+	16: Ret
+}
+
+key<Rule>(): RuleKey<Rule> {
+B0:
+	0: LdTrue
+	1: PackGeneric[5](RuleKey<Rule>)
+	2: Ret
+}
+
+public new_policy_for_testing<T>(ctx#0#0: &mut TxContext): TokenPolicy<T> * TokenPolicyCap<T> {
+L1:	%#1: UID
+L2:	%#2: VecMap<String, VecSet<TypeName>>
+L3:	%#3: Balance<T>
+L4:	cap#1#0: TokenPolicyCap<T>
+L5:	policy#1#0: TokenPolicy<T>
+B0:
+	0: CopyLoc[0](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: StLoc[1](%#1: UID)
+	3: Call vec_map::empty<String, VecSet<TypeName>>(): VecMap<String, VecSet<TypeName>>
+	4: StLoc[2](%#2: VecMap<String, VecSet<TypeName>>)
+	5: Call balance::zero<T>(): Balance<T>
+	6: StLoc[3](%#3: Balance<T>)
+	7: MoveLoc[1](%#1: UID)
+	8: MoveLoc[3](%#3: Balance<T>)
+	9: MoveLoc[2](%#2: VecMap<String, VecSet<TypeName>>)
+	10: PackGeneric[0](TokenPolicy<T>)
+	11: StLoc[5](policy#1#0: TokenPolicy<T>)
+	12: MoveLoc[0](ctx#0#0: &mut TxContext)
+	13: Call object::new(&mut TxContext): UID
+	14: ImmBorrowLoc[5](policy#1#0: TokenPolicy<T>)
+	15: Call object::id<TokenPolicy<T>>(&TokenPolicy<T>): ID
+	16: PackGeneric[1](TokenPolicyCap<T>)
+	17: StLoc[4](cap#1#0: TokenPolicyCap<T>)
+	18: MoveLoc[5](policy#1#0: TokenPolicy<T>)
+	19: MoveLoc[4](cap#1#0: TokenPolicyCap<T>)
+	20: Ret
+}
+
+public burn_policy_for_testing<T>(policy#0#0: TokenPolicy<T>, cap#0#0: TokenPolicyCap<T>) {
+L2:	cap_id#1#0: UID
+L3:	id#1#0: UID
+L4:	spent_balance#1#0: Balance<T>
+B0:
+	0: MoveLoc[1](cap#0#0: TokenPolicyCap<T>)
+	1: UnpackGeneric[1](TokenPolicyCap<T>)
+	2: Pop
+	3: StLoc[2](cap_id#1#0: UID)
+	4: MoveLoc[0](policy#0#0: TokenPolicy<T>)
+	5: UnpackGeneric[0](TokenPolicy<T>)
+	6: Pop
+	7: StLoc[4](spent_balance#1#0: Balance<T>)
+	8: StLoc[3](id#1#0: UID)
+	9: MoveLoc[4](spent_balance#1#0: Balance<T>)
+	10: Call balance::destroy_for_testing<T>(Balance<T>): u64
+	11: Pop
+	12: MoveLoc[2](cap_id#1#0: UID)
+	13: Call object::delete(UID)
+	14: MoveLoc[3](id#1#0: UID)
+	15: Call object::delete(UID)
+	16: Ret
+}
+
+public mint_for_testing<T>(amount#0#0: u64, ctx#0#0: &mut TxContext): Token<T> {
+L2:	balance#1#0: Balance<T>
+B0:
+	0: MoveLoc[0](amount#0#0: u64)
+	1: Call balance::create_for_testing<T>(u64): Balance<T>
+	2: StLoc[2](balance#1#0: Balance<T>)
+	3: MoveLoc[1](ctx#0#0: &mut TxContext)
+	4: Call object::new(&mut TxContext): UID
+	5: MoveLoc[2](balance#1#0: Balance<T>)
+	6: PackGeneric[3](Token<T>)
+	7: Ret
+}
+
+public burn_for_testing<T>(token#0#0: Token<T>) {
+L1:	balance#1#0: Balance<T>
+L2:	id#1#0: UID
+B0:
+	0: MoveLoc[0](token#0#0: Token<T>)
+	1: UnpackGeneric[3](Token<T>)
+	2: StLoc[1](balance#1#0: Balance<T>)
+	3: StLoc[2](id#1#0: UID)
+	4: MoveLoc[1](balance#1#0: Balance<T>)
+	5: Call balance::destroy_for_testing<T>(Balance<T>): u64
+	6: Pop
+	7: MoveLoc[2](id#1#0: UID)
+	8: Call object::delete(UID)
+	9: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => u64: 3
+	4 => u64: 4
+	5 => u64: 5
+	6 => u64: 6
+	7 => u64: 7
+	8 => vector<u8>: "spend" // interpreted as UTF8 string
+	9 => vector<u8>: "transfer" // interpreted as UTF8 string
+	10 => vector<u8>: "to_coin" // interpreted as UTF8 string
+	11 => vector<u8>: "from_coin" // interpreted as UTF8 string
+]
+}

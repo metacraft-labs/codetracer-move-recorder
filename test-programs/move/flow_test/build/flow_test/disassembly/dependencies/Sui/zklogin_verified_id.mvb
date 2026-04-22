@@ -1,0 +1,89 @@
+// Move bytecode v6
+module 2.zklogin_verified_id {
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct VerifiedID has key {
+	id: UID,
+	owner: address,
+	key_claim_name: String,
+	key_claim_value: String,
+	issuer: String,
+	audience: String
+}
+
+public owner(verified_id#0#0: &VerifiedID): address {
+B0:
+	0: MoveLoc[0](verified_id#0#0: &VerifiedID)
+	1: ImmBorrowField[0](VerifiedID.owner: address)
+	2: ReadRef
+	3: Ret
+}
+
+public key_claim_name(verified_id#0#0: &VerifiedID): &String {
+B0:
+	0: MoveLoc[0](verified_id#0#0: &VerifiedID)
+	1: ImmBorrowField[1](VerifiedID.key_claim_name: String)
+	2: Ret
+}
+
+public key_claim_value(verified_id#0#0: &VerifiedID): &String {
+B0:
+	0: MoveLoc[0](verified_id#0#0: &VerifiedID)
+	1: ImmBorrowField[2](VerifiedID.key_claim_value: String)
+	2: Ret
+}
+
+public issuer(verified_id#0#0: &VerifiedID): &String {
+B0:
+	0: MoveLoc[0](verified_id#0#0: &VerifiedID)
+	1: ImmBorrowField[3](VerifiedID.issuer: String)
+	2: Ret
+}
+
+public audience(verified_id#0#0: &VerifiedID): &String {
+B0:
+	0: MoveLoc[0](verified_id#0#0: &VerifiedID)
+	1: ImmBorrowField[4](VerifiedID.audience: String)
+	2: Ret
+}
+
+public delete(verified_id#0#0: VerifiedID) {
+B0:
+	0: MoveLoc[0](verified_id#0#0: VerifiedID)
+	1: Unpack[0](VerifiedID)
+	2: Pop
+	3: Pop
+	4: Pop
+	5: Pop
+	6: Pop
+	7: Call object::delete(UID)
+	8: Ret
+}
+
+public verify_zklogin_id(_key_claim_name#0#0: String, _key_claim_value#0#0: String, _issuer#0#0: String, _audience#0#0: String, _pin_hash#0#0: u256, _ctx#0#0: &mut TxContext) {
+B0:
+	0: LdConst[0](u64: 0)
+	1: Abort
+}
+
+public check_zklogin_id(_address#0#0: address, _key_claim_name#0#0: &String, _key_claim_value#0#0: &String, _issuer#0#0: &String, _audience#0#0: &String, _pin_hash#0#0: u256): bool {
+B0:
+	0: LdConst[0](u64: 0)
+	1: Abort
+}
+
+native check_zklogin_id_internal(address#0#0: address, key_claim_name#0#0: &vector<u8>, key_claim_value#0#0: &vector<u8>, issuer#0#0: &vector<u8>, audience#0#0: &vector<u8>, pin_hash#0#0: u256): bool;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+]
+}

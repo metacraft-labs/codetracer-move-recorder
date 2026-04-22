@@ -1,0 +1,78 @@
+// Move bytecode v6
+module 2.prover_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+
+struct Obj has store, key {
+	id: UID
+}
+
+public simple_transfer(o#0#0: Obj, recipient#0#0: address) {
+B0:
+	0: MoveLoc[0](o#0#0: Obj)
+	1: MoveLoc[1](recipient#0#0: address)
+	2: Call transfer::public_transfer<Obj>(Obj, address)
+	3: Ret
+}
+
+public simple_share(o#0#0: Obj) {
+B0:
+	0: MoveLoc[0](o#0#0: Obj)
+	1: Call transfer::public_share_object<Obj>(Obj)
+	2: Ret
+}
+
+public simple_freeze(o#0#0: Obj) {
+B0:
+	0: MoveLoc[0](o#0#0: Obj)
+	1: Call transfer::public_freeze_object<Obj>(Obj)
+	2: Ret
+}
+
+public simple_delete(o#0#0: Obj) {
+B0:
+	0: MoveLoc[0](o#0#0: Obj)
+	1: Unpack[0](Obj)
+	2: Call object::delete(UID)
+	3: Ret
+}
+
+public simple_field_add(o#0#0: &mut Obj, n1#0#0: u64, v1#0#0: u8, n2#0#0: u8, v2#0#0: u64) {
+B0:
+	0: CopyLoc[0](o#0#0: &mut Obj)
+	1: MutBorrowField[0](Obj.id: UID)
+	2: MoveLoc[1](n1#0#0: u64)
+	3: MoveLoc[2](v1#0#0: u8)
+	4: Call dynamic_field::add<u64, u8>(&mut UID, u64, u8)
+	5: MoveLoc[0](o#0#0: &mut Obj)
+	6: MutBorrowField[0](Obj.id: UID)
+	7: MoveLoc[3](n2#0#0: u8)
+	8: MoveLoc[4](v2#0#0: u64)
+	9: Call dynamic_field::add<u8, u64>(&mut UID, u8, u64)
+	10: Ret
+}
+
+public simple_field_remove(o#0#0: &mut Obj, n1#0#0: u64, n2#0#0: u8) {
+B0:
+	0: CopyLoc[0](o#0#0: &mut Obj)
+	1: MutBorrowField[0](Obj.id: UID)
+	2: MoveLoc[1](n1#0#0: u64)
+	3: Call dynamic_field::remove<u64, u8>(&mut UID, u64): u8
+	4: Pop
+	5: MoveLoc[0](o#0#0: &mut Obj)
+	6: MutBorrowField[0](Obj.id: UID)
+	7: MoveLoc[2](n2#0#0: u8)
+	8: Call dynamic_field::remove<u8, u64>(&mut UID, u8): u64
+	9: Pop
+	10: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

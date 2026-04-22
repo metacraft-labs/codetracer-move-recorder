@@ -1,0 +1,73 @@
+// Move bytecode v6
+module 2.item_locked_policy {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::kiosk;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+
+struct Rule has drop {
+	dummy_field: bool
+}
+
+public set<T>(policy#0#0: &mut TransferPolicy<T>, cap#0#0: &TransferPolicyCap<T>) {
+B0:
+	0: LdFalse
+	1: Pack[0](Rule)
+	2: MoveLoc[0](policy#0#0: &mut TransferPolicy<T>)
+	3: MoveLoc[1](cap#0#0: &TransferPolicyCap<T>)
+	4: LdTrue
+	5: Call transfer_policy::add_rule<T, Rule, bool>(Rule, &mut TransferPolicy<T>, &TransferPolicyCap<T>, bool)
+	6: Ret
+}
+
+public prove<T>(request#0#0: &mut TransferRequest<T>, kiosk#0#0: &Kiosk) {
+L2:	%#1: bool
+L3:	item#1#0: ID
+B0:
+	0: CopyLoc[0](request#0#0: &mut TransferRequest<T>)
+	1: FreezeRef
+	2: Call transfer_policy::item<T>(&TransferRequest<T>): ID
+	3: StLoc[3](item#1#0: ID)
+	4: CopyLoc[1](kiosk#0#0: &Kiosk)
+	5: CopyLoc[3](item#1#0: ID)
+	6: Call kiosk::has_item(&Kiosk, ID): bool
+	7: BrFalse(13)
+B1:
+	8: MoveLoc[1](kiosk#0#0: &Kiosk)
+	9: MoveLoc[3](item#1#0: ID)
+	10: Call kiosk::is_locked(&Kiosk, ID): bool
+	11: StLoc[2](%#1: bool)
+	12: Branch(17)
+B2:
+	13: MoveLoc[1](kiosk#0#0: &Kiosk)
+	14: Pop
+	15: LdFalse
+	16: StLoc[2](%#1: bool)
+B3:
+	17: MoveLoc[2](%#1: bool)
+	18: BrFalse(20)
+B4:
+	19: Branch(24)
+B5:
+	20: MoveLoc[0](request#0#0: &mut TransferRequest<T>)
+	21: Pop
+	22: LdConst[0](u64: 0)
+	23: Abort
+B6:
+	24: LdFalse
+	25: Pack[0](Rule)
+	26: MoveLoc[0](request#0#0: &mut TransferRequest<T>)
+	27: Call transfer_policy::add_receipt<T, Rule>(Rule, &mut TransferRequest<T>)
+	28: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+]
+}

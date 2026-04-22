@@ -1,0 +1,266 @@
+// Move bytecode v6
+module 2.table_vec_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::table_vec;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+simple_all_functions() {
+L0:	mut_value#1#0: &mut u64
+L1:	scenario#1#0: Scenario
+L2:	table_vec#1#0: TableVec<u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call table_vec::empty<u64>(&mut TxContext): TableVec<u64>
+	6: StLoc[2](table_vec#1#0: TableVec<u64>)
+	7: ImmBorrowLoc[2](table_vec#1#0: TableVec<u64>)
+	8: Call table_vec::length<u64>(&TableVec<u64>): u64
+	9: LdU64(0)
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834251652792319)
+	14: Abort
+B3:
+	15: MutBorrowLoc[2](table_vec#1#0: TableVec<u64>)
+	16: LdU64(7)
+	17: Call table_vec::push_back<u64>(&mut TableVec<u64>, u64)
+	18: MutBorrowLoc[2](table_vec#1#0: TableVec<u64>)
+	19: LdU64(0)
+	20: Call table_vec::borrow_mut<u64>(&mut TableVec<u64>, u64): &mut u64
+	21: StLoc[0](mut_value#1#0: &mut u64)
+	22: CopyLoc[0](mut_value#1#0: &mut u64)
+	23: ReadRef
+	24: LdU64(1)
+	25: Add
+	26: MoveLoc[0](mut_value#1#0: &mut u64)
+	27: WriteRef
+	28: ImmBorrowLoc[2](table_vec#1#0: TableVec<u64>)
+	29: LdU64(0)
+	30: Call table_vec::borrow<u64>(&TableVec<u64>, u64): &u64
+	31: ReadRef
+	32: LdU64(8)
+	33: Eq
+	34: BrFalse(36)
+B4:
+	35: Branch(38)
+B5:
+	36: LdU64(13906834277422596095)
+	37: Abort
+B6:
+	38: MutBorrowLoc[2](table_vec#1#0: TableVec<u64>)
+	39: LdU64(5)
+	40: Call table_vec::push_back<u64>(&mut TableVec<u64>, u64)
+	41: MutBorrowLoc[2](table_vec#1#0: TableVec<u64>)
+	42: LdU64(0)
+	43: LdU64(1)
+	44: Call table_vec::swap<u64>(&mut TableVec<u64>, u64, u64)
+	45: MutBorrowLoc[2](table_vec#1#0: TableVec<u64>)
+	46: LdU64(0)
+	47: Call table_vec::swap_remove<u64>(&mut TableVec<u64>, u64): u64
+	48: LdU64(5)
+	49: Eq
+	50: BrFalse(52)
+B7:
+	51: Branch(54)
+B8:
+	52: LdU64(13906834303192399871)
+	53: Abort
+B9:
+	54: MutBorrowLoc[2](table_vec#1#0: TableVec<u64>)
+	55: Call table_vec::pop_back<u64>(&mut TableVec<u64>): u64
+	56: LdU64(8)
+	57: Eq
+	58: BrFalse(60)
+B10:
+	59: Branch(62)
+B11:
+	60: LdU64(13906834316077301759)
+	61: Abort
+B12:
+	62: MoveLoc[2](table_vec#1#0: TableVec<u64>)
+	63: Call table_vec::destroy_empty<u64>(TableVec<u64>)
+	64: MoveLoc[1](scenario#1#0: Scenario)
+	65: Call test_scenario::end(Scenario): TransactionEffects
+	66: Pop
+	67: Ret
+}
+
+destroy_non_empty_aborts() {
+L0:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: LdU64(1)
+	4: MutBorrowLoc[0](scenario#1#0: Scenario)
+	5: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	6: Call table_vec::singleton<u64>(u64, &mut TxContext): TableVec<u64>
+	7: Call table_vec::destroy_empty<u64>(TableVec<u64>)
+	8: MoveLoc[0](scenario#1#0: Scenario)
+	9: Call test_scenario::end(Scenario): TransactionEffects
+	10: Pop
+	11: Ret
+}
+
+pop_back_empty_aborts() {
+L0:	scenario#1#0: Scenario
+L1:	table_vec#1#0: TableVec<u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call table_vec::empty<u64>(&mut TxContext): TableVec<u64>
+	6: StLoc[1](table_vec#1#0: TableVec<u64>)
+	7: MutBorrowLoc[1](table_vec#1#0: TableVec<u64>)
+	8: Call table_vec::pop_back<u64>(&mut TableVec<u64>): u64
+	9: Pop
+	10: MoveLoc[1](table_vec#1#0: TableVec<u64>)
+	11: Call table_vec::destroy_empty<u64>(TableVec<u64>)
+	12: MoveLoc[0](scenario#1#0: Scenario)
+	13: Call test_scenario::end(Scenario): TransactionEffects
+	14: Pop
+	15: Ret
+}
+
+borrow_out_of_bounds_aborts() {
+L0:	scenario#1#0: Scenario
+L1:	table_vec#1#0: TableVec<u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: LdU64(1)
+	4: MutBorrowLoc[0](scenario#1#0: Scenario)
+	5: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	6: Call table_vec::singleton<u64>(u64, &mut TxContext): TableVec<u64>
+	7: StLoc[1](table_vec#1#0: TableVec<u64>)
+	8: ImmBorrowLoc[1](table_vec#1#0: TableVec<u64>)
+	9: LdU64(77)
+	10: Call table_vec::borrow<u64>(&TableVec<u64>, u64): &u64
+	11: Pop
+	12: MoveLoc[1](table_vec#1#0: TableVec<u64>)
+	13: Call table_vec::destroy_empty<u64>(TableVec<u64>)
+	14: MoveLoc[0](scenario#1#0: Scenario)
+	15: Call test_scenario::end(Scenario): TransactionEffects
+	16: Pop
+	17: Ret
+}
+
+borrow_mut_out_of_bounds_aborts() {
+L0:	scenario#1#0: Scenario
+L1:	table_vec#1#0: TableVec<u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: LdU64(1)
+	4: MutBorrowLoc[0](scenario#1#0: Scenario)
+	5: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	6: Call table_vec::singleton<u64>(u64, &mut TxContext): TableVec<u64>
+	7: StLoc[1](table_vec#1#0: TableVec<u64>)
+	8: MutBorrowLoc[1](table_vec#1#0: TableVec<u64>)
+	9: LdU64(77)
+	10: Call table_vec::borrow_mut<u64>(&mut TableVec<u64>, u64): &mut u64
+	11: Pop
+	12: MoveLoc[1](table_vec#1#0: TableVec<u64>)
+	13: Call table_vec::destroy_empty<u64>(TableVec<u64>)
+	14: MoveLoc[0](scenario#1#0: Scenario)
+	15: Call test_scenario::end(Scenario): TransactionEffects
+	16: Pop
+	17: Ret
+}
+
+swap_out_of_bounds_aborts() {
+L0:	scenario#1#0: Scenario
+L1:	table_vec#1#0: TableVec<u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: LdU64(1)
+	4: MutBorrowLoc[0](scenario#1#0: Scenario)
+	5: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	6: Call table_vec::singleton<u64>(u64, &mut TxContext): TableVec<u64>
+	7: StLoc[1](table_vec#1#0: TableVec<u64>)
+	8: MutBorrowLoc[1](table_vec#1#0: TableVec<u64>)
+	9: LdU64(0)
+	10: LdU64(77)
+	11: Call table_vec::swap<u64>(&mut TableVec<u64>, u64, u64)
+	12: MoveLoc[1](table_vec#1#0: TableVec<u64>)
+	13: Call table_vec::destroy_empty<u64>(TableVec<u64>)
+	14: MoveLoc[0](scenario#1#0: Scenario)
+	15: Call test_scenario::end(Scenario): TransactionEffects
+	16: Pop
+	17: Ret
+}
+
+swap_same_index_succeeds() {
+L0:	scenario#1#0: Scenario
+L1:	table_vec#1#0: TableVec<u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: LdU64(1)
+	4: MutBorrowLoc[0](scenario#1#0: Scenario)
+	5: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	6: Call table_vec::singleton<u64>(u64, &mut TxContext): TableVec<u64>
+	7: StLoc[1](table_vec#1#0: TableVec<u64>)
+	8: MutBorrowLoc[1](table_vec#1#0: TableVec<u64>)
+	9: LdU64(0)
+	10: LdU64(0)
+	11: Call table_vec::swap<u64>(&mut TableVec<u64>, u64, u64)
+	12: MutBorrowLoc[1](table_vec#1#0: TableVec<u64>)
+	13: Call table_vec::pop_back<u64>(&mut TableVec<u64>): u64
+	14: Pop
+	15: MoveLoc[1](table_vec#1#0: TableVec<u64>)
+	16: Call table_vec::destroy_empty<u64>(TableVec<u64>)
+	17: MoveLoc[0](scenario#1#0: Scenario)
+	18: Call test_scenario::end(Scenario): TransactionEffects
+	19: Pop
+	20: Ret
+}
+
+swap_same_index_out_of_bounds_aborts() {
+L0:	scenario#1#0: Scenario
+L1:	table_vec#1#0: TableVec<u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: LdU64(1)
+	4: MutBorrowLoc[0](scenario#1#0: Scenario)
+	5: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	6: Call table_vec::singleton<u64>(u64, &mut TxContext): TableVec<u64>
+	7: StLoc[1](table_vec#1#0: TableVec<u64>)
+	8: MutBorrowLoc[1](table_vec#1#0: TableVec<u64>)
+	9: LdU64(77)
+	10: LdU64(77)
+	11: Call table_vec::swap<u64>(&mut TableVec<u64>, u64, u64)
+	12: MoveLoc[1](table_vec#1#0: TableVec<u64>)
+	13: Call table_vec::destroy_empty<u64>(TableVec<u64>)
+	14: MoveLoc[0](scenario#1#0: Scenario)
+	15: Call test_scenario::end(Scenario): TransactionEffects
+	16: Pop
+	17: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000001
+]
+}

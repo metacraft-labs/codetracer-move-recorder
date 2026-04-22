@@ -1,0 +1,1094 @@
+// Move bytecode v6
+module 2.kiosk_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::kiosk;
+use 0000000000000000000000000000000000000000000000000000000000000002::kiosk_test_utils;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::sui;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct WrongAsset has store, key {
+	id: UID
+}
+
+test_set_owner_custom() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+L2:	kiosk#1#0: Kiosk
+L3:	old_owner#1#0: address
+L4:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[1](ctx#1#0: &mut TxContext)
+	4: CopyLoc[1](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	6: StLoc[4](owner_cap#1#0: KioskOwnerCap)
+	7: StLoc[2](kiosk#1#0: Kiosk)
+	8: ImmBorrowLoc[2](kiosk#1#0: Kiosk)
+	9: Call kiosk::owner(&Kiosk): address
+	10: StLoc[3](old_owner#1#0: address)
+	11: MutBorrowLoc[2](kiosk#1#0: Kiosk)
+	12: ImmBorrowLoc[4](owner_cap#1#0: KioskOwnerCap)
+	13: CopyLoc[1](ctx#1#0: &mut TxContext)
+	14: FreezeRef
+	15: Call kiosk::set_owner(&mut Kiosk, &KioskOwnerCap, &TxContext)
+	16: ImmBorrowLoc[2](kiosk#1#0: Kiosk)
+	17: Call kiosk::owner(&Kiosk): address
+	18: CopyLoc[3](old_owner#1#0: address)
+	19: Eq
+	20: BrFalse(22)
+B1:
+	21: Branch(26)
+B2:
+	22: MoveLoc[1](ctx#1#0: &mut TxContext)
+	23: Pop
+	24: LdU64(13906834281717563391)
+	25: Abort
+B3:
+	26: MutBorrowLoc[2](kiosk#1#0: Kiosk)
+	27: ImmBorrowLoc[4](owner_cap#1#0: KioskOwnerCap)
+	28: LdConst[1](address: 0x00..)
+	29: Call kiosk::set_owner_custom(&mut Kiosk, &KioskOwnerCap, address)
+	30: ImmBorrowLoc[2](kiosk#1#0: Kiosk)
+	31: Call kiosk::owner(&Kiosk): address
+	32: MoveLoc[3](old_owner#1#0: address)
+	33: Neq
+	34: BrFalse(36)
+B4:
+	35: Branch(40)
+B5:
+	36: MoveLoc[1](ctx#1#0: &mut TxContext)
+	37: Pop
+	38: LdU64(13906834294602465279)
+	39: Abort
+B6:
+	40: ImmBorrowLoc[2](kiosk#1#0: Kiosk)
+	41: Call kiosk::owner(&Kiosk): address
+	42: LdConst[1](address: 0x00..)
+	43: Eq
+	44: BrFalse(46)
+B7:
+	45: Branch(50)
+B8:
+	46: MoveLoc[1](ctx#1#0: &mut TxContext)
+	47: Pop
+	48: LdU64(13906834298897432575)
+	49: Abort
+B9:
+	50: MoveLoc[2](kiosk#1#0: Kiosk)
+	51: MoveLoc[4](owner_cap#1#0: KioskOwnerCap)
+	52: MoveLoc[1](ctx#1#0: &mut TxContext)
+	53: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	54: Pop
+	55: Ret
+}
+
+test_place_and_take() {
+L0:	%#1: TxContext
+L1:	asset#1#0: Asset
+L2:	asset#2#0: Asset
+L3:	ctx#1#0: &mut TxContext
+L4:	item_id#1#0: ID
+L5:	kiosk#1#0: Kiosk
+L6:	owner_cap#1#0: KioskOwnerCap
+L7:	policy#1#0: TransferPolicy<Asset>
+L8:	policy_cap#1#0: TransferPolicyCap<Asset>
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[4](item_id#1#0: ID)
+	7: StLoc[1](asset#1#0: Asset)
+	8: CopyLoc[3](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[6](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[5](kiosk#1#0: Kiosk)
+	12: CopyLoc[3](ctx#1#0: &mut TxContext)
+	13: Call kiosk_test_utils::get_policy(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	14: StLoc[8](policy_cap#1#0: TransferPolicyCap<Asset>)
+	15: StLoc[7](policy#1#0: TransferPolicy<Asset>)
+	16: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	18: MoveLoc[1](asset#1#0: Asset)
+	19: Call kiosk::place<Asset>(&mut Kiosk, &KioskOwnerCap, Asset)
+	20: ImmBorrowLoc[5](kiosk#1#0: Kiosk)
+	21: CopyLoc[4](item_id#1#0: ID)
+	22: Call kiosk::has_item(&Kiosk, ID): bool
+	23: BrFalse(25)
+B1:
+	24: Branch(29)
+B2:
+	25: MoveLoc[3](ctx#1#0: &mut TxContext)
+	26: Pop
+	27: LdU64(13906834359026974719)
+	28: Abort
+B3:
+	29: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	30: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	31: CopyLoc[4](item_id#1#0: ID)
+	32: Call kiosk::take<Asset>(&mut Kiosk, &KioskOwnerCap, ID): Asset
+	33: StLoc[2](asset#2#0: Asset)
+	34: ImmBorrowLoc[5](kiosk#1#0: Kiosk)
+	35: MoveLoc[4](item_id#1#0: ID)
+	36: Call kiosk::has_item(&Kiosk, ID): bool
+	37: Not
+	38: BrFalse(40)
+B4:
+	39: Branch(44)
+B5:
+	40: MoveLoc[3](ctx#1#0: &mut TxContext)
+	41: Pop
+	42: LdU64(13906834367616909311)
+	43: Abort
+B6:
+	44: MoveLoc[7](policy#1#0: TransferPolicy<Asset>)
+	45: MoveLoc[8](policy_cap#1#0: TransferPolicyCap<Asset>)
+	46: CopyLoc[3](ctx#1#0: &mut TxContext)
+	47: Call kiosk_test_utils::return_policy(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	48: Pop
+	49: MoveLoc[5](kiosk#1#0: Kiosk)
+	50: MoveLoc[6](owner_cap#1#0: KioskOwnerCap)
+	51: MoveLoc[3](ctx#1#0: &mut TxContext)
+	52: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	53: Pop
+	54: MoveLoc[2](asset#2#0: Asset)
+	55: VecPack(14, 1)
+	56: Call kiosk_test_utils::return_assets(vector<Asset>)
+	57: Ret
+}
+
+test_taking_not_allowed() {
+L0:	%#1: TxContext
+L1:	_asset#1#0: Asset
+L2:	_policy_cap#1#0: TransferPolicyCap<Asset>
+L3:	asset#1#0: Asset
+L4:	ctx#1#0: &mut TxContext
+L5:	item_id#1#0: ID
+L6:	kiosk#1#0: Kiosk
+L7:	owner_cap#1#0: KioskOwnerCap
+L8:	policy#1#0: TransferPolicy<Asset>
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[4](ctx#1#0: &mut TxContext)
+	4: CopyLoc[4](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[5](item_id#1#0: ID)
+	7: StLoc[3](asset#1#0: Asset)
+	8: CopyLoc[4](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[7](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[6](kiosk#1#0: Kiosk)
+	12: MoveLoc[4](ctx#1#0: &mut TxContext)
+	13: Call kiosk_test_utils::get_policy(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	14: StLoc[2](_policy_cap#1#0: TransferPolicyCap<Asset>)
+	15: StLoc[8](policy#1#0: TransferPolicy<Asset>)
+	16: MutBorrowLoc[6](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[7](owner_cap#1#0: KioskOwnerCap)
+	18: ImmBorrowLoc[8](policy#1#0: TransferPolicy<Asset>)
+	19: MoveLoc[3](asset#1#0: Asset)
+	20: Call kiosk::lock<Asset>(&mut Kiosk, &KioskOwnerCap, &TransferPolicy<Asset>, Asset)
+	21: MutBorrowLoc[6](kiosk#1#0: Kiosk)
+	22: ImmBorrowLoc[7](owner_cap#1#0: KioskOwnerCap)
+	23: MoveLoc[5](item_id#1#0: ID)
+	24: Call kiosk::take<Asset>(&mut Kiosk, &KioskOwnerCap, ID): Asset
+	25: StLoc[1](_asset#1#0: Asset)
+	26: LdU64(1337)
+	27: Abort
+}
+
+test_purchase() {
+L0:	%#1: TxContext
+L1:	asset#1#0: Asset
+L2:	asset#2#0: Asset
+L3:	ctx#1#0: &mut TxContext
+L4:	item_id#1#0: ID
+L5:	kiosk#1#0: Kiosk
+L6:	owner_cap#1#0: KioskOwnerCap
+L7:	payment#1#0: Coin<SUI>
+L8:	policy#1#0: TransferPolicy<Asset>
+L9:	policy_cap#1#0: TransferPolicyCap<Asset>
+L10:	request#1#0: TransferRequest<Asset>
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[4](item_id#1#0: ID)
+	7: StLoc[1](asset#1#0: Asset)
+	8: CopyLoc[3](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[6](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[5](kiosk#1#0: Kiosk)
+	12: CopyLoc[3](ctx#1#0: &mut TxContext)
+	13: Call kiosk_test_utils::get_policy(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	14: StLoc[9](policy_cap#1#0: TransferPolicyCap<Asset>)
+	15: StLoc[8](policy#1#0: TransferPolicy<Asset>)
+	16: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	18: MoveLoc[1](asset#1#0: Asset)
+	19: LdConst[0](u64: 10000)
+	20: Call kiosk::place_and_list<Asset>(&mut Kiosk, &KioskOwnerCap, Asset, u64)
+	21: ImmBorrowLoc[5](kiosk#1#0: Kiosk)
+	22: CopyLoc[4](item_id#1#0: ID)
+	23: Call kiosk::is_listed(&Kiosk, ID): bool
+	24: BrFalse(26)
+B1:
+	25: Branch(30)
+B2:
+	26: MoveLoc[3](ctx#1#0: &mut TxContext)
+	27: Pop
+	28: LdU64(13906834487875993599)
+	29: Abort
+B3:
+	30: LdConst[0](u64: 10000)
+	31: CopyLoc[3](ctx#1#0: &mut TxContext)
+	32: Call coin::mint_for_testing<SUI>(u64, &mut TxContext): Coin<SUI>
+	33: StLoc[7](payment#1#0: Coin<SUI>)
+	34: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	35: CopyLoc[4](item_id#1#0: ID)
+	36: MoveLoc[7](payment#1#0: Coin<SUI>)
+	37: Call kiosk::purchase<Asset>(&mut Kiosk, ID, Coin<SUI>): Asset * TransferRequest<Asset>
+	38: StLoc[10](request#1#0: TransferRequest<Asset>)
+	39: StLoc[2](asset#2#0: Asset)
+	40: ImmBorrowLoc[5](kiosk#1#0: Kiosk)
+	41: MoveLoc[4](item_id#1#0: ID)
+	42: Call kiosk::is_listed(&Kiosk, ID): bool
+	43: Not
+	44: BrFalse(46)
+B4:
+	45: Branch(50)
+B5:
+	46: MoveLoc[3](ctx#1#0: &mut TxContext)
+	47: Pop
+	48: LdU64(13906834500760895487)
+	49: Abort
+B6:
+	50: ImmBorrowLoc[8](policy#1#0: TransferPolicy<Asset>)
+	51: MoveLoc[10](request#1#0: TransferRequest<Asset>)
+	52: Call transfer_policy::confirm_request<Asset>(&TransferPolicy<Asset>, TransferRequest<Asset>): ID * u64 * ID
+	53: Pop
+	54: Pop
+	55: Pop
+	56: MoveLoc[5](kiosk#1#0: Kiosk)
+	57: MoveLoc[6](owner_cap#1#0: KioskOwnerCap)
+	58: CopyLoc[3](ctx#1#0: &mut TxContext)
+	59: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	60: Pop
+	61: MoveLoc[2](asset#2#0: Asset)
+	62: VecPack(14, 1)
+	63: Call kiosk_test_utils::return_assets(vector<Asset>)
+	64: MoveLoc[8](policy#1#0: TransferPolicy<Asset>)
+	65: MoveLoc[9](policy_cap#1#0: TransferPolicyCap<Asset>)
+	66: MoveLoc[3](ctx#1#0: &mut TxContext)
+	67: Call kiosk_test_utils::return_policy(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	68: Pop
+	69: Ret
+}
+
+test_delist() {
+L0:	%#1: TxContext
+L1:	asset#1#0: Asset
+L2:	asset#2#0: Asset
+L3:	ctx#1#0: &mut TxContext
+L4:	item_id#1#0: ID
+L5:	kiosk#1#0: Kiosk
+L6:	owner_cap#1#0: KioskOwnerCap
+L7:	policy#1#0: TransferPolicy<Asset>
+L8:	policy_cap#1#0: TransferPolicyCap<Asset>
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[4](item_id#1#0: ID)
+	7: StLoc[1](asset#1#0: Asset)
+	8: CopyLoc[3](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[6](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[5](kiosk#1#0: Kiosk)
+	12: CopyLoc[3](ctx#1#0: &mut TxContext)
+	13: Call kiosk_test_utils::get_policy(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	14: StLoc[8](policy_cap#1#0: TransferPolicyCap<Asset>)
+	15: StLoc[7](policy#1#0: TransferPolicy<Asset>)
+	16: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	18: MoveLoc[1](asset#1#0: Asset)
+	19: LdConst[0](u64: 10000)
+	20: Call kiosk::place_and_list<Asset>(&mut Kiosk, &KioskOwnerCap, Asset, u64)
+	21: ImmBorrowLoc[5](kiosk#1#0: Kiosk)
+	22: CopyLoc[4](item_id#1#0: ID)
+	23: Call kiosk::is_listed(&Kiosk, ID): bool
+	24: BrFalse(26)
+B1:
+	25: Branch(30)
+B2:
+	26: MoveLoc[3](ctx#1#0: &mut TxContext)
+	27: Pop
+	28: LdU64(13906834569480372223)
+	29: Abort
+B3:
+	30: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	31: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	32: CopyLoc[4](item_id#1#0: ID)
+	33: Call kiosk::delist<Asset>(&mut Kiosk, &KioskOwnerCap, ID)
+	34: ImmBorrowLoc[5](kiosk#1#0: Kiosk)
+	35: CopyLoc[4](item_id#1#0: ID)
+	36: Call kiosk::is_listed(&Kiosk, ID): bool
+	37: Not
+	38: BrFalse(40)
+B4:
+	39: Branch(44)
+B5:
+	40: MoveLoc[3](ctx#1#0: &mut TxContext)
+	41: Pop
+	42: LdU64(13906834578070306815)
+	43: Abort
+B6:
+	44: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	45: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	46: MoveLoc[4](item_id#1#0: ID)
+	47: Call kiosk::take<Asset>(&mut Kiosk, &KioskOwnerCap, ID): Asset
+	48: StLoc[2](asset#2#0: Asset)
+	49: MoveLoc[5](kiosk#1#0: Kiosk)
+	50: MoveLoc[6](owner_cap#1#0: KioskOwnerCap)
+	51: CopyLoc[3](ctx#1#0: &mut TxContext)
+	52: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	53: Pop
+	54: MoveLoc[2](asset#2#0: Asset)
+	55: VecPack(14, 1)
+	56: Call kiosk_test_utils::return_assets(vector<Asset>)
+	57: MoveLoc[7](policy#1#0: TransferPolicy<Asset>)
+	58: MoveLoc[8](policy_cap#1#0: TransferPolicyCap<Asset>)
+	59: MoveLoc[3](ctx#1#0: &mut TxContext)
+	60: Call kiosk_test_utils::return_policy(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	61: Pop
+	62: Ret
+}
+
+test_delist_not_listed() {
+L0:	%#1: TxContext
+L1:	asset#1#0: Asset
+L2:	ctx#1#0: &mut TxContext
+L3:	item_id#1#0: ID
+L4:	kiosk#1#0: Kiosk
+L5:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[3](item_id#1#0: ID)
+	7: StLoc[1](asset#1#0: Asset)
+	8: MoveLoc[2](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[5](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[4](kiosk#1#0: Kiosk)
+	12: MutBorrowLoc[4](kiosk#1#0: Kiosk)
+	13: ImmBorrowLoc[5](owner_cap#1#0: KioskOwnerCap)
+	14: MoveLoc[1](asset#1#0: Asset)
+	15: Call kiosk::place<Asset>(&mut Kiosk, &KioskOwnerCap, Asset)
+	16: MutBorrowLoc[4](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[5](owner_cap#1#0: KioskOwnerCap)
+	18: MoveLoc[3](item_id#1#0: ID)
+	19: Call kiosk::delist<Asset>(&mut Kiosk, &KioskOwnerCap, ID)
+	20: LdU64(1337)
+	21: Abort
+}
+
+test_delist_listed_exclusively() {
+L0:	%#1: TxContext
+L1:	_cap#1#0: PurchaseCap<Asset>
+L2:	asset#1#0: Asset
+L3:	ctx#1#0: &mut TxContext
+L4:	item_id#1#0: ID
+L5:	kiosk#1#0: Kiosk
+L6:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[4](item_id#1#0: ID)
+	7: StLoc[2](asset#1#0: Asset)
+	8: CopyLoc[3](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[6](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[5](kiosk#1#0: Kiosk)
+	12: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	13: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	14: MoveLoc[2](asset#1#0: Asset)
+	15: Call kiosk::place<Asset>(&mut Kiosk, &KioskOwnerCap, Asset)
+	16: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	18: CopyLoc[4](item_id#1#0: ID)
+	19: LdU64(100)
+	20: MoveLoc[3](ctx#1#0: &mut TxContext)
+	21: Call kiosk::list_with_purchase_cap<Asset>(&mut Kiosk, &KioskOwnerCap, ID, u64, &mut TxContext): PurchaseCap<Asset>
+	22: StLoc[1](_cap#1#0: PurchaseCap<Asset>)
+	23: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	24: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	25: MoveLoc[4](item_id#1#0: ID)
+	26: Call kiosk::delist<Asset>(&mut Kiosk, &KioskOwnerCap, ID)
+	27: LdU64(1337)
+	28: Abort
+}
+
+test_delist_wrong_type() {
+L0:	%#1: TxContext
+L1:	asset#1#0: Asset
+L2:	ctx#1#0: &mut TxContext
+L3:	item_id#1#0: ID
+L4:	kiosk#1#0: Kiosk
+L5:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[3](item_id#1#0: ID)
+	7: StLoc[1](asset#1#0: Asset)
+	8: MoveLoc[2](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[5](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[4](kiosk#1#0: Kiosk)
+	12: MutBorrowLoc[4](kiosk#1#0: Kiosk)
+	13: ImmBorrowLoc[5](owner_cap#1#0: KioskOwnerCap)
+	14: MoveLoc[1](asset#1#0: Asset)
+	15: Call kiosk::place<Asset>(&mut Kiosk, &KioskOwnerCap, Asset)
+	16: MutBorrowLoc[4](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[5](owner_cap#1#0: KioskOwnerCap)
+	18: MoveLoc[3](item_id#1#0: ID)
+	19: Call kiosk::delist<WrongAsset>(&mut Kiosk, &KioskOwnerCap, ID)
+	20: LdU64(1337)
+	21: Abort
+}
+
+test_delist_no_item() {
+L0:	%#1: TxContext
+L1:	_asset#1#0: Asset
+L2:	ctx#1#0: &mut TxContext
+L3:	item_id#1#0: ID
+L4:	kiosk#1#0: Kiosk
+L5:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[3](item_id#1#0: ID)
+	7: StLoc[1](_asset#1#0: Asset)
+	8: MoveLoc[2](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[5](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[4](kiosk#1#0: Kiosk)
+	12: MutBorrowLoc[4](kiosk#1#0: Kiosk)
+	13: ImmBorrowLoc[5](owner_cap#1#0: KioskOwnerCap)
+	14: MoveLoc[3](item_id#1#0: ID)
+	15: Call kiosk::delist<Asset>(&mut Kiosk, &KioskOwnerCap, ID)
+	16: LdU64(1337)
+	17: Abort
+}
+
+test_purchase_wrong_amount() {
+L0:	%#1: TxContext
+L1:	_asset#1#0: Asset
+L2:	_policy_cap#1#0: TransferPolicyCap<Asset>
+L3:	asset#1#0: Asset
+L4:	ctx#1#0: &mut TxContext
+L5:	item_id#1#0: ID
+L6:	kiosk#1#0: Kiosk
+L7:	owner_cap#1#0: KioskOwnerCap
+L8:	payment#1#0: Coin<SUI>
+L9:	policy#1#0: TransferPolicy<Asset>
+L10:	request#1#0: TransferRequest<Asset>
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[4](ctx#1#0: &mut TxContext)
+	4: CopyLoc[4](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[5](item_id#1#0: ID)
+	7: StLoc[3](asset#1#0: Asset)
+	8: CopyLoc[4](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[7](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[6](kiosk#1#0: Kiosk)
+	12: CopyLoc[4](ctx#1#0: &mut TxContext)
+	13: Call kiosk_test_utils::get_policy(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	14: StLoc[2](_policy_cap#1#0: TransferPolicyCap<Asset>)
+	15: StLoc[9](policy#1#0: TransferPolicy<Asset>)
+	16: MutBorrowLoc[6](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[7](owner_cap#1#0: KioskOwnerCap)
+	18: MoveLoc[3](asset#1#0: Asset)
+	19: LdConst[0](u64: 10000)
+	20: Call kiosk::place_and_list<Asset>(&mut Kiosk, &KioskOwnerCap, Asset, u64)
+	21: LdConst[0](u64: 10000)
+	22: LdU64(1)
+	23: Add
+	24: MoveLoc[4](ctx#1#0: &mut TxContext)
+	25: Call coin::mint_for_testing<SUI>(u64, &mut TxContext): Coin<SUI>
+	26: StLoc[8](payment#1#0: Coin<SUI>)
+	27: MutBorrowLoc[6](kiosk#1#0: Kiosk)
+	28: MoveLoc[5](item_id#1#0: ID)
+	29: MoveLoc[8](payment#1#0: Coin<SUI>)
+	30: Call kiosk::purchase<Asset>(&mut Kiosk, ID, Coin<SUI>): Asset * TransferRequest<Asset>
+	31: StLoc[10](request#1#0: TransferRequest<Asset>)
+	32: StLoc[1](_asset#1#0: Asset)
+	33: ImmBorrowLoc[9](policy#1#0: TransferPolicy<Asset>)
+	34: MoveLoc[10](request#1#0: TransferRequest<Asset>)
+	35: Call transfer_policy::confirm_request<Asset>(&TransferPolicy<Asset>, TransferRequest<Asset>): ID * u64 * ID
+	36: Pop
+	37: Pop
+	38: Pop
+	39: LdU64(1337)
+	40: Abort
+}
+
+test_purchase_cap() {
+L0:	%#1: TxContext
+L1:	asset#1#0: Asset
+L2:	asset#2#0: Asset
+L3:	ctx#1#0: &mut TxContext
+L4:	item_id#1#0: ID
+L5:	kiosk#1#0: Kiosk
+L6:	owner_cap#1#0: KioskOwnerCap
+L7:	payment#1#0: Coin<SUI>
+L8:	policy#1#0: TransferPolicy<Asset>
+L9:	policy_cap#1#0: TransferPolicyCap<Asset>
+L10:	purchase_cap#1#0: PurchaseCap<Asset>
+L11:	request#1#0: TransferRequest<Asset>
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[4](item_id#1#0: ID)
+	7: StLoc[1](asset#1#0: Asset)
+	8: CopyLoc[3](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[6](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[5](kiosk#1#0: Kiosk)
+	12: CopyLoc[3](ctx#1#0: &mut TxContext)
+	13: Call kiosk_test_utils::get_policy(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	14: StLoc[9](policy_cap#1#0: TransferPolicyCap<Asset>)
+	15: StLoc[8](policy#1#0: TransferPolicy<Asset>)
+	16: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	18: MoveLoc[1](asset#1#0: Asset)
+	19: Call kiosk::place<Asset>(&mut Kiosk, &KioskOwnerCap, Asset)
+	20: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	21: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	22: CopyLoc[4](item_id#1#0: ID)
+	23: LdConst[0](u64: 10000)
+	24: CopyLoc[3](ctx#1#0: &mut TxContext)
+	25: Call kiosk::list_with_purchase_cap<Asset>(&mut Kiosk, &KioskOwnerCap, ID, u64, &mut TxContext): PurchaseCap<Asset>
+	26: StLoc[10](purchase_cap#1#0: PurchaseCap<Asset>)
+	27: LdConst[0](u64: 10000)
+	28: CopyLoc[3](ctx#1#0: &mut TxContext)
+	29: Call coin::mint_for_testing<SUI>(u64, &mut TxContext): Coin<SUI>
+	30: StLoc[7](payment#1#0: Coin<SUI>)
+	31: ImmBorrowLoc[5](kiosk#1#0: Kiosk)
+	32: CopyLoc[4](item_id#1#0: ID)
+	33: Call kiosk::is_listed_exclusively(&Kiosk, ID): bool
+	34: BrFalse(36)
+B1:
+	35: Branch(40)
+B2:
+	36: MoveLoc[3](ctx#1#0: &mut TxContext)
+	37: Pop
+	38: LdU64(13906834960322396159)
+	39: Abort
+B3:
+	40: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	41: MoveLoc[10](purchase_cap#1#0: PurchaseCap<Asset>)
+	42: MoveLoc[7](payment#1#0: Coin<SUI>)
+	43: Call kiosk::purchase_with_cap<Asset>(&mut Kiosk, PurchaseCap<Asset>, Coin<SUI>): Asset * TransferRequest<Asset>
+	44: StLoc[11](request#1#0: TransferRequest<Asset>)
+	45: StLoc[2](asset#2#0: Asset)
+	46: ImmBorrowLoc[5](kiosk#1#0: Kiosk)
+	47: MoveLoc[4](item_id#1#0: ID)
+	48: Call kiosk::is_listed_exclusively(&Kiosk, ID): bool
+	49: Not
+	50: BrFalse(52)
+B4:
+	51: Branch(56)
+B5:
+	52: MoveLoc[3](ctx#1#0: &mut TxContext)
+	53: Pop
+	54: LdU64(13906834968912330751)
+	55: Abort
+B6:
+	56: ImmBorrowLoc[8](policy#1#0: TransferPolicy<Asset>)
+	57: MoveLoc[11](request#1#0: TransferRequest<Asset>)
+	58: Call transfer_policy::confirm_request<Asset>(&TransferPolicy<Asset>, TransferRequest<Asset>): ID * u64 * ID
+	59: Pop
+	60: Pop
+	61: Pop
+	62: MoveLoc[5](kiosk#1#0: Kiosk)
+	63: MoveLoc[6](owner_cap#1#0: KioskOwnerCap)
+	64: CopyLoc[3](ctx#1#0: &mut TxContext)
+	65: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	66: Pop
+	67: MoveLoc[2](asset#2#0: Asset)
+	68: VecPack(14, 1)
+	69: Call kiosk_test_utils::return_assets(vector<Asset>)
+	70: MoveLoc[8](policy#1#0: TransferPolicy<Asset>)
+	71: MoveLoc[9](policy_cap#1#0: TransferPolicyCap<Asset>)
+	72: MoveLoc[3](ctx#1#0: &mut TxContext)
+	73: Call kiosk_test_utils::return_policy(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	74: Pop
+	75: Ret
+}
+
+test_purchase_cap_return() {
+L0:	%#1: TxContext
+L1:	asset#1#0: Asset
+L2:	asset#2#0: Asset
+L3:	ctx#1#0: &mut TxContext
+L4:	item_id#1#0: ID
+L5:	kiosk#1#0: Kiosk
+L6:	owner_cap#1#0: KioskOwnerCap
+L7:	policy#1#0: TransferPolicy<Asset>
+L8:	policy_cap#1#0: TransferPolicyCap<Asset>
+L9:	purchase_cap#1#0: PurchaseCap<Asset>
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[4](item_id#1#0: ID)
+	7: StLoc[1](asset#1#0: Asset)
+	8: CopyLoc[3](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[6](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[5](kiosk#1#0: Kiosk)
+	12: CopyLoc[3](ctx#1#0: &mut TxContext)
+	13: Call kiosk_test_utils::get_policy(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	14: StLoc[8](policy_cap#1#0: TransferPolicyCap<Asset>)
+	15: StLoc[7](policy#1#0: TransferPolicy<Asset>)
+	16: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	18: MoveLoc[1](asset#1#0: Asset)
+	19: Call kiosk::place<Asset>(&mut Kiosk, &KioskOwnerCap, Asset)
+	20: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	21: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	22: CopyLoc[4](item_id#1#0: ID)
+	23: LdConst[0](u64: 10000)
+	24: CopyLoc[3](ctx#1#0: &mut TxContext)
+	25: Call kiosk::list_with_purchase_cap<Asset>(&mut Kiosk, &KioskOwnerCap, ID, u64, &mut TxContext): PurchaseCap<Asset>
+	26: StLoc[9](purchase_cap#1#0: PurchaseCap<Asset>)
+	27: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	28: MoveLoc[9](purchase_cap#1#0: PurchaseCap<Asset>)
+	29: Call kiosk::return_purchase_cap<Asset>(&mut Kiosk, PurchaseCap<Asset>)
+	30: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	31: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	32: MoveLoc[4](item_id#1#0: ID)
+	33: Call kiosk::take<Asset>(&mut Kiosk, &KioskOwnerCap, ID): Asset
+	34: StLoc[2](asset#2#0: Asset)
+	35: MoveLoc[5](kiosk#1#0: Kiosk)
+	36: MoveLoc[6](owner_cap#1#0: KioskOwnerCap)
+	37: CopyLoc[3](ctx#1#0: &mut TxContext)
+	38: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	39: Pop
+	40: MoveLoc[2](asset#2#0: Asset)
+	41: VecPack(14, 1)
+	42: Call kiosk_test_utils::return_assets(vector<Asset>)
+	43: MoveLoc[7](policy#1#0: TransferPolicy<Asset>)
+	44: MoveLoc[8](policy_cap#1#0: TransferPolicyCap<Asset>)
+	45: MoveLoc[3](ctx#1#0: &mut TxContext)
+	46: Call kiosk_test_utils::return_policy(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	47: Pop
+	48: Ret
+}
+
+test_list_no_item_fail() {
+L0:	%#1: TxContext
+L1:	_asset#1#0: Asset
+L2:	ctx#1#0: &mut TxContext
+L3:	item_id#1#0: ID
+L4:	kiosk#1#0: Kiosk
+L5:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[3](item_id#1#0: ID)
+	7: StLoc[1](_asset#1#0: Asset)
+	8: MoveLoc[2](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[5](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[4](kiosk#1#0: Kiosk)
+	12: MutBorrowLoc[4](kiosk#1#0: Kiosk)
+	13: ImmBorrowLoc[5](owner_cap#1#0: KioskOwnerCap)
+	14: MoveLoc[3](item_id#1#0: ID)
+	15: LdConst[0](u64: 10000)
+	16: Call kiosk::list<Asset>(&mut Kiosk, &KioskOwnerCap, ID, u64)
+	17: LdU64(1337)
+	18: Abort
+}
+
+test_list_with_purchase_cap_no_item_fail() {
+L0:	%#1: TxContext
+L1:	_asset#1#0: Asset
+L2:	_purchase_cap#1#0: PurchaseCap<Asset>
+L3:	ctx#1#0: &mut TxContext
+L4:	item_id#1#0: ID
+L5:	kiosk#1#0: Kiosk
+L6:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[4](item_id#1#0: ID)
+	7: StLoc[1](_asset#1#0: Asset)
+	8: CopyLoc[3](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[6](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[5](kiosk#1#0: Kiosk)
+	12: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	13: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	14: MoveLoc[4](item_id#1#0: ID)
+	15: LdConst[0](u64: 10000)
+	16: MoveLoc[3](ctx#1#0: &mut TxContext)
+	17: Call kiosk::list_with_purchase_cap<Asset>(&mut Kiosk, &KioskOwnerCap, ID, u64, &mut TxContext): PurchaseCap<Asset>
+	18: StLoc[2](_purchase_cap#1#0: PurchaseCap<Asset>)
+	19: LdU64(1337)
+	20: Abort
+}
+
+test_purchase_cap_already_listed_fail() {
+L0:	%#1: TxContext
+L1:	_purchase_cap#1#0: PurchaseCap<Asset>
+L2:	asset#1#0: Asset
+L3:	ctx#1#0: &mut TxContext
+L4:	item_id#1#0: ID
+L5:	kiosk#1#0: Kiosk
+L6:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[4](item_id#1#0: ID)
+	7: StLoc[2](asset#1#0: Asset)
+	8: CopyLoc[3](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[6](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[5](kiosk#1#0: Kiosk)
+	12: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	13: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	14: MoveLoc[2](asset#1#0: Asset)
+	15: LdConst[0](u64: 10000)
+	16: Call kiosk::place_and_list<Asset>(&mut Kiosk, &KioskOwnerCap, Asset, u64)
+	17: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	18: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	19: MoveLoc[4](item_id#1#0: ID)
+	20: LdConst[0](u64: 10000)
+	21: MoveLoc[3](ctx#1#0: &mut TxContext)
+	22: Call kiosk::list_with_purchase_cap<Asset>(&mut Kiosk, &KioskOwnerCap, ID, u64, &mut TxContext): PurchaseCap<Asset>
+	23: StLoc[1](_purchase_cap#1#0: PurchaseCap<Asset>)
+	24: LdU64(1337)
+	25: Abort
+}
+
+test_purchase_cap_issued_list_fail() {
+L0:	%#1: TxContext
+L1:	asset#1#0: Asset
+L2:	ctx#1#0: &mut TxContext
+L3:	item_id#1#0: ID
+L4:	kiosk#1#0: Kiosk
+L5:	owner_cap#1#0: KioskOwnerCap
+L6:	purchase_cap#1#0: PurchaseCap<Asset>
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	6: StLoc[3](item_id#1#0: ID)
+	7: StLoc[1](asset#1#0: Asset)
+	8: CopyLoc[2](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	10: StLoc[5](owner_cap#1#0: KioskOwnerCap)
+	11: StLoc[4](kiosk#1#0: Kiosk)
+	12: MutBorrowLoc[4](kiosk#1#0: Kiosk)
+	13: ImmBorrowLoc[5](owner_cap#1#0: KioskOwnerCap)
+	14: MoveLoc[1](asset#1#0: Asset)
+	15: Call kiosk::place<Asset>(&mut Kiosk, &KioskOwnerCap, Asset)
+	16: MutBorrowLoc[4](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[5](owner_cap#1#0: KioskOwnerCap)
+	18: CopyLoc[3](item_id#1#0: ID)
+	19: LdConst[0](u64: 10000)
+	20: MoveLoc[2](ctx#1#0: &mut TxContext)
+	21: Call kiosk::list_with_purchase_cap<Asset>(&mut Kiosk, &KioskOwnerCap, ID, u64, &mut TxContext): PurchaseCap<Asset>
+	22: StLoc[6](purchase_cap#1#0: PurchaseCap<Asset>)
+	23: MutBorrowLoc[4](kiosk#1#0: Kiosk)
+	24: ImmBorrowLoc[5](owner_cap#1#0: KioskOwnerCap)
+	25: MoveLoc[3](item_id#1#0: ID)
+	26: LdConst[0](u64: 10000)
+	27: Call kiosk::list<Asset>(&mut Kiosk, &KioskOwnerCap, ID, u64)
+	28: MutBorrowLoc[4](kiosk#1#0: Kiosk)
+	29: MoveLoc[6](purchase_cap#1#0: PurchaseCap<Asset>)
+	30: Call kiosk::return_purchase_cap<Asset>(&mut Kiosk, PurchaseCap<Asset>)
+	31: LdU64(1337)
+	32: Abort
+}
+
+test_kiosk_has_items() {
+L0:	%#1: TxContext
+L1:	_cap#1#0: TransferPolicyCap<Asset>
+L2:	_policy#1#0: TransferPolicy<Asset>
+L3:	asset#1#0: Asset
+L4:	ctx#1#0: &mut TxContext
+L5:	kiosk#1#0: Kiosk
+L6:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[4](ctx#1#0: &mut TxContext)
+	4: CopyLoc[4](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_policy(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	6: StLoc[1](_cap#1#0: TransferPolicyCap<Asset>)
+	7: StLoc[2](_policy#1#0: TransferPolicy<Asset>)
+	8: CopyLoc[4](ctx#1#0: &mut TxContext)
+	9: Call kiosk_test_utils::get_asset(&mut TxContext): Asset * ID
+	10: Pop
+	11: StLoc[3](asset#1#0: Asset)
+	12: CopyLoc[4](ctx#1#0: &mut TxContext)
+	13: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	14: StLoc[6](owner_cap#1#0: KioskOwnerCap)
+	15: StLoc[5](kiosk#1#0: Kiosk)
+	16: MutBorrowLoc[5](kiosk#1#0: Kiosk)
+	17: ImmBorrowLoc[6](owner_cap#1#0: KioskOwnerCap)
+	18: MoveLoc[3](asset#1#0: Asset)
+	19: Call kiosk::place<Asset>(&mut Kiosk, &KioskOwnerCap, Asset)
+	20: MoveLoc[5](kiosk#1#0: Kiosk)
+	21: MoveLoc[6](owner_cap#1#0: KioskOwnerCap)
+	22: MoveLoc[4](ctx#1#0: &mut TxContext)
+	23: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	24: Pop
+	25: LdU64(1337)
+	26: Abort
+}
+
+test_withdraw_default() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+L2:	kiosk#1#0: Kiosk
+L3:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[1](ctx#1#0: &mut TxContext)
+	4: CopyLoc[1](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	6: StLoc[3](owner_cap#1#0: KioskOwnerCap)
+	7: StLoc[2](kiosk#1#0: Kiosk)
+	8: MutBorrowLoc[2](kiosk#1#0: Kiosk)
+	9: ImmBorrowLoc[3](owner_cap#1#0: KioskOwnerCap)
+	10: Call option::none<u64>(): Option<u64>
+	11: CopyLoc[1](ctx#1#0: &mut TxContext)
+	12: Call kiosk::withdraw(&mut Kiosk, &KioskOwnerCap, Option<u64>, &mut TxContext): Coin<SUI>
+	13: Call coin::burn_for_testing<SUI>(Coin<SUI>): u64
+	14: Pop
+	15: MoveLoc[2](kiosk#1#0: Kiosk)
+	16: MoveLoc[3](owner_cap#1#0: KioskOwnerCap)
+	17: MoveLoc[1](ctx#1#0: &mut TxContext)
+	18: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	19: Pop
+	20: Ret
+}
+
+test_withdraw_more_than_there_is() {
+L0:	%#1: TxContext
+L1:	_profits#1#0: Coin<SUI>
+L2:	ctx#1#0: &mut TxContext
+L3:	kiosk#1#0: Kiosk
+L4:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	6: StLoc[4](owner_cap#1#0: KioskOwnerCap)
+	7: StLoc[3](kiosk#1#0: Kiosk)
+	8: MutBorrowLoc[3](kiosk#1#0: Kiosk)
+	9: ImmBorrowLoc[4](owner_cap#1#0: KioskOwnerCap)
+	10: LdU64(100)
+	11: Call option::some<u64>(u64): Option<u64>
+	12: MoveLoc[2](ctx#1#0: &mut TxContext)
+	13: Call kiosk::withdraw(&mut Kiosk, &KioskOwnerCap, Option<u64>, &mut TxContext): Coin<SUI>
+	14: StLoc[1](_profits#1#0: Coin<SUI>)
+	15: LdU64(1337)
+	16: Abort
+}
+
+test_disallow_extensions_access_as_owner() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+L2:	kiosk#1#0: Kiosk
+L3:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[1](ctx#1#0: &mut TxContext)
+	4: CopyLoc[1](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	6: StLoc[3](owner_cap#1#0: KioskOwnerCap)
+	7: StLoc[2](kiosk#1#0: Kiosk)
+	8: MutBorrowLoc[2](kiosk#1#0: Kiosk)
+	9: ImmBorrowLoc[3](owner_cap#1#0: KioskOwnerCap)
+	10: LdFalse
+	11: Call kiosk::set_allow_extensions(&mut Kiosk, &KioskOwnerCap, bool)
+	12: MutBorrowLoc[2](kiosk#1#0: Kiosk)
+	13: ImmBorrowLoc[3](owner_cap#1#0: KioskOwnerCap)
+	14: Call kiosk::uid_mut_as_owner(&mut Kiosk, &KioskOwnerCap): &mut UID
+	15: Pop
+	16: MoveLoc[2](kiosk#1#0: Kiosk)
+	17: MoveLoc[3](owner_cap#1#0: KioskOwnerCap)
+	18: MoveLoc[1](ctx#1#0: &mut TxContext)
+	19: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	20: Pop
+	21: Ret
+}
+
+test_uid_access() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+L2:	kiosk#1#0: Kiosk
+L3:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[1](ctx#1#0: &mut TxContext)
+	4: CopyLoc[1](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	6: StLoc[3](owner_cap#1#0: KioskOwnerCap)
+	7: StLoc[2](kiosk#1#0: Kiosk)
+	8: ImmBorrowLoc[2](kiosk#1#0: Kiosk)
+	9: Call kiosk::uid(&Kiosk): &UID
+	10: Call object::uid_to_inner(&UID): ID
+	11: ImmBorrowLoc[2](kiosk#1#0: Kiosk)
+	12: Call object::id<Kiosk>(&Kiosk): ID
+	13: Eq
+	14: BrFalse(16)
+B1:
+	15: Branch(20)
+B2:
+	16: MoveLoc[1](ctx#1#0: &mut TxContext)
+	17: Pop
+	18: LdU64(13906835514373177343)
+	19: Abort
+B3:
+	20: MoveLoc[2](kiosk#1#0: Kiosk)
+	21: MoveLoc[3](owner_cap#1#0: KioskOwnerCap)
+	22: MoveLoc[1](ctx#1#0: &mut TxContext)
+	23: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	24: Pop
+	25: Ret
+}
+
+test_disallow_extensions_uid_mut() {
+L0:	%#1: TxContext
+L1:	kiosk#1#0: Kiosk
+L2:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	4: StLoc[2](owner_cap#1#0: KioskOwnerCap)
+	5: StLoc[1](kiosk#1#0: Kiosk)
+	6: MutBorrowLoc[1](kiosk#1#0: Kiosk)
+	7: ImmBorrowLoc[2](owner_cap#1#0: KioskOwnerCap)
+	8: LdFalse
+	9: Call kiosk::set_allow_extensions(&mut Kiosk, &KioskOwnerCap, bool)
+	10: MutBorrowLoc[1](kiosk#1#0: Kiosk)
+	11: Call kiosk::uid_mut(&mut Kiosk): &mut UID
+	12: Pop
+	13: LdU64(1337)
+	14: Abort
+}
+
+test_disallow_extensions_uid_available() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+L2:	kiosk#1#0: Kiosk
+L3:	owner_cap#1#0: KioskOwnerCap
+B0:
+	0: Call kiosk_test_utils::ctx(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[1](ctx#1#0: &mut TxContext)
+	4: CopyLoc[1](ctx#1#0: &mut TxContext)
+	5: Call kiosk_test_utils::get_kiosk(&mut TxContext): Kiosk * KioskOwnerCap
+	6: StLoc[3](owner_cap#1#0: KioskOwnerCap)
+	7: StLoc[2](kiosk#1#0: Kiosk)
+	8: MutBorrowLoc[2](kiosk#1#0: Kiosk)
+	9: ImmBorrowLoc[3](owner_cap#1#0: KioskOwnerCap)
+	10: LdFalse
+	11: Call kiosk::set_allow_extensions(&mut Kiosk, &KioskOwnerCap, bool)
+	12: ImmBorrowLoc[2](kiosk#1#0: Kiosk)
+	13: Call kiosk::uid(&Kiosk): &UID
+	14: Pop
+	15: MoveLoc[2](kiosk#1#0: Kiosk)
+	16: MoveLoc[3](owner_cap#1#0: KioskOwnerCap)
+	17: MoveLoc[1](ctx#1#0: &mut TxContext)
+	18: Call kiosk_test_utils::return_kiosk(Kiosk, KioskOwnerCap, &mut TxContext): u64
+	19: Pop
+	20: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 10000
+	1 => address: 0x00000000000000000000000000000000000000000000000000000000000a11ce
+]
+}

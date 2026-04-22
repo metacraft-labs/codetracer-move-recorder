@@ -1,0 +1,136 @@
+// Move bytecode v6
+module 2.accumulator_metadata {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::accumulator;
+use 0000000000000000000000000000000000000000000000000000000000000002::bag;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+
+struct OwnerKey has copy, drop, store {
+	owner: address
+}
+
+struct Owner has store {
+	balances: Bag,
+	owner: address
+}
+
+struct MetadataKey<phantom T> has copy, drop, store {
+	dummy_field: bool
+}
+
+struct Metadata<phantom T> has store {
+	fields: Bag
+}
+
+struct AccumulatorObjectCountKey has copy, drop, store {
+	dummy_field: bool
+}
+
+record_accumulator_object_changes(accumulator_root#0#0: &mut AccumulatorRoot, objects_created#0#0: u64, objects_destroyed#0#0: u64) {
+L3:	current_count#1#0: &mut u64
+L4:	key#1#0: AccumulatorObjectCountKey
+B0:
+	0: LdFalse
+	1: Pack[4](AccumulatorObjectCountKey)
+	2: StLoc[4](key#1#0: AccumulatorObjectCountKey)
+	3: CopyLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	4: Call accumulator::root_id_mut(&mut AccumulatorRoot): &mut UID
+	5: FreezeRef
+	6: CopyLoc[4](key#1#0: AccumulatorObjectCountKey)
+	7: Call dynamic_field::exists_<AccumulatorObjectCountKey>(&UID, AccumulatorObjectCountKey): bool
+	8: BrFalse(35)
+B1:
+	9: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	10: Call accumulator::root_id_mut(&mut AccumulatorRoot): &mut UID
+	11: MoveLoc[4](key#1#0: AccumulatorObjectCountKey)
+	12: Call dynamic_field::borrow_mut<AccumulatorObjectCountKey, u64>(&mut UID, AccumulatorObjectCountKey): &mut u64
+	13: StLoc[3](current_count#1#0: &mut u64)
+	14: CopyLoc[3](current_count#1#0: &mut u64)
+	15: ReadRef
+	16: CopyLoc[1](objects_created#0#0: u64)
+	17: Add
+	18: CopyLoc[2](objects_destroyed#0#0: u64)
+	19: Ge
+	20: BrFalse(22)
+B2:
+	21: Branch(26)
+B3:
+	22: MoveLoc[3](current_count#1#0: &mut u64)
+	23: Pop
+	24: LdConst[0](u64: 0)
+	25: Abort
+B4:
+	26: CopyLoc[3](current_count#1#0: &mut u64)
+	27: ReadRef
+	28: MoveLoc[1](objects_created#0#0: u64)
+	29: Add
+	30: MoveLoc[2](objects_destroyed#0#0: u64)
+	31: Sub
+	32: MoveLoc[3](current_count#1#0: &mut u64)
+	33: WriteRef
+	34: Branch(51)
+B5:
+	35: CopyLoc[1](objects_created#0#0: u64)
+	36: CopyLoc[2](objects_destroyed#0#0: u64)
+	37: Ge
+	38: BrFalse(40)
+B6:
+	39: Branch(44)
+B7:
+	40: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	41: Pop
+	42: LdConst[0](u64: 0)
+	43: Abort
+B8:
+	44: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	45: Call accumulator::root_id_mut(&mut AccumulatorRoot): &mut UID
+	46: MoveLoc[4](key#1#0: AccumulatorObjectCountKey)
+	47: MoveLoc[1](objects_created#0#0: u64)
+	48: MoveLoc[2](objects_destroyed#0#0: u64)
+	49: Sub
+	50: Call dynamic_field::add<AccumulatorObjectCountKey, u64>(&mut UID, AccumulatorObjectCountKey, u64)
+B9:
+	51: Ret
+}
+
+get_accumulator_object_count(accumulator_root#0#0: &AccumulatorRoot): u64 {
+L1:	%#1: u64
+L2:	key#1#0: AccumulatorObjectCountKey
+B0:
+	0: LdFalse
+	1: Pack[4](AccumulatorObjectCountKey)
+	2: StLoc[2](key#1#0: AccumulatorObjectCountKey)
+	3: CopyLoc[0](accumulator_root#0#0: &AccumulatorRoot)
+	4: Call accumulator::root_id(&AccumulatorRoot): &UID
+	5: CopyLoc[2](key#1#0: AccumulatorObjectCountKey)
+	6: Call dynamic_field::exists_<AccumulatorObjectCountKey>(&UID, AccumulatorObjectCountKey): bool
+	7: BrFalse(15)
+B1:
+	8: MoveLoc[0](accumulator_root#0#0: &AccumulatorRoot)
+	9: Call accumulator::root_id(&AccumulatorRoot): &UID
+	10: MoveLoc[2](key#1#0: AccumulatorObjectCountKey)
+	11: Call dynamic_field::borrow<AccumulatorObjectCountKey, u64>(&UID, AccumulatorObjectCountKey): &u64
+	12: ReadRef
+	13: StLoc[1](%#1: u64)
+	14: Branch(19)
+B2:
+	15: MoveLoc[0](accumulator_root#0#0: &AccumulatorRoot)
+	16: Pop
+	17: LdU64(0)
+	18: StLoc[1](%#1: u64)
+B3:
+	19: MoveLoc[1](%#1: u64)
+	20: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+]
+}

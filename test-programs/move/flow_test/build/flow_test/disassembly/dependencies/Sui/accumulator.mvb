@@ -1,0 +1,193 @@
+// Move bytecode v6
+module 2.accumulator {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct AccumulatorRoot has key {
+	id: UID
+}
+
+struct U128 has store {
+	value: u128
+}
+
+struct Key<phantom T> has copy, drop, store {
+	address: address
+}
+
+create(ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[0](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[1](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdConst[0](u64: 0)
+	7: Abort
+B3:
+	8: Call object::sui_accumulator_root_object_id(): UID
+	9: Pack[0](AccumulatorRoot)
+	10: Call transfer::share_object<AccumulatorRoot>(AccumulatorRoot)
+	11: Ret
+}
+
+public(friend) root_id(accumulator_root#0#0: &AccumulatorRoot): &UID {
+B0:
+	0: MoveLoc[0](accumulator_root#0#0: &AccumulatorRoot)
+	1: ImmBorrowField[0](AccumulatorRoot.id: UID)
+	2: Ret
+}
+
+public(friend) root_id_mut(accumulator_root#0#0: &mut AccumulatorRoot): &mut UID {
+B0:
+	0: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	1: MutBorrowField[0](AccumulatorRoot.id: UID)
+	2: Ret
+}
+
+public(friend) accumulator_u128_exists<T>(root#0#0: &AccumulatorRoot, address#0#0: address): bool {
+B0:
+	0: MoveLoc[0](root#0#0: &AccumulatorRoot)
+	1: MoveLoc[1](address#0#0: address)
+	2: PackGeneric[0](Key<T>)
+	3: Call root_has_accumulator<T, U128>(&AccumulatorRoot, Key<T>): bool
+	4: Ret
+}
+
+public(friend) accumulator_u128_read<T>(root#0#0: &AccumulatorRoot, address#0#0: address): u128 {
+B0:
+	0: MoveLoc[0](root#0#0: &AccumulatorRoot)
+	1: MoveLoc[1](address#0#0: address)
+	2: PackGeneric[0](Key<T>)
+	3: Call root_borrow_accumulator<T, U128>(&AccumulatorRoot, Key<T>): &U128
+	4: ImmBorrowField[1](U128.value: u128)
+	5: ReadRef
+	6: Ret
+}
+
+public(friend) create_u128(value#0#0: u128): U128 {
+B0:
+	0: MoveLoc[0](value#0#0: u128)
+	1: Pack[1](U128)
+	2: Ret
+}
+
+public(friend) destroy_u128(u128#0#0: U128) {
+B0:
+	0: MoveLoc[0](u128#0#0: U128)
+	1: Unpack[1](U128)
+	2: Pop
+	3: Ret
+}
+
+public(friend) update_u128(u128#0#0: &mut U128, merge#0#0: u128, split#0#0: u128) {
+B0:
+	0: CopyLoc[0](u128#0#0: &mut U128)
+	1: ImmBorrowField[1](U128.value: u128)
+	2: ReadRef
+	3: MoveLoc[1](merge#0#0: u128)
+	4: Add
+	5: MoveLoc[2](split#0#0: u128)
+	6: Sub
+	7: MoveLoc[0](u128#0#0: &mut U128)
+	8: MutBorrowField[1](U128.value: u128)
+	9: WriteRef
+	10: Ret
+}
+
+public(friend) is_zero_u128(u128#0#0: &U128): bool {
+B0:
+	0: MoveLoc[0](u128#0#0: &U128)
+	1: ImmBorrowField[1](U128.value: u128)
+	2: ReadRef
+	3: LdU128(0)
+	4: Eq
+	5: Ret
+}
+
+public(friend) accumulator_key<T>(address#0#0: address): Key<T> {
+B0:
+	0: MoveLoc[0](address#0#0: address)
+	1: PackGeneric[0](Key<T>)
+	2: Ret
+}
+
+public(friend) accumulator_address<T>(address#0#0: address): address {
+L1:	key#1#0: Key<T>
+B0:
+	0: MoveLoc[0](address#0#0: address)
+	1: PackGeneric[0](Key<T>)
+	2: StLoc[1](key#1#0: Key<T>)
+	3: Call object::sui_accumulator_root_address(): address
+	4: MoveLoc[1](key#1#0: Key<T>)
+	5: Call dynamic_field::hash_type_and_key<Key<T>>(address, Key<T>): address
+	6: Ret
+}
+
+public(friend) root_has_accumulator<K, V: store>(accumulator_root#0#0: &AccumulatorRoot, name#0#0: Key<K>): bool {
+B0:
+	0: MoveLoc[0](accumulator_root#0#0: &AccumulatorRoot)
+	1: ImmBorrowField[0](AccumulatorRoot.id: UID)
+	2: MoveLoc[1](name#0#0: Key<K>)
+	3: Call dynamic_field::exists_with_type<Key<K>, V>(&UID, Key<K>): bool
+	4: Ret
+}
+
+public(friend) root_add_accumulator<K, V: store>(accumulator_root#0#0: &mut AccumulatorRoot, name#0#0: Key<K>, value#0#0: V) {
+B0:
+	0: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	1: MutBorrowField[0](AccumulatorRoot.id: UID)
+	2: MoveLoc[1](name#0#0: Key<K>)
+	3: MoveLoc[2](value#0#0: V)
+	4: Call dynamic_field::add<Key<K>, V>(&mut UID, Key<K>, V)
+	5: Ret
+}
+
+public(friend) root_borrow_accumulator_mut<K, V: store>(accumulator_root#0#0: &mut AccumulatorRoot, name#0#0: Key<K>): &mut V {
+B0:
+	0: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	1: MutBorrowField[0](AccumulatorRoot.id: UID)
+	2: MoveLoc[1](name#0#0: Key<K>)
+	3: Call dynamic_field::borrow_mut<Key<K>, V>(&mut UID, Key<K>): &mut V
+	4: Ret
+}
+
+public(friend) root_borrow_accumulator<K, V: store>(accumulator_root#0#0: &AccumulatorRoot, name#0#0: Key<K>): &V {
+B0:
+	0: MoveLoc[0](accumulator_root#0#0: &AccumulatorRoot)
+	1: ImmBorrowField[0](AccumulatorRoot.id: UID)
+	2: MoveLoc[1](name#0#0: Key<K>)
+	3: Call dynamic_field::borrow<Key<K>, V>(&UID, Key<K>): &V
+	4: Ret
+}
+
+public(friend) root_remove_accumulator<K, V: store>(accumulator_root#0#0: &mut AccumulatorRoot, name#0#0: Key<K>): V {
+B0:
+	0: MoveLoc[0](accumulator_root#0#0: &mut AccumulatorRoot)
+	1: MutBorrowField[0](AccumulatorRoot.id: UID)
+	2: MoveLoc[1](name#0#0: Key<K>)
+	3: Call dynamic_field::remove<Key<K>, V>(&mut UID, Key<K>): V
+	4: Ret
+}
+
+native public(friend) emit_deposit_event<T>(accumulator#0#0: address, recipient#0#0: address, amount#0#0: u64);
+
+native public(friend) emit_withdraw_event<T>(accumulator#0#0: address, owner#0#0: address, amount#0#0: u64);
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

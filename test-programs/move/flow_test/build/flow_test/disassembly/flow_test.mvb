@@ -1,0 +1,1078 @@
+// Move bytecode v6
+module 0.flow_test {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+struct Point has copy, drop {
+	x: u64,
+	y: u64
+}
+
+struct Rectangle has copy, drop {
+	origin: Point,
+	width: u64,
+	height: u64
+}
+
+struct Wallet has copy, drop, store {
+	balance: u64,
+	id: u64
+}
+
+struct Container<T: copy + drop> has copy, drop {
+	value: T,
+	label: u64
+}
+
+rectangle_area(r#0#0: &Rectangle): u64 {
+B0:
+	0: CopyLoc[0](r#0#0: &Rectangle)
+	1: ImmBorrowField[0](Rectangle.width: u64)
+	2: ReadRef
+	3: MoveLoc[0](r#0#0: &Rectangle)
+	4: ImmBorrowField[1](Rectangle.height: u64)
+	5: ReadRef
+	6: Mul
+	7: Ret
+}
+
+add_points(a#0#0: &Point, b#0#0: &Point): Point {
+B0:
+	0: CopyLoc[0](a#0#0: &Point)
+	1: ImmBorrowField[2](Point.x: u64)
+	2: ReadRef
+	3: CopyLoc[1](b#0#0: &Point)
+	4: ImmBorrowField[2](Point.x: u64)
+	5: ReadRef
+	6: Add
+	7: MoveLoc[0](a#0#0: &Point)
+	8: ImmBorrowField[3](Point.y: u64)
+	9: ReadRef
+	10: MoveLoc[1](b#0#0: &Point)
+	11: ImmBorrowField[3](Point.y: u64)
+	12: ReadRef
+	13: Add
+	14: Pack[0](Point)
+	15: Ret
+}
+
+scale_point(p#0#0: &mut Point, factor#0#0: u64) {
+B0:
+	0: CopyLoc[0](p#0#0: &mut Point)
+	1: ImmBorrowField[2](Point.x: u64)
+	2: ReadRef
+	3: CopyLoc[1](factor#0#0: u64)
+	4: Mul
+	5: CopyLoc[0](p#0#0: &mut Point)
+	6: MutBorrowField[2](Point.x: u64)
+	7: WriteRef
+	8: CopyLoc[0](p#0#0: &mut Point)
+	9: ImmBorrowField[3](Point.y: u64)
+	10: ReadRef
+	11: MoveLoc[1](factor#0#0: u64)
+	12: Mul
+	13: MoveLoc[0](p#0#0: &mut Point)
+	14: MutBorrowField[3](Point.y: u64)
+	15: WriteRef
+	16: Ret
+}
+
+fibonacci(n#0#0: u64): u64 {
+L1:	a#1#0: u64
+L2:	b#1#0: u64
+L3:	i#1#0: u64
+L4:	temp#1#0: u64
+B0:
+	0: CopyLoc[0](n#0#0: u64)
+	1: LdU64(0)
+	2: Eq
+	3: BrFalse(6)
+B1:
+	4: LdU64(0)
+	5: Ret
+B2:
+	6: CopyLoc[0](n#0#0: u64)
+	7: LdU64(1)
+	8: Eq
+	9: BrFalse(12)
+B3:
+	10: LdU64(1)
+	11: Ret
+B4:
+	12: LdU64(0)
+	13: StLoc[1](a#1#0: u64)
+	14: LdU64(1)
+	15: StLoc[2](b#1#0: u64)
+	16: LdU64(2)
+	17: StLoc[3](i#1#0: u64)
+B5:
+	18: CopyLoc[3](i#1#0: u64)
+	19: CopyLoc[0](n#0#0: u64)
+	20: Le
+	21: BrFalse(35)
+B6:
+	22: CopyLoc[2](b#1#0: u64)
+	23: StLoc[4](temp#1#0: u64)
+	24: MoveLoc[1](a#1#0: u64)
+	25: MoveLoc[2](b#1#0: u64)
+	26: Add
+	27: StLoc[2](b#1#0: u64)
+	28: MoveLoc[4](temp#1#0: u64)
+	29: StLoc[1](a#1#0: u64)
+	30: MoveLoc[3](i#1#0: u64)
+	31: LdU64(1)
+	32: Add
+	33: StLoc[3](i#1#0: u64)
+	34: Branch(18)
+B7:
+	35: MoveLoc[2](b#1#0: u64)
+	36: Ret
+}
+
+max_u64(a#0#0: u64, b#0#0: u64): u64 {
+L2:	%#1: u64
+B0:
+	0: CopyLoc[0](a#0#0: u64)
+	1: CopyLoc[1](b#0#0: u64)
+	2: Ge
+	3: BrFalse(7)
+B1:
+	4: MoveLoc[0](a#0#0: u64)
+	5: StLoc[2](%#1: u64)
+	6: Branch(9)
+B2:
+	7: MoveLoc[1](b#0#0: u64)
+	8: StLoc[2](%#1: u64)
+B3:
+	9: MoveLoc[2](%#1: u64)
+	10: Ret
+}
+
+min_u64(a#0#0: u64, b#0#0: u64): u64 {
+L2:	%#1: u64
+B0:
+	0: CopyLoc[0](a#0#0: u64)
+	1: CopyLoc[1](b#0#0: u64)
+	2: Le
+	3: BrFalse(7)
+B1:
+	4: MoveLoc[0](a#0#0: u64)
+	5: StLoc[2](%#1: u64)
+	6: Branch(9)
+B2:
+	7: MoveLoc[1](b#0#0: u64)
+	8: StLoc[2](%#1: u64)
+B3:
+	9: MoveLoc[2](%#1: u64)
+	10: Ret
+}
+
+vector_sum(v#0#0: &vector<u64>): u64 {
+L1:	i#1#0: u64
+L2:	len#1#0: u64
+L3:	sum#1#0: u64
+B0:
+	0: LdU64(0)
+	1: StLoc[3](sum#1#0: u64)
+	2: LdU64(0)
+	3: StLoc[1](i#1#0: u64)
+	4: CopyLoc[0](v#0#0: &vector<u64>)
+	5: VecLen(1)
+	6: StLoc[2](len#1#0: u64)
+B1:
+	7: CopyLoc[1](i#1#0: u64)
+	8: CopyLoc[2](len#1#0: u64)
+	9: Lt
+	10: BrFalse(24)
+B2:
+	11: Branch(12)
+B3:
+	12: MoveLoc[3](sum#1#0: u64)
+	13: CopyLoc[0](v#0#0: &vector<u64>)
+	14: CopyLoc[1](i#1#0: u64)
+	15: VecImmBorrow(1)
+	16: ReadRef
+	17: Add
+	18: StLoc[3](sum#1#0: u64)
+	19: MoveLoc[1](i#1#0: u64)
+	20: LdU64(1)
+	21: Add
+	22: StLoc[1](i#1#0: u64)
+	23: Branch(7)
+B4:
+	24: MoveLoc[0](v#0#0: &vector<u64>)
+	25: Pop
+	26: MoveLoc[3](sum#1#0: u64)
+	27: Ret
+}
+
+compute_triple(a#0#0: u64, b#0#0: u64): u64 * u64 * u64 {
+L2:	max#1#0: u64
+L3:	product#1#0: u64
+L4:	sum#1#0: u64
+B0:
+	0: CopyLoc[0](a#0#0: u64)
+	1: CopyLoc[1](b#0#0: u64)
+	2: Add
+	3: StLoc[4](sum#1#0: u64)
+	4: CopyLoc[0](a#0#0: u64)
+	5: CopyLoc[1](b#0#0: u64)
+	6: Mul
+	7: StLoc[3](product#1#0: u64)
+	8: MoveLoc[0](a#0#0: u64)
+	9: MoveLoc[1](b#0#0: u64)
+	10: Call max_u64(u64, u64): u64
+	11: StLoc[2](max#1#0: u64)
+	12: MoveLoc[4](sum#1#0: u64)
+	13: MoveLoc[3](product#1#0: u64)
+	14: MoveLoc[2](max#1#0: u64)
+	15: Ret
+}
+
+wrap_value<T: copy + drop>(val#0#0: T, label#0#0: u64): Container<T> {
+B0:
+	0: MoveLoc[0](val#0#0: T)
+	1: MoveLoc[1](label#0#0: u64)
+	2: PackGeneric[0](Container<T>)
+	3: Ret
+}
+
+unwrap_value<T: copy + drop>(c#0#0: Container<T>): T {
+B0:
+	0: MoveLoc[0](c#0#0: Container<T>)
+	1: UnpackGeneric[0](Container<T>)
+	2: Pop
+	3: Ret
+}
+
+test_computation() {
+L0:	a#1#0: u64
+L1:	doubled#1#0: u64
+L2:	sum_val#1#0: u64
+B0:
+	0: LdU64(10)
+	1: StLoc[0](a#1#0: u64)
+	2: CopyLoc[0](a#1#0: u64)
+	3: LdU64(32)
+	4: Add
+	5: StLoc[2](sum_val#1#0: u64)
+	6: CopyLoc[2](sum_val#1#0: u64)
+	7: LdU64(42)
+	8: Eq
+	9: BrFalse(11)
+B1:
+	10: Branch(13)
+B2:
+	11: LdConst[0](u64: 1)
+	12: Abort
+B3:
+	13: MoveLoc[2](sum_val#1#0: u64)
+	14: LdU64(2)
+	15: Mul
+	16: StLoc[1](doubled#1#0: u64)
+	17: CopyLoc[1](doubled#1#0: u64)
+	18: LdU64(84)
+	19: Eq
+	20: BrFalse(22)
+B4:
+	21: Branch(24)
+B5:
+	22: LdConst[0](u64: 1)
+	23: Abort
+B6:
+	24: MoveLoc[1](doubled#1#0: u64)
+	25: MoveLoc[0](a#1#0: u64)
+	26: Add
+	27: LdU64(94)
+	28: Eq
+	29: BrFalse(31)
+B7:
+	30: Branch(33)
+B8:
+	31: LdConst[0](u64: 1)
+	32: Abort
+B9:
+	33: Ret
+}
+
+test_structs() {
+L0:	p1#1#0: Point
+L1:	p2#1#0: Point
+L2:	rect#1#0: Rectangle
+L3:	sum_point#1#0: Point
+L4:	w#1#0: Wallet
+B0:
+	0: LdU64(3)
+	1: LdU64(4)
+	2: Pack[0](Point)
+	3: StLoc[0](p1#1#0: Point)
+	4: LdU64(7)
+	5: LdU64(6)
+	6: Pack[0](Point)
+	7: StLoc[1](p2#1#0: Point)
+	8: ImmBorrowLoc[0](p1#1#0: Point)
+	9: ImmBorrowLoc[1](p2#1#0: Point)
+	10: Call add_points(&Point, &Point): Point
+	11: StLoc[3](sum_point#1#0: Point)
+	12: ImmBorrowLoc[3](sum_point#1#0: Point)
+	13: ImmBorrowField[2](Point.x: u64)
+	14: ReadRef
+	15: LdU64(10)
+	16: Eq
+	17: BrFalse(19)
+B1:
+	18: Branch(21)
+B2:
+	19: LdConst[0](u64: 1)
+	20: Abort
+B3:
+	21: ImmBorrowLoc[3](sum_point#1#0: Point)
+	22: ImmBorrowField[3](Point.y: u64)
+	23: ReadRef
+	24: LdU64(10)
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdConst[0](u64: 1)
+	29: Abort
+B6:
+	30: MoveLoc[0](p1#1#0: Point)
+	31: LdU64(5)
+	32: LdU64(8)
+	33: Pack[1](Rectangle)
+	34: StLoc[2](rect#1#0: Rectangle)
+	35: ImmBorrowLoc[2](rect#1#0: Rectangle)
+	36: Call rectangle_area(&Rectangle): u64
+	37: LdU64(40)
+	38: Eq
+	39: BrFalse(41)
+B7:
+	40: Branch(43)
+B8:
+	41: LdConst[0](u64: 1)
+	42: Abort
+B9:
+	43: MoveLoc[3](sum_point#1#0: Point)
+	44: Unpack[0](Point)
+	45: Add
+	46: LdU64(20)
+	47: Eq
+	48: BrFalse(50)
+B10:
+	49: Branch(52)
+B11:
+	50: LdConst[0](u64: 1)
+	51: Abort
+B12:
+	52: LdU64(1000)
+	53: LdU64(1)
+	54: Pack[2](Wallet)
+	55: StLoc[4](w#1#0: Wallet)
+	56: ImmBorrowLoc[4](w#1#0: Wallet)
+	57: ImmBorrowField[4](Wallet.balance: u64)
+	58: ReadRef
+	59: LdU64(1000)
+	60: Eq
+	61: BrFalse(63)
+B13:
+	62: Branch(65)
+B14:
+	63: LdConst[0](u64: 1)
+	64: Abort
+B15:
+	65: Ret
+}
+
+test_vectors() {
+L0:	first#1#0: u64
+L1:	last#1#0: u64
+L2:	new_len#1#0: u64
+L3:	popped#1#0: u64
+L4:	v#1#0: vector<u64>
+B0:
+	0: VecPack(1, 0)
+	1: StLoc[4](v#1#0: vector<u64>)
+	2: MutBorrowLoc[4](v#1#0: vector<u64>)
+	3: LdU64(10)
+	4: VecPushBack(1)
+	5: MutBorrowLoc[4](v#1#0: vector<u64>)
+	6: LdU64(20)
+	7: VecPushBack(1)
+	8: MutBorrowLoc[4](v#1#0: vector<u64>)
+	9: LdU64(30)
+	10: VecPushBack(1)
+	11: MutBorrowLoc[4](v#1#0: vector<u64>)
+	12: LdU64(40)
+	13: VecPushBack(1)
+	14: MutBorrowLoc[4](v#1#0: vector<u64>)
+	15: LdU64(50)
+	16: VecPushBack(1)
+	17: ImmBorrowLoc[4](v#1#0: vector<u64>)
+	18: VecLen(1)
+	19: LdU64(5)
+	20: Eq
+	21: BrFalse(23)
+B1:
+	22: Branch(25)
+B2:
+	23: LdConst[1](u64: 2)
+	24: Abort
+B3:
+	25: ImmBorrowLoc[4](v#1#0: vector<u64>)
+	26: LdU64(0)
+	27: VecImmBorrow(1)
+	28: ReadRef
+	29: StLoc[0](first#1#0: u64)
+	30: ImmBorrowLoc[4](v#1#0: vector<u64>)
+	31: LdU64(4)
+	32: VecImmBorrow(1)
+	33: ReadRef
+	34: StLoc[1](last#1#0: u64)
+	35: MoveLoc[0](first#1#0: u64)
+	36: LdU64(10)
+	37: Eq
+	38: BrFalse(40)
+B4:
+	39: Branch(42)
+B5:
+	40: LdConst[0](u64: 1)
+	41: Abort
+B6:
+	42: MoveLoc[1](last#1#0: u64)
+	43: LdU64(50)
+	44: Eq
+	45: BrFalse(47)
+B7:
+	46: Branch(49)
+B8:
+	47: LdConst[0](u64: 1)
+	48: Abort
+B9:
+	49: ImmBorrowLoc[4](v#1#0: vector<u64>)
+	50: Call vector_sum(&vector<u64>): u64
+	51: LdU64(150)
+	52: Eq
+	53: BrFalse(55)
+B10:
+	54: Branch(57)
+B11:
+	55: LdConst[0](u64: 1)
+	56: Abort
+B12:
+	57: MutBorrowLoc[4](v#1#0: vector<u64>)
+	58: VecPopBack(1)
+	59: StLoc[3](popped#1#0: u64)
+	60: ImmBorrowLoc[4](v#1#0: vector<u64>)
+	61: VecLen(1)
+	62: StLoc[2](new_len#1#0: u64)
+	63: MoveLoc[3](popped#1#0: u64)
+	64: LdU64(50)
+	65: Eq
+	66: BrFalse(68)
+B13:
+	67: Branch(70)
+B14:
+	68: LdConst[0](u64: 1)
+	69: Abort
+B15:
+	70: MoveLoc[2](new_len#1#0: u64)
+	71: LdU64(4)
+	72: Eq
+	73: BrFalse(75)
+B16:
+	74: Branch(77)
+B17:
+	75: LdConst[0](u64: 1)
+	76: Abort
+B18:
+	77: Ret
+}
+
+test_loops() {
+L0:	%#1: u64
+L1:	accumulator#1#0: u64
+L2:	counter#1#0: u64
+L3:	iterations#1#0: u64
+L4:	power#1#0: u64
+B0:
+	0: LdU64(0)
+	1: StLoc[2](counter#1#0: u64)
+	2: LdU64(0)
+	3: StLoc[1](accumulator#1#0: u64)
+B1:
+	4: CopyLoc[2](counter#1#0: u64)
+	5: LdU64(10)
+	6: Lt
+	7: BrFalse(18)
+B2:
+	8: Branch(9)
+B3:
+	9: MoveLoc[2](counter#1#0: u64)
+	10: LdU64(1)
+	11: Add
+	12: StLoc[2](counter#1#0: u64)
+	13: MoveLoc[1](accumulator#1#0: u64)
+	14: CopyLoc[2](counter#1#0: u64)
+	15: Add
+	16: StLoc[1](accumulator#1#0: u64)
+	17: Branch(4)
+B4:
+	18: MoveLoc[2](counter#1#0: u64)
+	19: LdU64(10)
+	20: Eq
+	21: BrFalse(23)
+B5:
+	22: Branch(25)
+B6:
+	23: LdConst[0](u64: 1)
+	24: Abort
+B7:
+	25: CopyLoc[1](accumulator#1#0: u64)
+	26: LdU64(55)
+	27: Eq
+	28: BrFalse(30)
+B8:
+	29: Branch(32)
+B9:
+	30: LdConst[0](u64: 1)
+	31: Abort
+B10:
+	32: LdU64(1)
+	33: StLoc[4](power#1#0: u64)
+	34: LdU64(0)
+	35: StLoc[3](iterations#1#0: u64)
+B11:
+	36: CopyLoc[4](power#1#0: u64)
+	37: LdU64(100)
+	38: Ge
+	39: BrFalse(41)
+B12:
+	40: Branch(50)
+B13:
+	41: MoveLoc[4](power#1#0: u64)
+	42: LdU64(2)
+	43: Mul
+	44: StLoc[4](power#1#0: u64)
+	45: MoveLoc[3](iterations#1#0: u64)
+	46: LdU64(1)
+	47: Add
+	48: StLoc[3](iterations#1#0: u64)
+	49: Branch(36)
+B14:
+	50: MoveLoc[4](power#1#0: u64)
+	51: LdU64(128)
+	52: Eq
+	53: BrFalse(55)
+B15:
+	54: Branch(57)
+B16:
+	55: LdConst[0](u64: 1)
+	56: Abort
+B17:
+	57: MoveLoc[3](iterations#1#0: u64)
+	58: LdU64(7)
+	59: Eq
+	60: BrFalse(62)
+B18:
+	61: Branch(64)
+B19:
+	62: LdConst[0](u64: 1)
+	63: Abort
+B20:
+	64: MoveLoc[1](accumulator#1#0: u64)
+	65: LdU64(50)
+	66: Gt
+	67: BrFalse(71)
+B21:
+	68: LdU64(1)
+	69: StLoc[0](%#1: u64)
+	70: Branch(73)
+B22:
+	71: LdU64(0)
+	72: StLoc[0](%#1: u64)
+B23:
+	73: MoveLoc[0](%#1: u64)
+	74: LdU64(1)
+	75: Eq
+	76: BrFalse(78)
+B24:
+	77: Branch(80)
+B25:
+	78: LdConst[0](u64: 1)
+	79: Abort
+B26:
+	80: Ret
+}
+
+test_nested_calls() {
+L0:	max#1#0: u64
+L1:	product#1#0: u64
+L2:	x#1#0: u64
+L3:	y#1#0: u64
+B0:
+	0: LdU64(12)
+	1: StLoc[2](x#1#0: u64)
+	2: LdU64(8)
+	3: StLoc[3](y#1#0: u64)
+	4: CopyLoc[2](x#1#0: u64)
+	5: CopyLoc[3](y#1#0: u64)
+	6: Call compute_triple(u64, u64): u64 * u64 * u64
+	7: StLoc[0](max#1#0: u64)
+	8: StLoc[1](product#1#0: u64)
+	9: LdU64(20)
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdConst[0](u64: 1)
+	14: Abort
+B3:
+	15: CopyLoc[1](product#1#0: u64)
+	16: LdU64(96)
+	17: Eq
+	18: BrFalse(20)
+B4:
+	19: Branch(22)
+B5:
+	20: LdConst[0](u64: 1)
+	21: Abort
+B6:
+	22: MoveLoc[0](max#1#0: u64)
+	23: LdU64(12)
+	24: Eq
+	25: BrFalse(27)
+B7:
+	26: Branch(29)
+B8:
+	27: LdConst[0](u64: 1)
+	28: Abort
+B9:
+	29: MoveLoc[2](x#1#0: u64)
+	30: MoveLoc[3](y#1#0: u64)
+	31: Call min_u64(u64, u64): u64
+	32: LdU64(15)
+	33: LdU64(20)
+	34: Call min_u64(u64, u64): u64
+	35: Call max_u64(u64, u64): u64
+	36: LdU64(15)
+	37: Eq
+	38: BrFalse(40)
+B10:
+	39: Branch(42)
+B11:
+	40: LdConst[0](u64: 1)
+	41: Abort
+B12:
+	42: MoveLoc[1](product#1#0: u64)
+	43: LdConst[4](u64: 100)
+	44: Mul
+	45: LdU64(9600)
+	46: Eq
+	47: BrFalse(49)
+B13:
+	48: Branch(51)
+B14:
+	49: LdConst[0](u64: 1)
+	50: Abort
+B15:
+	51: Ret
+}
+
+test_generics() {
+L0:	c3#1#0: Container<Point>
+L1:	v3#1#0: Point
+B0:
+	0: LdU64(42)
+	1: LdU64(1)
+	2: Call wrap_value<u64>(u64, u64): Container<u64>
+	3: Call unwrap_value<u64>(Container<u64>): u64
+	4: LdU64(42)
+	5: Eq
+	6: BrFalse(8)
+B1:
+	7: Branch(10)
+B2:
+	8: LdConst[0](u64: 1)
+	9: Abort
+B3:
+	10: LdTrue
+	11: LdU64(2)
+	12: Call wrap_value<bool>(bool, u64): Container<bool>
+	13: Call unwrap_value<bool>(Container<bool>): bool
+	14: LdTrue
+	15: Eq
+	16: BrFalse(18)
+B4:
+	17: Branch(20)
+B5:
+	18: LdConst[0](u64: 1)
+	19: Abort
+B6:
+	20: LdU64(5)
+	21: LdU64(10)
+	22: Pack[0](Point)
+	23: LdU64(3)
+	24: Call wrap_value<Point>(Point, u64): Container<Point>
+	25: StLoc[0](c3#1#0: Container<Point>)
+	26: CopyLoc[0](c3#1#0: Container<Point>)
+	27: Call unwrap_value<Point>(Container<Point>): Point
+	28: StLoc[1](v3#1#0: Point)
+	29: ImmBorrowLoc[1](v3#1#0: Point)
+	30: ImmBorrowField[2](Point.x: u64)
+	31: ReadRef
+	32: LdU64(5)
+	33: Eq
+	34: BrFalse(36)
+B7:
+	35: Branch(38)
+B8:
+	36: LdConst[0](u64: 1)
+	37: Abort
+B9:
+	38: ImmBorrowLoc[1](v3#1#0: Point)
+	39: ImmBorrowField[3](Point.y: u64)
+	40: ReadRef
+	41: LdU64(10)
+	42: Eq
+	43: BrFalse(45)
+B10:
+	44: Branch(47)
+B11:
+	45: LdConst[0](u64: 1)
+	46: Abort
+B12:
+	47: ImmBorrowLoc[0](c3#1#0: Container<Point>)
+	48: ImmBorrowFieldGeneric[0](Container.label: u64)
+	49: ReadRef
+	50: LdU64(3)
+	51: Eq
+	52: BrFalse(54)
+B13:
+	53: Branch(56)
+B14:
+	54: LdConst[0](u64: 1)
+	55: Abort
+B15:
+	56: Ret
+}
+
+test_fibonacci() {
+L0:	fib_0#1#0: u64
+L1:	fib_1#1#0: u64
+L2:	fib_10#1#0: u64
+L3:	fib_15#1#0: u64
+L4:	fib_5#1#0: u64
+B0:
+	0: LdU64(0)
+	1: Call fibonacci(u64): u64
+	2: StLoc[0](fib_0#1#0: u64)
+	3: LdU64(1)
+	4: Call fibonacci(u64): u64
+	5: StLoc[1](fib_1#1#0: u64)
+	6: LdU64(5)
+	7: Call fibonacci(u64): u64
+	8: StLoc[4](fib_5#1#0: u64)
+	9: LdU64(10)
+	10: Call fibonacci(u64): u64
+	11: StLoc[2](fib_10#1#0: u64)
+	12: LdU64(15)
+	13: Call fibonacci(u64): u64
+	14: StLoc[3](fib_15#1#0: u64)
+	15: MoveLoc[0](fib_0#1#0: u64)
+	16: LdU64(0)
+	17: Eq
+	18: BrFalse(20)
+B1:
+	19: Branch(22)
+B2:
+	20: LdConst[0](u64: 1)
+	21: Abort
+B3:
+	22: MoveLoc[1](fib_1#1#0: u64)
+	23: LdU64(1)
+	24: Eq
+	25: BrFalse(27)
+B4:
+	26: Branch(29)
+B5:
+	27: LdConst[0](u64: 1)
+	28: Abort
+B6:
+	29: MoveLoc[4](fib_5#1#0: u64)
+	30: LdU64(5)
+	31: Eq
+	32: BrFalse(34)
+B7:
+	33: Branch(36)
+B8:
+	34: LdConst[0](u64: 1)
+	35: Abort
+B9:
+	36: MoveLoc[2](fib_10#1#0: u64)
+	37: LdU64(55)
+	38: Eq
+	39: BrFalse(41)
+B10:
+	40: Branch(43)
+B11:
+	41: LdConst[0](u64: 1)
+	42: Abort
+B12:
+	43: MoveLoc[3](fib_15#1#0: u64)
+	44: LdU64(610)
+	45: Eq
+	46: BrFalse(48)
+B13:
+	47: Branch(50)
+B14:
+	48: LdConst[0](u64: 1)
+	49: Abort
+B15:
+	50: Ret
+}
+
+test_references() {
+L0:	final_x#1#0: u64
+L1:	final_y#1#0: u64
+L2:	mut_point#1#0: Point
+L3:	read_x#1#0: u64
+L4:	read_y#1#0: u64
+L5:	ref_x#1#0: &Point
+B0:
+	0: LdU64(2)
+	1: LdU64(3)
+	2: Pack[0](Point)
+	3: StLoc[2](mut_point#1#0: Point)
+	4: MutBorrowLoc[2](mut_point#1#0: Point)
+	5: LdU64(5)
+	6: Call scale_point(&mut Point, u64)
+	7: ImmBorrowLoc[2](mut_point#1#0: Point)
+	8: ImmBorrowField[2](Point.x: u64)
+	9: ReadRef
+	10: LdU64(10)
+	11: Eq
+	12: BrFalse(14)
+B1:
+	13: Branch(16)
+B2:
+	14: LdConst[0](u64: 1)
+	15: Abort
+B3:
+	16: ImmBorrowLoc[2](mut_point#1#0: Point)
+	17: ImmBorrowField[3](Point.y: u64)
+	18: ReadRef
+	19: LdU64(15)
+	20: Eq
+	21: BrFalse(23)
+B4:
+	22: Branch(25)
+B5:
+	23: LdConst[0](u64: 1)
+	24: Abort
+B6:
+	25: ImmBorrowLoc[2](mut_point#1#0: Point)
+	26: StLoc[5](ref_x#1#0: &Point)
+	27: CopyLoc[5](ref_x#1#0: &Point)
+	28: ImmBorrowField[2](Point.x: u64)
+	29: ReadRef
+	30: StLoc[3](read_x#1#0: u64)
+	31: MoveLoc[5](ref_x#1#0: &Point)
+	32: ImmBorrowField[3](Point.y: u64)
+	33: ReadRef
+	34: StLoc[4](read_y#1#0: u64)
+	35: MoveLoc[3](read_x#1#0: u64)
+	36: LdU64(10)
+	37: Eq
+	38: BrFalse(40)
+B7:
+	39: Branch(42)
+B8:
+	40: LdConst[0](u64: 1)
+	41: Abort
+B9:
+	42: MoveLoc[4](read_y#1#0: u64)
+	43: LdU64(15)
+	44: Eq
+	45: BrFalse(47)
+B10:
+	46: Branch(49)
+B11:
+	47: LdConst[0](u64: 1)
+	48: Abort
+B12:
+	49: MutBorrowLoc[2](mut_point#1#0: Point)
+	50: LdU64(3)
+	51: Call scale_point(&mut Point, u64)
+	52: ImmBorrowLoc[2](mut_point#1#0: Point)
+	53: ImmBorrowField[2](Point.x: u64)
+	54: ReadRef
+	55: StLoc[0](final_x#1#0: u64)
+	56: ImmBorrowLoc[2](mut_point#1#0: Point)
+	57: ImmBorrowField[3](Point.y: u64)
+	58: ReadRef
+	59: StLoc[1](final_y#1#0: u64)
+	60: MoveLoc[0](final_x#1#0: u64)
+	61: LdU64(30)
+	62: Eq
+	63: BrFalse(65)
+B13:
+	64: Branch(67)
+B14:
+	65: LdConst[0](u64: 1)
+	66: Abort
+B15:
+	67: MoveLoc[1](final_y#1#0: u64)
+	68: LdU64(45)
+	69: Eq
+	70: BrFalse(72)
+B16:
+	71: Branch(74)
+B17:
+	72: LdConst[0](u64: 1)
+	73: Abort
+B18:
+	74: Ret
+}
+
+test_boolean_and_integers() {
+L0:	%#1: bool
+L1:	%#2: bool
+L2:	%#3: bool
+L3:	%#4: u64
+L4:	and_result#1#0: bool
+L5:	f#1#0: bool
+L6:	not_result#1#0: bool
+L7:	or_result#1#0: bool
+L8:	t#1#0: bool
+B0:
+	0: LdTrue
+	1: StLoc[8](t#1#0: bool)
+	2: LdFalse
+	3: StLoc[5](f#1#0: bool)
+	4: CopyLoc[8](t#1#0: bool)
+	5: BrFalse(9)
+B1:
+	6: CopyLoc[5](f#1#0: bool)
+	7: StLoc[0](%#1: bool)
+	8: Branch(11)
+B2:
+	9: LdFalse
+	10: StLoc[0](%#1: bool)
+B3:
+	11: MoveLoc[0](%#1: bool)
+	12: StLoc[4](and_result#1#0: bool)
+	13: CopyLoc[8](t#1#0: bool)
+	14: BrFalse(18)
+B4:
+	15: LdTrue
+	16: StLoc[1](%#2: bool)
+	17: Branch(20)
+B5:
+	18: MoveLoc[5](f#1#0: bool)
+	19: StLoc[1](%#2: bool)
+B6:
+	20: MoveLoc[1](%#2: bool)
+	21: StLoc[7](or_result#1#0: bool)
+	22: MoveLoc[8](t#1#0: bool)
+	23: Not
+	24: StLoc[6](not_result#1#0: bool)
+	25: CopyLoc[4](and_result#1#0: bool)
+	26: LdFalse
+	27: Eq
+	28: BrFalse(30)
+B7:
+	29: Branch(32)
+B8:
+	30: LdConst[0](u64: 1)
+	31: Abort
+B9:
+	32: CopyLoc[7](or_result#1#0: bool)
+	33: LdTrue
+	34: Eq
+	35: BrFalse(37)
+B10:
+	36: Branch(39)
+B11:
+	37: LdConst[0](u64: 1)
+	38: Abort
+B12:
+	39: MoveLoc[6](not_result#1#0: bool)
+	40: LdFalse
+	41: Eq
+	42: BrFalse(44)
+B13:
+	43: Branch(46)
+B14:
+	44: LdConst[0](u64: 1)
+	45: Abort
+B15:
+	46: MoveLoc[7](or_result#1#0: bool)
+	47: BrFalse(52)
+B16:
+	48: MoveLoc[4](and_result#1#0: bool)
+	49: Not
+	50: StLoc[2](%#3: bool)
+	51: Branch(54)
+B17:
+	52: LdFalse
+	53: StLoc[2](%#3: bool)
+B18:
+	54: MoveLoc[2](%#3: bool)
+	55: BrFalse(59)
+B19:
+	56: LdU64(1)
+	57: StLoc[3](%#4: u64)
+	58: Branch(61)
+B20:
+	59: LdU64(0)
+	60: StLoc[3](%#4: u64)
+B21:
+	61: MoveLoc[3](%#4: u64)
+	62: LdU64(1)
+	63: Eq
+	64: BrFalse(66)
+B22:
+	65: Branch(68)
+B23:
+	66: LdConst[0](u64: 1)
+	67: Abort
+B24:
+	68: Ret
+}
+
+test_abort() {
+L0:	y#1#0: u64
+B0:
+	0: LdU64(0)
+	1: StLoc[0](y#1#0: u64)
+	2: CopyLoc[0](y#1#0: u64)
+	3: LdU64(0)
+	4: Eq
+	5: BrFalse(8)
+B1:
+	6: LdConst[3](u64: 42)
+	7: Abort
+B2:
+	8: LdU64(10)
+	9: MoveLoc[0](y#1#0: u64)
+	10: Div
+	11: Pop
+	12: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 1
+	1 => u64: 2
+	2 => u64: 3
+	3 => u64: 42
+	4 => u64: 100
+]
+}

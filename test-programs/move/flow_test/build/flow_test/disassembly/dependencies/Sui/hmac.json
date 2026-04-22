@@ -1,0 +1,90 @@
+{
+  "version": 2,
+  "from_file_path": "/home/zahary/metacraft/codetracer-move-recorder/test-programs/move/flow_test/build/flow_test/disassembly/dependencies/Sui/dependencies/Sui/hmac.mvb",
+  "definition_location": {
+    "file_hash": "8934697cc0d291a3e2e8c9f5e582ba7cfed6435362322c3ed0a8a83194900349",
+    "start": 29,
+    "end": 33
+  },
+  "module_name": [
+    "0000000000000000000000000000000000000000000000000000000000000002",
+    "hmac"
+  ],
+  "struct_map": {},
+  "enum_map": {},
+  "function_map": {
+    "0": {
+      "location": {
+        "file_hash": "8934697cc0d291a3e2e8c9f5e582ba7cfed6435362322c3ed0a8a83194900349",
+        "start": 118,
+        "end": 203
+      },
+      "definition_location": {
+        "file_hash": "8934697cc0d291a3e2e8c9f5e582ba7cfed6435362322c3ed0a8a83194900349",
+        "start": 132,
+        "end": 145
+      },
+      "type_parameters": [],
+      "parameters": [
+        [
+          "key#0#0",
+          {
+            "file_hash": "8934697cc0d291a3e2e8c9f5e582ba7cfed6435362322c3ed0a8a83194900349",
+            "start": 146,
+            "end": 153
+          }
+        ],
+        [
+          "msg#0#0",
+          {
+            "file_hash": "8934697cc0d291a3e2e8c9f5e582ba7cfed6435362322c3ed0a8a83194900349",
+            "start": 168,
+            "end": 175
+          }
+        ]
+      ],
+      "returns": [
+        {
+          "file_hash": "8934697cc0d291a3e2e8c9f5e582ba7cfed6435362322c3ed0a8a83194900349",
+          "start": 191,
+          "end": 201
+        }
+      ],
+      "locals": [],
+      "nops": {},
+      "code_map": {},
+      "is_native": true
+    },
+    "1": {
+      "location": {
+        "file_hash": "8934697cc0d291a3e2e8c9f5e582ba7cfed6435362322c3ed0a8a83194900349",
+        "start": 204,
+        "end": 281
+      },
+      "definition_location": {
+        "file_hash": "8934697cc0d291a3e2e8c9f5e582ba7cfed6435362322c3ed0a8a83194900349",
+        "start": 217,
+        "end": 233
+      },
+      "type_parameters": [],
+      "parameters": [],
+      "returns": [],
+      "locals": [],
+      "nops": {},
+      "code_map": {
+        "0": {
+          "file_hash": "8934697cc0d291a3e2e8c9f5e582ba7cfed6435362322c3ed0a8a83194900349",
+          "start": 246,
+          "end": 270
+        },
+        "1": {
+          "file_hash": "8934697cc0d291a3e2e8c9f5e582ba7cfed6435362322c3ed0a8a83194900349",
+          "start": 275,
+          "end": 278
+        }
+      },
+      "is_native": false
+    }
+  },
+  "constant_map": {}
+}

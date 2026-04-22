@@ -1,0 +1,101 @@
+// Move bytecode v6
+module 2.sui {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::balance;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::url;
+
+struct SUI has drop {
+	dummy_field: bool
+}
+
+new(ctx#0#0: &mut TxContext): Balance<SUI> {
+L1:	metadata#1#0: CoinMetadata<SUI>
+L2:	supply#1#0: Supply<SUI>
+L3:	total_sui#1#0: Balance<SUI>
+L4:	treasury#1#0: TreasuryCap<SUI>
+B0:
+	0: CopyLoc[0](ctx#0#0: &mut TxContext)
+	1: FreezeRef
+	2: Call tx_context::sender(&TxContext): address
+	3: LdConst[5](address: 0x00..)
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](ctx#0#0: &mut TxContext)
+	8: Pop
+	9: LdConst[1](u64: 1)
+	10: Abort
+B3:
+	11: CopyLoc[0](ctx#0#0: &mut TxContext)
+	12: FreezeRef
+	13: Call tx_context::epoch(&TxContext): u64
+	14: LdU64(0)
+	15: Eq
+	16: BrFalse(18)
+B4:
+	17: Branch(22)
+B5:
+	18: MoveLoc[0](ctx#0#0: &mut TxContext)
+	19: Pop
+	20: LdConst[0](u64: 0)
+	21: Abort
+B6:
+	22: LdFalse
+	23: Pack[0](SUI)
+	24: LdU8(9)
+	25: LdConst[6](vector<u8>: "SUI..)
+	26: LdConst[7](vector<u8>: "Sui..)
+	27: LdConst[8](vector<u8>: "" /..)
+	28: Call option::none<Url>(): Option<Url>
+	29: MoveLoc[0](ctx#0#0: &mut TxContext)
+	30: Call coin::create_currency<SUI>(SUI, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, &mut TxContext): TreasuryCap<SUI> * CoinMetadata<SUI>
+	31: StLoc[1](metadata#1#0: CoinMetadata<SUI>)
+	32: StLoc[4](treasury#1#0: TreasuryCap<SUI>)
+	33: MoveLoc[1](metadata#1#0: CoinMetadata<SUI>)
+	34: Call transfer::public_freeze_object<CoinMetadata<SUI>>(CoinMetadata<SUI>)
+	35: MoveLoc[4](treasury#1#0: TreasuryCap<SUI>)
+	36: Call coin::treasury_into_supply<SUI>(TreasuryCap<SUI>): Supply<SUI>
+	37: StLoc[2](supply#1#0: Supply<SUI>)
+	38: MutBorrowLoc[2](supply#1#0: Supply<SUI>)
+	39: LdConst[4](u64: 1000..)
+	40: Call balance::increase_supply<SUI>(&mut Supply<SUI>, u64): Balance<SUI>
+	41: StLoc[3](total_sui#1#0: Balance<SUI>)
+	42: MoveLoc[2](supply#1#0: Supply<SUI>)
+	43: Call balance::destroy_supply<SUI>(Supply<SUI>): u64
+	44: Pop
+	45: MoveLoc[3](total_sui#1#0: Balance<SUI>)
+	46: Ret
+}
+
+entry public transfer(c#0#0: Coin<SUI>, recipient#0#0: address) {
+B0:
+	0: MoveLoc[0](c#0#0: Coin<SUI>)
+	1: MoveLoc[1](recipient#0#0: address)
+	2: Call transfer::public_transfer<Coin<SUI>>(Coin<SUI>, address)
+	3: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 1000000000
+	3 => u64: 10000000000
+	4 => u64: 10000000000000000000
+	5 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	6 => vector<u8>: "SUI" // interpreted as UTF8 string
+	7 => vector<u8>: "Sui" // interpreted as UTF8 string
+	8 => vector<u8>: "" // interpreted as UTF8 string
+]
+}

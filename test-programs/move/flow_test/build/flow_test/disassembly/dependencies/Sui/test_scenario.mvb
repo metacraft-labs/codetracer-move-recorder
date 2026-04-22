@@ -1,0 +1,976 @@
+// Move bytecode v6
+module 2.test_scenario {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::clock;
+use 0000000000000000000000000000000000000000000000000000000000000002::deny_list;
+use 0000000000000000000000000000000000000000000000000000000000000002::display_registry;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::random;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::vec_map;
+
+struct Scenario {
+	txn_number: u64,
+	ctx: TxContext
+}
+
+struct TxContextBuilder has copy, drop {
+	sender: address,
+	epoch: u64,
+	epoch_timestamp_ms: u64,
+	ids_created: u64,
+	rgp: Option<u64>,
+	gas_price: u64,
+	gas_budget: u64,
+	sponsor: Option<address>
+}
+
+struct TransactionEffects has drop {
+	created: vector<ID>,
+	written: vector<ID>,
+	deleted: vector<ID>,
+	transferred_to_account: VecMap<ID, address>,
+	transferred_to_object: VecMap<ID, ID>,
+	shared: vector<ID>,
+	frozen: vector<ID>,
+	num_user_events: u64
+}
+
+public ctx_builder_from_sender(sender#0#0: address): TxContextBuilder {
+B0:
+	0: MoveLoc[0](sender#0#0: address)
+	1: LdU64(0)
+	2: LdU64(0)
+	3: LdU64(0)
+	4: LdU64(700)
+	5: Call option::some<u64>(u64): Option<u64>
+	6: LdU64(1000)
+	7: LdU64(100000000)
+	8: Call option::none<address>(): Option<address>
+	9: Pack[1](TxContextBuilder)
+	10: Ret
+}
+
+public ctx_builder(scenario#0#0: &Scenario): TxContextBuilder {
+B0:
+	0: MoveLoc[0](scenario#0#0: &Scenario)
+	1: ImmBorrowField[0](Scenario.ctx: TxContext)
+	2: Call ctx_builder_from_context(&TxContext): TxContextBuilder
+	3: Ret
+}
+
+public ctx_builder_from_context(ctx#0#0: &TxContext): TxContextBuilder {
+B0:
+	0: CopyLoc[0](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: CopyLoc[0](ctx#0#0: &TxContext)
+	3: Call tx_context::epoch(&TxContext): u64
+	4: CopyLoc[0](ctx#0#0: &TxContext)
+	5: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	6: CopyLoc[0](ctx#0#0: &TxContext)
+	7: Call tx_context::ids_created(&TxContext): u64
+	8: CopyLoc[0](ctx#0#0: &TxContext)
+	9: Call tx_context::reference_gas_price(&TxContext): u64
+	10: Call option::some<u64>(u64): Option<u64>
+	11: CopyLoc[0](ctx#0#0: &TxContext)
+	12: Call tx_context::gas_price(&TxContext): u64
+	13: CopyLoc[0](ctx#0#0: &TxContext)
+	14: Call tx_context::gas_budget(&TxContext): u64
+	15: MoveLoc[0](ctx#0#0: &TxContext)
+	16: Call tx_context::sponsor(&TxContext): Option<address>
+	17: Pack[1](TxContextBuilder)
+	18: Ret
+}
+
+public set_epoch(builder#0#0: TxContextBuilder, epoch#0#0: u64): TxContextBuilder {
+B0:
+	0: MoveLoc[1](epoch#0#0: u64)
+	1: MutBorrowLoc[0](builder#0#0: TxContextBuilder)
+	2: MutBorrowField[1](TxContextBuilder.epoch: u64)
+	3: WriteRef
+	4: MoveLoc[0](builder#0#0: TxContextBuilder)
+	5: Ret
+}
+
+public set_epoch_timestamp(builder#0#0: TxContextBuilder, ms#0#0: u64): TxContextBuilder {
+B0:
+	0: MoveLoc[1](ms#0#0: u64)
+	1: MutBorrowLoc[0](builder#0#0: TxContextBuilder)
+	2: MutBorrowField[2](TxContextBuilder.epoch_timestamp_ms: u64)
+	3: WriteRef
+	4: MoveLoc[0](builder#0#0: TxContextBuilder)
+	5: Ret
+}
+
+public set_ids_created(builder#0#0: TxContextBuilder, ids_created#0#0: u64): TxContextBuilder {
+B0:
+	0: MoveLoc[1](ids_created#0#0: u64)
+	1: MutBorrowLoc[0](builder#0#0: TxContextBuilder)
+	2: MutBorrowField[3](TxContextBuilder.ids_created: u64)
+	3: WriteRef
+	4: MoveLoc[0](builder#0#0: TxContextBuilder)
+	5: Ret
+}
+
+public set_reference_gas_price(builder#0#0: TxContextBuilder, rgp#0#0: u64): TxContextBuilder {
+B0:
+	0: MoveLoc[1](rgp#0#0: u64)
+	1: Call option::some<u64>(u64): Option<u64>
+	2: MutBorrowLoc[0](builder#0#0: TxContextBuilder)
+	3: MutBorrowField[4](TxContextBuilder.rgp: Option<u64>)
+	4: WriteRef
+	5: MoveLoc[0](builder#0#0: TxContextBuilder)
+	6: Ret
+}
+
+public unset_reference_gas_price(builder#0#0: TxContextBuilder): TxContextBuilder {
+B0:
+	0: Call option::none<u64>(): Option<u64>
+	1: MutBorrowLoc[0](builder#0#0: TxContextBuilder)
+	2: MutBorrowField[4](TxContextBuilder.rgp: Option<u64>)
+	3: WriteRef
+	4: MoveLoc[0](builder#0#0: TxContextBuilder)
+	5: Ret
+}
+
+public set_gas_price(builder#0#0: TxContextBuilder, gas_price#0#0: u64): TxContextBuilder {
+B0:
+	0: MoveLoc[1](gas_price#0#0: u64)
+	1: MutBorrowLoc[0](builder#0#0: TxContextBuilder)
+	2: MutBorrowField[5](TxContextBuilder.gas_price: u64)
+	3: WriteRef
+	4: MoveLoc[0](builder#0#0: TxContextBuilder)
+	5: Ret
+}
+
+public set_gas_budget(builder#0#0: TxContextBuilder, gas_budget#0#0: u64): TxContextBuilder {
+B0:
+	0: MoveLoc[1](gas_budget#0#0: u64)
+	1: MutBorrowLoc[0](builder#0#0: TxContextBuilder)
+	2: MutBorrowField[6](TxContextBuilder.gas_budget: u64)
+	3: WriteRef
+	4: MoveLoc[0](builder#0#0: TxContextBuilder)
+	5: Ret
+}
+
+public set_sponsor(builder#0#0: TxContextBuilder, sponsor#0#0: address): TxContextBuilder {
+B0:
+	0: MoveLoc[1](sponsor#0#0: address)
+	1: Call option::some<address>(address): Option<address>
+	2: MutBorrowLoc[0](builder#0#0: TxContextBuilder)
+	3: MutBorrowField[7](TxContextBuilder.sponsor: Option<address>)
+	4: WriteRef
+	5: MoveLoc[0](builder#0#0: TxContextBuilder)
+	6: Ret
+}
+
+public unset_sponsor(builder#0#0: TxContextBuilder): TxContextBuilder {
+B0:
+	0: Call option::none<address>(): Option<address>
+	1: MutBorrowLoc[0](builder#0#0: TxContextBuilder)
+	2: MutBorrowField[7](TxContextBuilder.sponsor: Option<address>)
+	3: WriteRef
+	4: MoveLoc[0](builder#0#0: TxContextBuilder)
+	5: Ret
+}
+
+make_tx_context(builder#0#0: TxContextBuilder, tx_hash#0#0: vector<u8>): TxContext {
+B0:
+	0: ImmBorrowLoc[0](builder#0#0: TxContextBuilder)
+	1: ImmBorrowField[8](TxContextBuilder.sender: address)
+	2: ReadRef
+	3: MoveLoc[1](tx_hash#0#0: vector<u8>)
+	4: ImmBorrowLoc[0](builder#0#0: TxContextBuilder)
+	5: ImmBorrowField[1](TxContextBuilder.epoch: u64)
+	6: ReadRef
+	7: ImmBorrowLoc[0](builder#0#0: TxContextBuilder)
+	8: ImmBorrowField[2](TxContextBuilder.epoch_timestamp_ms: u64)
+	9: ReadRef
+	10: ImmBorrowLoc[0](builder#0#0: TxContextBuilder)
+	11: ImmBorrowField[3](TxContextBuilder.ids_created: u64)
+	12: ReadRef
+	13: ImmBorrowLoc[0](builder#0#0: TxContextBuilder)
+	14: ImmBorrowField[4](TxContextBuilder.rgp: Option<u64>)
+	15: ReadRef
+	16: Call option::destroy_some<u64>(Option<u64>): u64
+	17: ImmBorrowLoc[0](builder#0#0: TxContextBuilder)
+	18: ImmBorrowField[5](TxContextBuilder.gas_price: u64)
+	19: ReadRef
+	20: ImmBorrowLoc[0](builder#0#0: TxContextBuilder)
+	21: ImmBorrowField[6](TxContextBuilder.gas_budget: u64)
+	22: ReadRef
+	23: ImmBorrowLoc[0](builder#0#0: TxContextBuilder)
+	24: ImmBorrowField[7](TxContextBuilder.sponsor: Option<address>)
+	25: ReadRef
+	26: Call tx_context::create(address, vector<u8>, u64, u64, u64, u64, u64, u64, Option<address>): TxContext
+	27: Ret
+}
+
+public begin(sender#0#0: address): Scenario {
+B0:
+	0: LdU64(0)
+	1: MoveLoc[0](sender#0#0: address)
+	2: LdU64(0)
+	3: LdU64(0)
+	4: LdU64(0)
+	5: LdU64(0)
+	6: Call tx_context::new_from_hint(address, u64, u64, u64, u64): TxContext
+	7: Pack[0](Scenario)
+	8: Ret
+}
+
+public begin_with_context(ctx_builder#0#0: TxContextBuilder): Scenario {
+L1:	ctx#1#0: TxContext
+L2:	hash#1#0: vector<u8>
+L3:	txn_number#1#0: u64
+B0:
+	0: LdU64(0)
+	1: StLoc[3](txn_number#1#0: u64)
+	2: ImmBorrowLoc[0](ctx_builder#0#0: TxContextBuilder)
+	3: ImmBorrowField[4](TxContextBuilder.rgp: Option<u64>)
+	4: Call option::is_some<u64>(&Option<u64>): bool
+	5: BrFalse(7)
+B1:
+	6: Branch(9)
+B2:
+	7: LdU64(13906835175070760959)
+	8: Abort
+B3:
+	9: CopyLoc[3](txn_number#1#0: u64)
+	10: Call tx_context::dummy_tx_hash_with_hint(u64): vector<u8>
+	11: StLoc[2](hash#1#0: vector<u8>)
+	12: MoveLoc[0](ctx_builder#0#0: TxContextBuilder)
+	13: MoveLoc[2](hash#1#0: vector<u8>)
+	14: Call make_tx_context(TxContextBuilder, vector<u8>): TxContext
+	15: StLoc[1](ctx#1#0: TxContext)
+	16: MoveLoc[3](txn_number#1#0: u64)
+	17: MoveLoc[1](ctx#1#0: TxContext)
+	18: Pack[0](Scenario)
+	19: Ret
+}
+
+public create_system_objects(scenario#0#0: &mut Scenario) {
+L1:	sender#1#0: address
+B0:
+	0: CopyLoc[0](scenario#0#0: &mut Scenario)
+	1: Call ctx(&mut Scenario): &mut TxContext
+	2: FreezeRef
+	3: Call tx_context::sender(&TxContext): address
+	4: StLoc[1](sender#1#0: address)
+	5: CopyLoc[0](scenario#0#0: &mut Scenario)
+	6: LdConst[8](address: 0x00..)
+	7: Call next_tx(&mut Scenario, address): TransactionEffects
+	8: Pop
+	9: CopyLoc[0](scenario#0#0: &mut Scenario)
+	10: Call ctx(&mut Scenario): &mut TxContext
+	11: Call clock::create_for_testing(&mut TxContext): Clock
+	12: Call clock::share_for_testing(Clock)
+	13: CopyLoc[0](scenario#0#0: &mut Scenario)
+	14: Call ctx(&mut Scenario): &mut TxContext
+	15: Call random::create_for_testing(&mut TxContext)
+	16: CopyLoc[0](scenario#0#0: &mut Scenario)
+	17: Call ctx(&mut Scenario): &mut TxContext
+	18: Call deny_list::create_for_testing(&mut TxContext)
+	19: CopyLoc[0](scenario#0#0: &mut Scenario)
+	20: Call ctx(&mut Scenario): &mut TxContext
+	21: Call display_registry::create_for_testing(&mut TxContext)
+	22: MoveLoc[0](scenario#0#0: &mut Scenario)
+	23: MoveLoc[1](sender#1#0: address)
+	24: Call next_tx(&mut Scenario, address): TransactionEffects
+	25: Pop
+	26: Ret
+}
+
+public next_tx(scenario#0#0: &mut Scenario, sender#0#0: address): TransactionEffects {
+L2:	epoch#1#0: u64
+L3:	epoch_timestamp_ms#1#0: u64
+B0:
+	0: CopyLoc[0](scenario#0#0: &mut Scenario)
+	1: ImmBorrowField[9](Scenario.txn_number: u64)
+	2: ReadRef
+	3: LdU64(1)
+	4: Add
+	5: CopyLoc[0](scenario#0#0: &mut Scenario)
+	6: MutBorrowField[9](Scenario.txn_number: u64)
+	7: WriteRef
+	8: CopyLoc[0](scenario#0#0: &mut Scenario)
+	9: ImmBorrowField[0](Scenario.ctx: TxContext)
+	10: Call tx_context::epoch(&TxContext): u64
+	11: StLoc[2](epoch#1#0: u64)
+	12: CopyLoc[0](scenario#0#0: &mut Scenario)
+	13: ImmBorrowField[0](Scenario.ctx: TxContext)
+	14: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	15: StLoc[3](epoch_timestamp_ms#1#0: u64)
+	16: MoveLoc[1](sender#0#0: address)
+	17: CopyLoc[0](scenario#0#0: &mut Scenario)
+	18: ImmBorrowField[9](Scenario.txn_number: u64)
+	19: ReadRef
+	20: MoveLoc[2](epoch#1#0: u64)
+	21: MoveLoc[3](epoch_timestamp_ms#1#0: u64)
+	22: LdU64(0)
+	23: Call tx_context::new_from_hint(address, u64, u64, u64, u64): TxContext
+	24: MoveLoc[0](scenario#0#0: &mut Scenario)
+	25: MutBorrowField[0](Scenario.ctx: TxContext)
+	26: WriteRef
+	27: Call end_transaction(): TransactionEffects
+	28: Ret
+}
+
+public next_with_context(scenario#0#0: &mut Scenario, ctx_builder#0#0: TxContextBuilder): TransactionEffects {
+L2:	%#1: bool
+L3:	%#2: u64
+L4:	%#3: &Option<u64>
+L5:	builder#1#0: TxContextBuilder
+L6:	current_epoch#1#0: u64
+L7:	effects#1#0: TransactionEffects
+L8:	epoch#1#0: u64
+L9:	hash#1#0: vector<u8>
+L10:	hash#2#0: vector<u8>
+B0:
+	0: ImmBorrowLoc[1](ctx_builder#0#0: TxContextBuilder)
+	1: ImmBorrowField[1](TxContextBuilder.epoch: u64)
+	2: ReadRef
+	3: StLoc[8](epoch#1#0: u64)
+	4: CopyLoc[0](scenario#0#0: &mut Scenario)
+	5: ImmBorrowField[0](Scenario.ctx: TxContext)
+	6: Call tx_context::epoch(&TxContext): u64
+	7: StLoc[6](current_epoch#1#0: u64)
+	8: CopyLoc[8](epoch#1#0: u64)
+	9: CopyLoc[6](current_epoch#1#0: u64)
+	10: Ge
+	11: BrFalse(13)
+B1:
+	12: Branch(17)
+B2:
+	13: MoveLoc[0](scenario#0#0: &mut Scenario)
+	14: Pop
+	15: LdU64(13906835467128537087)
+	16: Abort
+B3:
+	17: ImmBorrowLoc[1](ctx_builder#0#0: TxContextBuilder)
+	18: ImmBorrowField[4](TxContextBuilder.rgp: Option<u64>)
+	19: Call option::is_none<u64>(&Option<u64>): bool
+	20: BrFalse(24)
+B4:
+	21: LdTrue
+	22: StLoc[2](%#1: bool)
+	23: Branch(42)
+B5:
+	24: ImmBorrowLoc[1](ctx_builder#0#0: TxContextBuilder)
+	25: ImmBorrowField[4](TxContextBuilder.rgp: Option<u64>)
+	26: StLoc[4](%#3: &Option<u64>)
+	27: CopyLoc[0](scenario#0#0: &mut Scenario)
+	28: ImmBorrowField[0](Scenario.ctx: TxContext)
+	29: Call tx_context::reference_gas_price(&TxContext): u64
+	30: StLoc[3](%#2: u64)
+	31: MoveLoc[4](%#3: &Option<u64>)
+	32: ImmBorrowLoc[3](%#2: u64)
+	33: Call option::contains<u64>(&Option<u64>, &u64): bool
+	34: BrFalse(38)
+B6:
+	35: LdTrue
+	36: StLoc[2](%#1: bool)
+	37: Branch(42)
+B7:
+	38: CopyLoc[8](epoch#1#0: u64)
+	39: CopyLoc[6](current_epoch#1#0: u64)
+	40: Gt
+	41: StLoc[2](%#1: bool)
+B8:
+	42: MoveLoc[2](%#1: bool)
+	43: BrFalse(45)
+B9:
+	44: Branch(49)
+B10:
+	45: MoveLoc[0](scenario#0#0: &mut Scenario)
+	46: Pop
+	47: LdU64(13906835480013438975)
+	48: Abort
+B11:
+	49: ImmBorrowLoc[1](ctx_builder#0#0: TxContextBuilder)
+	50: ImmBorrowField[2](TxContextBuilder.epoch_timestamp_ms: u64)
+	51: ReadRef
+	52: CopyLoc[0](scenario#0#0: &mut Scenario)
+	53: ImmBorrowField[0](Scenario.ctx: TxContext)
+	54: Call tx_context::epoch_timestamp_ms(&TxContext): u64
+	55: Ge
+	56: BrFalse(58)
+B12:
+	57: Branch(62)
+B13:
+	58: MoveLoc[0](scenario#0#0: &mut Scenario)
+	59: Pop
+	60: LdU64(13906835505783242751)
+	61: Abort
+B14:
+	62: CopyLoc[8](epoch#1#0: u64)
+	63: CopyLoc[6](current_epoch#1#0: u64)
+	64: Eq
+	65: BrFalse(67)
+B15:
+	66: Branch(106)
+B16:
+	67: MoveLoc[6](current_epoch#1#0: u64)
+	68: LdU64(1)
+	69: Add
+	70: StLoc[6](current_epoch#1#0: u64)
+	71: CopyLoc[0](scenario#0#0: &mut Scenario)
+	72: ImmBorrowField[9](Scenario.txn_number: u64)
+	73: ReadRef
+	74: LdU64(1)
+	75: Add
+	76: CopyLoc[0](scenario#0#0: &mut Scenario)
+	77: MutBorrowField[9](Scenario.txn_number: u64)
+	78: WriteRef
+	79: CopyLoc[1](ctx_builder#0#0: TxContextBuilder)
+	80: StLoc[5](builder#1#0: TxContextBuilder)
+	81: CopyLoc[5](builder#1#0: TxContextBuilder)
+	82: CopyLoc[6](current_epoch#1#0: u64)
+	83: Call set_epoch(TxContextBuilder, u64): TxContextBuilder
+	84: Pop
+	85: CopyLoc[0](scenario#0#0: &mut Scenario)
+	86: ImmBorrowField[9](Scenario.txn_number: u64)
+	87: ReadRef
+	88: Call tx_context::dummy_tx_hash_with_hint(u64): vector<u8>
+	89: StLoc[10](hash#2#0: vector<u8>)
+	90: MoveLoc[5](builder#1#0: TxContextBuilder)
+	91: MoveLoc[10](hash#2#0: vector<u8>)
+	92: Call make_tx_context(TxContextBuilder, vector<u8>): TxContext
+	93: CopyLoc[0](scenario#0#0: &mut Scenario)
+	94: MutBorrowField[0](Scenario.ctx: TxContext)
+	95: WriteRef
+	96: Call end_transaction(): TransactionEffects
+	97: StLoc[7](effects#1#0: TransactionEffects)
+	98: CopyLoc[6](current_epoch#1#0: u64)
+	99: CopyLoc[8](epoch#1#0: u64)
+	100: Eq
+	101: BrFalse(67)
+B17:
+	102: MoveLoc[0](scenario#0#0: &mut Scenario)
+	103: Pop
+	104: MoveLoc[7](effects#1#0: TransactionEffects)
+	105: Ret
+B18:
+	106: CopyLoc[0](scenario#0#0: &mut Scenario)
+	107: ImmBorrowField[9](Scenario.txn_number: u64)
+	108: ReadRef
+	109: LdU64(1)
+	110: Add
+	111: CopyLoc[0](scenario#0#0: &mut Scenario)
+	112: MutBorrowField[9](Scenario.txn_number: u64)
+	113: WriteRef
+	114: CopyLoc[0](scenario#0#0: &mut Scenario)
+	115: ImmBorrowField[9](Scenario.txn_number: u64)
+	116: ReadRef
+	117: Call tx_context::dummy_tx_hash_with_hint(u64): vector<u8>
+	118: StLoc[9](hash#1#0: vector<u8>)
+	119: MoveLoc[1](ctx_builder#0#0: TxContextBuilder)
+	120: MoveLoc[9](hash#1#0: vector<u8>)
+	121: Call make_tx_context(TxContextBuilder, vector<u8>): TxContext
+	122: MoveLoc[0](scenario#0#0: &mut Scenario)
+	123: MutBorrowField[0](Scenario.ctx: TxContext)
+	124: WriteRef
+	125: Call end_transaction(): TransactionEffects
+	126: Ret
+}
+
+public next_epoch(scenario#0#0: &mut Scenario, sender#0#0: address): TransactionEffects {
+B0:
+	0: CopyLoc[0](scenario#0#0: &mut Scenario)
+	1: MutBorrowField[0](Scenario.ctx: TxContext)
+	2: Call tx_context::increment_epoch_number(&mut TxContext)
+	3: MoveLoc[0](scenario#0#0: &mut Scenario)
+	4: MoveLoc[1](sender#0#0: address)
+	5: Call next_tx(&mut Scenario, address): TransactionEffects
+	6: Ret
+}
+
+public later_epoch(scenario#0#0: &mut Scenario, delta_ms#0#0: u64, sender#0#0: address): TransactionEffects {
+B0:
+	0: CopyLoc[0](scenario#0#0: &mut Scenario)
+	1: MutBorrowField[0](Scenario.ctx: TxContext)
+	2: MoveLoc[1](delta_ms#0#0: u64)
+	3: Call tx_context::increment_epoch_timestamp(&mut TxContext, u64)
+	4: MoveLoc[0](scenario#0#0: &mut Scenario)
+	5: MoveLoc[2](sender#0#0: address)
+	6: Call next_epoch(&mut Scenario, address): TransactionEffects
+	7: Ret
+}
+
+public skip_to_epoch(scenario#0#0: &mut Scenario, epoch#0#0: u64) {
+L2:	$stop#0#1: u64
+L3:	i#1#4: u64
+L4:	stop#1#4: u64
+B0:
+	0: CopyLoc[1](epoch#0#0: u64)
+	1: CopyLoc[0](scenario#0#0: &mut Scenario)
+	2: ImmBorrowField[0](Scenario.ctx: TxContext)
+	3: Call tx_context::epoch(&TxContext): u64
+	4: Ge
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](scenario#0#0: &mut Scenario)
+	8: Pop
+	9: LdU64(13906835690466836479)
+	10: Abort
+B3:
+	11: MoveLoc[1](epoch#0#0: u64)
+	12: CopyLoc[0](scenario#0#0: &mut Scenario)
+	13: ImmBorrowField[0](Scenario.ctx: TxContext)
+	14: Call tx_context::epoch(&TxContext): u64
+	15: Sub
+	16: StLoc[2]($stop#0#1: u64)
+	17: LdU64(0)
+	18: StLoc[3](i#1#4: u64)
+	19: MoveLoc[2]($stop#0#1: u64)
+	20: StLoc[4](stop#1#4: u64)
+B4:
+	21: CopyLoc[3](i#1#4: u64)
+	22: CopyLoc[4](stop#1#4: u64)
+	23: Lt
+	24: BrFalse(37)
+B5:
+	25: CopyLoc[3](i#1#4: u64)
+	26: Pop
+	27: CopyLoc[0](scenario#0#0: &mut Scenario)
+	28: MutBorrowField[0](Scenario.ctx: TxContext)
+	29: Call tx_context::increment_epoch_number(&mut TxContext)
+	30: Call end_transaction(): TransactionEffects
+	31: Pop
+	32: MoveLoc[3](i#1#4: u64)
+	33: LdU64(1)
+	34: Add
+	35: StLoc[3](i#1#4: u64)
+	36: Branch(21)
+B6:
+	37: MoveLoc[0](scenario#0#0: &mut Scenario)
+	38: Pop
+	39: Ret
+}
+
+public end(scenario#0#0: Scenario): TransactionEffects {
+B0:
+	0: MoveLoc[0](scenario#0#0: Scenario)
+	1: Unpack[0](Scenario)
+	2: Pop
+	3: Pop
+	4: Call end_transaction(): TransactionEffects
+	5: Ret
+}
+
+public ctx(scenario#0#0: &mut Scenario): &mut TxContext {
+B0:
+	0: MoveLoc[0](scenario#0#0: &mut Scenario)
+	1: MutBorrowField[0](Scenario.ctx: TxContext)
+	2: Ret
+}
+
+public new_object(scenario#0#0: &mut Scenario): UID {
+B0:
+	0: MoveLoc[0](scenario#0#0: &mut Scenario)
+	1: MutBorrowField[0](Scenario.ctx: TxContext)
+	2: Call object::new(&mut TxContext): UID
+	3: Ret
+}
+
+public sender(scenario#0#0: &Scenario): address {
+B0:
+	0: MoveLoc[0](scenario#0#0: &Scenario)
+	1: ImmBorrowField[0](Scenario.ctx: TxContext)
+	2: Call tx_context::sender(&TxContext): address
+	3: Ret
+}
+
+public num_concluded_txes(scenario#0#0: &Scenario): u64 {
+B0:
+	0: MoveLoc[0](scenario#0#0: &Scenario)
+	1: ImmBorrowField[9](Scenario.txn_number: u64)
+	2: ReadRef
+	3: Ret
+}
+
+public created(effects#0#0: &TransactionEffects): vector<ID> {
+B0:
+	0: MoveLoc[0](effects#0#0: &TransactionEffects)
+	1: ImmBorrowField[10](TransactionEffects.created: vector<ID>)
+	2: ReadRef
+	3: Ret
+}
+
+public written(effects#0#0: &TransactionEffects): vector<ID> {
+B0:
+	0: MoveLoc[0](effects#0#0: &TransactionEffects)
+	1: ImmBorrowField[11](TransactionEffects.written: vector<ID>)
+	2: ReadRef
+	3: Ret
+}
+
+public deleted(effects#0#0: &TransactionEffects): vector<ID> {
+B0:
+	0: MoveLoc[0](effects#0#0: &TransactionEffects)
+	1: ImmBorrowField[12](TransactionEffects.deleted: vector<ID>)
+	2: ReadRef
+	3: Ret
+}
+
+public transferred_to_account(effects#0#0: &TransactionEffects): VecMap<ID, address> {
+B0:
+	0: MoveLoc[0](effects#0#0: &TransactionEffects)
+	1: ImmBorrowField[13](TransactionEffects.transferred_to_account: VecMap<ID, address>)
+	2: ReadRef
+	3: Ret
+}
+
+public transferred_to_object(effects#0#0: &TransactionEffects): VecMap<ID, ID> {
+B0:
+	0: MoveLoc[0](effects#0#0: &TransactionEffects)
+	1: ImmBorrowField[14](TransactionEffects.transferred_to_object: VecMap<ID, ID>)
+	2: ReadRef
+	3: Ret
+}
+
+public shared(effects#0#0: &TransactionEffects): vector<ID> {
+B0:
+	0: MoveLoc[0](effects#0#0: &TransactionEffects)
+	1: ImmBorrowField[15](TransactionEffects.shared: vector<ID>)
+	2: ReadRef
+	3: Ret
+}
+
+public frozen(effects#0#0: &TransactionEffects): vector<ID> {
+B0:
+	0: MoveLoc[0](effects#0#0: &TransactionEffects)
+	1: ImmBorrowField[16](TransactionEffects.frozen: vector<ID>)
+	2: ReadRef
+	3: Ret
+}
+
+public num_user_events(effects#0#0: &TransactionEffects): u64 {
+B0:
+	0: MoveLoc[0](effects#0#0: &TransactionEffects)
+	1: ImmBorrowField[17](TransactionEffects.num_user_events: u64)
+	2: ReadRef
+	3: Ret
+}
+
+native public take_from_address_by_id<T: key>(scenario#0#0: &Scenario, account#0#0: address, id#0#0: ID): T;
+
+native public most_recent_id_for_address<T: key>(account#0#0: address): Option<ID>;
+
+native public ids_for_address<T: key>(account#0#0: address): vector<ID>;
+
+public has_most_recent_for_address<T: key>(account#0#0: address): bool {
+L1:	%#1: Option<ID>
+B0:
+	0: MoveLoc[0](account#0#0: address)
+	1: Call most_recent_id_for_address<T>(address): Option<ID>
+	2: StLoc[1](%#1: Option<ID>)
+	3: ImmBorrowLoc[1](%#1: Option<ID>)
+	4: Call option::is_some<ID>(&Option<ID>): bool
+	5: Ret
+}
+
+public take_from_address<T: key>(scenario#0#0: &Scenario, account#0#0: address): T {
+L2:	id_opt#1#0: Option<ID>
+B0:
+	0: CopyLoc[1](account#0#0: address)
+	1: Call most_recent_id_for_address<T>(address): Option<ID>
+	2: StLoc[2](id_opt#1#0: Option<ID>)
+	3: ImmBorrowLoc[2](id_opt#1#0: Option<ID>)
+	4: Call option::is_some<ID>(&Option<ID>): bool
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](scenario#0#0: &Scenario)
+	8: Pop
+	9: LdConst[3](u64: 3)
+	10: Abort
+B3:
+	11: MoveLoc[0](scenario#0#0: &Scenario)
+	12: MoveLoc[1](account#0#0: address)
+	13: MoveLoc[2](id_opt#1#0: Option<ID>)
+	14: Call option::destroy_some<ID>(Option<ID>): ID
+	15: Call take_from_address_by_id<T>(&Scenario, address, ID): T
+	16: Ret
+}
+
+public return_to_address<T: key>(account#0#0: address, t#0#0: T) {
+L2:	id#1#0: ID
+B0:
+	0: ImmBorrowLoc[1](t#0#0: T)
+	1: Call object::id<T>(&T): ID
+	2: StLoc[2](id#1#0: ID)
+	3: CopyLoc[0](account#0#0: address)
+	4: MoveLoc[2](id#1#0: ID)
+	5: Call was_taken_from_address(address, ID): bool
+	6: BrFalse(8)
+B1:
+	7: Branch(10)
+B2:
+	8: LdConst[2](u64: 2)
+	9: Abort
+B3:
+	10: MoveLoc[1](t#0#0: T)
+	11: MoveLoc[0](account#0#0: address)
+	12: Call transfer::transfer_impl<T>(T, address)
+	13: Ret
+}
+
+native public was_taken_from_address(account#0#0: address, id#0#0: ID): bool;
+
+public take_from_sender_by_id<T: key>(scenario#0#0: &Scenario, id#0#0: ID): T {
+B0:
+	0: CopyLoc[0](scenario#0#0: &Scenario)
+	1: MoveLoc[0](scenario#0#0: &Scenario)
+	2: Call sender(&Scenario): address
+	3: MoveLoc[1](id#0#0: ID)
+	4: Call take_from_address_by_id<T>(&Scenario, address, ID): T
+	5: Ret
+}
+
+public most_recent_id_for_sender<T: key>(scenario#0#0: &Scenario): Option<ID> {
+B0:
+	0: MoveLoc[0](scenario#0#0: &Scenario)
+	1: Call sender(&Scenario): address
+	2: Call most_recent_id_for_address<T>(address): Option<ID>
+	3: Ret
+}
+
+public has_most_recent_for_sender<T: key>(scenario#0#0: &Scenario): bool {
+L1:	%#1: Option<ID>
+B0:
+	0: MoveLoc[0](scenario#0#0: &Scenario)
+	1: Call sender(&Scenario): address
+	2: Call most_recent_id_for_address<T>(address): Option<ID>
+	3: StLoc[1](%#1: Option<ID>)
+	4: ImmBorrowLoc[1](%#1: Option<ID>)
+	5: Call option::is_some<ID>(&Option<ID>): bool
+	6: Ret
+}
+
+public take_from_sender<T: key>(scenario#0#0: &Scenario): T {
+B0:
+	0: CopyLoc[0](scenario#0#0: &Scenario)
+	1: MoveLoc[0](scenario#0#0: &Scenario)
+	2: Call sender(&Scenario): address
+	3: Call take_from_address<T>(&Scenario, address): T
+	4: Ret
+}
+
+public return_to_sender<T: key>(scenario#0#0: &Scenario, t#0#0: T) {
+B0:
+	0: MoveLoc[0](scenario#0#0: &Scenario)
+	1: Call sender(&Scenario): address
+	2: MoveLoc[1](t#0#0: T)
+	3: Call return_to_address<T>(address, T)
+	4: Ret
+}
+
+public was_taken_from_sender(scenario#0#0: &Scenario, id#0#0: ID): bool {
+B0:
+	0: MoveLoc[0](scenario#0#0: &Scenario)
+	1: Call sender(&Scenario): address
+	2: MoveLoc[1](id#0#0: ID)
+	3: Call was_taken_from_address(address, ID): bool
+	4: Ret
+}
+
+public ids_for_sender<T: key>(scenario#0#0: &Scenario): vector<ID> {
+B0:
+	0: MoveLoc[0](scenario#0#0: &Scenario)
+	1: Call sender(&Scenario): address
+	2: Call ids_for_address<T>(address): vector<ID>
+	3: Ret
+}
+
+native public take_immutable_by_id<T: key>(scenario#0#0: &Scenario, id#0#0: ID): T;
+
+native public most_recent_immutable_id<T: key>(): Option<ID>;
+
+public has_most_recent_immutable<T: key>(): bool {
+L0:	%#1: Option<ID>
+B0:
+	0: Call most_recent_immutable_id<T>(): Option<ID>
+	1: StLoc[0](%#1: Option<ID>)
+	2: ImmBorrowLoc[0](%#1: Option<ID>)
+	3: Call option::is_some<ID>(&Option<ID>): bool
+	4: Ret
+}
+
+public take_immutable<T: key>(scenario#0#0: &Scenario): T {
+L1:	id_opt#1#0: Option<ID>
+B0:
+	0: Call most_recent_immutable_id<T>(): Option<ID>
+	1: StLoc[1](id_opt#1#0: Option<ID>)
+	2: ImmBorrowLoc[1](id_opt#1#0: Option<ID>)
+	3: Call option::is_some<ID>(&Option<ID>): bool
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](scenario#0#0: &Scenario)
+	7: Pop
+	8: LdConst[3](u64: 3)
+	9: Abort
+B3:
+	10: MoveLoc[0](scenario#0#0: &Scenario)
+	11: MoveLoc[1](id_opt#1#0: Option<ID>)
+	12: Call option::destroy_some<ID>(Option<ID>): ID
+	13: Call take_immutable_by_id<T>(&Scenario, ID): T
+	14: Ret
+}
+
+public return_immutable<T: key>(t#0#0: T) {
+B0:
+	0: ImmBorrowLoc[0](t#0#0: T)
+	1: Call object::id<T>(&T): ID
+	2: Call was_taken_immutable(ID): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(7)
+B2:
+	5: LdConst[2](u64: 2)
+	6: Abort
+B3:
+	7: MoveLoc[0](t#0#0: T)
+	8: Call transfer::freeze_object_impl<T>(T)
+	9: Ret
+}
+
+native public was_taken_immutable(id#0#0: ID): bool;
+
+native public take_shared_by_id<T: key>(scenario#0#0: &Scenario, id#0#0: ID): T;
+
+native public most_recent_id_shared<T: key>(): Option<ID>;
+
+public has_most_recent_shared<T: key>(): bool {
+L0:	%#1: Option<ID>
+B0:
+	0: Call most_recent_id_shared<T>(): Option<ID>
+	1: StLoc[0](%#1: Option<ID>)
+	2: ImmBorrowLoc[0](%#1: Option<ID>)
+	3: Call option::is_some<ID>(&Option<ID>): bool
+	4: Ret
+}
+
+public take_shared<T: key>(scenario#0#0: &Scenario): T {
+L1:	id_opt#1#0: Option<ID>
+B0:
+	0: Call most_recent_id_shared<T>(): Option<ID>
+	1: StLoc[1](id_opt#1#0: Option<ID>)
+	2: ImmBorrowLoc[1](id_opt#1#0: Option<ID>)
+	3: Call option::is_some<ID>(&Option<ID>): bool
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](scenario#0#0: &Scenario)
+	7: Pop
+	8: LdConst[3](u64: 3)
+	9: Abort
+B3:
+	10: MoveLoc[0](scenario#0#0: &Scenario)
+	11: MoveLoc[1](id_opt#1#0: Option<ID>)
+	12: Call option::destroy_some<ID>(Option<ID>): ID
+	13: Call take_shared_by_id<T>(&Scenario, ID): T
+	14: Ret
+}
+
+public return_shared<T: key>(t#0#0: T) {
+B0:
+	0: ImmBorrowLoc[0](t#0#0: T)
+	1: Call object::id<T>(&T): ID
+	2: Call was_taken_shared(ID): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(7)
+B2:
+	5: LdConst[2](u64: 2)
+	6: Abort
+B3:
+	7: MoveLoc[0](t#0#0: T)
+	8: Call transfer::share_object_impl<T>(T)
+	9: Ret
+}
+
+public receivable_object_ids_for_owner_id<T: key>(object#0#0: ID): vector<ID> {
+B0:
+	0: ImmBorrowLoc[0](object#0#0: ID)
+	1: Call object::id_to_address(&ID): address
+	2: Call ids_for_address<T>(address): vector<ID>
+	3: Ret
+}
+
+public most_recent_receiving_ticket<T: key>(owner#0#0: &ID): Receiving<T> {
+L1:	id_opt#1#0: Option<ID>
+B0:
+	0: MoveLoc[0](owner#0#0: &ID)
+	1: Call object::id_to_address(&ID): address
+	2: Call most_recent_id_for_address<T>(address): Option<ID>
+	3: StLoc[1](id_opt#1#0: Option<ID>)
+	4: ImmBorrowLoc[1](id_opt#1#0: Option<ID>)
+	5: Call option::is_some<ID>(&Option<ID>): bool
+	6: BrFalse(8)
+B1:
+	7: Branch(10)
+B2:
+	8: LdConst[3](u64: 3)
+	9: Abort
+B3:
+	10: MoveLoc[1](id_opt#1#0: Option<ID>)
+	11: Call option::destroy_some<ID>(Option<ID>): ID
+	12: Call receiving_ticket_by_id<T>(ID): Receiving<T>
+	13: Ret
+}
+
+public receiving_ticket_by_id<T: key>(object_id#0#0: ID): Receiving<T> {
+L1:	version#1#0: u64
+B0:
+	0: CopyLoc[0](object_id#0#0: ID)
+	1: Call allocate_receiving_ticket_for_object<T>(ID): u64
+	2: StLoc[1](version#1#0: u64)
+	3: MoveLoc[0](object_id#0#0: ID)
+	4: MoveLoc[1](version#1#0: u64)
+	5: Call transfer::make_receiver<T>(ID, u64): Receiving<T>
+	6: Ret
+}
+
+public return_receiving_ticket<T: key>(ticket#0#0: Receiving<T>) {
+B0:
+	0: ImmBorrowLoc[0](ticket#0#0: Receiving<T>)
+	1: Call transfer::receiving_id<T>(&Receiving<T>): ID
+	2: Call deallocate_receiving_ticket_for_object(ID)
+	3: Ret
+}
+
+native was_taken_shared(id#0#0: ID): bool;
+
+native allocate_receiving_ticket_for_object<T: key>(object_id#0#0: ID): u64;
+
+native deallocate_receiving_ticket_for_object(object_id#0#0: ID);
+
+native end_transaction(): TransactionEffects;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => u64: 3
+	4 => u64: 4
+	5 => u64: 5
+	6 => u64: 6
+	7 => u64: 7
+	8 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

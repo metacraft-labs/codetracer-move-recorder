@@ -1,0 +1,77 @@
+// Move bytecode v6
+module 2.token_test_utils {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::token;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct TEST has drop {
+	dummy_field: bool
+}
+
+public ctx(sender#0#0: address): TxContext {
+B0:
+	0: MoveLoc[0](sender#0#0: address)
+	1: LdConst[0](vector<u8>: 203a..)
+	2: LdU64(0)
+	3: LdU64(0)
+	4: LdU64(0)
+	5: Call tx_context::new(address, vector<u8>, u64, u64, u64): TxContext
+	6: Ret
+}
+
+public get_treasury_cap(ctx#0#0: &mut TxContext): TreasuryCap<TEST> {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call coin::create_treasury_cap_for_testing<TEST>(&mut TxContext): TreasuryCap<TEST>
+	2: Ret
+}
+
+public return_treasury_cap(treasury_cap#0#0: TreasuryCap<TEST>) {
+B0:
+	0: MoveLoc[0](treasury_cap#0#0: TreasuryCap<TEST>)
+	1: Call transfer::public_share_object<TreasuryCap<TEST>>(TreasuryCap<TEST>)
+	2: Ret
+}
+
+public get_policy(ctx#0#0: &mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST> {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call token::new_policy_for_testing<TEST>(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	2: Ret
+}
+
+public return_policy(policy#0#0: TokenPolicy<TEST>, cap#0#0: TokenPolicyCap<TEST>) {
+B0:
+	0: MoveLoc[0](policy#0#0: TokenPolicy<TEST>)
+	1: MoveLoc[1](cap#0#0: TokenPolicyCap<TEST>)
+	2: Call token::burn_policy_for_testing<TEST>(TokenPolicy<TEST>, TokenPolicyCap<TEST>)
+	3: Ret
+}
+
+public mint(amount#0#0: u64, ctx#0#0: &mut TxContext): Token<TEST> {
+B0:
+	0: MoveLoc[0](amount#0#0: u64)
+	1: MoveLoc[1](ctx#0#0: &mut TxContext)
+	2: Call token::mint_for_testing<TEST>(u64, &mut TxContext): Token<TEST>
+	3: Ret
+}
+
+public burn(token#0#0: Token<TEST>) {
+B0:
+	0: MoveLoc[0](token#0#0: Token<TEST>)
+	1: Call token::burn_for_testing<TEST>(Token<TEST>)
+	2: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: 203a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532
+]
+}

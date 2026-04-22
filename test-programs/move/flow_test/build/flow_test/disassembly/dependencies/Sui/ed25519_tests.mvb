@@ -1,0 +1,123 @@
+// Move bytecode v6
+module 2.ed25519_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::ed25519;
+
+test_ed25519_valid_sig() {
+L0:	msg#1#0: vector<u8>
+L1:	pk#1#0: vector<u8>
+L2:	sig#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: 2031..)
+	1: StLoc[0](msg#1#0: vector<u8>)
+	2: LdConst[1](vector<u8>: 20cc..)
+	3: StLoc[1](pk#1#0: vector<u8>)
+	4: LdConst[2](vector<u8>: 40cc..)
+	5: StLoc[2](sig#1#0: vector<u8>)
+	6: ImmBorrowLoc[2](sig#1#0: vector<u8>)
+	7: ImmBorrowLoc[1](pk#1#0: vector<u8>)
+	8: ImmBorrowLoc[0](msg#1#0: vector<u8>)
+	9: Call ed25519::ed25519_verify(&vector<u8>, &vector<u8>, &vector<u8>): bool
+	10: LdTrue
+	11: Eq
+	12: BrFalse(14)
+B1:
+	13: Branch(16)
+B2:
+	14: LdU64(13906834255947759615)
+	15: Abort
+B3:
+	16: Ret
+}
+
+test_ed25519_invalid_sig() {
+L0:	invalid_sig#1#0: vector<u8>
+L1:	msg#1#0: vector<u8>
+L2:	other_msg#1#0: vector<u8>
+L3:	pk#1#0: vector<u8>
+L4:	pk#2#0: vector<u8>
+L5:	sig#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: 2031..)
+	1: StLoc[1](msg#1#0: vector<u8>)
+	2: LdConst[1](vector<u8>: 20cc..)
+	3: StLoc[3](pk#1#0: vector<u8>)
+	4: LdConst[3](vector<u8>: 40cd..)
+	5: StLoc[0](invalid_sig#1#0: vector<u8>)
+	6: ImmBorrowLoc[0](invalid_sig#1#0: vector<u8>)
+	7: ImmBorrowLoc[3](pk#1#0: vector<u8>)
+	8: ImmBorrowLoc[1](msg#1#0: vector<u8>)
+	9: Call ed25519::ed25519_verify(&vector<u8>, &vector<u8>, &vector<u8>): bool
+	10: LdFalse
+	11: Eq
+	12: BrFalse(14)
+B1:
+	13: Branch(16)
+B2:
+	14: LdU64(13906834303192399871)
+	15: Abort
+B3:
+	16: LdConst[1](vector<u8>: 20cc..)
+	17: StLoc[4](pk#2#0: vector<u8>)
+	18: LdConst[2](vector<u8>: 40cc..)
+	19: StLoc[5](sig#1#0: vector<u8>)
+	20: LdConst[4](vector<u8>: 2041..)
+	21: StLoc[2](other_msg#1#0: vector<u8>)
+	22: ImmBorrowLoc[5](sig#1#0: vector<u8>)
+	23: ImmBorrowLoc[4](pk#2#0: vector<u8>)
+	24: ImmBorrowLoc[2](other_msg#1#0: vector<u8>)
+	25: Call ed25519::ed25519_verify(&vector<u8>, &vector<u8>, &vector<u8>): bool
+	26: LdFalse
+	27: Eq
+	28: BrFalse(30)
+B4:
+	29: Branch(32)
+B5:
+	30: LdU64(13906834337552138239)
+	31: Abort
+B6:
+	32: Ret
+}
+
+test_ed25519_invalid_pubkey() {
+L0:	msg#1#0: vector<u8>
+L1:	pk#1#0: vector<u8>
+L2:	sig#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: 2031..)
+	1: StLoc[0](msg#1#0: vector<u8>)
+	2: LdConst[5](vector<u8>: "" /..)
+	3: StLoc[1](pk#1#0: vector<u8>)
+	4: LdConst[2](vector<u8>: 40cc..)
+	5: StLoc[2](sig#1#0: vector<u8>)
+	6: ImmBorrowLoc[2](sig#1#0: vector<u8>)
+	7: ImmBorrowLoc[1](pk#1#0: vector<u8>)
+	8: ImmBorrowLoc[0](msg#1#0: vector<u8>)
+	9: Call ed25519::ed25519_verify(&vector<u8>, &vector<u8>, &vector<u8>): bool
+	10: LdFalse
+	11: Eq
+	12: BrFalse(14)
+B1:
+	13: Branch(16)
+B2:
+	14: LdU64(13906834384796778495)
+	15: Abort
+B3:
+	16: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: 20315f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3
+	1 => vector<u8>: 20cc62332e34bb2d5cd69f60efbb2a36cb916c7eb458301ea36636c4dbb012bd88
+	2 => vector<u8>: 40cce72947906dbae4c166fc01fd096432784032be43db540909bc901dbc057992b4d655ca4f4355cf0868e1266baacf6919902969f063e74162f8f04bc4056105
+	3 => vector<u8>: 40cde72947906dbae4c166fc01fd096432784032be43db540909bc901dbc057992b4d655ca4f4355cf0868e1266baacf6919902969f063e74162f8f04bc4056105
+	4 => vector<u8>: 20415f5bdb76d078c43b8ac0064e4a0164612b1fce77c869345bfc94c75894edd3
+	5 => vector<u8>: "" // interpreted as UTF8 string
+]
+}

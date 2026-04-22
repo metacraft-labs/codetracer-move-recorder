@@ -1,0 +1,357 @@
+// Move bytecode v6
+module 2.balance {
+use 0000000000000000000000000000000000000000000000000000000000000001::ascii;
+use 0000000000000000000000000000000000000000000000000000000000000001::internal;
+use 0000000000000000000000000000000000000000000000000000000000000001::type_name;
+use 0000000000000000000000000000000000000000000000000000000000000001::u128;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::accumulator;
+use 0000000000000000000000000000000000000000000000000000000000000002::funds_accumulator;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Supply<phantom T> has store {
+	value: u64
+}
+
+struct Balance<phantom T> has store {
+	value: u64
+}
+
+public value<T>(self#0#0: &Balance<T>): u64 {
+B0:
+	0: MoveLoc[0](self#0#0: &Balance<T>)
+	1: ImmBorrowFieldGeneric[0](Balance.value: u64)
+	2: ReadRef
+	3: Ret
+}
+
+public supply_value<T>(supply#0#0: &Supply<T>): u64 {
+B0:
+	0: MoveLoc[0](supply#0#0: &Supply<T>)
+	1: ImmBorrowFieldGeneric[1](Supply.value: u64)
+	2: ReadRef
+	3: Ret
+}
+
+public create_supply<T: drop>(_#0#0: T): Supply<T> {
+B0:
+	0: LdU64(0)
+	1: PackGeneric[0](Supply<T>)
+	2: Ret
+}
+
+public increase_supply<T>(self#0#0: &mut Supply<T>, value#0#0: u64): Balance<T> {
+B0:
+	0: CopyLoc[1](value#0#0: u64)
+	1: LdU64(18446744073709551615)
+	2: CopyLoc[0](self#0#0: &mut Supply<T>)
+	3: ImmBorrowFieldGeneric[1](Supply.value: u64)
+	4: ReadRef
+	5: Sub
+	6: Le
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](self#0#0: &mut Supply<T>)
+	10: Pop
+	11: LdConst[1](u64: 1)
+	12: Abort
+B3:
+	13: CopyLoc[0](self#0#0: &mut Supply<T>)
+	14: ImmBorrowFieldGeneric[1](Supply.value: u64)
+	15: ReadRef
+	16: CopyLoc[1](value#0#0: u64)
+	17: Add
+	18: MoveLoc[0](self#0#0: &mut Supply<T>)
+	19: MutBorrowFieldGeneric[1](Supply.value: u64)
+	20: WriteRef
+	21: MoveLoc[1](value#0#0: u64)
+	22: PackGeneric[1](Balance<T>)
+	23: Ret
+}
+
+public decrease_supply<T>(self#0#0: &mut Supply<T>, balance#0#0: Balance<T>): u64 {
+L2:	value#1#0: u64
+B0:
+	0: MoveLoc[1](balance#0#0: Balance<T>)
+	1: UnpackGeneric[1](Balance<T>)
+	2: StLoc[2](value#1#0: u64)
+	3: CopyLoc[0](self#0#0: &mut Supply<T>)
+	4: ImmBorrowFieldGeneric[1](Supply.value: u64)
+	5: ReadRef
+	6: CopyLoc[2](value#1#0: u64)
+	7: Ge
+	8: BrFalse(10)
+B1:
+	9: Branch(14)
+B2:
+	10: MoveLoc[0](self#0#0: &mut Supply<T>)
+	11: Pop
+	12: LdConst[1](u64: 1)
+	13: Abort
+B3:
+	14: CopyLoc[0](self#0#0: &mut Supply<T>)
+	15: ImmBorrowFieldGeneric[1](Supply.value: u64)
+	16: ReadRef
+	17: CopyLoc[2](value#1#0: u64)
+	18: Sub
+	19: MoveLoc[0](self#0#0: &mut Supply<T>)
+	20: MutBorrowFieldGeneric[1](Supply.value: u64)
+	21: WriteRef
+	22: MoveLoc[2](value#1#0: u64)
+	23: Ret
+}
+
+public zero<T>(): Balance<T> {
+B0:
+	0: LdU64(0)
+	1: PackGeneric[1](Balance<T>)
+	2: Ret
+}
+
+public join<T>(self#0#0: &mut Balance<T>, balance#0#0: Balance<T>): u64 {
+L2:	value#1#0: u64
+B0:
+	0: MoveLoc[1](balance#0#0: Balance<T>)
+	1: UnpackGeneric[1](Balance<T>)
+	2: StLoc[2](value#1#0: u64)
+	3: CopyLoc[0](self#0#0: &mut Balance<T>)
+	4: ImmBorrowFieldGeneric[0](Balance.value: u64)
+	5: ReadRef
+	6: MoveLoc[2](value#1#0: u64)
+	7: Add
+	8: CopyLoc[0](self#0#0: &mut Balance<T>)
+	9: MutBorrowFieldGeneric[0](Balance.value: u64)
+	10: WriteRef
+	11: MoveLoc[0](self#0#0: &mut Balance<T>)
+	12: ImmBorrowFieldGeneric[0](Balance.value: u64)
+	13: ReadRef
+	14: Ret
+}
+
+public split<T>(self#0#0: &mut Balance<T>, value#0#0: u64): Balance<T> {
+B0:
+	0: CopyLoc[0](self#0#0: &mut Balance<T>)
+	1: ImmBorrowFieldGeneric[0](Balance.value: u64)
+	2: ReadRef
+	3: CopyLoc[1](value#0#0: u64)
+	4: Ge
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](self#0#0: &mut Balance<T>)
+	8: Pop
+	9: LdConst[2](u64: 2)
+	10: Abort
+B3:
+	11: CopyLoc[0](self#0#0: &mut Balance<T>)
+	12: ImmBorrowFieldGeneric[0](Balance.value: u64)
+	13: ReadRef
+	14: CopyLoc[1](value#0#0: u64)
+	15: Sub
+	16: MoveLoc[0](self#0#0: &mut Balance<T>)
+	17: MutBorrowFieldGeneric[0](Balance.value: u64)
+	18: WriteRef
+	19: MoveLoc[1](value#0#0: u64)
+	20: PackGeneric[1](Balance<T>)
+	21: Ret
+}
+
+public withdraw_all<T>(self#0#0: &mut Balance<T>): Balance<T> {
+L1:	value#1#0: u64
+B0:
+	0: CopyLoc[0](self#0#0: &mut Balance<T>)
+	1: ImmBorrowFieldGeneric[0](Balance.value: u64)
+	2: ReadRef
+	3: StLoc[1](value#1#0: u64)
+	4: MoveLoc[0](self#0#0: &mut Balance<T>)
+	5: MoveLoc[1](value#1#0: u64)
+	6: Call split<T>(&mut Balance<T>, u64): Balance<T>
+	7: Ret
+}
+
+public destroy_zero<T>(balance#0#0: Balance<T>) {
+B0:
+	0: ImmBorrowLoc[0](balance#0#0: Balance<T>)
+	1: ImmBorrowFieldGeneric[0](Balance.value: u64)
+	2: ReadRef
+	3: LdU64(0)
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(9)
+B2:
+	7: LdConst[0](u64: 0)
+	8: Abort
+B3:
+	9: MoveLoc[0](balance#0#0: Balance<T>)
+	10: UnpackGeneric[1](Balance<T>)
+	11: Pop
+	12: Ret
+}
+
+public send_funds<T>(balance#0#0: Balance<T>, recipient#0#0: address) {
+B0:
+	0: MoveLoc[0](balance#0#0: Balance<T>)
+	1: MoveLoc[1](recipient#0#0: address)
+	2: Call funds_accumulator::add_impl<Balance<T>>(Balance<T>, address)
+	3: Ret
+}
+
+public redeem_funds<T>(withdrawal#0#0: Withdrawal<Balance<T>>): Balance<T> {
+B0:
+	0: MoveLoc[0](withdrawal#0#0: Withdrawal<Balance<T>>)
+	1: Call internal::permit<Balance<T>>(): Permit<Balance<T>>
+	2: Call funds_accumulator::redeem<Balance<T>>(Withdrawal<Balance<T>>, Permit<Balance<T>>): Balance<T>
+	3: Ret
+}
+
+public withdraw_funds_from_object<T>(obj#0#0: &mut UID, value#0#0: u64): Withdrawal<Balance<T>> {
+B0:
+	0: MoveLoc[0](obj#0#0: &mut UID)
+	1: MoveLoc[1](value#0#0: u64)
+	2: CastU256
+	3: Call funds_accumulator::withdraw_from_object<Balance<T>>(&mut UID, u256): Withdrawal<Balance<T>>
+	4: Ret
+}
+
+public settled_funds_value<T>(root#0#0: &AccumulatorRoot, address#0#0: address): u64 {
+L2:	val#1#0: u128
+B0:
+	0: CopyLoc[0](root#0#0: &AccumulatorRoot)
+	1: CopyLoc[1](address#0#0: address)
+	2: Call accumulator::accumulator_u128_exists<Balance<T>>(&AccumulatorRoot, address): bool
+	3: Not
+	4: BrFalse(9)
+B1:
+	5: MoveLoc[0](root#0#0: &AccumulatorRoot)
+	6: Pop
+	7: LdU64(0)
+	8: Ret
+B2:
+	9: MoveLoc[0](root#0#0: &AccumulatorRoot)
+	10: MoveLoc[1](address#0#0: address)
+	11: Call accumulator::accumulator_u128_read<Balance<T>>(&AccumulatorRoot, address): u128
+	12: StLoc[2](val#1#0: u128)
+	13: LdU128(18446744073709551615)
+	14: MoveLoc[2](val#1#0: u128)
+	15: Call u128::min(u128, u128): u128
+	16: CastU64
+	17: Ret
+}
+
+public(friend) create_supply_internal<T>(): Supply<T> {
+B0:
+	0: LdU64(0)
+	1: PackGeneric[0](Supply<T>)
+	2: Ret
+}
+
+create_staking_rewards<T>(value#0#0: u64, ctx#0#0: &TxContext): Balance<T> {
+B0:
+	0: MoveLoc[1](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[6](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdConst[3](u64: 3)
+	7: Abort
+B3:
+	8: Call type_name::with_defining_ids<T>(): TypeName
+	9: Call type_name::into_string(TypeName): String
+	10: Call ascii::into_bytes(String): vector<u8>
+	11: LdConst[5](vector<u8>: "000..)
+	12: Eq
+	13: BrFalse(15)
+B4:
+	14: Branch(17)
+B5:
+	15: LdConst[4](u64: 4)
+	16: Abort
+B6:
+	17: MoveLoc[0](value#0#0: u64)
+	18: PackGeneric[1](Balance<T>)
+	19: Ret
+}
+
+destroy_storage_rebates<T>(self#0#0: Balance<T>, ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[1](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[6](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdConst[3](u64: 3)
+	7: Abort
+B3:
+	8: Call type_name::with_defining_ids<T>(): TypeName
+	9: Call type_name::into_string(TypeName): String
+	10: Call ascii::into_bytes(String): vector<u8>
+	11: LdConst[5](vector<u8>: "000..)
+	12: Eq
+	13: BrFalse(15)
+B4:
+	14: Branch(17)
+B5:
+	15: LdConst[4](u64: 4)
+	16: Abort
+B6:
+	17: MoveLoc[0](self#0#0: Balance<T>)
+	18: UnpackGeneric[1](Balance<T>)
+	19: Pop
+	20: Ret
+}
+
+public(friend) destroy_supply<T>(self#0#0: Supply<T>): u64 {
+B0:
+	0: MoveLoc[0](self#0#0: Supply<T>)
+	1: UnpackGeneric[0](Supply<T>)
+	2: Ret
+}
+
+public create_for_testing<T>(value#0#0: u64): Balance<T> {
+B0:
+	0: MoveLoc[0](value#0#0: u64)
+	1: PackGeneric[1](Balance<T>)
+	2: Ret
+}
+
+public destroy_for_testing<T>(self#0#0: Balance<T>): u64 {
+B0:
+	0: MoveLoc[0](self#0#0: Balance<T>)
+	1: UnpackGeneric[1](Balance<T>)
+	2: Ret
+}
+
+public create_supply_for_testing<T>(): Supply<T> {
+B0:
+	0: LdU64(0)
+	1: PackGeneric[0](Supply<T>)
+	2: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => u64: 3
+	4 => u64: 4
+	5 => vector<u8>: "0000000000000000000000000000000000000000000000000000000000000002::sui::SUI" // interpreted as UTF8 string
+	6 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

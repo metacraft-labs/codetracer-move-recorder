@@ -1,0 +1,97 @@
+// Move bytecode v6
+module 2.object_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::address;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+test_bytes_address_roundtrip() {
+L0:	addr0#1#0: address
+L1:	addr1#1#0: address
+L2:	byte0#1#0: vector<u8>
+L3:	byte1#1#0: vector<u8>
+L4:	ctx#1#0: TxContext
+L5:	uid0#1#0: UID
+L6:	uid1#1#0: UID
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[4](ctx#1#0: TxContext)
+	2: MutBorrowLoc[4](ctx#1#0: TxContext)
+	3: Call object::new(&mut TxContext): UID
+	4: StLoc[5](uid0#1#0: UID)
+	5: MutBorrowLoc[4](ctx#1#0: TxContext)
+	6: Call object::new(&mut TxContext): UID
+	7: StLoc[6](uid1#1#0: UID)
+	8: ImmBorrowLoc[5](uid0#1#0: UID)
+	9: Call object::uid_to_address(&UID): address
+	10: StLoc[0](addr0#1#0: address)
+	11: ImmBorrowLoc[5](uid0#1#0: UID)
+	12: Call object::uid_to_bytes(&UID): vector<u8>
+	13: StLoc[2](byte0#1#0: vector<u8>)
+	14: ImmBorrowLoc[6](uid1#1#0: UID)
+	15: Call object::uid_to_address(&UID): address
+	16: StLoc[1](addr1#1#0: address)
+	17: ImmBorrowLoc[6](uid1#1#0: UID)
+	18: Call object::uid_to_bytes(&UID): vector<u8>
+	19: StLoc[3](byte1#1#0: vector<u8>)
+	20: CopyLoc[0](addr0#1#0: address)
+	21: CopyLoc[1](addr1#1#0: address)
+	22: Neq
+	23: BrFalse(25)
+B1:
+	24: Branch(27)
+B2:
+	25: LdConst[0](u64: 61440)
+	26: Abort
+B3:
+	27: CopyLoc[2](byte0#1#0: vector<u8>)
+	28: CopyLoc[3](byte1#1#0: vector<u8>)
+	29: Neq
+	30: BrFalse(32)
+B4:
+	31: Branch(34)
+B5:
+	32: LdConst[1](u64: 61441)
+	33: Abort
+B6:
+	34: MoveLoc[0](addr0#1#0: address)
+	35: MoveLoc[2](byte0#1#0: vector<u8>)
+	36: Call address::from_bytes(vector<u8>): address
+	37: Eq
+	38: BrFalse(40)
+B7:
+	39: Branch(42)
+B8:
+	40: LdConst[2](u64: 61442)
+	41: Abort
+B9:
+	42: MoveLoc[1](addr1#1#0: address)
+	43: MoveLoc[3](byte1#1#0: vector<u8>)
+	44: Call address::from_bytes(vector<u8>): address
+	45: Eq
+	46: BrFalse(48)
+B10:
+	47: Branch(50)
+B11:
+	48: LdConst[2](u64: 61442)
+	49: Abort
+B12:
+	50: MoveLoc[5](uid0#1#0: UID)
+	51: Call object::delete(UID)
+	52: MoveLoc[6](uid1#1#0: UID)
+	53: Call object::delete(UID)
+	54: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 61440
+	1 => u64: 61441
+	2 => u64: 61442
+]
+}

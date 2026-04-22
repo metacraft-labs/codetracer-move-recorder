@@ -1,0 +1,307 @@
+// Move bytecode v6
+module 2.borrow {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Referent<T: store + key> has store {
+	id: address,
+	value: Option<T>
+}
+
+struct Borrow {
+	ref: address,
+	obj: ID
+}
+
+struct Test has store, key {
+	id: UID
+}
+
+public new<T: store + key>(value#0#0: T, ctx#0#0: &mut TxContext): Referent<T> {
+B0:
+	0: MoveLoc[1](ctx#0#0: &mut TxContext)
+	1: Call tx_context::fresh_object_address(&mut TxContext): address
+	2: MoveLoc[0](value#0#0: T)
+	3: Call option::some<T>(T): Option<T>
+	4: PackGeneric[0](Referent<T>)
+	5: Ret
+}
+
+public borrow<T: store + key>(self#0#0: &mut Referent<T>): T * Borrow {
+L1:	id#1#0: ID
+L2:	value#1#0: T
+B0:
+	0: CopyLoc[0](self#0#0: &mut Referent<T>)
+	1: MutBorrowFieldGeneric[0](Referent.value: Option<T>)
+	2: Call option::extract<T>(&mut Option<T>): T
+	3: StLoc[2](value#1#0: T)
+	4: ImmBorrowLoc[2](value#1#0: T)
+	5: Call object::id<T>(&T): ID
+	6: StLoc[1](id#1#0: ID)
+	7: MoveLoc[2](value#1#0: T)
+	8: MoveLoc[0](self#0#0: &mut Referent<T>)
+	9: ImmBorrowFieldGeneric[1](Referent.id: address)
+	10: ReadRef
+	11: MoveLoc[1](id#1#0: ID)
+	12: Pack[1](Borrow)
+	13: Ret
+}
+
+public put_back<T: store + key>(self#0#0: &mut Referent<T>, value#0#0: T, borrow#0#0: Borrow) {
+L3:	obj#1#0: ID
+L4:	ref#1#0: address
+B0:
+	0: MoveLoc[2](borrow#0#0: Borrow)
+	1: Unpack[1](Borrow)
+	2: StLoc[3](obj#1#0: ID)
+	3: StLoc[4](ref#1#0: address)
+	4: ImmBorrowLoc[1](value#0#0: T)
+	5: Call object::id<T>(&T): ID
+	6: MoveLoc[3](obj#1#0: ID)
+	7: Eq
+	8: BrFalse(10)
+B1:
+	9: Branch(14)
+B2:
+	10: MoveLoc[0](self#0#0: &mut Referent<T>)
+	11: Pop
+	12: LdConst[1](u64: 1)
+	13: Abort
+B3:
+	14: CopyLoc[0](self#0#0: &mut Referent<T>)
+	15: ImmBorrowFieldGeneric[1](Referent.id: address)
+	16: ReadRef
+	17: MoveLoc[4](ref#1#0: address)
+	18: Eq
+	19: BrFalse(21)
+B4:
+	20: Branch(25)
+B5:
+	21: MoveLoc[0](self#0#0: &mut Referent<T>)
+	22: Pop
+	23: LdConst[0](u64: 0)
+	24: Abort
+B6:
+	25: MoveLoc[0](self#0#0: &mut Referent<T>)
+	26: MutBorrowFieldGeneric[0](Referent.value: Option<T>)
+	27: MoveLoc[1](value#0#0: T)
+	28: Call option::fill<T>(&mut Option<T>, T)
+	29: Ret
+}
+
+public destroy<T: store + key>(self#0#0: Referent<T>): T {
+L1:	value#1#0: Option<T>
+B0:
+	0: MoveLoc[0](self#0#0: Referent<T>)
+	1: UnpackGeneric[0](Referent<T>)
+	2: StLoc[1](value#1#0: Option<T>)
+	3: Pop
+	4: MoveLoc[1](value#1#0: Option<T>)
+	5: Call option::destroy_some<T>(Option<T>): T
+	6: Ret
+}
+
+test_borrow() {
+L0:	%#1: TxContext
+L1:	borrow#1#0: Borrow
+L2:	ctx#1#0: &mut TxContext
+L3:	ref#1#0: Referent<Test>
+L4:	value#1#0: Test
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call object::new(&mut TxContext): UID
+	6: Pack[2](Test)
+	7: MoveLoc[2](ctx#1#0: &mut TxContext)
+	8: Call new<Test>(Test, &mut TxContext): Referent<Test>
+	9: StLoc[3](ref#1#0: Referent<Test>)
+	10: MutBorrowLoc[3](ref#1#0: Referent<Test>)
+	11: Call borrow<Test>(&mut Referent<Test>): Test * Borrow
+	12: StLoc[1](borrow#1#0: Borrow)
+	13: StLoc[4](value#1#0: Test)
+	14: MutBorrowLoc[3](ref#1#0: Referent<Test>)
+	15: MoveLoc[4](value#1#0: Test)
+	16: MoveLoc[1](borrow#1#0: Borrow)
+	17: Call put_back<Test>(&mut Referent<Test>, Test, Borrow)
+	18: MoveLoc[3](ref#1#0: Referent<Test>)
+	19: Call destroy<Test>(Referent<Test>): Test
+	20: Unpack[2](Test)
+	21: Call object::delete(UID)
+	22: Ret
+}
+
+test_object_swap() {
+L0:	%#1: TxContext
+L1:	b_1#1#0: Borrow
+L2:	b_2#1#0: Borrow
+L3:	ctx#1#0: &mut TxContext
+L4:	ref_1#1#0: Referent<Test>
+L5:	ref_2#1#0: Referent<Test>
+L6:	v_1#1#0: Test
+L7:	v_2#1#0: Test
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call object::new(&mut TxContext): UID
+	6: Pack[2](Test)
+	7: CopyLoc[3](ctx#1#0: &mut TxContext)
+	8: Call new<Test>(Test, &mut TxContext): Referent<Test>
+	9: StLoc[4](ref_1#1#0: Referent<Test>)
+	10: CopyLoc[3](ctx#1#0: &mut TxContext)
+	11: Call object::new(&mut TxContext): UID
+	12: Pack[2](Test)
+	13: MoveLoc[3](ctx#1#0: &mut TxContext)
+	14: Call new<Test>(Test, &mut TxContext): Referent<Test>
+	15: StLoc[5](ref_2#1#0: Referent<Test>)
+	16: MutBorrowLoc[4](ref_1#1#0: Referent<Test>)
+	17: Call borrow<Test>(&mut Referent<Test>): Test * Borrow
+	18: StLoc[1](b_1#1#0: Borrow)
+	19: StLoc[6](v_1#1#0: Test)
+	20: MutBorrowLoc[5](ref_2#1#0: Referent<Test>)
+	21: Call borrow<Test>(&mut Referent<Test>): Test * Borrow
+	22: StLoc[2](b_2#1#0: Borrow)
+	23: StLoc[7](v_2#1#0: Test)
+	24: MutBorrowLoc[4](ref_1#1#0: Referent<Test>)
+	25: MoveLoc[7](v_2#1#0: Test)
+	26: MoveLoc[1](b_1#1#0: Borrow)
+	27: Call put_back<Test>(&mut Referent<Test>, Test, Borrow)
+	28: MutBorrowLoc[5](ref_2#1#0: Referent<Test>)
+	29: MoveLoc[6](v_1#1#0: Test)
+	30: MoveLoc[2](b_2#1#0: Borrow)
+	31: Call put_back<Test>(&mut Referent<Test>, Test, Borrow)
+	32: MoveLoc[4](ref_1#1#0: Referent<Test>)
+	33: Call destroy<Test>(Referent<Test>): Test
+	34: Unpack[2](Test)
+	35: Call object::delete(UID)
+	36: MoveLoc[5](ref_2#1#0: Referent<Test>)
+	37: Call destroy<Test>(Referent<Test>): Test
+	38: Unpack[2](Test)
+	39: Call object::delete(UID)
+	40: Ret
+}
+
+test_borrow_swap() {
+L0:	%#1: TxContext
+L1:	b_1#1#0: Borrow
+L2:	b_2#1#0: Borrow
+L3:	ctx#1#0: &mut TxContext
+L4:	ref_1#1#0: Referent<Test>
+L5:	ref_2#1#0: Referent<Test>
+L6:	v_1#1#0: Test
+L7:	v_2#1#0: Test
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call object::new(&mut TxContext): UID
+	6: Pack[2](Test)
+	7: CopyLoc[3](ctx#1#0: &mut TxContext)
+	8: Call new<Test>(Test, &mut TxContext): Referent<Test>
+	9: StLoc[4](ref_1#1#0: Referent<Test>)
+	10: CopyLoc[3](ctx#1#0: &mut TxContext)
+	11: Call object::new(&mut TxContext): UID
+	12: Pack[2](Test)
+	13: MoveLoc[3](ctx#1#0: &mut TxContext)
+	14: Call new<Test>(Test, &mut TxContext): Referent<Test>
+	15: StLoc[5](ref_2#1#0: Referent<Test>)
+	16: MutBorrowLoc[4](ref_1#1#0: Referent<Test>)
+	17: Call borrow<Test>(&mut Referent<Test>): Test * Borrow
+	18: StLoc[1](b_1#1#0: Borrow)
+	19: StLoc[6](v_1#1#0: Test)
+	20: MutBorrowLoc[5](ref_2#1#0: Referent<Test>)
+	21: Call borrow<Test>(&mut Referent<Test>): Test * Borrow
+	22: StLoc[2](b_2#1#0: Borrow)
+	23: StLoc[7](v_2#1#0: Test)
+	24: MutBorrowLoc[4](ref_1#1#0: Referent<Test>)
+	25: MoveLoc[6](v_1#1#0: Test)
+	26: MoveLoc[2](b_2#1#0: Borrow)
+	27: Call put_back<Test>(&mut Referent<Test>, Test, Borrow)
+	28: MutBorrowLoc[5](ref_2#1#0: Referent<Test>)
+	29: MoveLoc[7](v_2#1#0: Test)
+	30: MoveLoc[1](b_1#1#0: Borrow)
+	31: Call put_back<Test>(&mut Referent<Test>, Test, Borrow)
+	32: MoveLoc[4](ref_1#1#0: Referent<Test>)
+	33: Call destroy<Test>(Referent<Test>): Test
+	34: Unpack[2](Test)
+	35: Call object::delete(UID)
+	36: MoveLoc[5](ref_2#1#0: Referent<Test>)
+	37: Call destroy<Test>(Referent<Test>): Test
+	38: Unpack[2](Test)
+	39: Call object::delete(UID)
+	40: Ret
+}
+
+test_borrow_fail() {
+L0:	%#1: TxContext
+L1:	b_1#1#0: Borrow
+L2:	b_2#1#0: Borrow
+L3:	ctx#1#0: &mut TxContext
+L4:	ref_1#1#0: Referent<Test>
+L5:	ref_2#1#0: Referent<Test>
+L6:	v_1#1#0: Test
+L7:	v_2#1#0: Test
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[3](ctx#1#0: &mut TxContext)
+	4: CopyLoc[3](ctx#1#0: &mut TxContext)
+	5: Call object::new(&mut TxContext): UID
+	6: Pack[2](Test)
+	7: CopyLoc[3](ctx#1#0: &mut TxContext)
+	8: Call new<Test>(Test, &mut TxContext): Referent<Test>
+	9: StLoc[4](ref_1#1#0: Referent<Test>)
+	10: CopyLoc[3](ctx#1#0: &mut TxContext)
+	11: Call object::new(&mut TxContext): UID
+	12: Pack[2](Test)
+	13: MoveLoc[3](ctx#1#0: &mut TxContext)
+	14: Call new<Test>(Test, &mut TxContext): Referent<Test>
+	15: StLoc[5](ref_2#1#0: Referent<Test>)
+	16: MutBorrowLoc[4](ref_1#1#0: Referent<Test>)
+	17: Call borrow<Test>(&mut Referent<Test>): Test * Borrow
+	18: StLoc[1](b_1#1#0: Borrow)
+	19: StLoc[6](v_1#1#0: Test)
+	20: MutBorrowLoc[5](ref_2#1#0: Referent<Test>)
+	21: Call borrow<Test>(&mut Referent<Test>): Test * Borrow
+	22: StLoc[2](b_2#1#0: Borrow)
+	23: StLoc[7](v_2#1#0: Test)
+	24: MutBorrowLoc[4](ref_1#1#0: Referent<Test>)
+	25: MoveLoc[7](v_2#1#0: Test)
+	26: MoveLoc[2](b_2#1#0: Borrow)
+	27: Call put_back<Test>(&mut Referent<Test>, Test, Borrow)
+	28: MutBorrowLoc[5](ref_2#1#0: Referent<Test>)
+	29: MoveLoc[6](v_1#1#0: Test)
+	30: MoveLoc[1](b_1#1#0: Borrow)
+	31: Call put_back<Test>(&mut Referent<Test>, Test, Borrow)
+	32: MoveLoc[4](ref_1#1#0: Referent<Test>)
+	33: Call destroy<Test>(Referent<Test>): Test
+	34: Unpack[2](Test)
+	35: Call object::delete(UID)
+	36: MoveLoc[5](ref_2#1#0: Referent<Test>)
+	37: Call destroy<Test>(Referent<Test>): Test
+	38: Unpack[2](Test)
+	39: Call object::delete(UID)
+	40: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+]
+}

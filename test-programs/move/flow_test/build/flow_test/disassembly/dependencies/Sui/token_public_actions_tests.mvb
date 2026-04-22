@@ -1,0 +1,98 @@
+// Move bytecode v6
+module 2.token_public_actions_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::token;
+use 0000000000000000000000000000000000000000000000000000000000000002::token_test_utils;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+test_public_split_join_zero_destroy() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+L2:	split#1#0: Token<TEST>
+L3:	token#1#0: Token<TEST>
+L4:	zero#1#0: Token<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[1](ctx#1#0: &mut TxContext)
+	5: LdU64(100)
+	6: CopyLoc[1](ctx#1#0: &mut TxContext)
+	7: Call token_test_utils::mint(u64, &mut TxContext): Token<TEST>
+	8: StLoc[3](token#1#0: Token<TEST>)
+	9: MutBorrowLoc[3](token#1#0: Token<TEST>)
+	10: LdU64(50)
+	11: CopyLoc[1](ctx#1#0: &mut TxContext)
+	12: Call token::split<TEST>(&mut Token<TEST>, u64, &mut TxContext): Token<TEST>
+	13: StLoc[2](split#1#0: Token<TEST>)
+	14: CopyLoc[1](ctx#1#0: &mut TxContext)
+	15: Call token::zero<TEST>(&mut TxContext): Token<TEST>
+	16: StLoc[4](zero#1#0: Token<TEST>)
+	17: MutBorrowLoc[3](token#1#0: Token<TEST>)
+	18: MoveLoc[2](split#1#0: Token<TEST>)
+	19: Call token::join<TEST>(&mut Token<TEST>, Token<TEST>)
+	20: MutBorrowLoc[3](token#1#0: Token<TEST>)
+	21: MoveLoc[4](zero#1#0: Token<TEST>)
+	22: Call token::join<TEST>(&mut Token<TEST>, Token<TEST>)
+	23: MutBorrowLoc[3](token#1#0: Token<TEST>)
+	24: LdU64(0)
+	25: CopyLoc[1](ctx#1#0: &mut TxContext)
+	26: Call token::split<TEST>(&mut Token<TEST>, u64, &mut TxContext): Token<TEST>
+	27: Call token::destroy_zero<TEST>(Token<TEST>)
+	28: MoveLoc[3](token#1#0: Token<TEST>)
+	29: MoveLoc[1](ctx#1#0: &mut TxContext)
+	30: Call token::keep<TEST>(Token<TEST>, &mut TxContext)
+	31: Ret
+}
+
+test_public_destroy_non_zero_fail() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[1](ctx#1#0: &mut TxContext)
+	5: LdU64(100)
+	6: MoveLoc[1](ctx#1#0: &mut TxContext)
+	7: Call token_test_utils::mint(u64, &mut TxContext): Token<TEST>
+	8: Call token::destroy_zero<TEST>(Token<TEST>)
+	9: Ret
+}
+
+test_split_excessive_fail() {
+L0:	%#1: TxContext
+L1:	_t#1#0: Token<TEST>
+L2:	ctx#1#0: &mut TxContext
+L3:	token#1#0: Token<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[2](ctx#1#0: &mut TxContext)
+	5: LdU64(0)
+	6: CopyLoc[2](ctx#1#0: &mut TxContext)
+	7: Call token_test_utils::mint(u64, &mut TxContext): Token<TEST>
+	8: StLoc[3](token#1#0: Token<TEST>)
+	9: MutBorrowLoc[3](token#1#0: Token<TEST>)
+	10: LdU64(100)
+	11: MoveLoc[2](ctx#1#0: &mut TxContext)
+	12: Call token::split<TEST>(&mut Token<TEST>, u64, &mut TxContext): Token<TEST>
+	13: StLoc[1](_t#1#0: Token<TEST>)
+	14: LdU64(1337)
+	15: Abort
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

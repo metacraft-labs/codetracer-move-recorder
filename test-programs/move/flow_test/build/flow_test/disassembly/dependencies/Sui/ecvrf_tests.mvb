@@ -1,0 +1,150 @@
+// Move bytecode v6
+module 2.ecvrf_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::ecvrf;
+
+test_ecvrf_verify() {
+L0:	alpha_string#1#0: vector<u8>
+L1:	output#1#0: vector<u8>
+L2:	proof#1#0: vector<u8>
+L3:	public_key#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: 404f..)
+	1: StLoc[1](output#1#0: vector<u8>)
+	2: LdConst[1](vector<u8>: "Hel..)
+	3: StLoc[0](alpha_string#1#0: vector<u8>)
+	4: LdConst[2](vector<u8>: 201e..)
+	5: StLoc[3](public_key#1#0: vector<u8>)
+	6: LdConst[3](vector<u8>: 50d8..)
+	7: StLoc[2](proof#1#0: vector<u8>)
+	8: ImmBorrowLoc[1](output#1#0: vector<u8>)
+	9: ImmBorrowLoc[0](alpha_string#1#0: vector<u8>)
+	10: ImmBorrowLoc[3](public_key#1#0: vector<u8>)
+	11: ImmBorrowLoc[2](proof#1#0: vector<u8>)
+	12: Call ecvrf::ecvrf_verify(&vector<u8>, &vector<u8>, &vector<u8>, &vector<u8>): bool
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834255947759615)
+	16: Abort
+B3:
+	17: Ret
+}
+
+test_ecvrf_invalid() {
+L0:	alpha_string#1#0: vector<u8>
+L1:	output#1#0: vector<u8>
+L2:	proof#1#0: vector<u8>
+L3:	public_key#1#0: vector<u8>
+B0:
+	0: LdConst[4](vector<u8>: "inv..)
+	1: StLoc[1](output#1#0: vector<u8>)
+	2: LdConst[1](vector<u8>: "Hel..)
+	3: StLoc[0](alpha_string#1#0: vector<u8>)
+	4: LdConst[2](vector<u8>: 201e..)
+	5: StLoc[3](public_key#1#0: vector<u8>)
+	6: LdConst[3](vector<u8>: 50d8..)
+	7: StLoc[2](proof#1#0: vector<u8>)
+	8: ImmBorrowLoc[1](output#1#0: vector<u8>)
+	9: ImmBorrowLoc[0](alpha_string#1#0: vector<u8>)
+	10: ImmBorrowLoc[3](public_key#1#0: vector<u8>)
+	11: ImmBorrowLoc[2](proof#1#0: vector<u8>)
+	12: Call ecvrf::ecvrf_verify(&vector<u8>, &vector<u8>, &vector<u8>, &vector<u8>): bool
+	13: Not
+	14: BrFalse(16)
+B1:
+	15: Branch(18)
+B2:
+	16: LdU64(13906834298897432575)
+	17: Abort
+B3:
+	18: Ret
+}
+
+test_invalid_length() {
+L0:	alpha_string#1#0: vector<u8>
+L1:	output#1#0: vector<u8>
+L2:	proof#1#0: vector<u8>
+L3:	public_key#1#0: vector<u8>
+B0:
+	0: LdConst[5](vector<u8>: "inv..)
+	1: StLoc[1](output#1#0: vector<u8>)
+	2: LdConst[1](vector<u8>: "Hel..)
+	3: StLoc[0](alpha_string#1#0: vector<u8>)
+	4: LdConst[2](vector<u8>: 201e..)
+	5: StLoc[3](public_key#1#0: vector<u8>)
+	6: LdConst[3](vector<u8>: 50d8..)
+	7: StLoc[2](proof#1#0: vector<u8>)
+	8: ImmBorrowLoc[1](output#1#0: vector<u8>)
+	9: ImmBorrowLoc[0](alpha_string#1#0: vector<u8>)
+	10: ImmBorrowLoc[3](public_key#1#0: vector<u8>)
+	11: ImmBorrowLoc[2](proof#1#0: vector<u8>)
+	12: Call ecvrf::ecvrf_verify(&vector<u8>, &vector<u8>, &vector<u8>, &vector<u8>): bool
+	13: Pop
+	14: Ret
+}
+
+test_invalid_public_key() {
+L0:	alpha_string#1#0: vector<u8>
+L1:	output#1#0: vector<u8>
+L2:	proof#1#0: vector<u8>
+L3:	public_key#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: 404f..)
+	1: StLoc[1](output#1#0: vector<u8>)
+	2: LdConst[1](vector<u8>: "Hel..)
+	3: StLoc[0](alpha_string#1#0: vector<u8>)
+	4: LdConst[6](vector<u8>: "inv..)
+	5: StLoc[3](public_key#1#0: vector<u8>)
+	6: LdConst[3](vector<u8>: 50d8..)
+	7: StLoc[2](proof#1#0: vector<u8>)
+	8: ImmBorrowLoc[1](output#1#0: vector<u8>)
+	9: ImmBorrowLoc[0](alpha_string#1#0: vector<u8>)
+	10: ImmBorrowLoc[3](public_key#1#0: vector<u8>)
+	11: ImmBorrowLoc[2](proof#1#0: vector<u8>)
+	12: Call ecvrf::ecvrf_verify(&vector<u8>, &vector<u8>, &vector<u8>, &vector<u8>): bool
+	13: Pop
+	14: Ret
+}
+
+test_invalid_proof() {
+L0:	alpha_string#1#0: vector<u8>
+L1:	output#1#0: vector<u8>
+L2:	proof#1#0: vector<u8>
+L3:	public_key#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: 404f..)
+	1: StLoc[1](output#1#0: vector<u8>)
+	2: LdConst[1](vector<u8>: "Hel..)
+	3: StLoc[0](alpha_string#1#0: vector<u8>)
+	4: LdConst[2](vector<u8>: 201e..)
+	5: StLoc[3](public_key#1#0: vector<u8>)
+	6: LdConst[7](vector<u8>: "inv..)
+	7: StLoc[2](proof#1#0: vector<u8>)
+	8: ImmBorrowLoc[1](output#1#0: vector<u8>)
+	9: ImmBorrowLoc[0](alpha_string#1#0: vector<u8>)
+	10: ImmBorrowLoc[3](public_key#1#0: vector<u8>)
+	11: ImmBorrowLoc[2](proof#1#0: vector<u8>)
+	12: Call ecvrf::ecvrf_verify(&vector<u8>, &vector<u8>, &vector<u8>, &vector<u8>): bool
+	13: Pop
+	14: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: 404fad431c7402fa1d4a7652e975aeb9a2b746540eca0b1b1e59c8d19c14a7701918a8249136e355455b8bc73851f7fc62c84f2e39f685b281e681043970026ed8
+	1 => vector<u8>: "Hello, world!" // interpreted as UTF8 string
+	2 => vector<u8>: 201ea6f0f467574295a2cd5d21a3fd3a712ade354d520d3bd0fe6088d7b7c2e00e
+	3 => vector<u8>: 50d8ad2eafb4f2eaf317447726e541359f26dfce248431fe09984fdc73144abb6ceb006c57a29a742eae5a81dd04239870769e310a81046cbbaff8b0bd27a6d6affee167ebba50549b58ffdf9aa192f506
+	4 => vector<u8>: "invalid hash, invalid hash, invalid hash, invalid hash, invalid " // interpreted as UTF8 string
+	5 => vector<u8>: "invalid hash" // interpreted as UTF8 string
+	6 => vector<u8>: "invalid public key" // interpreted as UTF8 string
+	7 => vector<u8>: "invalid proof" // interpreted as UTF8 string
+]
+}

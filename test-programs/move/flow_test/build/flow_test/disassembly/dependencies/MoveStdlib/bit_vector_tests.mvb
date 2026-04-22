@@ -1,0 +1,739 @@
+// Move bytecode v6
+module 1.bit_vector_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::bit_vector;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+bitvector_set_unset_of_size(k#0#0: u64) {
+L1:	bitvector#1#0: BitVector
+L2:	index#1#0: u64
+L3:	index_to_right#1#0: u64
+L4:	index_to_right#2#0: u64
+B0:
+	0: CopyLoc[0](k#0#0: u64)
+	1: Call bit_vector::new(u64): BitVector
+	2: StLoc[1](bitvector#1#0: BitVector)
+	3: LdU64(0)
+	4: StLoc[2](index#1#0: u64)
+B1:
+	5: CopyLoc[2](index#1#0: u64)
+	6: CopyLoc[0](k#0#0: u64)
+	7: Lt
+	8: BrFalse(43)
+B2:
+	9: Branch(10)
+B3:
+	10: MutBorrowLoc[1](bitvector#1#0: BitVector)
+	11: CopyLoc[2](index#1#0: u64)
+	12: Call bit_vector::set(&mut BitVector, u64)
+	13: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	14: CopyLoc[2](index#1#0: u64)
+	15: Call bit_vector::is_index_set(&BitVector, u64): bool
+	16: BrFalse(18)
+B4:
+	17: Branch(20)
+B5:
+	18: LdU64(13906834251652792319)
+	19: Abort
+B6:
+	20: MoveLoc[2](index#1#0: u64)
+	21: LdU64(1)
+	22: Add
+	23: StLoc[2](index#1#0: u64)
+	24: CopyLoc[2](index#1#0: u64)
+	25: StLoc[3](index_to_right#1#0: u64)
+B7:
+	26: CopyLoc[3](index_to_right#1#0: u64)
+	27: CopyLoc[0](k#0#0: u64)
+	28: Lt
+	29: BrFalse(5)
+B8:
+	30: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	31: CopyLoc[3](index_to_right#1#0: u64)
+	32: Call bit_vector::is_index_set(&BitVector, u64): bool
+	33: Not
+	34: BrFalse(36)
+B9:
+	35: Branch(38)
+B10:
+	36: LdU64(13906834268832661503)
+	37: Abort
+B11:
+	38: MoveLoc[3](index_to_right#1#0: u64)
+	39: LdU64(1)
+	40: Add
+	41: StLoc[3](index_to_right#1#0: u64)
+	42: Branch(26)
+B12:
+	43: LdU64(0)
+	44: StLoc[2](index#1#0: u64)
+B13:
+	45: CopyLoc[2](index#1#0: u64)
+	46: CopyLoc[0](k#0#0: u64)
+	47: Lt
+	48: BrFalse(83)
+B14:
+	49: MutBorrowLoc[1](bitvector#1#0: BitVector)
+	50: CopyLoc[2](index#1#0: u64)
+	51: Call bit_vector::unset(&mut BitVector, u64)
+	52: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	53: CopyLoc[2](index#1#0: u64)
+	54: Call bit_vector::is_index_set(&BitVector, u64): bool
+	55: Not
+	56: BrFalse(58)
+B15:
+	57: Branch(60)
+B16:
+	58: LdU64(13906834307487367167)
+	59: Abort
+B17:
+	60: MoveLoc[2](index#1#0: u64)
+	61: LdU64(1)
+	62: Add
+	63: StLoc[2](index#1#0: u64)
+	64: CopyLoc[2](index#1#0: u64)
+	65: StLoc[4](index_to_right#2#0: u64)
+	66: Branch(67)
+B18:
+	67: CopyLoc[4](index_to_right#2#0: u64)
+	68: CopyLoc[0](k#0#0: u64)
+	69: Lt
+	70: BrFalse(45)
+B19:
+	71: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	72: CopyLoc[4](index_to_right#2#0: u64)
+	73: Call bit_vector::is_index_set(&BitVector, u64): bool
+	74: BrFalse(76)
+B20:
+	75: Branch(78)
+B21:
+	76: LdU64(13906834324667236351)
+	77: Abort
+B22:
+	78: MoveLoc[4](index_to_right#2#0: u64)
+	79: LdU64(1)
+	80: Add
+	81: StLoc[4](index_to_right#2#0: u64)
+	82: Branch(67)
+B23:
+	83: Ret
+}
+
+set_bit_out_of_bounds() {
+L0:	bitvector#1#0: BitVector
+B0:
+	0: Call bit_vector::word_size(): u64
+	1: Call bit_vector::new(u64): BitVector
+	2: StLoc[0](bitvector#1#0: BitVector)
+	3: MutBorrowLoc[0](bitvector#1#0: BitVector)
+	4: Call bit_vector::word_size(): u64
+	5: Call bit_vector::set(&mut BitVector, u64)
+	6: Ret
+}
+
+unset_bit_out_of_bounds() {
+L0:	bitvector#1#0: BitVector
+B0:
+	0: Call bit_vector::word_size(): u64
+	1: Call bit_vector::new(u64): BitVector
+	2: StLoc[0](bitvector#1#0: BitVector)
+	3: MutBorrowLoc[0](bitvector#1#0: BitVector)
+	4: Call bit_vector::word_size(): u64
+	5: Call bit_vector::unset(&mut BitVector, u64)
+	6: Ret
+}
+
+index_bit_out_of_bounds() {
+L0:	bitvector#1#0: BitVector
+B0:
+	0: Call bit_vector::word_size(): u64
+	1: Call bit_vector::new(u64): BitVector
+	2: StLoc[0](bitvector#1#0: BitVector)
+	3: ImmBorrowLoc[0](bitvector#1#0: BitVector)
+	4: Call bit_vector::word_size(): u64
+	5: Call bit_vector::is_index_set(&BitVector, u64): bool
+	6: Pop
+	7: Ret
+}
+
+set_bit_and_index_basic() {
+B0:
+	0: LdU64(8)
+	1: Call bitvector_set_unset_of_size(u64)
+	2: Ret
+}
+
+set_bit_and_index_odd_size() {
+B0:
+	0: LdU64(140)
+	1: Call bitvector_set_unset_of_size(u64)
+	2: Ret
+}
+
+longest_sequence_no_set_zero_index() {
+L0:	bitvector#1#0: BitVector
+B0:
+	0: LdU64(100)
+	1: Call bit_vector::new(u64): BitVector
+	2: StLoc[0](bitvector#1#0: BitVector)
+	3: ImmBorrowLoc[0](bitvector#1#0: BitVector)
+	4: LdU64(0)
+	5: Call bit_vector::longest_set_sequence_starting_at(&BitVector, u64): u64
+	6: LdU64(0)
+	7: Eq
+	8: BrFalse(10)
+B1:
+	9: Branch(12)
+B2:
+	10: LdU64(13906834483581026303)
+	11: Abort
+B3:
+	12: Ret
+}
+
+longest_sequence_one_set_zero_index() {
+L0:	bitvector#1#0: BitVector
+B0:
+	0: LdU64(100)
+	1: Call bit_vector::new(u64): BitVector
+	2: StLoc[0](bitvector#1#0: BitVector)
+	3: MutBorrowLoc[0](bitvector#1#0: BitVector)
+	4: LdU64(1)
+	5: Call bit_vector::set(&mut BitVector, u64)
+	6: ImmBorrowLoc[0](bitvector#1#0: BitVector)
+	7: LdU64(0)
+	8: Call bit_vector::longest_set_sequence_starting_at(&BitVector, u64): u64
+	9: LdU64(0)
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834513645797375)
+	14: Abort
+B3:
+	15: Ret
+}
+
+longest_sequence_no_set_nonzero_index() {
+L0:	bitvector#1#0: BitVector
+B0:
+	0: LdU64(100)
+	1: Call bit_vector::new(u64): BitVector
+	2: StLoc[0](bitvector#1#0: BitVector)
+	3: ImmBorrowLoc[0](bitvector#1#0: BitVector)
+	4: LdU64(51)
+	5: Call bit_vector::longest_set_sequence_starting_at(&BitVector, u64): u64
+	6: LdU64(0)
+	7: Eq
+	8: BrFalse(10)
+B1:
+	9: Branch(12)
+B2:
+	10: LdU64(13906834539415601151)
+	11: Abort
+B3:
+	12: Ret
+}
+
+longest_sequence_two_set_nonzero_index() {
+L0:	bitvector#1#0: BitVector
+B0:
+	0: LdU64(100)
+	1: Call bit_vector::new(u64): BitVector
+	2: StLoc[0](bitvector#1#0: BitVector)
+	3: MutBorrowLoc[0](bitvector#1#0: BitVector)
+	4: LdU64(50)
+	5: Call bit_vector::set(&mut BitVector, u64)
+	6: MutBorrowLoc[0](bitvector#1#0: BitVector)
+	7: LdU64(52)
+	8: Call bit_vector::set(&mut BitVector, u64)
+	9: ImmBorrowLoc[0](bitvector#1#0: BitVector)
+	10: LdU64(51)
+	11: Call bit_vector::longest_set_sequence_starting_at(&BitVector, u64): u64
+	12: LdU64(0)
+	13: Eq
+	14: BrFalse(16)
+B1:
+	15: Branch(18)
+B2:
+	16: LdU64(13906834573775339519)
+	17: Abort
+B3:
+	18: Ret
+}
+
+longest_sequence_with_break() {
+L0:	bitvector#1#0: BitVector
+L1:	i#1#0: u64
+B0:
+	0: LdU64(100)
+	1: Call bit_vector::new(u64): BitVector
+	2: StLoc[0](bitvector#1#0: BitVector)
+	3: LdU64(0)
+	4: StLoc[1](i#1#0: u64)
+B1:
+	5: CopyLoc[1](i#1#0: u64)
+	6: LdU64(20)
+	7: Lt
+	8: BrFalse(18)
+B2:
+	9: Branch(10)
+B3:
+	10: MutBorrowLoc[0](bitvector#1#0: BitVector)
+	11: CopyLoc[1](i#1#0: u64)
+	12: Call bit_vector::set(&mut BitVector, u64)
+	13: MoveLoc[1](i#1#0: u64)
+	14: LdU64(1)
+	15: Add
+	16: StLoc[1](i#1#0: u64)
+	17: Branch(5)
+B4:
+	18: MoveLoc[1](i#1#0: u64)
+	19: LdU64(1)
+	20: Add
+	21: StLoc[1](i#1#0: u64)
+B5:
+	22: CopyLoc[1](i#1#0: u64)
+	23: LdU64(100)
+	24: Lt
+	25: BrFalse(35)
+B6:
+	26: Branch(27)
+B7:
+	27: MutBorrowLoc[0](bitvector#1#0: BitVector)
+	28: CopyLoc[1](i#1#0: u64)
+	29: Call bit_vector::set(&mut BitVector, u64)
+	30: MoveLoc[1](i#1#0: u64)
+	31: LdU64(1)
+	32: Add
+	33: StLoc[1](i#1#0: u64)
+	34: Branch(22)
+B8:
+	35: ImmBorrowLoc[0](bitvector#1#0: BitVector)
+	36: LdU64(0)
+	37: Call bit_vector::longest_set_sequence_starting_at(&BitVector, u64): u64
+	38: LdU64(20)
+	39: Eq
+	40: BrFalse(42)
+B9:
+	41: Branch(44)
+B10:
+	42: LdU64(13906834646789783551)
+	43: Abort
+B11:
+	44: ImmBorrowLoc[0](bitvector#1#0: BitVector)
+	45: LdU64(20)
+	46: Call bit_vector::longest_set_sequence_starting_at(&BitVector, u64): u64
+	47: LdU64(0)
+	48: Eq
+	49: BrFalse(51)
+B12:
+	50: Branch(53)
+B13:
+	51: LdU64(13906834651084750847)
+	52: Abort
+B14:
+	53: ImmBorrowLoc[0](bitvector#1#0: BitVector)
+	54: LdU64(21)
+	55: Call bit_vector::longest_set_sequence_starting_at(&BitVector, u64): u64
+	56: LdU64(79)
+	57: Eq
+	58: BrFalse(60)
+B15:
+	59: Branch(62)
+B16:
+	60: LdU64(13906834655379718143)
+	61: Abort
+B17:
+	62: Ret
+}
+
+shift_left() {
+L0:	bitlen#1#0: u64
+L1:	bitvector#1#0: BitVector
+L2:	i#1#0: u64
+B0:
+	0: LdU64(97)
+	1: StLoc[0](bitlen#1#0: u64)
+	2: CopyLoc[0](bitlen#1#0: u64)
+	3: Call bit_vector::new(u64): BitVector
+	4: StLoc[1](bitvector#1#0: BitVector)
+	5: LdU64(0)
+	6: StLoc[2](i#1#0: u64)
+B1:
+	7: CopyLoc[2](i#1#0: u64)
+	8: CopyLoc[0](bitlen#1#0: u64)
+	9: Lt
+	10: BrFalse(20)
+B2:
+	11: Branch(12)
+B3:
+	12: MutBorrowLoc[1](bitvector#1#0: BitVector)
+	13: CopyLoc[2](i#1#0: u64)
+	14: Call bit_vector::set(&mut BitVector, u64)
+	15: MoveLoc[2](i#1#0: u64)
+	16: LdU64(1)
+	17: Add
+	18: StLoc[2](i#1#0: u64)
+	19: Branch(7)
+B4:
+	20: MoveLoc[0](bitlen#1#0: u64)
+	21: LdU64(1)
+	22: Sub
+	23: StLoc[2](i#1#0: u64)
+B5:
+	24: CopyLoc[2](i#1#0: u64)
+	25: LdU64(0)
+	26: Gt
+	27: BrFalse(52)
+B6:
+	28: Branch(29)
+B7:
+	29: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	30: CopyLoc[2](i#1#0: u64)
+	31: Call bit_vector::is_index_set(&BitVector, u64): bool
+	32: BrFalse(34)
+B8:
+	33: Branch(36)
+B9:
+	34: LdU64(13906834724099194879)
+	35: Abort
+B10:
+	36: MutBorrowLoc[1](bitvector#1#0: BitVector)
+	37: LdU64(1)
+	38: Call bit_vector::shift_left(&mut BitVector, u64)
+	39: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	40: CopyLoc[2](i#1#0: u64)
+	41: Call bit_vector::is_index_set(&BitVector, u64): bool
+	42: Not
+	43: BrFalse(45)
+B11:
+	44: Branch(47)
+B12:
+	45: LdU64(13906834732689129471)
+	46: Abort
+B13:
+	47: MoveLoc[2](i#1#0: u64)
+	48: LdU64(1)
+	49: Sub
+	50: StLoc[2](i#1#0: u64)
+	51: Branch(24)
+B14:
+	52: Ret
+}
+
+shift_left_specific_amount() {
+L0:	bitlen#1#0: u64
+L1:	bitvector#1#0: BitVector
+L2:	i#1#0: u64
+L3:	shift_amount#1#0: u64
+B0:
+	0: LdU64(300)
+	1: StLoc[0](bitlen#1#0: u64)
+	2: LdU64(133)
+	3: StLoc[3](shift_amount#1#0: u64)
+	4: CopyLoc[0](bitlen#1#0: u64)
+	5: Call bit_vector::new(u64): BitVector
+	6: StLoc[1](bitvector#1#0: BitVector)
+	7: MutBorrowLoc[1](bitvector#1#0: BitVector)
+	8: LdU64(201)
+	9: Call bit_vector::set(&mut BitVector, u64)
+	10: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	11: LdU64(201)
+	12: Call bit_vector::is_index_set(&BitVector, u64): bool
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834784228737023)
+	16: Abort
+B3:
+	17: MutBorrowLoc[1](bitvector#1#0: BitVector)
+	18: CopyLoc[3](shift_amount#1#0: u64)
+	19: Call bit_vector::shift_left(&mut BitVector, u64)
+	20: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	21: LdU64(201)
+	22: MoveLoc[3](shift_amount#1#0: u64)
+	23: Sub
+	24: Call bit_vector::is_index_set(&BitVector, u64): bool
+	25: BrFalse(27)
+B4:
+	26: Branch(29)
+B5:
+	27: LdU64(13906834797113638911)
+	28: Abort
+B6:
+	29: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	30: LdU64(201)
+	31: Call bit_vector::is_index_set(&BitVector, u64): bool
+	32: Not
+	33: BrFalse(35)
+B7:
+	34: Branch(37)
+B8:
+	35: LdU64(13906834801408606207)
+	36: Abort
+B9:
+	37: MutBorrowLoc[1](bitvector#1#0: BitVector)
+	38: CopyLoc[0](bitlen#1#0: u64)
+	39: LdU64(1)
+	40: Sub
+	41: Call bit_vector::shift_left(&mut BitVector, u64)
+	42: LdU64(0)
+	43: StLoc[2](i#1#0: u64)
+B10:
+	44: CopyLoc[2](i#1#0: u64)
+	45: CopyLoc[0](bitlen#1#0: u64)
+	46: Lt
+	47: BrFalse(61)
+B11:
+	48: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	49: CopyLoc[2](i#1#0: u64)
+	50: Call bit_vector::is_index_set(&BitVector, u64): bool
+	51: Not
+	52: BrFalse(54)
+B12:
+	53: Branch(56)
+B13:
+	54: LdU64(13906834831473377279)
+	55: Abort
+B14:
+	56: MoveLoc[2](i#1#0: u64)
+	57: LdU64(1)
+	58: Add
+	59: StLoc[2](i#1#0: u64)
+	60: Branch(44)
+B15:
+	61: Ret
+}
+
+shift_left_specific_amount_to_unset_bit() {
+L0:	%#1: bool
+L1:	bitlen#1#0: u64
+L2:	bitvector#1#0: BitVector
+L3:	chosen_index#1#0: u64
+L4:	i#1#0: u64
+L5:	shift_amount#1#0: u64
+B0:
+	0: LdU64(50)
+	1: StLoc[1](bitlen#1#0: u64)
+	2: LdU64(24)
+	3: StLoc[3](chosen_index#1#0: u64)
+	4: LdU64(3)
+	5: StLoc[5](shift_amount#1#0: u64)
+	6: CopyLoc[1](bitlen#1#0: u64)
+	7: Call bit_vector::new(u64): BitVector
+	8: StLoc[2](bitvector#1#0: BitVector)
+	9: LdU64(0)
+	10: StLoc[4](i#1#0: u64)
+B1:
+	11: CopyLoc[4](i#1#0: u64)
+	12: CopyLoc[1](bitlen#1#0: u64)
+	13: Lt
+	14: BrFalse(24)
+B2:
+	15: Branch(16)
+B3:
+	16: MutBorrowLoc[2](bitvector#1#0: BitVector)
+	17: CopyLoc[4](i#1#0: u64)
+	18: Call bit_vector::set(&mut BitVector, u64)
+	19: MoveLoc[4](i#1#0: u64)
+	20: LdU64(1)
+	21: Add
+	22: StLoc[4](i#1#0: u64)
+	23: Branch(11)
+B4:
+	24: MutBorrowLoc[2](bitvector#1#0: BitVector)
+	25: CopyLoc[3](chosen_index#1#0: u64)
+	26: Call bit_vector::unset(&mut BitVector, u64)
+	27: ImmBorrowLoc[2](bitvector#1#0: BitVector)
+	28: CopyLoc[3](chosen_index#1#0: u64)
+	29: Call bit_vector::is_index_set(&BitVector, u64): bool
+	30: Not
+	31: BrFalse(33)
+B5:
+	32: Branch(35)
+B6:
+	33: LdU64(13906834917372723199)
+	34: Abort
+B7:
+	35: MutBorrowLoc[2](bitvector#1#0: BitVector)
+	36: CopyLoc[5](shift_amount#1#0: u64)
+	37: Call bit_vector::shift_left(&mut BitVector, u64)
+	38: LdU64(0)
+	39: StLoc[4](i#1#0: u64)
+B8:
+	40: CopyLoc[4](i#1#0: u64)
+	41: CopyLoc[1](bitlen#1#0: u64)
+	42: Lt
+	43: BrFalse(82)
+B9:
+	44: CopyLoc[4](i#1#0: u64)
+	45: CopyLoc[3](chosen_index#1#0: u64)
+	46: CopyLoc[5](shift_amount#1#0: u64)
+	47: Sub
+	48: Eq
+	49: BrFalse(54)
+B10:
+	50: Branch(51)
+B11:
+	51: LdTrue
+	52: StLoc[0](%#1: bool)
+	53: Branch(60)
+B12:
+	54: CopyLoc[4](i#1#0: u64)
+	55: CopyLoc[1](bitlen#1#0: u64)
+	56: CopyLoc[5](shift_amount#1#0: u64)
+	57: Sub
+	58: Ge
+	59: StLoc[0](%#1: bool)
+B13:
+	60: MoveLoc[0](%#1: bool)
+	61: BrFalse(70)
+B14:
+	62: ImmBorrowLoc[2](bitvector#1#0: BitVector)
+	63: CopyLoc[4](i#1#0: u64)
+	64: Call bit_vector::is_index_set(&BitVector, u64): bool
+	65: Not
+	66: BrFalse(68)
+B15:
+	67: Branch(77)
+B16:
+	68: LdU64(13906834956027428863)
+	69: Abort
+B17:
+	70: ImmBorrowLoc[2](bitvector#1#0: BitVector)
+	71: CopyLoc[4](i#1#0: u64)
+	72: Call bit_vector::is_index_set(&BitVector, u64): bool
+	73: BrFalse(75)
+B18:
+	74: Branch(77)
+B19:
+	75: LdU64(13906834964617363455)
+	76: Abort
+B20:
+	77: MoveLoc[4](i#1#0: u64)
+	78: LdU64(1)
+	79: Add
+	80: StLoc[4](i#1#0: u64)
+	81: Branch(40)
+B21:
+	82: Ret
+}
+
+shift_left_at_size() {
+L0:	bitlen#1#0: u64
+L1:	bitvector#1#0: BitVector
+L2:	i#1#0: u64
+B0:
+	0: LdU64(133)
+	1: StLoc[0](bitlen#1#0: u64)
+	2: CopyLoc[0](bitlen#1#0: u64)
+	3: Call bit_vector::new(u64): BitVector
+	4: StLoc[1](bitvector#1#0: BitVector)
+	5: LdU64(0)
+	6: StLoc[2](i#1#0: u64)
+B1:
+	7: CopyLoc[2](i#1#0: u64)
+	8: CopyLoc[0](bitlen#1#0: u64)
+	9: Lt
+	10: BrFalse(20)
+B2:
+	11: Branch(12)
+B3:
+	12: MutBorrowLoc[1](bitvector#1#0: BitVector)
+	13: CopyLoc[2](i#1#0: u64)
+	14: Call bit_vector::set(&mut BitVector, u64)
+	15: MoveLoc[2](i#1#0: u64)
+	16: LdU64(1)
+	17: Add
+	18: StLoc[2](i#1#0: u64)
+	19: Branch(7)
+B4:
+	20: MutBorrowLoc[1](bitvector#1#0: BitVector)
+	21: CopyLoc[0](bitlen#1#0: u64)
+	22: LdU64(1)
+	23: Sub
+	24: Call bit_vector::shift_left(&mut BitVector, u64)
+	25: MoveLoc[0](bitlen#1#0: u64)
+	26: LdU64(1)
+	27: Sub
+	28: StLoc[2](i#1#0: u64)
+B5:
+	29: CopyLoc[2](i#1#0: u64)
+	30: LdU64(0)
+	31: Gt
+	32: BrFalse(47)
+B6:
+	33: Branch(34)
+B7:
+	34: ImmBorrowLoc[1](bitvector#1#0: BitVector)
+	35: CopyLoc[2](i#1#0: u64)
+	36: Call bit_vector::is_index_set(&BitVector, u64): bool
+	37: Not
+	38: BrFalse(40)
+B8:
+	39: Branch(42)
+B9:
+	40: LdU64(13906835050516709375)
+	41: Abort
+B10:
+	42: MoveLoc[2](i#1#0: u64)
+	43: LdU64(1)
+	44: Sub
+	45: StLoc[2](i#1#0: u64)
+	46: Branch(29)
+B11:
+	47: Ret
+}
+
+shift_left_more_than_size() {
+L0:	bitlen#1#0: u64
+L1:	bitvector#1#0: BitVector
+B0:
+	0: LdU64(133)
+	1: StLoc[0](bitlen#1#0: u64)
+	2: CopyLoc[0](bitlen#1#0: u64)
+	3: Call bit_vector::new(u64): BitVector
+	4: StLoc[1](bitvector#1#0: BitVector)
+	5: MutBorrowLoc[1](bitvector#1#0: BitVector)
+	6: MoveLoc[0](bitlen#1#0: u64)
+	7: Call bit_vector::shift_left(&mut BitVector, u64)
+	8: Ret
+}
+
+empty_bitvector() {
+B0:
+	0: LdU64(0)
+	1: Call bit_vector::new(u64): BitVector
+	2: Pop
+	3: Ret
+}
+
+single_bit_bitvector() {
+L0:	bitvector#1#0: BitVector
+B0:
+	0: LdU64(1)
+	1: Call bit_vector::new(u64): BitVector
+	2: StLoc[0](bitvector#1#0: BitVector)
+	3: ImmBorrowLoc[0](bitvector#1#0: BitVector)
+	4: Call bit_vector::length(&BitVector): u64
+	5: LdU64(1)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(11)
+B2:
+	9: LdU64(13906835136416055295)
+	10: Abort
+B3:
+	11: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

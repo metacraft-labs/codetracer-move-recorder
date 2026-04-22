@@ -1,0 +1,13 @@
+// Move bytecode v6
+module 2.protocol_config {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+native public(friend) is_feature_enabled(feature_flag_name#0#0: vector<u8>): bool;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

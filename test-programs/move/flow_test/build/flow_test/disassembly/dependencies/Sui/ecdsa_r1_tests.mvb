@@ -1,0 +1,199 @@
+// Move bytecode v6
+module 2.ecdsa_r1_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::ecdsa_r1;
+
+test_ecrecover_pubkey() {
+L0:	msg#1#0: vector<u8>
+L1:	pubkey_bytes#1#0: vector<u8>
+L2:	sig#1#0: vector<u8>
+L3:	sig#2#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "Hel..)
+	1: StLoc[0](msg#1#0: vector<u8>)
+	2: LdConst[1](vector<u8>: 4120..)
+	3: StLoc[2](sig#1#0: vector<u8>)
+	4: LdConst[2](vector<u8>: 2102..)
+	5: StLoc[1](pubkey_bytes#1#0: vector<u8>)
+	6: ImmBorrowLoc[2](sig#1#0: vector<u8>)
+	7: ImmBorrowLoc[0](msg#1#0: vector<u8>)
+	8: LdU8(0)
+	9: Call ecdsa_r1::secp256r1_ecrecover(&vector<u8>, &vector<u8>, u8): vector<u8>
+	10: CopyLoc[1](pubkey_bytes#1#0: vector<u8>)
+	11: Eq
+	12: BrFalse(14)
+B1:
+	13: Branch(16)
+B2:
+	14: LdU64(13906834260242726911)
+	15: Abort
+B3:
+	16: LdConst[3](vector<u8>: 4126..)
+	17: StLoc[3](sig#2#0: vector<u8>)
+	18: ImmBorrowLoc[3](sig#2#0: vector<u8>)
+	19: ImmBorrowLoc[0](msg#1#0: vector<u8>)
+	20: LdU8(1)
+	21: Call ecdsa_r1::secp256r1_ecrecover(&vector<u8>, &vector<u8>, u8): vector<u8>
+	22: MoveLoc[1](pubkey_bytes#1#0: vector<u8>)
+	23: Eq
+	24: BrFalse(26)
+B4:
+	25: Branch(28)
+B5:
+	26: LdU64(13906834286012530687)
+	27: Abort
+B6:
+	28: Ret
+}
+
+test_ecrecover_pubkey_invalid_sig() {
+L0:	msg#1#0: vector<u8>
+L1:	sig#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "Hel..)
+	1: StLoc[0](msg#1#0: vector<u8>)
+	2: LdConst[4](vector<u8>: 4026..)
+	3: StLoc[1](sig#1#0: vector<u8>)
+	4: ImmBorrowLoc[1](sig#1#0: vector<u8>)
+	5: ImmBorrowLoc[0](msg#1#0: vector<u8>)
+	6: LdU8(1)
+	7: Call ecdsa_r1::secp256r1_ecrecover(&vector<u8>, &vector<u8>, u8): vector<u8>
+	8: Pop
+	9: Ret
+}
+
+test_secp256r1_verify_fails_with_recoverable_sig() {
+L0:	msg#1#0: vector<u8>
+L1:	pk#1#0: vector<u8>
+L2:	sig#1#0: vector<u8>
+L3:	sig#2#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "Hel..)
+	1: StLoc[0](msg#1#0: vector<u8>)
+	2: LdConst[2](vector<u8>: 2102..)
+	3: StLoc[1](pk#1#0: vector<u8>)
+	4: LdConst[1](vector<u8>: 4120..)
+	5: StLoc[2](sig#1#0: vector<u8>)
+	6: ImmBorrowLoc[2](sig#1#0: vector<u8>)
+	7: ImmBorrowLoc[1](pk#1#0: vector<u8>)
+	8: ImmBorrowLoc[0](msg#1#0: vector<u8>)
+	9: LdU8(0)
+	10: Call ecdsa_r1::secp256r1_verify(&vector<u8>, &vector<u8>, &vector<u8>, u8): bool
+	11: LdFalse
+	12: Eq
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834371911876607)
+	16: Abort
+B3:
+	17: LdConst[5](vector<u8>: 4120..)
+	18: StLoc[3](sig#2#0: vector<u8>)
+	19: ImmBorrowLoc[3](sig#2#0: vector<u8>)
+	20: ImmBorrowLoc[1](pk#1#0: vector<u8>)
+	21: ImmBorrowLoc[0](msg#1#0: vector<u8>)
+	22: LdU8(0)
+	23: Call ecdsa_r1::secp256r1_verify(&vector<u8>, &vector<u8>, &vector<u8>, u8): bool
+	24: LdFalse
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdU64(13906834397681680383)
+	29: Abort
+B6:
+	30: Ret
+}
+
+test_secp256r1_verify_success_with_nonrecoverable_sig() {
+L0:	msg#1#0: vector<u8>
+L1:	pk#1#0: vector<u8>
+L2:	sig#1#0: vector<u8>
+L3:	sig#2#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "Hel..)
+	1: StLoc[0](msg#1#0: vector<u8>)
+	2: LdConst[2](vector<u8>: 2102..)
+	3: StLoc[1](pk#1#0: vector<u8>)
+	4: LdConst[6](vector<u8>: 4020..)
+	5: StLoc[2](sig#1#0: vector<u8>)
+	6: ImmBorrowLoc[2](sig#1#0: vector<u8>)
+	7: ImmBorrowLoc[1](pk#1#0: vector<u8>)
+	8: ImmBorrowLoc[0](msg#1#0: vector<u8>)
+	9: LdU8(0)
+	10: Call ecdsa_r1::secp256r1_verify(&vector<u8>, &vector<u8>, &vector<u8>, u8): bool
+	11: LdTrue
+	12: Eq
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834444926320639)
+	16: Abort
+B3:
+	17: LdConst[4](vector<u8>: 4026..)
+	18: StLoc[3](sig#2#0: vector<u8>)
+	19: ImmBorrowLoc[3](sig#2#0: vector<u8>)
+	20: ImmBorrowLoc[1](pk#1#0: vector<u8>)
+	21: ImmBorrowLoc[0](msg#1#0: vector<u8>)
+	22: LdU8(1)
+	23: Call ecdsa_r1::secp256r1_verify(&vector<u8>, &vector<u8>, &vector<u8>, u8): bool
+	24: LdTrue
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdU64(13906834466401157119)
+	29: Abort
+B6:
+	30: Ret
+}
+
+test_secp256r1_invalid_public_key_length() {
+L0:	msg#1#0: vector<u8>
+L1:	pk#1#0: vector<u8>
+L2:	sig#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "Hel..)
+	1: StLoc[0](msg#1#0: vector<u8>)
+	2: LdConst[7](vector<u8>: 2002..)
+	3: StLoc[1](pk#1#0: vector<u8>)
+	4: LdConst[6](vector<u8>: 4020..)
+	5: StLoc[2](sig#1#0: vector<u8>)
+	6: ImmBorrowLoc[2](sig#1#0: vector<u8>)
+	7: ImmBorrowLoc[1](pk#1#0: vector<u8>)
+	8: ImmBorrowLoc[0](msg#1#0: vector<u8>)
+	9: LdU8(0)
+	10: Call ecdsa_r1::secp256r1_verify(&vector<u8>, &vector<u8>, &vector<u8>, u8): bool
+	11: LdFalse
+	12: Eq
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834513645797375)
+	16: Abort
+B3:
+	17: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "Hello, world!" // interpreted as UTF8 string
+	1 => vector<u8>: 41209841acabd0fdf6d25fa0948b2f5c6c74f930eede89c6fce59502218a3134a147535921bf0cdf5d1990f6f0b3dadb8c05069ddc531db057d325857ce198a52900
+	2 => vector<u8>: 210227322b3a891a0a280d6bc1fb2cbb23d28f54906fd6407f5f741f6def5762609a
+	3 => vector<u8>: 4126d84720652d8bc4ddd1986434a10b3b7b69f0e35a17c6a5987e6d1cba69652f4384a342487642df5e44592d304bea0ceb0fae2e347fa3cec5ce1a8144cfbbb200
+	4 => vector<u8>: 4026d84720652d8bc4ddd1986434a10b3b7b69f0e35a17c6a5987e6d1cba69652f4384a342487642df5e44592d304bea0ceb0fae2e347fa3cec5ce1a8144cfbbb2
+	5 => vector<u8>: 41209841acabd0fdf6d25fa0948b2f5c6c74f930eede89c6fce59502218a3134a147535921bf0cdf5d1990f6f0b3dadb8c05069ddc531db057d325857ce198a52901
+	6 => vector<u8>: 40209841acabd0fdf6d25fa0948b2f5c6c74f930eede89c6fce59502218a3134a147535921bf0cdf5d1990f6f0b3dadb8c05069ddc531db057d325857ce198a529
+	7 => vector<u8>: 200227322b3a891a0a280d6bc1fb2cbb23d28f54906fd6407f5f741f6def576260
+]
+}

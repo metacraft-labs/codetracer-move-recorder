@@ -1,0 +1,134 @@
+// Move bytecode v6
+module 2.token_treasury_cap_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::token;
+use 0000000000000000000000000000000000000000000000000000000000000002::token_test_utils;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+test_treasury_spend_flush() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TokenPolicyCap<TEST>
+L2:	ctx#1#0: &mut TxContext
+L3:	policy#1#0: TokenPolicy<TEST>
+L4:	request#1#0: ActionRequest<TEST>
+L5:	treasury_cap#1#0: TreasuryCap<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[2](ctx#1#0: &mut TxContext)
+	5: CopyLoc[2](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[3](policy#1#0: TokenPolicy<TEST>)
+	9: CopyLoc[2](ctx#1#0: &mut TxContext)
+	10: Call token_test_utils::get_treasury_cap(&mut TxContext): TreasuryCap<TEST>
+	11: StLoc[5](treasury_cap#1#0: TreasuryCap<TEST>)
+	12: MutBorrowLoc[5](treasury_cap#1#0: TreasuryCap<TEST>)
+	13: LdU64(1000)
+	14: CopyLoc[2](ctx#1#0: &mut TxContext)
+	15: Call token::mint<TEST>(&mut TreasuryCap<TEST>, u64, &mut TxContext): Token<TEST>
+	16: CopyLoc[2](ctx#1#0: &mut TxContext)
+	17: Call token::spend<TEST>(Token<TEST>, &mut TxContext): ActionRequest<TEST>
+	18: StLoc[4](request#1#0: ActionRequest<TEST>)
+	19: MutBorrowLoc[3](policy#1#0: TokenPolicy<TEST>)
+	20: ImmBorrowLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	21: Call token::spend_action(): String
+	22: CopyLoc[2](ctx#1#0: &mut TxContext)
+	23: Call token::allow<TEST>(&mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, String, &mut TxContext)
+	24: MutBorrowLoc[3](policy#1#0: TokenPolicy<TEST>)
+	25: MoveLoc[4](request#1#0: ActionRequest<TEST>)
+	26: CopyLoc[2](ctx#1#0: &mut TxContext)
+	27: Call token::confirm_request_mut<TEST>(&mut TokenPolicy<TEST>, ActionRequest<TEST>, &mut TxContext): String * u64 * address * Option<address>
+	28: Pop
+	29: Pop
+	30: Pop
+	31: Pop
+	32: MutBorrowLoc[3](policy#1#0: TokenPolicy<TEST>)
+	33: MutBorrowLoc[5](treasury_cap#1#0: TreasuryCap<TEST>)
+	34: MoveLoc[2](ctx#1#0: &mut TxContext)
+	35: Call token::flush<TEST>(&mut TokenPolicy<TEST>, &mut TreasuryCap<TEST>, &mut TxContext): u64
+	36: Pop
+	37: MoveLoc[5](treasury_cap#1#0: TreasuryCap<TEST>)
+	38: Call token_test_utils::return_treasury_cap(TreasuryCap<TEST>)
+	39: MoveLoc[3](policy#1#0: TokenPolicy<TEST>)
+	40: MoveLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	41: Call token_test_utils::return_policy(TokenPolicy<TEST>, TokenPolicyCap<TEST>)
+	42: Ret
+}
+
+test_treasury_resolve_request() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+L2:	request#1#0: ActionRequest<TEST>
+L3:	treasury_cap#1#0: TreasuryCap<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[1](ctx#1#0: &mut TxContext)
+	5: CopyLoc[1](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_treasury_cap(&mut TxContext): TreasuryCap<TEST>
+	7: StLoc[3](treasury_cap#1#0: TreasuryCap<TEST>)
+	8: MutBorrowLoc[3](treasury_cap#1#0: TreasuryCap<TEST>)
+	9: LdU64(1000)
+	10: CopyLoc[1](ctx#1#0: &mut TxContext)
+	11: Call token::mint<TEST>(&mut TreasuryCap<TEST>, u64, &mut TxContext): Token<TEST>
+	12: CopyLoc[1](ctx#1#0: &mut TxContext)
+	13: Call token::spend<TEST>(Token<TEST>, &mut TxContext): ActionRequest<TEST>
+	14: StLoc[2](request#1#0: ActionRequest<TEST>)
+	15: MutBorrowLoc[3](treasury_cap#1#0: TreasuryCap<TEST>)
+	16: MoveLoc[2](request#1#0: ActionRequest<TEST>)
+	17: MoveLoc[1](ctx#1#0: &mut TxContext)
+	18: Call token::confirm_with_treasury_cap<TEST>(&mut TreasuryCap<TEST>, ActionRequest<TEST>, &mut TxContext): String * u64 * address * Option<address>
+	19: Pop
+	20: Pop
+	21: Pop
+	22: Pop
+	23: MoveLoc[3](treasury_cap#1#0: TreasuryCap<TEST>)
+	24: Call token_test_utils::return_treasury_cap(TreasuryCap<TEST>)
+	25: Ret
+}
+
+test_treasury_mint_burn() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+L2:	token#1#0: Token<TEST>
+L3:	treasury_cap#1#0: TreasuryCap<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[1](ctx#1#0: &mut TxContext)
+	5: CopyLoc[1](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_treasury_cap(&mut TxContext): TreasuryCap<TEST>
+	7: StLoc[3](treasury_cap#1#0: TreasuryCap<TEST>)
+	8: MutBorrowLoc[3](treasury_cap#1#0: TreasuryCap<TEST>)
+	9: LdU64(1000)
+	10: MoveLoc[1](ctx#1#0: &mut TxContext)
+	11: Call token::mint<TEST>(&mut TreasuryCap<TEST>, u64, &mut TxContext): Token<TEST>
+	12: StLoc[2](token#1#0: Token<TEST>)
+	13: MutBorrowLoc[3](treasury_cap#1#0: TreasuryCap<TEST>)
+	14: MoveLoc[2](token#1#0: Token<TEST>)
+	15: Call token::burn<TEST>(&mut TreasuryCap<TEST>, Token<TEST>)
+	16: MoveLoc[3](treasury_cap#1#0: TreasuryCap<TEST>)
+	17: Call token_test_utils::return_treasury_cap(TreasuryCap<TEST>)
+	18: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

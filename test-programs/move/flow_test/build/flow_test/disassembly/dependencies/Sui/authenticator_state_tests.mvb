@@ -1,0 +1,888 @@
+// Move bytecode v6
+module 2.authenticator_state_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::authenticator_state;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+authenticator_state_tests_basic() {
+L0:	auth_state#1#0: AuthenticatorState
+L1:	jwk1#1#0: ActiveJwk
+L2:	jwk1#2#0: ActiveJwk
+L3:	jwk2#1#0: ActiveJwk
+L4:	jwk3#1#0: ActiveJwk
+L5:	recorded_jwks#1#0: vector<ActiveJwk>
+L6:	recorded_jwks#2#0: vector<ActiveJwk>
+L7:	recorded_jwks#3#0: vector<ActiveJwk>
+L8:	recorded_jwks#4#0: vector<ActiveJwk>
+L9:	recorded_jwks#5#0: vector<ActiveJwk>
+L10:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[10](scenario#1#0: Scenario)
+	3: MutBorrowLoc[10](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: FreezeRef
+	6: Call authenticator_state::create_for_testing(&TxContext)
+	7: MutBorrowLoc[10](scenario#1#0: Scenario)
+	8: LdConst[0](address: 0x00..)
+	9: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	10: Pop
+	11: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	12: Call test_scenario::take_shared<AuthenticatorState>(&Scenario): AuthenticatorState
+	13: StLoc[0](auth_state#1#0: AuthenticatorState)
+	14: LdConst[1](vector<u8>: "iss..)
+	15: Call string::utf8(vector<u8>): String
+	16: LdConst[2](vector<u8>: "key..)
+	17: Call string::utf8(vector<u8>): String
+	18: LdConst[3](vector<u8>: "key..)
+	19: Call string::utf8(vector<u8>): String
+	20: LdU64(1)
+	21: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	22: StLoc[1](jwk1#1#0: ActiveJwk)
+	23: LdConst[1](vector<u8>: "iss..)
+	24: Call string::utf8(vector<u8>): String
+	25: LdConst[4](vector<u8>: "key..)
+	26: Call string::utf8(vector<u8>): String
+	27: LdConst[5](vector<u8>: "key..)
+	28: Call string::utf8(vector<u8>): String
+	29: LdU64(1)
+	30: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	31: StLoc[3](jwk2#1#0: ActiveJwk)
+	32: LdConst[1](vector<u8>: "iss..)
+	33: Call string::utf8(vector<u8>): String
+	34: LdConst[6](vector<u8>: "key..)
+	35: Call string::utf8(vector<u8>): String
+	36: LdConst[7](vector<u8>: "key..)
+	37: Call string::utf8(vector<u8>): String
+	38: LdU64(1)
+	39: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	40: StLoc[4](jwk3#1#0: ActiveJwk)
+	41: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	42: CopyLoc[1](jwk1#1#0: ActiveJwk)
+	43: CopyLoc[4](jwk3#1#0: ActiveJwk)
+	44: VecPack(15, 2)
+	45: MutBorrowLoc[10](scenario#1#0: Scenario)
+	46: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	47: FreezeRef
+	48: Call authenticator_state::update_authenticator_state_for_testing(&mut AuthenticatorState, vector<ActiveJwk>, &TxContext)
+	49: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	50: MutBorrowLoc[10](scenario#1#0: Scenario)
+	51: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	52: FreezeRef
+	53: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	54: StLoc[5](recorded_jwks#1#0: vector<ActiveJwk>)
+	55: ImmBorrowLoc[5](recorded_jwks#1#0: vector<ActiveJwk>)
+	56: LdU64(0)
+	57: VecImmBorrow(15)
+	58: ImmBorrowLoc[1](jwk1#1#0: ActiveJwk)
+	59: Eq
+	60: BrFalse(62)
+B1:
+	61: Branch(64)
+B2:
+	62: LdU64(13906834397681680383)
+	63: Abort
+B3:
+	64: ImmBorrowLoc[5](recorded_jwks#1#0: vector<ActiveJwk>)
+	65: LdU64(1)
+	66: VecImmBorrow(15)
+	67: ImmBorrowLoc[4](jwk3#1#0: ActiveJwk)
+	68: Eq
+	69: BrFalse(71)
+B4:
+	70: Branch(73)
+B5:
+	71: LdU64(13906834401976647679)
+	72: Abort
+B6:
+	73: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	74: CopyLoc[3](jwk2#1#0: ActiveJwk)
+	75: VecPack(15, 1)
+	76: MutBorrowLoc[10](scenario#1#0: Scenario)
+	77: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	78: FreezeRef
+	79: Call authenticator_state::update_authenticator_state_for_testing(&mut AuthenticatorState, vector<ActiveJwk>, &TxContext)
+	80: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	81: MutBorrowLoc[10](scenario#1#0: Scenario)
+	82: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	83: FreezeRef
+	84: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	85: StLoc[6](recorded_jwks#2#0: vector<ActiveJwk>)
+	86: ImmBorrowLoc[6](recorded_jwks#2#0: vector<ActiveJwk>)
+	87: LdU64(0)
+	88: VecImmBorrow(15)
+	89: ImmBorrowLoc[1](jwk1#1#0: ActiveJwk)
+	90: Eq
+	91: BrFalse(93)
+B7:
+	92: Branch(95)
+B8:
+	93: LdU64(13906834419156516863)
+	94: Abort
+B9:
+	95: ImmBorrowLoc[6](recorded_jwks#2#0: vector<ActiveJwk>)
+	96: LdU64(1)
+	97: VecImmBorrow(15)
+	98: ImmBorrowLoc[3](jwk2#1#0: ActiveJwk)
+	99: Eq
+	100: BrFalse(102)
+B10:
+	101: Branch(104)
+B11:
+	102: LdU64(13906834423451484159)
+	103: Abort
+B12:
+	104: ImmBorrowLoc[6](recorded_jwks#2#0: vector<ActiveJwk>)
+	105: LdU64(2)
+	106: VecImmBorrow(15)
+	107: ImmBorrowLoc[4](jwk3#1#0: ActiveJwk)
+	108: Eq
+	109: BrFalse(111)
+B13:
+	110: Branch(113)
+B14:
+	111: LdU64(13906834427746451455)
+	112: Abort
+B15:
+	113: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	114: LdU64(1)
+	115: MutBorrowLoc[10](scenario#1#0: Scenario)
+	116: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	117: FreezeRef
+	118: Call authenticator_state::expire_jwks_for_testing(&mut AuthenticatorState, u64, &TxContext)
+	119: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	120: MutBorrowLoc[10](scenario#1#0: Scenario)
+	121: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	122: FreezeRef
+	123: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	124: StLoc[7](recorded_jwks#3#0: vector<ActiveJwk>)
+	125: ImmBorrowLoc[7](recorded_jwks#3#0: vector<ActiveJwk>)
+	126: VecLen(15)
+	127: LdU64(3)
+	128: Eq
+	129: BrFalse(131)
+B16:
+	130: Branch(133)
+B17:
+	131: LdU64(13906834444926320639)
+	132: Abort
+B18:
+	133: LdConst[1](vector<u8>: "iss..)
+	134: Call string::utf8(vector<u8>): String
+	135: LdConst[2](vector<u8>: "key..)
+	136: Call string::utf8(vector<u8>): String
+	137: LdConst[3](vector<u8>: "key..)
+	138: Call string::utf8(vector<u8>): String
+	139: LdU64(2)
+	140: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	141: StLoc[2](jwk1#2#0: ActiveJwk)
+	142: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	143: CopyLoc[2](jwk1#2#0: ActiveJwk)
+	144: VecPack(15, 1)
+	145: MutBorrowLoc[10](scenario#1#0: Scenario)
+	146: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	147: FreezeRef
+	148: Call authenticator_state::update_authenticator_state_for_testing(&mut AuthenticatorState, vector<ActiveJwk>, &TxContext)
+	149: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	150: MutBorrowLoc[10](scenario#1#0: Scenario)
+	151: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	152: FreezeRef
+	153: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	154: StLoc[8](recorded_jwks#4#0: vector<ActiveJwk>)
+	155: ImmBorrowLoc[8](recorded_jwks#4#0: vector<ActiveJwk>)
+	156: VecLen(15)
+	157: LdU64(3)
+	158: Eq
+	159: BrFalse(161)
+B19:
+	160: Branch(163)
+B20:
+	161: LdU64(13906834487875993599)
+	162: Abort
+B21:
+	163: ImmBorrowLoc[8](recorded_jwks#4#0: vector<ActiveJwk>)
+	164: LdU64(0)
+	165: VecImmBorrow(15)
+	166: ImmBorrowLoc[2](jwk1#2#0: ActiveJwk)
+	167: Eq
+	168: BrFalse(170)
+B22:
+	169: Branch(172)
+B23:
+	170: LdU64(13906834492170960895)
+	171: Abort
+B24:
+	172: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	173: LdU64(2)
+	174: MutBorrowLoc[10](scenario#1#0: Scenario)
+	175: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	176: FreezeRef
+	177: Call authenticator_state::expire_jwks_for_testing(&mut AuthenticatorState, u64, &TxContext)
+	178: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	179: MutBorrowLoc[10](scenario#1#0: Scenario)
+	180: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	181: FreezeRef
+	182: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	183: StLoc[9](recorded_jwks#5#0: vector<ActiveJwk>)
+	184: ImmBorrowLoc[9](recorded_jwks#5#0: vector<ActiveJwk>)
+	185: VecLen(15)
+	186: LdU64(1)
+	187: Eq
+	188: BrFalse(190)
+B25:
+	189: Branch(192)
+B26:
+	190: LdU64(13906834509350830079)
+	191: Abort
+B27:
+	192: ImmBorrowLoc[9](recorded_jwks#5#0: vector<ActiveJwk>)
+	193: LdU64(0)
+	194: VecImmBorrow(15)
+	195: ImmBorrowLoc[2](jwk1#2#0: ActiveJwk)
+	196: Eq
+	197: BrFalse(199)
+B28:
+	198: Branch(201)
+B29:
+	199: LdU64(13906834513645797375)
+	200: Abort
+B30:
+	201: MoveLoc[0](auth_state#1#0: AuthenticatorState)
+	202: Call test_scenario::return_shared<AuthenticatorState>(AuthenticatorState)
+	203: MoveLoc[10](scenario#1#0: Scenario)
+	204: Call test_scenario::end(Scenario): TransactionEffects
+	205: Pop
+	206: Ret
+}
+
+authenticator_state_tests_deduplication() {
+L0:	auth_state#1#0: AuthenticatorState
+L1:	jwk1#1#0: ActiveJwk
+L2:	jwk2#1#0: ActiveJwk
+L3:	jwk3#1#0: ActiveJwk
+L4:	jwk4#1#0: ActiveJwk
+L5:	recorded_jwks#1#0: vector<ActiveJwk>
+L6:	recorded_jwks#2#0: vector<ActiveJwk>
+L7:	recorded_jwks#3#0: vector<ActiveJwk>
+L8:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[8](scenario#1#0: Scenario)
+	3: MutBorrowLoc[8](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: FreezeRef
+	6: Call authenticator_state::create_for_testing(&TxContext)
+	7: MutBorrowLoc[8](scenario#1#0: Scenario)
+	8: LdConst[0](address: 0x00..)
+	9: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	10: Pop
+	11: ImmBorrowLoc[8](scenario#1#0: Scenario)
+	12: Call test_scenario::take_shared<AuthenticatorState>(&Scenario): AuthenticatorState
+	13: StLoc[0](auth_state#1#0: AuthenticatorState)
+	14: LdConst[8](vector<u8>: "htt..)
+	15: Call string::utf8(vector<u8>): String
+	16: LdConst[9](vector<u8>: "kid..)
+	17: Call string::utf8(vector<u8>): String
+	18: LdConst[10](vector<u8>: "k1"..)
+	19: Call string::utf8(vector<u8>): String
+	20: LdU64(0)
+	21: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	22: StLoc[1](jwk1#1#0: ActiveJwk)
+	23: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	24: CopyLoc[1](jwk1#1#0: ActiveJwk)
+	25: VecPack(15, 1)
+	26: MutBorrowLoc[8](scenario#1#0: Scenario)
+	27: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	28: FreezeRef
+	29: Call authenticator_state::update_authenticator_state_for_testing(&mut AuthenticatorState, vector<ActiveJwk>, &TxContext)
+	30: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	31: MutBorrowLoc[8](scenario#1#0: Scenario)
+	32: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	33: FreezeRef
+	34: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	35: StLoc[5](recorded_jwks#1#0: vector<ActiveJwk>)
+	36: ImmBorrowLoc[5](recorded_jwks#1#0: vector<ActiveJwk>)
+	37: VecLen(15)
+	38: LdU64(1)
+	39: Eq
+	40: BrFalse(42)
+B1:
+	41: Branch(44)
+B2:
+	42: LdU64(13906834616725012479)
+	43: Abort
+B3:
+	44: ImmBorrowLoc[5](recorded_jwks#1#0: vector<ActiveJwk>)
+	45: LdU64(0)
+	46: VecImmBorrow(15)
+	47: ImmBorrowLoc[1](jwk1#1#0: ActiveJwk)
+	48: Eq
+	49: BrFalse(51)
+B4:
+	50: Branch(53)
+B5:
+	51: LdU64(13906834621019979775)
+	52: Abort
+B6:
+	53: LdConst[11](vector<u8>: "htt..)
+	54: Call string::utf8(vector<u8>): String
+	55: LdConst[12](vector<u8>: "kid..)
+	56: Call string::utf8(vector<u8>): String
+	57: LdConst[13](vector<u8>: "k2"..)
+	58: Call string::utf8(vector<u8>): String
+	59: LdU64(0)
+	60: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	61: StLoc[2](jwk2#1#0: ActiveJwk)
+	62: LdConst[8](vector<u8>: "htt..)
+	63: Call string::utf8(vector<u8>): String
+	64: LdConst[9](vector<u8>: "kid..)
+	65: Call string::utf8(vector<u8>): String
+	66: LdConst[14](vector<u8>: "k3"..)
+	67: Call string::utf8(vector<u8>): String
+	68: LdU64(0)
+	69: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	70: StLoc[3](jwk3#1#0: ActiveJwk)
+	71: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	72: CopyLoc[2](jwk2#1#0: ActiveJwk)
+	73: MoveLoc[3](jwk3#1#0: ActiveJwk)
+	74: VecPack(15, 2)
+	75: MutBorrowLoc[8](scenario#1#0: Scenario)
+	76: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	77: FreezeRef
+	78: Call authenticator_state::update_authenticator_state_for_testing(&mut AuthenticatorState, vector<ActiveJwk>, &TxContext)
+	79: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	80: MutBorrowLoc[8](scenario#1#0: Scenario)
+	81: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	82: FreezeRef
+	83: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	84: StLoc[6](recorded_jwks#2#0: vector<ActiveJwk>)
+	85: ImmBorrowLoc[6](recorded_jwks#2#0: vector<ActiveJwk>)
+	86: VecLen(15)
+	87: LdU64(2)
+	88: Eq
+	89: BrFalse(91)
+B7:
+	90: Branch(93)
+B8:
+	91: LdU64(13906834694034423807)
+	92: Abort
+B9:
+	93: ImmBorrowLoc[6](recorded_jwks#2#0: vector<ActiveJwk>)
+	94: LdU64(0)
+	95: VecImmBorrow(15)
+	96: ImmBorrowLoc[2](jwk2#1#0: ActiveJwk)
+	97: Eq
+	98: BrFalse(100)
+B10:
+	99: Branch(102)
+B11:
+	100: LdU64(13906834702624358399)
+	101: Abort
+B12:
+	102: ImmBorrowLoc[6](recorded_jwks#2#0: vector<ActiveJwk>)
+	103: LdU64(1)
+	104: VecImmBorrow(15)
+	105: ImmBorrowLoc[1](jwk1#1#0: ActiveJwk)
+	106: Eq
+	107: BrFalse(109)
+B13:
+	108: Branch(111)
+B14:
+	109: LdU64(13906834706919325695)
+	110: Abort
+B15:
+	111: LdConst[8](vector<u8>: "htt..)
+	112: Call string::utf8(vector<u8>): String
+	113: LdConst[15](vector<u8>: "kid..)
+	114: Call string::utf8(vector<u8>): String
+	115: LdConst[16](vector<u8>: "k4"..)
+	116: Call string::utf8(vector<u8>): String
+	117: LdU64(0)
+	118: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	119: StLoc[4](jwk4#1#0: ActiveJwk)
+	120: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	121: CopyLoc[4](jwk4#1#0: ActiveJwk)
+	122: VecPack(15, 1)
+	123: MutBorrowLoc[8](scenario#1#0: Scenario)
+	124: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	125: FreezeRef
+	126: Call authenticator_state::update_authenticator_state_for_testing(&mut AuthenticatorState, vector<ActiveJwk>, &TxContext)
+	127: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	128: MutBorrowLoc[8](scenario#1#0: Scenario)
+	129: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	130: FreezeRef
+	131: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	132: StLoc[7](recorded_jwks#3#0: vector<ActiveJwk>)
+	133: ImmBorrowLoc[7](recorded_jwks#3#0: vector<ActiveJwk>)
+	134: VecLen(15)
+	135: LdU64(3)
+	136: Eq
+	137: BrFalse(139)
+B16:
+	138: Branch(141)
+B17:
+	139: LdU64(13906834749868998655)
+	140: Abort
+B18:
+	141: ImmBorrowLoc[7](recorded_jwks#3#0: vector<ActiveJwk>)
+	142: LdU64(0)
+	143: VecImmBorrow(15)
+	144: ImmBorrowLoc[2](jwk2#1#0: ActiveJwk)
+	145: Eq
+	146: BrFalse(148)
+B19:
+	147: Branch(150)
+B20:
+	148: LdU64(13906834754163965951)
+	149: Abort
+B21:
+	150: ImmBorrowLoc[7](recorded_jwks#3#0: vector<ActiveJwk>)
+	151: LdU64(1)
+	152: VecImmBorrow(15)
+	153: ImmBorrowLoc[1](jwk1#1#0: ActiveJwk)
+	154: Eq
+	155: BrFalse(157)
+B22:
+	156: Branch(159)
+B23:
+	157: LdU64(13906834758458933247)
+	158: Abort
+B24:
+	159: ImmBorrowLoc[7](recorded_jwks#3#0: vector<ActiveJwk>)
+	160: LdU64(2)
+	161: VecImmBorrow(15)
+	162: ImmBorrowLoc[4](jwk4#1#0: ActiveJwk)
+	163: Eq
+	164: BrFalse(166)
+B25:
+	165: Branch(168)
+B26:
+	166: LdU64(13906834762753900543)
+	167: Abort
+B27:
+	168: MoveLoc[0](auth_state#1#0: AuthenticatorState)
+	169: Call test_scenario::return_shared<AuthenticatorState>(AuthenticatorState)
+	170: MoveLoc[8](scenario#1#0: Scenario)
+	171: Call test_scenario::end(Scenario): TransactionEffects
+	172: Pop
+	173: Ret
+}
+
+authenticator_state_tests_expiry_edge_cases() {
+L0:	auth_state#1#0: AuthenticatorState
+L1:	jwk1#1#0: ActiveJwk
+L2:	jwk2#1#0: ActiveJwk
+L3:	jwk3#1#0: ActiveJwk
+L4:	jwk4#1#0: ActiveJwk
+L5:	jwk5#1#0: ActiveJwk
+L6:	jwk6#1#0: ActiveJwk
+L7:	recorded_jwks#1#0: vector<ActiveJwk>
+L8:	recorded_jwks#2#0: vector<ActiveJwk>
+L9:	recorded_jwks#3#0: vector<ActiveJwk>
+L10:	recorded_jwks#4#0: vector<ActiveJwk>
+L11:	recorded_jwks#5#0: vector<ActiveJwk>
+L12:	recorded_jwks#6#0: vector<ActiveJwk>
+L13:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[13](scenario#1#0: Scenario)
+	3: MutBorrowLoc[13](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: FreezeRef
+	6: Call authenticator_state::create_for_testing(&TxContext)
+	7: MutBorrowLoc[13](scenario#1#0: Scenario)
+	8: LdConst[0](address: 0x00..)
+	9: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	10: Pop
+	11: ImmBorrowLoc[13](scenario#1#0: Scenario)
+	12: Call test_scenario::take_shared<AuthenticatorState>(&Scenario): AuthenticatorState
+	13: StLoc[0](auth_state#1#0: AuthenticatorState)
+	14: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	15: LdU64(1)
+	16: MutBorrowLoc[13](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call authenticator_state::expire_jwks_for_testing(&mut AuthenticatorState, u64, &TxContext)
+	20: LdConst[1](vector<u8>: "iss..)
+	21: Call string::utf8(vector<u8>): String
+	22: LdConst[2](vector<u8>: "key..)
+	23: Call string::utf8(vector<u8>): String
+	24: LdConst[3](vector<u8>: "key..)
+	25: Call string::utf8(vector<u8>): String
+	26: LdU64(1)
+	27: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	28: StLoc[1](jwk1#1#0: ActiveJwk)
+	29: LdConst[17](vector<u8>: "iss..)
+	30: Call string::utf8(vector<u8>): String
+	31: LdConst[4](vector<u8>: "key..)
+	32: Call string::utf8(vector<u8>): String
+	33: LdConst[5](vector<u8>: "key..)
+	34: Call string::utf8(vector<u8>): String
+	35: LdU64(1)
+	36: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	37: StLoc[2](jwk2#1#0: ActiveJwk)
+	38: LdConst[18](vector<u8>: "iss..)
+	39: Call string::utf8(vector<u8>): String
+	40: LdConst[6](vector<u8>: "key..)
+	41: Call string::utf8(vector<u8>): String
+	42: LdConst[7](vector<u8>: "key..)
+	43: Call string::utf8(vector<u8>): String
+	44: LdU64(1)
+	45: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	46: StLoc[3](jwk3#1#0: ActiveJwk)
+	47: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	48: MoveLoc[1](jwk1#1#0: ActiveJwk)
+	49: CopyLoc[2](jwk2#1#0: ActiveJwk)
+	50: CopyLoc[3](jwk3#1#0: ActiveJwk)
+	51: VecPack(15, 3)
+	52: MutBorrowLoc[13](scenario#1#0: Scenario)
+	53: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	54: FreezeRef
+	55: Call authenticator_state::update_authenticator_state_for_testing(&mut AuthenticatorState, vector<ActiveJwk>, &TxContext)
+	56: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	57: LdU64(2)
+	58: MutBorrowLoc[13](scenario#1#0: Scenario)
+	59: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	60: FreezeRef
+	61: Call authenticator_state::expire_jwks_for_testing(&mut AuthenticatorState, u64, &TxContext)
+	62: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	63: MutBorrowLoc[13](scenario#1#0: Scenario)
+	64: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	65: FreezeRef
+	66: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	67: StLoc[7](recorded_jwks#1#0: vector<ActiveJwk>)
+	68: ImmBorrowLoc[7](recorded_jwks#1#0: vector<ActiveJwk>)
+	69: VecLen(15)
+	70: LdU64(3)
+	71: Eq
+	72: BrFalse(74)
+B1:
+	73: Branch(76)
+B2:
+	74: LdU64(13906834956027428863)
+	75: Abort
+B3:
+	76: LdConst[1](vector<u8>: "iss..)
+	77: Call string::utf8(vector<u8>): String
+	78: LdConst[19](vector<u8>: "key..)
+	79: Call string::utf8(vector<u8>): String
+	80: LdConst[20](vector<u8>: "key..)
+	81: Call string::utf8(vector<u8>): String
+	82: LdU64(2)
+	83: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	84: StLoc[4](jwk4#1#0: ActiveJwk)
+	85: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	86: CopyLoc[4](jwk4#1#0: ActiveJwk)
+	87: VecPack(15, 1)
+	88: MutBorrowLoc[13](scenario#1#0: Scenario)
+	89: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	90: FreezeRef
+	91: Call authenticator_state::update_authenticator_state_for_testing(&mut AuthenticatorState, vector<ActiveJwk>, &TxContext)
+	92: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	93: MutBorrowLoc[13](scenario#1#0: Scenario)
+	94: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	95: FreezeRef
+	96: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	97: StLoc[8](recorded_jwks#2#0: vector<ActiveJwk>)
+	98: ImmBorrowLoc[8](recorded_jwks#2#0: vector<ActiveJwk>)
+	99: VecLen(15)
+	100: LdU64(4)
+	101: Eq
+	102: BrFalse(104)
+B4:
+	103: Branch(106)
+B5:
+	104: LdU64(13906835016156971007)
+	105: Abort
+B6:
+	106: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	107: LdU64(2)
+	108: MutBorrowLoc[13](scenario#1#0: Scenario)
+	109: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	110: FreezeRef
+	111: Call authenticator_state::expire_jwks_for_testing(&mut AuthenticatorState, u64, &TxContext)
+	112: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	113: MutBorrowLoc[13](scenario#1#0: Scenario)
+	114: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	115: FreezeRef
+	116: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	117: StLoc[9](recorded_jwks#3#0: vector<ActiveJwk>)
+	118: ImmBorrowLoc[9](recorded_jwks#3#0: vector<ActiveJwk>)
+	119: VecLen(15)
+	120: LdU64(3)
+	121: Eq
+	122: BrFalse(124)
+B7:
+	123: Branch(126)
+B8:
+	124: LdU64(13906835037631807487)
+	125: Abort
+B9:
+	126: ImmBorrowLoc[9](recorded_jwks#3#0: vector<ActiveJwk>)
+	127: LdU64(0)
+	128: VecImmBorrow(15)
+	129: ImmBorrowLoc[4](jwk4#1#0: ActiveJwk)
+	130: Eq
+	131: BrFalse(133)
+B10:
+	132: Branch(135)
+B11:
+	133: LdU64(13906835041926774783)
+	134: Abort
+B12:
+	135: ImmBorrowLoc[9](recorded_jwks#3#0: vector<ActiveJwk>)
+	136: LdU64(1)
+	137: VecImmBorrow(15)
+	138: ImmBorrowLoc[2](jwk2#1#0: ActiveJwk)
+	139: Eq
+	140: BrFalse(142)
+B13:
+	141: Branch(144)
+B14:
+	142: LdU64(13906835046221742079)
+	143: Abort
+B15:
+	144: ImmBorrowLoc[9](recorded_jwks#3#0: vector<ActiveJwk>)
+	145: LdU64(2)
+	146: VecImmBorrow(15)
+	147: ImmBorrowLoc[3](jwk3#1#0: ActiveJwk)
+	148: Eq
+	149: BrFalse(151)
+B16:
+	150: Branch(153)
+B17:
+	151: LdU64(13906835050516709375)
+	152: Abort
+B18:
+	153: LdConst[17](vector<u8>: "iss..)
+	154: Call string::utf8(vector<u8>): String
+	155: LdConst[21](vector<u8>: "key..)
+	156: Call string::utf8(vector<u8>): String
+	157: LdConst[22](vector<u8>: "key..)
+	158: Call string::utf8(vector<u8>): String
+	159: LdU64(3)
+	160: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	161: StLoc[5](jwk5#1#0: ActiveJwk)
+	162: LdConst[18](vector<u8>: "iss..)
+	163: Call string::utf8(vector<u8>): String
+	164: LdConst[23](vector<u8>: "key..)
+	165: Call string::utf8(vector<u8>): String
+	166: LdConst[24](vector<u8>: "key..)
+	167: Call string::utf8(vector<u8>): String
+	168: LdU64(3)
+	169: Call authenticator_state::create_active_jwk(String, String, String, u64): ActiveJwk
+	170: StLoc[6](jwk6#1#0: ActiveJwk)
+	171: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	172: CopyLoc[5](jwk5#1#0: ActiveJwk)
+	173: CopyLoc[6](jwk6#1#0: ActiveJwk)
+	174: VecPack(15, 2)
+	175: MutBorrowLoc[13](scenario#1#0: Scenario)
+	176: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	177: FreezeRef
+	178: Call authenticator_state::update_authenticator_state_for_testing(&mut AuthenticatorState, vector<ActiveJwk>, &TxContext)
+	179: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	180: MutBorrowLoc[13](scenario#1#0: Scenario)
+	181: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	182: FreezeRef
+	183: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	184: StLoc[10](recorded_jwks#4#0: vector<ActiveJwk>)
+	185: ImmBorrowLoc[10](recorded_jwks#4#0: vector<ActiveJwk>)
+	186: VecLen(15)
+	187: LdU64(5)
+	188: Eq
+	189: BrFalse(191)
+B19:
+	190: Branch(193)
+B20:
+	191: LdU64(13906835136416055295)
+	192: Abort
+B21:
+	193: ImmBorrowLoc[10](recorded_jwks#4#0: vector<ActiveJwk>)
+	194: LdU64(2)
+	195: VecImmBorrow(15)
+	196: ImmBorrowLoc[5](jwk5#1#0: ActiveJwk)
+	197: Eq
+	198: BrFalse(200)
+B22:
+	199: Branch(202)
+B23:
+	200: LdU64(13906835140711022591)
+	201: Abort
+B24:
+	202: ImmBorrowLoc[10](recorded_jwks#4#0: vector<ActiveJwk>)
+	203: LdU64(4)
+	204: VecImmBorrow(15)
+	205: ImmBorrowLoc[6](jwk6#1#0: ActiveJwk)
+	206: Eq
+	207: BrFalse(209)
+B25:
+	208: Branch(211)
+B26:
+	209: LdU64(13906835145005989887)
+	210: Abort
+B27:
+	211: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	212: LdU64(3)
+	213: MutBorrowLoc[13](scenario#1#0: Scenario)
+	214: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	215: FreezeRef
+	216: Call authenticator_state::expire_jwks_for_testing(&mut AuthenticatorState, u64, &TxContext)
+	217: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	218: MutBorrowLoc[13](scenario#1#0: Scenario)
+	219: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	220: FreezeRef
+	221: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	222: StLoc[11](recorded_jwks#5#0: vector<ActiveJwk>)
+	223: ImmBorrowLoc[11](recorded_jwks#5#0: vector<ActiveJwk>)
+	224: VecLen(15)
+	225: LdU64(3)
+	226: Eq
+	227: BrFalse(229)
+B28:
+	228: Branch(231)
+B29:
+	229: LdU64(13906835166480826367)
+	230: Abort
+B30:
+	231: ImmBorrowLoc[11](recorded_jwks#5#0: vector<ActiveJwk>)
+	232: LdU64(0)
+	233: VecImmBorrow(15)
+	234: ImmBorrowLoc[4](jwk4#1#0: ActiveJwk)
+	235: Eq
+	236: BrFalse(238)
+B31:
+	237: Branch(240)
+B32:
+	238: LdU64(13906835170775793663)
+	239: Abort
+B33:
+	240: ImmBorrowLoc[11](recorded_jwks#5#0: vector<ActiveJwk>)
+	241: LdU64(1)
+	242: VecImmBorrow(15)
+	243: ImmBorrowLoc[5](jwk5#1#0: ActiveJwk)
+	244: Eq
+	245: BrFalse(247)
+B34:
+	246: Branch(249)
+B35:
+	247: LdU64(13906835175070760959)
+	248: Abort
+B36:
+	249: ImmBorrowLoc[11](recorded_jwks#5#0: vector<ActiveJwk>)
+	250: LdU64(2)
+	251: VecImmBorrow(15)
+	252: ImmBorrowLoc[6](jwk6#1#0: ActiveJwk)
+	253: Eq
+	254: BrFalse(256)
+B37:
+	255: Branch(258)
+B38:
+	256: LdU64(13906835179365728255)
+	257: Abort
+B39:
+	258: MutBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	259: LdU64(3)
+	260: MutBorrowLoc[13](scenario#1#0: Scenario)
+	261: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	262: FreezeRef
+	263: Call authenticator_state::expire_jwks_for_testing(&mut AuthenticatorState, u64, &TxContext)
+	264: ImmBorrowLoc[0](auth_state#1#0: AuthenticatorState)
+	265: MutBorrowLoc[13](scenario#1#0: Scenario)
+	266: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	267: FreezeRef
+	268: Call authenticator_state::get_active_jwks_for_testing(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	269: StLoc[12](recorded_jwks#6#0: vector<ActiveJwk>)
+	270: ImmBorrowLoc[12](recorded_jwks#6#0: vector<ActiveJwk>)
+	271: VecLen(15)
+	272: LdU64(3)
+	273: Eq
+	274: BrFalse(276)
+B40:
+	275: Branch(278)
+B41:
+	276: LdU64(13906835196545597439)
+	277: Abort
+B42:
+	278: ImmBorrowLoc[12](recorded_jwks#6#0: vector<ActiveJwk>)
+	279: LdU64(0)
+	280: VecImmBorrow(15)
+	281: ImmBorrowLoc[4](jwk4#1#0: ActiveJwk)
+	282: Eq
+	283: BrFalse(285)
+B43:
+	284: Branch(287)
+B44:
+	285: LdU64(13906835200840564735)
+	286: Abort
+B45:
+	287: ImmBorrowLoc[12](recorded_jwks#6#0: vector<ActiveJwk>)
+	288: LdU64(1)
+	289: VecImmBorrow(15)
+	290: ImmBorrowLoc[5](jwk5#1#0: ActiveJwk)
+	291: Eq
+	292: BrFalse(294)
+B46:
+	293: Branch(296)
+B47:
+	294: LdU64(13906835205135532031)
+	295: Abort
+B48:
+	296: ImmBorrowLoc[12](recorded_jwks#6#0: vector<ActiveJwk>)
+	297: LdU64(2)
+	298: VecImmBorrow(15)
+	299: ImmBorrowLoc[6](jwk6#1#0: ActiveJwk)
+	300: Eq
+	301: BrFalse(303)
+B49:
+	302: Branch(305)
+B50:
+	303: LdU64(13906835209430499327)
+	304: Abort
+B51:
+	305: MoveLoc[0](auth_state#1#0: AuthenticatorState)
+	306: Call test_scenario::return_shared<AuthenticatorState>(AuthenticatorState)
+	307: MoveLoc[13](scenario#1#0: Scenario)
+	308: Call test_scenario::end(Scenario): TransactionEffects
+	309: Pop
+	310: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	1 => vector<u8>: "iss1" // interpreted as UTF8 string
+	2 => vector<u8>: "key1" // interpreted as UTF8 string
+	3 => vector<u8>: "key1_payload" // interpreted as UTF8 string
+	4 => vector<u8>: "key2" // interpreted as UTF8 string
+	5 => vector<u8>: "key2_payload" // interpreted as UTF8 string
+	6 => vector<u8>: "key3" // interpreted as UTF8 string
+	7 => vector<u8>: "key3_payload" // interpreted as UTF8 string
+	8 => vector<u8>: "https://accounts.google.com" // interpreted as UTF8 string
+	9 => vector<u8>: "kid2" // interpreted as UTF8 string
+	10 => vector<u8>: "k1" // interpreted as UTF8 string
+	11 => vector<u8>: "https://www.facebook.com" // interpreted as UTF8 string
+	12 => vector<u8>: "kid1" // interpreted as UTF8 string
+	13 => vector<u8>: "k2" // interpreted as UTF8 string
+	14 => vector<u8>: "k3" // interpreted as UTF8 string
+	15 => vector<u8>: "kid4" // interpreted as UTF8 string
+	16 => vector<u8>: "k4" // interpreted as UTF8 string
+	17 => vector<u8>: "iss2" // interpreted as UTF8 string
+	18 => vector<u8>: "iss3" // interpreted as UTF8 string
+	19 => vector<u8>: "key4" // interpreted as UTF8 string
+	20 => vector<u8>: "key4_payload" // interpreted as UTF8 string
+	21 => vector<u8>: "key5" // interpreted as UTF8 string
+	22 => vector<u8>: "key5_payload" // interpreted as UTF8 string
+	23 => vector<u8>: "key6" // interpreted as UTF8 string
+	24 => vector<u8>: "key6_payload" // interpreted as UTF8 string
+]
+}

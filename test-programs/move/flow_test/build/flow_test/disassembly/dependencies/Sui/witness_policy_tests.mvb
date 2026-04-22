@@ -1,0 +1,151 @@
+// Move bytecode v6
+module 2.witness_policy_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy_tests;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::witness_policy;
+
+struct Proof has drop {
+	dummy_field: bool
+}
+
+struct Cheat has drop {
+	dummy_field: bool
+}
+
+test_default_flow() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TransferPolicyCap<Asset>
+L2:	ctx#1#0: &mut TxContext
+L3:	policy#1#0: TransferPolicy<Asset>
+L4:	request#1#0: TransferRequest<Asset>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call transfer_policy_tests::prepare(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	6: StLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	7: StLoc[3](policy#1#0: TransferPolicy<Asset>)
+	8: MutBorrowLoc[3](policy#1#0: TransferPolicy<Asset>)
+	9: ImmBorrowLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	10: Call witness_policy::set<Asset, Proof>(&mut TransferPolicy<Asset>, &TransferPolicyCap<Asset>)
+	11: CopyLoc[2](ctx#1#0: &mut TxContext)
+	12: Call transfer_policy_tests::fresh_id(&mut TxContext): ID
+	13: LdU64(0)
+	14: CopyLoc[2](ctx#1#0: &mut TxContext)
+	15: Call transfer_policy_tests::fresh_id(&mut TxContext): ID
+	16: Call transfer_policy::new_request<Asset>(ID, u64, ID): TransferRequest<Asset>
+	17: StLoc[4](request#1#0: TransferRequest<Asset>)
+	18: LdFalse
+	19: Pack[0](Proof)
+	20: ImmBorrowLoc[3](policy#1#0: TransferPolicy<Asset>)
+	21: MutBorrowLoc[4](request#1#0: TransferRequest<Asset>)
+	22: Call witness_policy::prove<Asset, Proof>(Proof, &TransferPolicy<Asset>, &mut TransferRequest<Asset>)
+	23: ImmBorrowLoc[3](policy#1#0: TransferPolicy<Asset>)
+	24: MoveLoc[4](request#1#0: TransferRequest<Asset>)
+	25: Call transfer_policy::confirm_request<Asset>(&TransferPolicy<Asset>, TransferRequest<Asset>): ID * u64 * ID
+	26: Pop
+	27: Pop
+	28: Pop
+	29: MoveLoc[3](policy#1#0: TransferPolicy<Asset>)
+	30: MoveLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	31: MoveLoc[2](ctx#1#0: &mut TxContext)
+	32: Call transfer_policy_tests::wrapup(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	33: Pop
+	34: Ret
+}
+
+test_no_proof() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TransferPolicyCap<Asset>
+L2:	ctx#1#0: &mut TxContext
+L3:	policy#1#0: TransferPolicy<Asset>
+L4:	request#1#0: TransferRequest<Asset>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call transfer_policy_tests::prepare(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	6: StLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	7: StLoc[3](policy#1#0: TransferPolicy<Asset>)
+	8: MutBorrowLoc[3](policy#1#0: TransferPolicy<Asset>)
+	9: ImmBorrowLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	10: Call witness_policy::set<Asset, Proof>(&mut TransferPolicy<Asset>, &TransferPolicyCap<Asset>)
+	11: CopyLoc[2](ctx#1#0: &mut TxContext)
+	12: Call transfer_policy_tests::fresh_id(&mut TxContext): ID
+	13: LdU64(0)
+	14: CopyLoc[2](ctx#1#0: &mut TxContext)
+	15: Call transfer_policy_tests::fresh_id(&mut TxContext): ID
+	16: Call transfer_policy::new_request<Asset>(ID, u64, ID): TransferRequest<Asset>
+	17: StLoc[4](request#1#0: TransferRequest<Asset>)
+	18: ImmBorrowLoc[3](policy#1#0: TransferPolicy<Asset>)
+	19: MoveLoc[4](request#1#0: TransferRequest<Asset>)
+	20: Call transfer_policy::confirm_request<Asset>(&TransferPolicy<Asset>, TransferRequest<Asset>): ID * u64 * ID
+	21: Pop
+	22: Pop
+	23: Pop
+	24: MoveLoc[3](policy#1#0: TransferPolicy<Asset>)
+	25: MoveLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	26: MoveLoc[2](ctx#1#0: &mut TxContext)
+	27: Call transfer_policy_tests::wrapup(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	28: Pop
+	29: Ret
+}
+
+test_wrong_proof() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TransferPolicyCap<Asset>
+L2:	ctx#1#0: &mut TxContext
+L3:	policy#1#0: TransferPolicy<Asset>
+L4:	request#1#0: TransferRequest<Asset>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call transfer_policy_tests::prepare(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	6: StLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	7: StLoc[3](policy#1#0: TransferPolicy<Asset>)
+	8: MutBorrowLoc[3](policy#1#0: TransferPolicy<Asset>)
+	9: ImmBorrowLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	10: Call witness_policy::set<Asset, Proof>(&mut TransferPolicy<Asset>, &TransferPolicyCap<Asset>)
+	11: CopyLoc[2](ctx#1#0: &mut TxContext)
+	12: Call transfer_policy_tests::fresh_id(&mut TxContext): ID
+	13: LdU64(0)
+	14: CopyLoc[2](ctx#1#0: &mut TxContext)
+	15: Call transfer_policy_tests::fresh_id(&mut TxContext): ID
+	16: Call transfer_policy::new_request<Asset>(ID, u64, ID): TransferRequest<Asset>
+	17: StLoc[4](request#1#0: TransferRequest<Asset>)
+	18: LdFalse
+	19: Pack[1](Cheat)
+	20: ImmBorrowLoc[3](policy#1#0: TransferPolicy<Asset>)
+	21: MutBorrowLoc[4](request#1#0: TransferRequest<Asset>)
+	22: Call witness_policy::prove<Asset, Cheat>(Cheat, &TransferPolicy<Asset>, &mut TransferRequest<Asset>)
+	23: ImmBorrowLoc[3](policy#1#0: TransferPolicy<Asset>)
+	24: MoveLoc[4](request#1#0: TransferRequest<Asset>)
+	25: Call transfer_policy::confirm_request<Asset>(&TransferPolicy<Asset>, TransferRequest<Asset>): ID * u64 * ID
+	26: Pop
+	27: Pop
+	28: Pop
+	29: MoveLoc[3](policy#1#0: TransferPolicy<Asset>)
+	30: MoveLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	31: MoveLoc[2](ctx#1#0: &mut TxContext)
+	32: Call transfer_policy_tests::wrapup(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	33: Pop
+	34: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

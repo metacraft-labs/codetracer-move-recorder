@@ -1,0 +1,172 @@
+// Move bytecode v6
+module 2.royalty_policy_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::royalty_policy;
+use 0000000000000000000000000000000000000000000000000000000000000002::sui;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy_tests;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+test_default_flow() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TransferPolicyCap<Asset>
+L2:	ctx#1#0: &mut TxContext
+L3:	payment#1#0: Coin<SUI>
+L4:	policy#1#0: TransferPolicy<Asset>
+L5:	profits#1#0: u64
+L6:	remainder#1#0: u64
+L7:	request#1#0: TransferRequest<Asset>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call transfer_policy_tests::prepare(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	6: StLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	7: StLoc[4](policy#1#0: TransferPolicy<Asset>)
+	8: MutBorrowLoc[4](policy#1#0: TransferPolicy<Asset>)
+	9: ImmBorrowLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	10: LdU16(100)
+	11: Call royalty_policy::set<Asset>(&mut TransferPolicy<Asset>, &TransferPolicyCap<Asset>, u16)
+	12: CopyLoc[2](ctx#1#0: &mut TxContext)
+	13: Call transfer_policy_tests::fresh_id(&mut TxContext): ID
+	14: LdU64(100000)
+	15: CopyLoc[2](ctx#1#0: &mut TxContext)
+	16: Call transfer_policy_tests::fresh_id(&mut TxContext): ID
+	17: Call transfer_policy::new_request<Asset>(ID, u64, ID): TransferRequest<Asset>
+	18: StLoc[7](request#1#0: TransferRequest<Asset>)
+	19: LdU64(2000)
+	20: CopyLoc[2](ctx#1#0: &mut TxContext)
+	21: Call coin::mint_for_testing<SUI>(u64, &mut TxContext): Coin<SUI>
+	22: StLoc[3](payment#1#0: Coin<SUI>)
+	23: MutBorrowLoc[4](policy#1#0: TransferPolicy<Asset>)
+	24: MutBorrowLoc[7](request#1#0: TransferRequest<Asset>)
+	25: MutBorrowLoc[3](payment#1#0: Coin<SUI>)
+	26: CopyLoc[2](ctx#1#0: &mut TxContext)
+	27: Call royalty_policy::pay<Asset>(&mut TransferPolicy<Asset>, &mut TransferRequest<Asset>, &mut Coin<SUI>, &mut TxContext)
+	28: ImmBorrowLoc[4](policy#1#0: TransferPolicy<Asset>)
+	29: MoveLoc[7](request#1#0: TransferRequest<Asset>)
+	30: Call transfer_policy::confirm_request<Asset>(&TransferPolicy<Asset>, TransferRequest<Asset>): ID * u64 * ID
+	31: Pop
+	32: Pop
+	33: Pop
+	34: MoveLoc[3](payment#1#0: Coin<SUI>)
+	35: Call coin::burn_for_testing<SUI>(Coin<SUI>): u64
+	36: StLoc[6](remainder#1#0: u64)
+	37: MoveLoc[4](policy#1#0: TransferPolicy<Asset>)
+	38: MoveLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	39: MoveLoc[2](ctx#1#0: &mut TxContext)
+	40: Call transfer_policy_tests::wrapup(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	41: StLoc[5](profits#1#0: u64)
+	42: MoveLoc[6](remainder#1#0: u64)
+	43: LdU64(1000)
+	44: Eq
+	45: BrFalse(47)
+B1:
+	46: Branch(49)
+B2:
+	47: LdU64(13906834526530699263)
+	48: Abort
+B3:
+	49: MoveLoc[5](profits#1#0: u64)
+	50: LdU64(1000)
+	51: Eq
+	52: BrFalse(54)
+B4:
+	53: Branch(56)
+B5:
+	54: LdU64(13906834530825666559)
+	55: Abort
+B6:
+	56: Ret
+}
+
+test_incorrect_config() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TransferPolicyCap<Asset>
+L2:	ctx#1#0: &mut TxContext
+L3:	policy#1#0: TransferPolicy<Asset>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call transfer_policy_tests::prepare(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	6: StLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	7: StLoc[3](policy#1#0: TransferPolicy<Asset>)
+	8: MutBorrowLoc[3](policy#1#0: TransferPolicy<Asset>)
+	9: ImmBorrowLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	10: LdU16(11000)
+	11: Call royalty_policy::set<Asset>(&mut TransferPolicy<Asset>, &TransferPolicyCap<Asset>, u16)
+	12: MoveLoc[3](policy#1#0: TransferPolicy<Asset>)
+	13: MoveLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	14: MoveLoc[2](ctx#1#0: &mut TxContext)
+	15: Call transfer_policy_tests::wrapup(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	16: Pop
+	17: Ret
+}
+
+test_insufficient_amount() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TransferPolicyCap<Asset>
+L2:	ctx#1#0: &mut TxContext
+L3:	payment#1#0: Coin<SUI>
+L4:	policy#1#0: TransferPolicy<Asset>
+L5:	request#1#0: TransferRequest<Asset>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[2](ctx#1#0: &mut TxContext)
+	4: CopyLoc[2](ctx#1#0: &mut TxContext)
+	5: Call transfer_policy_tests::prepare(&mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	6: StLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	7: StLoc[4](policy#1#0: TransferPolicy<Asset>)
+	8: MutBorrowLoc[4](policy#1#0: TransferPolicy<Asset>)
+	9: ImmBorrowLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	10: LdU16(100)
+	11: Call royalty_policy::set<Asset>(&mut TransferPolicy<Asset>, &TransferPolicyCap<Asset>, u16)
+	12: CopyLoc[2](ctx#1#0: &mut TxContext)
+	13: Call transfer_policy_tests::fresh_id(&mut TxContext): ID
+	14: LdU64(100000)
+	15: CopyLoc[2](ctx#1#0: &mut TxContext)
+	16: Call transfer_policy_tests::fresh_id(&mut TxContext): ID
+	17: Call transfer_policy::new_request<Asset>(ID, u64, ID): TransferRequest<Asset>
+	18: StLoc[5](request#1#0: TransferRequest<Asset>)
+	19: LdU64(999)
+	20: CopyLoc[2](ctx#1#0: &mut TxContext)
+	21: Call coin::mint_for_testing<SUI>(u64, &mut TxContext): Coin<SUI>
+	22: StLoc[3](payment#1#0: Coin<SUI>)
+	23: MutBorrowLoc[4](policy#1#0: TransferPolicy<Asset>)
+	24: MutBorrowLoc[5](request#1#0: TransferRequest<Asset>)
+	25: MutBorrowLoc[3](payment#1#0: Coin<SUI>)
+	26: CopyLoc[2](ctx#1#0: &mut TxContext)
+	27: Call royalty_policy::pay<Asset>(&mut TransferPolicy<Asset>, &mut TransferRequest<Asset>, &mut Coin<SUI>, &mut TxContext)
+	28: ImmBorrowLoc[4](policy#1#0: TransferPolicy<Asset>)
+	29: MoveLoc[5](request#1#0: TransferRequest<Asset>)
+	30: Call transfer_policy::confirm_request<Asset>(&TransferPolicy<Asset>, TransferRequest<Asset>): ID * u64 * ID
+	31: Pop
+	32: Pop
+	33: Pop
+	34: MoveLoc[3](payment#1#0: Coin<SUI>)
+	35: Call coin::burn_for_testing<SUI>(Coin<SUI>): u64
+	36: Pop
+	37: MoveLoc[4](policy#1#0: TransferPolicy<Asset>)
+	38: MoveLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	39: MoveLoc[2](ctx#1#0: &mut TxContext)
+	40: Call transfer_policy_tests::wrapup(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): u64
+	41: Pop
+	42: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

@@ -1,0 +1,50 @@
+// Move bytecode v6
+module 2.witness_policy {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+
+struct Rule<phantom Proof: drop> has drop {
+	dummy_field: bool
+}
+
+public set<T: store + key, Proof: drop>(policy#0#0: &mut TransferPolicy<T>, cap#0#0: &TransferPolicyCap<T>) {
+B0:
+	0: LdFalse
+	1: PackGeneric[0](Rule<Proof>)
+	2: MoveLoc[0](policy#0#0: &mut TransferPolicy<T>)
+	3: MoveLoc[1](cap#0#0: &TransferPolicyCap<T>)
+	4: LdTrue
+	5: Call transfer_policy::add_rule<T, Rule<Proof>, bool>(Rule<Proof>, &mut TransferPolicy<T>, &TransferPolicyCap<T>, bool)
+	6: Ret
+}
+
+public prove<T: store + key, Proof: drop>(_proof#0#0: Proof, policy#0#0: &TransferPolicy<T>, request#0#0: &mut TransferRequest<T>) {
+B0:
+	0: MoveLoc[1](policy#0#0: &TransferPolicy<T>)
+	1: Call transfer_policy::has_rule<T, Rule<Proof>>(&TransferPolicy<T>): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(8)
+B2:
+	4: MoveLoc[2](request#0#0: &mut TransferRequest<T>)
+	5: Pop
+	6: LdConst[0](u64: 0)
+	7: Abort
+B3:
+	8: LdFalse
+	9: PackGeneric[0](Rule<Proof>)
+	10: MoveLoc[2](request#0#0: &mut TransferRequest<T>)
+	11: Call transfer_policy::add_receipt<T, Rule<Proof>>(Rule<Proof>, &mut TransferRequest<T>)
+	12: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+]
+}

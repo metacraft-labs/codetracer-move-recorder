@@ -1,0 +1,468 @@
+// Move bytecode v6
+module 2.vec_set_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::vec_set;
+
+duplicate_key_abort() {
+L0:	m#1#0: VecSet<u64>
+B0:
+	0: Call vec_set::empty<u64>(): VecSet<u64>
+	1: StLoc[0](m#1#0: VecSet<u64>)
+	2: MutBorrowLoc[0](m#1#0: VecSet<u64>)
+	3: LdU64(1)
+	4: Call vec_set::insert<u64>(&mut VecSet<u64>, u64)
+	5: MutBorrowLoc[0](m#1#0: VecSet<u64>)
+	6: LdU64(1)
+	7: Call vec_set::insert<u64>(&mut VecSet<u64>, u64)
+	8: Ret
+}
+
+nonexistent_key_remove() {
+L0:	k#1#0: u64
+L1:	m#1#0: VecSet<u64>
+B0:
+	0: Call vec_set::empty<u64>(): VecSet<u64>
+	1: StLoc[1](m#1#0: VecSet<u64>)
+	2: MutBorrowLoc[1](m#1#0: VecSet<u64>)
+	3: LdU64(1)
+	4: Call vec_set::insert<u64>(&mut VecSet<u64>, u64)
+	5: LdU64(2)
+	6: StLoc[0](k#1#0: u64)
+	7: MutBorrowLoc[1](m#1#0: VecSet<u64>)
+	8: ImmBorrowLoc[0](k#1#0: u64)
+	9: Call vec_set::remove<u64>(&mut VecSet<u64>, &u64)
+	10: Ret
+}
+
+smoke() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	i#1#17: u64
+L5:	i#1#24: u64
+L6:	i#1#4: u64
+L7:	i#3#27: u64
+L8:	k#1#7: u64
+L9:	k#2#20: u64
+L10:	k#3#27: u64
+L11:	keys#1#0: vector<u64>
+L12:	m#1#0: VecSet<u64>
+L13:	t1#1#11: &u64
+L14:	t1#1#28: u64
+L15:	t1#1#31: &u64
+L16:	t1#1#8: u64
+L17:	t2#1#11: &u64
+L18:	t2#1#28: u64
+L19:	t2#1#31: &u64
+L20:	t2#1#8: u64
+B0:
+	0: Call vec_set::empty<u64>(): VecSet<u64>
+	1: StLoc[12](m#1#0: VecSet<u64>)
+	2: LdU64(0)
+	3: StLoc[6](i#1#4: u64)
+B1:
+	4: CopyLoc[6](i#1#4: u64)
+	5: LdU64(10)
+	6: Lt
+	7: BrFalse(20)
+B2:
+	8: CopyLoc[6](i#1#4: u64)
+	9: LdU64(2)
+	10: Add
+	11: StLoc[8](k#1#7: u64)
+	12: MutBorrowLoc[12](m#1#0: VecSet<u64>)
+	13: MoveLoc[8](k#1#7: u64)
+	14: Call vec_set::insert<u64>(&mut VecSet<u64>, u64)
+	15: MoveLoc[6](i#1#4: u64)
+	16: LdU64(1)
+	17: Add
+	18: StLoc[6](i#1#4: u64)
+	19: Branch(4)
+B3:
+	20: ImmBorrowLoc[12](m#1#0: VecSet<u64>)
+	21: Call vec_set::is_empty<u64>(&VecSet<u64>): bool
+	22: Not
+	23: BrFalse(25)
+B4:
+	24: Branch(27)
+B5:
+	25: LdU64(13906834316077301759)
+	26: Abort
+B6:
+	27: ImmBorrowLoc[12](m#1#0: VecSet<u64>)
+	28: Call vec_set::length<u64>(&VecSet<u64>): u64
+	29: StLoc[16](t1#1#8: u64)
+	30: LdU64(10)
+	31: StLoc[20](t2#1#8: u64)
+	32: ImmBorrowLoc[16](t1#1#8: u64)
+	33: StLoc[13](t1#1#11: &u64)
+	34: ImmBorrowLoc[20](t2#1#8: u64)
+	35: StLoc[17](t2#1#11: &u64)
+	36: CopyLoc[13](t1#1#11: &u64)
+	37: CopyLoc[17](t2#1#11: &u64)
+	38: Eq
+	39: Not
+	40: BrFalse(57)
+B7:
+	41: LdConst[0](vector<u8>: "Ass..)
+	42: Call string::utf8(vector<u8>): String
+	43: StLoc[0](%#1: String)
+	44: ImmBorrowLoc[0](%#1: String)
+	45: Call debug::print<String>(&String)
+	46: MoveLoc[13](t1#1#11: &u64)
+	47: Call debug::print<u64>(&u64)
+	48: LdConst[1](vector<u8>: "!="..)
+	49: Call string::utf8(vector<u8>): String
+	50: StLoc[1](%#2: String)
+	51: ImmBorrowLoc[1](%#2: String)
+	52: Call debug::print<String>(&String)
+	53: MoveLoc[17](t2#1#11: &u64)
+	54: Call debug::print<u64>(&u64)
+	55: LdU64(13906834320372269055)
+	56: Abort
+B8:
+	57: MoveLoc[17](t2#1#11: &u64)
+	58: Pop
+	59: MoveLoc[13](t1#1#11: &u64)
+	60: Pop
+	61: LdU64(0)
+	62: StLoc[4](i#1#17: u64)
+B9:
+	63: CopyLoc[4](i#1#17: u64)
+	64: LdU64(10)
+	65: Lt
+	66: BrFalse(83)
+B10:
+	67: CopyLoc[4](i#1#17: u64)
+	68: LdU64(2)
+	69: Add
+	70: StLoc[9](k#2#20: u64)
+	71: ImmBorrowLoc[12](m#1#0: VecSet<u64>)
+	72: ImmBorrowLoc[9](k#2#20: u64)
+	73: Call vec_set::contains<u64>(&VecSet<u64>, &u64): bool
+	74: BrFalse(76)
+B11:
+	75: Branch(78)
+B12:
+	76: LdU64(13906834337552138239)
+	77: Abort
+B13:
+	78: MoveLoc[4](i#1#17: u64)
+	79: LdU64(1)
+	80: Add
+	81: StLoc[4](i#1#17: u64)
+	82: Branch(63)
+B14:
+	83: CopyLoc[12](m#1#0: VecSet<u64>)
+	84: Call vec_set::into_keys<u64>(VecSet<u64>): vector<u64>
+	85: StLoc[11](keys#1#0: vector<u64>)
+	86: LdU64(0)
+	87: StLoc[5](i#1#24: u64)
+B15:
+	88: CopyLoc[5](i#1#24: u64)
+	89: LdU64(10)
+	90: Lt
+	91: BrFalse(142)
+B16:
+	92: CopyLoc[5](i#1#24: u64)
+	93: StLoc[7](i#3#27: u64)
+	94: CopyLoc[7](i#3#27: u64)
+	95: LdU64(2)
+	96: Add
+	97: StLoc[10](k#3#27: u64)
+	98: MutBorrowLoc[12](m#1#0: VecSet<u64>)
+	99: ImmBorrowLoc[10](k#3#27: u64)
+	100: Call vec_set::remove<u64>(&mut VecSet<u64>, &u64)
+	101: ImmBorrowLoc[11](keys#1#0: vector<u64>)
+	102: MoveLoc[7](i#3#27: u64)
+	103: VecImmBorrow(2)
+	104: ReadRef
+	105: StLoc[14](t1#1#28: u64)
+	106: MoveLoc[10](k#3#27: u64)
+	107: StLoc[18](t2#1#28: u64)
+	108: ImmBorrowLoc[14](t1#1#28: u64)
+	109: StLoc[15](t1#1#31: &u64)
+	110: ImmBorrowLoc[18](t2#1#28: u64)
+	111: StLoc[19](t2#1#31: &u64)
+	112: CopyLoc[15](t1#1#31: &u64)
+	113: CopyLoc[19](t2#1#31: &u64)
+	114: Eq
+	115: Not
+	116: BrFalse(133)
+B17:
+	117: LdConst[0](vector<u8>: "Ass..)
+	118: Call string::utf8(vector<u8>): String
+	119: StLoc[2](%#3: String)
+	120: ImmBorrowLoc[2](%#3: String)
+	121: Call debug::print<String>(&String)
+	122: MoveLoc[15](t1#1#31: &u64)
+	123: Call debug::print<u64>(&u64)
+	124: LdConst[1](vector<u8>: "!="..)
+	125: Call string::utf8(vector<u8>): String
+	126: StLoc[3](%#4: String)
+	127: ImmBorrowLoc[3](%#4: String)
+	128: Call debug::print<String>(&String)
+	129: MoveLoc[19](t2#1#31: &u64)
+	130: Call debug::print<u64>(&u64)
+	131: LdU64(13906834354732007423)
+	132: Abort
+B18:
+	133: MoveLoc[19](t2#1#31: &u64)
+	134: Pop
+	135: MoveLoc[15](t1#1#31: &u64)
+	136: Pop
+	137: MoveLoc[5](i#1#24: u64)
+	138: LdU64(1)
+	139: Add
+	140: StLoc[5](i#1#24: u64)
+	141: Branch(88)
+B19:
+	142: Ret
+}
+
+test_keys() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	m#1#0: VecSet<u64>
+L5:	t1#1#1: u64
+L6:	t1#1#10: &vector<u64>
+L7:	t1#1#4: &u64
+L8:	t1#1#7: vector<u64>
+L9:	t2#1#1: u64
+L10:	t2#1#10: &vector<u64>
+L11:	t2#1#4: &u64
+L12:	t2#1#7: vector<u64>
+B0:
+	0: Call vec_set::empty<u64>(): VecSet<u64>
+	1: StLoc[4](m#1#0: VecSet<u64>)
+	2: MutBorrowLoc[4](m#1#0: VecSet<u64>)
+	3: LdU64(1)
+	4: Call vec_set::insert<u64>(&mut VecSet<u64>, u64)
+	5: MutBorrowLoc[4](m#1#0: VecSet<u64>)
+	6: LdU64(2)
+	7: Call vec_set::insert<u64>(&mut VecSet<u64>, u64)
+	8: MutBorrowLoc[4](m#1#0: VecSet<u64>)
+	9: LdU64(3)
+	10: Call vec_set::insert<u64>(&mut VecSet<u64>, u64)
+	11: ImmBorrowLoc[4](m#1#0: VecSet<u64>)
+	12: Call vec_set::length<u64>(&VecSet<u64>): u64
+	13: StLoc[5](t1#1#1: u64)
+	14: LdU64(3)
+	15: StLoc[9](t2#1#1: u64)
+	16: ImmBorrowLoc[5](t1#1#1: u64)
+	17: StLoc[7](t1#1#4: &u64)
+	18: ImmBorrowLoc[9](t2#1#1: u64)
+	19: StLoc[11](t2#1#4: &u64)
+	20: CopyLoc[7](t1#1#4: &u64)
+	21: CopyLoc[11](t2#1#4: &u64)
+	22: Eq
+	23: Not
+	24: BrFalse(41)
+B1:
+	25: LdConst[0](vector<u8>: "Ass..)
+	26: Call string::utf8(vector<u8>): String
+	27: StLoc[0](%#1: String)
+	28: ImmBorrowLoc[0](%#1: String)
+	29: Call debug::print<String>(&String)
+	30: MoveLoc[7](t1#1#4: &u64)
+	31: Call debug::print<u64>(&u64)
+	32: LdConst[1](vector<u8>: "!="..)
+	33: Call string::utf8(vector<u8>): String
+	34: StLoc[1](%#2: String)
+	35: ImmBorrowLoc[1](%#2: String)
+	36: Call debug::print<String>(&String)
+	37: MoveLoc[11](t2#1#4: &u64)
+	38: Call debug::print<u64>(&u64)
+	39: LdU64(13906834414861549567)
+	40: Abort
+B2:
+	41: MoveLoc[11](t2#1#4: &u64)
+	42: Pop
+	43: MoveLoc[7](t1#1#4: &u64)
+	44: Pop
+	45: ImmBorrowLoc[4](m#1#0: VecSet<u64>)
+	46: Call vec_set::keys<u64>(&VecSet<u64>): &vector<u64>
+	47: ReadRef
+	48: StLoc[8](t1#1#7: vector<u64>)
+	49: LdConst[2](vector<u64>: 0301..)
+	50: StLoc[12](t2#1#7: vector<u64>)
+	51: ImmBorrowLoc[8](t1#1#7: vector<u64>)
+	52: StLoc[6](t1#1#10: &vector<u64>)
+	53: ImmBorrowLoc[12](t2#1#7: vector<u64>)
+	54: StLoc[10](t2#1#10: &vector<u64>)
+	55: CopyLoc[6](t1#1#10: &vector<u64>)
+	56: CopyLoc[10](t2#1#10: &vector<u64>)
+	57: Eq
+	58: Not
+	59: BrFalse(76)
+B3:
+	60: LdConst[0](vector<u8>: "Ass..)
+	61: Call string::utf8(vector<u8>): String
+	62: StLoc[2](%#3: String)
+	63: ImmBorrowLoc[2](%#3: String)
+	64: Call debug::print<String>(&String)
+	65: MoveLoc[6](t1#1#10: &vector<u64>)
+	66: Call debug::print<vector<u64>>(&vector<u64>)
+	67: LdConst[1](vector<u8>: "!="..)
+	68: Call string::utf8(vector<u8>): String
+	69: StLoc[3](%#4: String)
+	70: ImmBorrowLoc[3](%#4: String)
+	71: Call debug::print<String>(&String)
+	72: MoveLoc[10](t2#1#10: &vector<u64>)
+	73: Call debug::print<vector<u64>>(&vector<u64>)
+	74: LdU64(13906834419156516863)
+	75: Abort
+B4:
+	76: MoveLoc[10](t2#1#10: &vector<u64>)
+	77: Pop
+	78: MoveLoc[6](t1#1#10: &vector<u64>)
+	79: Pop
+	80: Ret
+}
+
+round_trip() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	i#1#10: u64
+L5:	k#1#13: u64
+L6:	s#1#0: VecSet<u64>
+L7:	s2#1#13: VecSet<u64>
+L8:	t1#1#1: VecSet<u64>
+L9:	t1#1#14: VecSet<u64>
+L10:	t1#1#17: &VecSet<u64>
+L11:	t1#1#4: &VecSet<u64>
+L12:	t2#1#1: VecSet<u64>
+L13:	t2#1#14: VecSet<u64>
+L14:	t2#1#17: &VecSet<u64>
+L15:	t2#1#4: &VecSet<u64>
+B0:
+	0: Call vec_set::empty<u64>(): VecSet<u64>
+	1: StLoc[6](s#1#0: VecSet<u64>)
+	2: CopyLoc[6](s#1#0: VecSet<u64>)
+	3: StLoc[8](t1#1#1: VecSet<u64>)
+	4: LdConst[3](vector<u64>: 00)
+	5: Call vec_set::from_keys<u64>(vector<u64>): VecSet<u64>
+	6: StLoc[12](t2#1#1: VecSet<u64>)
+	7: ImmBorrowLoc[8](t1#1#1: VecSet<u64>)
+	8: StLoc[11](t1#1#4: &VecSet<u64>)
+	9: ImmBorrowLoc[12](t2#1#1: VecSet<u64>)
+	10: StLoc[15](t2#1#4: &VecSet<u64>)
+	11: CopyLoc[11](t1#1#4: &VecSet<u64>)
+	12: CopyLoc[15](t2#1#4: &VecSet<u64>)
+	13: Eq
+	14: Not
+	15: BrFalse(32)
+B1:
+	16: LdConst[0](vector<u8>: "Ass..)
+	17: Call string::utf8(vector<u8>): String
+	18: StLoc[0](%#1: String)
+	19: ImmBorrowLoc[0](%#1: String)
+	20: Call debug::print<String>(&String)
+	21: MoveLoc[11](t1#1#4: &VecSet<u64>)
+	22: Call debug::print<VecSet<u64>>(&VecSet<u64>)
+	23: LdConst[1](vector<u8>: "!="..)
+	24: Call string::utf8(vector<u8>): String
+	25: StLoc[1](%#2: String)
+	26: ImmBorrowLoc[1](%#2: String)
+	27: Call debug::print<String>(&String)
+	28: MoveLoc[15](t2#1#4: &VecSet<u64>)
+	29: Call debug::print<VecSet<u64>>(&VecSet<u64>)
+	30: LdU64(13906834444926320639)
+	31: Abort
+B2:
+	32: MoveLoc[15](t2#1#4: &VecSet<u64>)
+	33: Pop
+	34: MoveLoc[11](t1#1#4: &VecSet<u64>)
+	35: Pop
+	36: LdU64(0)
+	37: StLoc[4](i#1#10: u64)
+B3:
+	38: CopyLoc[4](i#1#10: u64)
+	39: LdU64(50)
+	40: Lt
+	41: BrFalse(91)
+B4:
+	42: CopyLoc[4](i#1#10: u64)
+	43: LdU64(2)
+	44: Add
+	45: StLoc[5](k#1#13: u64)
+	46: MutBorrowLoc[6](s#1#0: VecSet<u64>)
+	47: MoveLoc[5](k#1#13: u64)
+	48: Call vec_set::insert<u64>(&mut VecSet<u64>, u64)
+	49: CopyLoc[6](s#1#0: VecSet<u64>)
+	50: Call vec_set::into_keys<u64>(VecSet<u64>): vector<u64>
+	51: Call vec_set::from_keys<u64>(vector<u64>): VecSet<u64>
+	52: StLoc[7](s2#1#13: VecSet<u64>)
+	53: CopyLoc[6](s#1#0: VecSet<u64>)
+	54: StLoc[9](t1#1#14: VecSet<u64>)
+	55: MoveLoc[7](s2#1#13: VecSet<u64>)
+	56: StLoc[13](t2#1#14: VecSet<u64>)
+	57: ImmBorrowLoc[9](t1#1#14: VecSet<u64>)
+	58: StLoc[10](t1#1#17: &VecSet<u64>)
+	59: ImmBorrowLoc[13](t2#1#14: VecSet<u64>)
+	60: StLoc[14](t2#1#17: &VecSet<u64>)
+	61: CopyLoc[10](t1#1#17: &VecSet<u64>)
+	62: CopyLoc[14](t2#1#17: &VecSet<u64>)
+	63: Eq
+	64: Not
+	65: BrFalse(82)
+B5:
+	66: LdConst[0](vector<u8>: "Ass..)
+	67: Call string::utf8(vector<u8>): String
+	68: StLoc[2](%#3: String)
+	69: ImmBorrowLoc[2](%#3: String)
+	70: Call debug::print<String>(&String)
+	71: MoveLoc[10](t1#1#17: &VecSet<u64>)
+	72: Call debug::print<VecSet<u64>>(&VecSet<u64>)
+	73: LdConst[1](vector<u8>: "!="..)
+	74: Call string::utf8(vector<u8>): String
+	75: StLoc[3](%#4: String)
+	76: ImmBorrowLoc[3](%#4: String)
+	77: Call debug::print<String>(&String)
+	78: MoveLoc[14](t2#1#17: &VecSet<u64>)
+	79: Call debug::print<VecSet<u64>>(&VecSet<u64>)
+	80: LdU64(13906834449221287935)
+	81: Abort
+B6:
+	82: MoveLoc[14](t2#1#17: &VecSet<u64>)
+	83: Pop
+	84: MoveLoc[10](t1#1#17: &VecSet<u64>)
+	85: Pop
+	86: MoveLoc[4](i#1#10: u64)
+	87: LdU64(1)
+	88: Add
+	89: StLoc[4](i#1#10: u64)
+	90: Branch(38)
+B7:
+	91: Ret
+}
+
+from_keys_values_duplicate_key_abort() {
+B0:
+	0: LdConst[4](vector<u64>: 0301..)
+	1: Call vec_set::from_keys<u64>(vector<u64>): VecSet<u64>
+	2: Pop
+	3: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	1 => vector<u8>: "!=" // interpreted as UTF8 string
+	2 => vector<u64>: 03010000000000000002000000000000000300000000000000
+	3 => vector<u64>: 00
+	4 => vector<u64>: 03010000000000000000000000000000000100000000000000
+]
+}

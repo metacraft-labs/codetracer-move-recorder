@@ -1,0 +1,71 @@
+// Move bytecode v6
+module 2.test_utils {
+use 0000000000000000000000000000000000000000000000000000000000000001::ascii;
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+public assert_eq<T: drop>(t1#0#0: T, t2#0#0: T) {
+B0:
+	0: ImmBorrowLoc[0](t1#0#0: T)
+	1: ImmBorrowLoc[1](t2#0#0: T)
+	2: Call assert_ref_eq<T>(&T, &T)
+	3: Ret
+}
+
+public assert_ref_eq<T>(t1#0#0: &T, t2#0#0: &T) {
+B0:
+	0: CopyLoc[0](t1#0#0: &T)
+	1: CopyLoc[1](t2#0#0: &T)
+	2: Eq
+	3: Not
+	4: BrFalse(15)
+B1:
+	5: LdConst[0](vector<u8>: "Ass..)
+	6: Call print(vector<u8>)
+	7: MoveLoc[0](t1#0#0: &T)
+	8: Call debug::print<T>(&T)
+	9: LdConst[1](vector<u8>: "!="..)
+	10: Call print(vector<u8>)
+	11: MoveLoc[1](t2#0#0: &T)
+	12: Call debug::print<T>(&T)
+	13: LdU64(0)
+	14: Abort
+B2:
+	15: MoveLoc[1](t2#0#0: &T)
+	16: Pop
+	17: MoveLoc[0](t1#0#0: &T)
+	18: Pop
+	19: Ret
+}
+
+public print(str#0#0: vector<u8>) {
+L1:	%#1: String
+B0:
+	0: MoveLoc[0](str#0#0: vector<u8>)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[1](%#1: String)
+	3: ImmBorrowLoc[1](%#1: String)
+	4: Call debug::print<String>(&String)
+	5: Ret
+}
+
+public destroy<T>(x#0#0: T) {
+B0:
+	0: MoveLoc[0](x#0#0: T)
+	1: Call unit_test::destroy<T>(T)
+	2: Ret
+}
+
+native public create_one_time_witness<T: drop>(): T;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	1 => vector<u8>: "!=" // interpreted as UTF8 string
+]
+}

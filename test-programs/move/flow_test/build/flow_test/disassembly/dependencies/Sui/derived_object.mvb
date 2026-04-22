@@ -1,0 +1,93 @@
+// Move bytecode v7
+module 2.derived_object {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+
+struct Claimed has copy, drop, store {
+	pos0: ID
+}
+
+struct DerivedObjectKey<K: copy + drop + store> has copy, drop, store {
+	pos0: K
+}
+
+enum ClaimedStatus has store {
+	Reserved {  }
+}
+
+public claim<K: copy + drop + store>(parent#0#0: &mut UID, key#0#0: K): UID {
+L2:	addr#1#0: address
+L3:	id#1#0: ID
+B0:
+	0: CopyLoc[0](parent#0#0: &mut UID)
+	1: FreezeRef
+	2: Call object::uid_to_inner(&UID): ID
+	3: MoveLoc[1](key#0#0: K)
+	4: Call derive_address<K>(ID, K): address
+	5: StLoc[2](addr#1#0: address)
+	6: CopyLoc[2](addr#1#0: address)
+	7: Call object::id_from_address(address): ID
+	8: StLoc[3](id#1#0: ID)
+	9: CopyLoc[0](parent#0#0: &mut UID)
+	10: FreezeRef
+	11: CopyLoc[3](id#1#0: ID)
+	12: Pack[0](Claimed)
+	13: Call dynamic_field::exists_<Claimed>(&UID, Claimed): bool
+	14: Not
+	15: BrFalse(17)
+B1:
+	16: Branch(21)
+B2:
+	17: MoveLoc[0](parent#0#0: &mut UID)
+	18: Pop
+	19: LdU64(13835058231375822849)
+	20: Abort
+B3:
+	21: MoveLoc[0](parent#0#0: &mut UID)
+	22: MoveLoc[3](id#1#0: ID)
+	23: Pack[0](Claimed)
+	24: PackVariant(VariantHandleIndex(0))
+	25: Call dynamic_field::add<Claimed, ClaimedStatus>(&mut UID, Claimed, ClaimedStatus)
+	26: MoveLoc[2](addr#1#0: address)
+	27: Call object::new_uid_from_hash(address): UID
+	28: Ret
+}
+
+public exists<K: copy + drop + store>(parent#0#0: &UID, key#0#0: K): bool {
+L2:	addr#1#0: address
+B0:
+	0: CopyLoc[0](parent#0#0: &UID)
+	1: Call object::uid_to_inner(&UID): ID
+	2: MoveLoc[1](key#0#0: K)
+	3: Call derive_address<K>(ID, K): address
+	4: StLoc[2](addr#1#0: address)
+	5: MoveLoc[0](parent#0#0: &UID)
+	6: MoveLoc[2](addr#1#0: address)
+	7: Call object::id_from_address(address): ID
+	8: Pack[0](Claimed)
+	9: Call dynamic_field::exists_<Claimed>(&UID, Claimed): bool
+	10: Ret
+}
+
+public derive_address<K: copy + drop + store>(parent#0#0: ID, key#0#0: K): address {
+B0:
+	0: ImmBorrowLoc[0](parent#0#0: ID)
+	1: Call object::id_to_address(&ID): address
+	2: MoveLoc[1](key#0#0: K)
+	3: PackGeneric[0](DerivedObjectKey<K>)
+	4: Call dynamic_field::hash_type_and_key<DerivedObjectKey<K>>(address, DerivedObjectKey<K>): address
+	5: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "EObjectAlreadyExists" // interpreted as UTF8 string
+	1 => vector<u8>: "Derived object is already claimed." // interpreted as UTF8 string
+]
+}

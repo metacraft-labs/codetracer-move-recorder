@@ -1,0 +1,22 @@
+// Move bytecode v6
+module 1.internal {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+struct Permit<phantom T> has drop {
+	dummy_field: bool
+}
+
+public permit<T>(): Permit<T> {
+B0:
+	0: LdFalse
+	1: PackGeneric[0](Permit<T>)
+	2: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

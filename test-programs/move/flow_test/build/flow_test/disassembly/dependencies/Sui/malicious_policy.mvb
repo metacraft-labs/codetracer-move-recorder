@@ -1,0 +1,25 @@
+// Move bytecode v6
+module 2.malicious_policy {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+
+struct Rule has drop {
+	dummy_field: bool
+}
+
+public cheat<T>(request#0#0: &mut TransferRequest<T>) {
+B0:
+	0: LdFalse
+	1: Pack[0](Rule)
+	2: MoveLoc[0](request#0#0: &mut TransferRequest<T>)
+	3: Call transfer_policy::add_receipt<T, Rule>(Rule, &mut TransferRequest<T>)
+	4: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

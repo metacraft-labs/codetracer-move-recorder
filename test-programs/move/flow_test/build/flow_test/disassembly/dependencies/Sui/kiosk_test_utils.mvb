@@ -1,0 +1,153 @@
+// Move bytecode v6
+module 2.kiosk_test_utils {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::kiosk;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::package;
+use 0000000000000000000000000000000000000000000000000000000000000002::sui;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct OTW has drop {
+	dummy_field: bool
+}
+
+struct Asset has store, key {
+	id: UID
+}
+
+public ctx(): TxContext {
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: Ret
+}
+
+public folks(): address * address * address {
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: LdConst[1](address: 0x00..)
+	2: LdConst[2](address: 0x00..)
+	3: Ret
+}
+
+public get_publisher(ctx#0#0: &mut TxContext): Publisher {
+B0:
+	0: LdFalse
+	1: Pack[0](OTW)
+	2: MoveLoc[0](ctx#0#0: &mut TxContext)
+	3: Call package::test_claim<OTW>(OTW, &mut TxContext): Publisher
+	4: Ret
+}
+
+public get_policy(ctx#0#0: &mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset> {
+L1:	cap#1#0: TransferPolicyCap<Asset>
+L2:	policy#1#0: TransferPolicy<Asset>
+L3:	publisher#1#0: Publisher
+B0:
+	0: CopyLoc[0](ctx#0#0: &mut TxContext)
+	1: Call get_publisher(&mut TxContext): Publisher
+	2: StLoc[3](publisher#1#0: Publisher)
+	3: ImmBorrowLoc[3](publisher#1#0: Publisher)
+	4: MoveLoc[0](ctx#0#0: &mut TxContext)
+	5: Call transfer_policy::new<Asset>(&Publisher, &mut TxContext): TransferPolicy<Asset> * TransferPolicyCap<Asset>
+	6: StLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	7: StLoc[2](policy#1#0: TransferPolicy<Asset>)
+	8: MoveLoc[3](publisher#1#0: Publisher)
+	9: Call return_publisher(Publisher)
+	10: MoveLoc[2](policy#1#0: TransferPolicy<Asset>)
+	11: MoveLoc[1](cap#1#0: TransferPolicyCap<Asset>)
+	12: Ret
+}
+
+public get_sui(amount#0#0: u64, ctx#0#0: &mut TxContext): Coin<SUI> {
+B0:
+	0: MoveLoc[0](amount#0#0: u64)
+	1: MoveLoc[1](ctx#0#0: &mut TxContext)
+	2: Call coin::mint_for_testing<SUI>(u64, &mut TxContext): Coin<SUI>
+	3: Ret
+}
+
+public get_asset(ctx#0#0: &mut TxContext): Asset * ID {
+L1:	id#1#0: ID
+L2:	uid#1#0: UID
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: StLoc[2](uid#1#0: UID)
+	3: ImmBorrowLoc[2](uid#1#0: UID)
+	4: Call object::uid_to_inner(&UID): ID
+	5: StLoc[1](id#1#0: ID)
+	6: MoveLoc[2](uid#1#0: UID)
+	7: Pack[1](Asset)
+	8: MoveLoc[1](id#1#0: ID)
+	9: Ret
+}
+
+public get_kiosk(ctx#0#0: &mut TxContext): Kiosk * KioskOwnerCap {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call kiosk::new(&mut TxContext): Kiosk * KioskOwnerCap
+	2: Ret
+}
+
+public return_publisher(publisher#0#0: Publisher) {
+B0:
+	0: MoveLoc[0](publisher#0#0: Publisher)
+	1: Call package::burn_publisher(Publisher)
+	2: Ret
+}
+
+public return_policy(policy#0#0: TransferPolicy<Asset>, cap#0#0: TransferPolicyCap<Asset>, ctx#0#0: &mut TxContext): u64 {
+B0:
+	0: MoveLoc[0](policy#0#0: TransferPolicy<Asset>)
+	1: MoveLoc[1](cap#0#0: TransferPolicyCap<Asset>)
+	2: MoveLoc[2](ctx#0#0: &mut TxContext)
+	3: Call transfer_policy::destroy_and_withdraw<Asset>(TransferPolicy<Asset>, TransferPolicyCap<Asset>, &mut TxContext): Coin<SUI>
+	4: Call coin::burn_for_testing<SUI>(Coin<SUI>): u64
+	5: Ret
+}
+
+public return_kiosk(kiosk#0#0: Kiosk, cap#0#0: KioskOwnerCap, ctx#0#0: &mut TxContext): u64 {
+B0:
+	0: MoveLoc[0](kiosk#0#0: Kiosk)
+	1: MoveLoc[1](cap#0#0: KioskOwnerCap)
+	2: MoveLoc[2](ctx#0#0: &mut TxContext)
+	3: Call kiosk::close_and_withdraw(Kiosk, KioskOwnerCap, &mut TxContext): Coin<SUI>
+	4: Call coin::burn_for_testing<SUI>(Coin<SUI>): u64
+	5: Ret
+}
+
+public return_assets(assets#0#0: vector<Asset>) {
+B0:
+	0: ImmBorrowLoc[0](assets#0#0: vector<Asset>)
+	1: VecLen(17)
+	2: LdU64(0)
+	3: Gt
+	4: BrFalse(11)
+B1:
+	5: Branch(6)
+B2:
+	6: MutBorrowLoc[0](assets#0#0: vector<Asset>)
+	7: VecPopBack(17)
+	8: Unpack[1](Asset)
+	9: Call object::delete(UID)
+	10: Branch(0)
+B3:
+	11: MoveLoc[0](assets#0#0: vector<Asset>)
+	12: VecUnpack(17, 0)
+	13: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x00000000000000000000000000000000000000000000000000000000000a11ce
+	1 => address: 0x0000000000000000000000000000000000000000000000000000000000000b0b
+	2 => address: 0x000000000000000000000000000000000000000000000000000000000000ca51
+]
+}

@@ -1,0 +1,45 @@
+// Move bytecode v6
+module 2.protocol_config_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::protocol_config;
+
+test_is_feature_enabled_true() {
+B0:
+	0: LdConst[0](vector<u8>: "adv..)
+	1: Call protocol_config::is_feature_enabled(vector<u8>): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(6)
+B2:
+	4: LdU64(1)
+	5: Abort
+B3:
+	6: Ret
+}
+
+test_is_feature_enabled_false() {
+B0:
+	0: LdConst[1](vector<u8>: "per..)
+	1: Call protocol_config::is_feature_enabled(vector<u8>): bool
+	2: Not
+	3: BrFalse(5)
+B1:
+	4: Branch(7)
+B2:
+	5: LdU64(1)
+	6: Abort
+B3:
+	7: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "advance_epoch_start_time_in_safe_mode" // interpreted as UTF8 string
+	1 => vector<u8>: "per_command_shared_object_transfer_rules" // interpreted as UTF8 string
+]
+}

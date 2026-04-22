@@ -1,0 +1,59 @@
+// Move bytecode v6
+module 2.hmac_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::hmac;
+
+test_hmac_sha3_256() {
+L0:	empty_key#1#0: vector<u8>
+L1:	empty_msg#1#0: vector<u8>
+L2:	key#1#0: vector<u8>
+L3:	msg#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "my ..)
+	1: StLoc[2](key#1#0: vector<u8>)
+	2: LdConst[1](vector<u8>: "hel..)
+	3: StLoc[3](msg#1#0: vector<u8>)
+	4: ImmBorrowLoc[2](key#1#0: vector<u8>)
+	5: ImmBorrowLoc[3](msg#1#0: vector<u8>)
+	6: Call hmac::hmac_sha3_256(&vector<u8>, &vector<u8>): vector<u8>
+	7: LdConst[2](vector<u8>: 20f6..)
+	8: Eq
+	9: BrFalse(11)
+B1:
+	10: Branch(13)
+B2:
+	11: LdU64(13906834251652792319)
+	12: Abort
+B3:
+	13: LdConst[3](vector<u8>: "" /..)
+	14: StLoc[0](empty_key#1#0: vector<u8>)
+	15: LdConst[3](vector<u8>: "" /..)
+	16: StLoc[1](empty_msg#1#0: vector<u8>)
+	17: ImmBorrowLoc[0](empty_key#1#0: vector<u8>)
+	18: ImmBorrowLoc[3](msg#1#0: vector<u8>)
+	19: Call hmac::hmac_sha3_256(&vector<u8>, &vector<u8>): vector<u8>
+	20: Pop
+	21: ImmBorrowLoc[2](key#1#0: vector<u8>)
+	22: ImmBorrowLoc[1](empty_msg#1#0: vector<u8>)
+	23: Call hmac::hmac_sha3_256(&vector<u8>, &vector<u8>): vector<u8>
+	24: Pop
+	25: ImmBorrowLoc[0](empty_key#1#0: vector<u8>)
+	26: ImmBorrowLoc[1](empty_msg#1#0: vector<u8>)
+	27: Call hmac::hmac_sha3_256(&vector<u8>, &vector<u8>): vector<u8>
+	28: Pop
+	29: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "my key!" // interpreted as UTF8 string
+	1 => vector<u8>: "hello world!" // interpreted as UTF8 string
+	2 => vector<u8>: 20f6d6ae02f426eb9664e89e3c6d86c60e6103ce22b916819219c26e34e8d236dc
+	3 => vector<u8>: "" // interpreted as UTF8 string
+]
+}

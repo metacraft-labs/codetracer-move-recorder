@@ -1,0 +1,5276 @@
+// Move bytecode v7
+module 2.bcs_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+use 0000000000000000000000000000000000000000000000000000000000000002::bcs;
+
+struct Info has copy, drop {
+	a: bool,
+	b: u8,
+	c: u64,
+	d: u128,
+	k: vector<bool>,
+	s: address
+}
+
+enum Enum has copy, drop {
+	Empty {  },
+	U8 { pos0: u8 },
+	U16 { pos0: u16 }
+}
+
+test_uleb_len_fail() {
+L0:	bytes#1#0: BCS
+B0:
+	0: LdConst[6](vector<u8>: 05ff..)
+	1: Call bcs::new(vector<u8>): BCS
+	2: StLoc[0](bytes#1#0: BCS)
+	3: MutBorrowLoc[0](bytes#1#0: BCS)
+	4: Call bcs::peel_vec_length(&mut BCS): u64
+	5: Pop
+	6: LdU64(0)
+	7: Abort
+}
+
+test_bool_fail() {
+L0:	%#1: u8
+L1:	bytes#1#0: BCS
+B0:
+	0: LdU8(10)
+	1: StLoc[0](%#1: u8)
+	2: ImmBorrowLoc[0](%#1: u8)
+	3: Call bcs::to_bytes<u8>(&u8): vector<u8>
+	4: Call bcs::new(vector<u8>): BCS
+	5: StLoc[1](bytes#1#0: BCS)
+	6: MutBorrowLoc[1](bytes#1#0: BCS)
+	7: Call bcs::peel_bool(&mut BCS): bool
+	8: Pop
+	9: Ret
+}
+
+test_bool() {
+L0:	%#2: String
+L1:	%#3: String
+L2:	%#4: vector<u8>
+L3:	bytes#1#1: BCS
+L4:	case#1#1: bool
+L5:	cases#1#1: vector<bool>
+L6:	t1#1#4: bool
+L7:	t1#1#7: &bool
+L8:	t2#1#4: bool
+L9:	t2#1#7: &bool
+B0:
+	0: LdConst[7](vector<bool>: 020100)
+	1: StLoc[5](cases#1#1: vector<bool>)
+B1:
+	2: ImmBorrowLoc[5](cases#1#1: vector<bool>)
+	3: Call vector::is_empty<bool>(&vector<bool>): bool
+	4: Not
+	5: BrFalse(57)
+B2:
+	6: MutBorrowLoc[5](cases#1#1: vector<bool>)
+	7: VecPopBack(11)
+	8: StLoc[4](case#1#1: bool)
+	9: ImmBorrowLoc[4](case#1#1: bool)
+	10: Call bcs::to_bytes<bool>(&bool): vector<u8>
+	11: Call bcs::new(vector<u8>): BCS
+	12: StLoc[3](bytes#1#1: BCS)
+	13: MutBorrowLoc[3](bytes#1#1: BCS)
+	14: Call bcs::peel_bool(&mut BCS): bool
+	15: StLoc[6](t1#1#4: bool)
+	16: MoveLoc[4](case#1#1: bool)
+	17: StLoc[8](t2#1#4: bool)
+	18: ImmBorrowLoc[6](t1#1#4: bool)
+	19: StLoc[7](t1#1#7: &bool)
+	20: ImmBorrowLoc[8](t2#1#4: bool)
+	21: StLoc[9](t2#1#7: &bool)
+	22: CopyLoc[7](t1#1#7: &bool)
+	23: CopyLoc[9](t2#1#7: &bool)
+	24: Eq
+	25: Not
+	26: BrFalse(44)
+B3:
+	27: Branch(28)
+B4:
+	28: LdConst[8](vector<u8>: "Ass..)
+	29: Call string::utf8(vector<u8>): String
+	30: StLoc[0](%#2: String)
+	31: ImmBorrowLoc[0](%#2: String)
+	32: Call debug::print<String>(&String)
+	33: MoveLoc[7](t1#1#7: &bool)
+	34: Call debug::print<bool>(&bool)
+	35: LdConst[9](vector<u8>: "!="..)
+	36: Call string::utf8(vector<u8>): String
+	37: StLoc[1](%#3: String)
+	38: ImmBorrowLoc[1](%#3: String)
+	39: Call debug::print<String>(&String)
+	40: MoveLoc[9](t2#1#7: &bool)
+	41: Call debug::print<bool>(&bool)
+	42: LdU64(13906834457811222527)
+	43: Abort
+B5:
+	44: MoveLoc[9](t2#1#7: &bool)
+	45: Pop
+	46: MoveLoc[7](t1#1#7: &bool)
+	47: Pop
+	48: MoveLoc[3](bytes#1#1: BCS)
+	49: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	50: StLoc[2](%#4: vector<u8>)
+	51: ImmBorrowLoc[2](%#4: vector<u8>)
+	52: Call vector::is_empty<u8>(&vector<u8>): bool
+	53: BrFalse(55)
+B6:
+	54: Branch(2)
+B7:
+	55: LdU64(13906834457811222527)
+	56: Abort
+B8:
+	57: Ret
+}
+
+test_u8() {
+L0:	%#3: String
+L1:	%#4: String
+L2:	%#5: vector<u8>
+L3:	bytes#1#1: BCS
+L4:	case#1#1: u8
+L5:	cases#1#1: vector<u8>
+L6:	max#1#4: u8
+L7:	t1#1#6: u8
+L8:	t1#1#9: &u8
+L9:	t2#1#6: u8
+L10:	t2#1#9: &u8
+B0:
+	0: LdConst[0](u8: 255)
+	1: StLoc[6](max#1#4: u8)
+	2: LdU8(0)
+	3: LdU8(1)
+	4: CopyLoc[6](max#1#4: u8)
+	5: LdU8(2)
+	6: Div
+	7: CopyLoc[6](max#1#4: u8)
+	8: LdU8(1)
+	9: Sub
+	10: MoveLoc[6](max#1#4: u8)
+	11: VecPack(9, 5)
+	12: StLoc[5](cases#1#1: vector<u8>)
+B1:
+	13: ImmBorrowLoc[5](cases#1#1: vector<u8>)
+	14: Call vector::is_empty<u8>(&vector<u8>): bool
+	15: Not
+	16: BrFalse(67)
+B2:
+	17: MutBorrowLoc[5](cases#1#1: vector<u8>)
+	18: VecPopBack(9)
+	19: StLoc[4](case#1#1: u8)
+	20: ImmBorrowLoc[4](case#1#1: u8)
+	21: Call bcs::to_bytes<u8>(&u8): vector<u8>
+	22: Call bcs::new(vector<u8>): BCS
+	23: StLoc[3](bytes#1#1: BCS)
+	24: MutBorrowLoc[3](bytes#1#1: BCS)
+	25: Call bcs::peel_u8(&mut BCS): u8
+	26: StLoc[7](t1#1#6: u8)
+	27: MoveLoc[4](case#1#1: u8)
+	28: StLoc[9](t2#1#6: u8)
+	29: ImmBorrowLoc[7](t1#1#6: u8)
+	30: StLoc[8](t1#1#9: &u8)
+	31: ImmBorrowLoc[9](t2#1#6: u8)
+	32: StLoc[10](t2#1#9: &u8)
+	33: CopyLoc[8](t1#1#9: &u8)
+	34: CopyLoc[10](t2#1#9: &u8)
+	35: Eq
+	36: Not
+	37: BrFalse(54)
+B3:
+	38: LdConst[8](vector<u8>: "Ass..)
+	39: Call string::utf8(vector<u8>): String
+	40: StLoc[0](%#3: String)
+	41: ImmBorrowLoc[0](%#3: String)
+	42: Call debug::print<String>(&String)
+	43: MoveLoc[8](t1#1#9: &u8)
+	44: Call debug::print<u8>(&u8)
+	45: LdConst[9](vector<u8>: "!="..)
+	46: Call string::utf8(vector<u8>): String
+	47: StLoc[1](%#4: String)
+	48: ImmBorrowLoc[1](%#4: String)
+	49: Call debug::print<String>(&String)
+	50: MoveLoc[10](t2#1#9: &u8)
+	51: Call debug::print<u8>(&u8)
+	52: LdU64(13906834479286059007)
+	53: Abort
+B4:
+	54: MoveLoc[10](t2#1#9: &u8)
+	55: Pop
+	56: MoveLoc[8](t1#1#9: &u8)
+	57: Pop
+	58: MoveLoc[3](bytes#1#1: BCS)
+	59: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	60: StLoc[2](%#5: vector<u8>)
+	61: ImmBorrowLoc[2](%#5: vector<u8>)
+	62: Call vector::is_empty<u8>(&vector<u8>): bool
+	63: BrFalse(65)
+B5:
+	64: Branch(13)
+B6:
+	65: LdU64(13906834479286059007)
+	66: Abort
+B7:
+	67: Ret
+}
+
+test_u16() {
+L0:	%#3: String
+L1:	%#4: String
+L2:	%#5: vector<u8>
+L3:	bytes#1#1: BCS
+L4:	case#1#1: u16
+L5:	cases#1#1: vector<u16>
+L6:	max#1#4: u16
+L7:	t1#1#6: u16
+L8:	t1#1#9: &u16
+L9:	t2#1#6: u16
+L10:	t2#1#9: &u16
+B0:
+	0: LdConst[1](u16: 65535)
+	1: StLoc[6](max#1#4: u16)
+	2: LdU16(0)
+	3: LdU16(1)
+	4: CopyLoc[6](max#1#4: u16)
+	5: LdU16(2)
+	6: Div
+	7: CopyLoc[6](max#1#4: u16)
+	8: LdU16(1)
+	9: Sub
+	10: MoveLoc[6](max#1#4: u16)
+	11: VecPack(17, 5)
+	12: StLoc[5](cases#1#1: vector<u16>)
+B1:
+	13: ImmBorrowLoc[5](cases#1#1: vector<u16>)
+	14: Call vector::is_empty<u16>(&vector<u16>): bool
+	15: Not
+	16: BrFalse(67)
+B2:
+	17: MutBorrowLoc[5](cases#1#1: vector<u16>)
+	18: VecPopBack(17)
+	19: StLoc[4](case#1#1: u16)
+	20: ImmBorrowLoc[4](case#1#1: u16)
+	21: Call bcs::to_bytes<u16>(&u16): vector<u8>
+	22: Call bcs::new(vector<u8>): BCS
+	23: StLoc[3](bytes#1#1: BCS)
+	24: MutBorrowLoc[3](bytes#1#1: BCS)
+	25: Call bcs::peel_u16(&mut BCS): u16
+	26: StLoc[7](t1#1#6: u16)
+	27: MoveLoc[4](case#1#1: u16)
+	28: StLoc[9](t2#1#6: u16)
+	29: ImmBorrowLoc[7](t1#1#6: u16)
+	30: StLoc[8](t1#1#9: &u16)
+	31: ImmBorrowLoc[9](t2#1#6: u16)
+	32: StLoc[10](t2#1#9: &u16)
+	33: CopyLoc[8](t1#1#9: &u16)
+	34: CopyLoc[10](t2#1#9: &u16)
+	35: Eq
+	36: Not
+	37: BrFalse(54)
+B3:
+	38: LdConst[8](vector<u8>: "Ass..)
+	39: Call string::utf8(vector<u8>): String
+	40: StLoc[0](%#3: String)
+	41: ImmBorrowLoc[0](%#3: String)
+	42: Call debug::print<String>(&String)
+	43: MoveLoc[8](t1#1#9: &u16)
+	44: Call debug::print<u16>(&u16)
+	45: LdConst[9](vector<u8>: "!="..)
+	46: Call string::utf8(vector<u8>): String
+	47: StLoc[1](%#4: String)
+	48: ImmBorrowLoc[1](%#4: String)
+	49: Call debug::print<String>(&String)
+	50: MoveLoc[10](t2#1#9: &u16)
+	51: Call debug::print<u16>(&u16)
+	52: LdU64(13906834500760895487)
+	53: Abort
+B4:
+	54: MoveLoc[10](t2#1#9: &u16)
+	55: Pop
+	56: MoveLoc[8](t1#1#9: &u16)
+	57: Pop
+	58: MoveLoc[3](bytes#1#1: BCS)
+	59: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	60: StLoc[2](%#5: vector<u8>)
+	61: ImmBorrowLoc[2](%#5: vector<u8>)
+	62: Call vector::is_empty<u8>(&vector<u8>): bool
+	63: BrFalse(65)
+B5:
+	64: Branch(13)
+B6:
+	65: LdU64(13906834500760895487)
+	66: Abort
+B7:
+	67: Ret
+}
+
+test_u32() {
+L0:	%#3: String
+L1:	%#4: String
+L2:	%#5: vector<u8>
+L3:	bytes#1#1: BCS
+L4:	case#1#1: u32
+L5:	cases#1#1: vector<u32>
+L6:	max#1#4: u32
+L7:	t1#1#6: u32
+L8:	t1#1#9: &u32
+L9:	t2#1#6: u32
+L10:	t2#1#9: &u32
+B0:
+	0: LdConst[2](u32: 4294..)
+	1: StLoc[6](max#1#4: u32)
+	2: LdU32(0)
+	3: LdU32(1)
+	4: CopyLoc[6](max#1#4: u32)
+	5: LdU32(2)
+	6: Div
+	7: CopyLoc[6](max#1#4: u32)
+	8: LdU32(1)
+	9: Sub
+	10: MoveLoc[6](max#1#4: u32)
+	11: VecPack(19, 5)
+	12: StLoc[5](cases#1#1: vector<u32>)
+B1:
+	13: ImmBorrowLoc[5](cases#1#1: vector<u32>)
+	14: Call vector::is_empty<u32>(&vector<u32>): bool
+	15: Not
+	16: BrFalse(67)
+B2:
+	17: MutBorrowLoc[5](cases#1#1: vector<u32>)
+	18: VecPopBack(19)
+	19: StLoc[4](case#1#1: u32)
+	20: ImmBorrowLoc[4](case#1#1: u32)
+	21: Call bcs::to_bytes<u32>(&u32): vector<u8>
+	22: Call bcs::new(vector<u8>): BCS
+	23: StLoc[3](bytes#1#1: BCS)
+	24: MutBorrowLoc[3](bytes#1#1: BCS)
+	25: Call bcs::peel_u32(&mut BCS): u32
+	26: StLoc[7](t1#1#6: u32)
+	27: MoveLoc[4](case#1#1: u32)
+	28: StLoc[9](t2#1#6: u32)
+	29: ImmBorrowLoc[7](t1#1#6: u32)
+	30: StLoc[8](t1#1#9: &u32)
+	31: ImmBorrowLoc[9](t2#1#6: u32)
+	32: StLoc[10](t2#1#9: &u32)
+	33: CopyLoc[8](t1#1#9: &u32)
+	34: CopyLoc[10](t2#1#9: &u32)
+	35: Eq
+	36: Not
+	37: BrFalse(54)
+B3:
+	38: LdConst[8](vector<u8>: "Ass..)
+	39: Call string::utf8(vector<u8>): String
+	40: StLoc[0](%#3: String)
+	41: ImmBorrowLoc[0](%#3: String)
+	42: Call debug::print<String>(&String)
+	43: MoveLoc[8](t1#1#9: &u32)
+	44: Call debug::print<u32>(&u32)
+	45: LdConst[9](vector<u8>: "!="..)
+	46: Call string::utf8(vector<u8>): String
+	47: StLoc[1](%#4: String)
+	48: ImmBorrowLoc[1](%#4: String)
+	49: Call debug::print<String>(&String)
+	50: MoveLoc[10](t2#1#9: &u32)
+	51: Call debug::print<u32>(&u32)
+	52: LdU64(13906834522235731967)
+	53: Abort
+B4:
+	54: MoveLoc[10](t2#1#9: &u32)
+	55: Pop
+	56: MoveLoc[8](t1#1#9: &u32)
+	57: Pop
+	58: MoveLoc[3](bytes#1#1: BCS)
+	59: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	60: StLoc[2](%#5: vector<u8>)
+	61: ImmBorrowLoc[2](%#5: vector<u8>)
+	62: Call vector::is_empty<u8>(&vector<u8>): bool
+	63: BrFalse(65)
+B5:
+	64: Branch(13)
+B6:
+	65: LdU64(13906834522235731967)
+	66: Abort
+B7:
+	67: Ret
+}
+
+test_u64() {
+L0:	%#3: String
+L1:	%#4: String
+L2:	%#5: vector<u8>
+L3:	bytes#1#1: BCS
+L4:	case#1#1: u64
+L5:	cases#1#1: vector<u64>
+L6:	max#1#4: u64
+L7:	t1#1#6: u64
+L8:	t1#1#9: &u64
+L9:	t2#1#6: u64
+L10:	t2#1#9: &u64
+B0:
+	0: LdConst[3](u64: 1844..)
+	1: StLoc[6](max#1#4: u64)
+	2: LdU64(0)
+	3: LdU64(1)
+	4: CopyLoc[6](max#1#4: u64)
+	5: LdU64(2)
+	6: Div
+	7: CopyLoc[6](max#1#4: u64)
+	8: LdU64(1)
+	9: Sub
+	10: MoveLoc[6](max#1#4: u64)
+	11: VecPack(7, 5)
+	12: StLoc[5](cases#1#1: vector<u64>)
+B1:
+	13: ImmBorrowLoc[5](cases#1#1: vector<u64>)
+	14: Call vector::is_empty<u64>(&vector<u64>): bool
+	15: Not
+	16: BrFalse(67)
+B2:
+	17: MutBorrowLoc[5](cases#1#1: vector<u64>)
+	18: VecPopBack(7)
+	19: StLoc[4](case#1#1: u64)
+	20: ImmBorrowLoc[4](case#1#1: u64)
+	21: Call bcs::to_bytes<u64>(&u64): vector<u8>
+	22: Call bcs::new(vector<u8>): BCS
+	23: StLoc[3](bytes#1#1: BCS)
+	24: MutBorrowLoc[3](bytes#1#1: BCS)
+	25: Call bcs::peel_u64(&mut BCS): u64
+	26: StLoc[7](t1#1#6: u64)
+	27: MoveLoc[4](case#1#1: u64)
+	28: StLoc[9](t2#1#6: u64)
+	29: ImmBorrowLoc[7](t1#1#6: u64)
+	30: StLoc[8](t1#1#9: &u64)
+	31: ImmBorrowLoc[9](t2#1#6: u64)
+	32: StLoc[10](t2#1#9: &u64)
+	33: CopyLoc[8](t1#1#9: &u64)
+	34: CopyLoc[10](t2#1#9: &u64)
+	35: Eq
+	36: Not
+	37: BrFalse(54)
+B3:
+	38: LdConst[8](vector<u8>: "Ass..)
+	39: Call string::utf8(vector<u8>): String
+	40: StLoc[0](%#3: String)
+	41: ImmBorrowLoc[0](%#3: String)
+	42: Call debug::print<String>(&String)
+	43: MoveLoc[8](t1#1#9: &u64)
+	44: Call debug::print<u64>(&u64)
+	45: LdConst[9](vector<u8>: "!="..)
+	46: Call string::utf8(vector<u8>): String
+	47: StLoc[1](%#4: String)
+	48: ImmBorrowLoc[1](%#4: String)
+	49: Call debug::print<String>(&String)
+	50: MoveLoc[10](t2#1#9: &u64)
+	51: Call debug::print<u64>(&u64)
+	52: LdU64(13906834543710568447)
+	53: Abort
+B4:
+	54: MoveLoc[10](t2#1#9: &u64)
+	55: Pop
+	56: MoveLoc[8](t1#1#9: &u64)
+	57: Pop
+	58: MoveLoc[3](bytes#1#1: BCS)
+	59: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	60: StLoc[2](%#5: vector<u8>)
+	61: ImmBorrowLoc[2](%#5: vector<u8>)
+	62: Call vector::is_empty<u8>(&vector<u8>): bool
+	63: BrFalse(65)
+B5:
+	64: Branch(13)
+B6:
+	65: LdU64(13906834543710568447)
+	66: Abort
+B7:
+	67: Ret
+}
+
+test_u128() {
+L0:	%#3: String
+L1:	%#4: String
+L2:	%#5: vector<u8>
+L3:	bytes#1#1: BCS
+L4:	case#1#1: u128
+L5:	cases#1#1: vector<u128>
+L6:	max#1#4: u128
+L7:	t1#1#6: u128
+L8:	t1#1#9: &u128
+L9:	t2#1#6: u128
+L10:	t2#1#9: &u128
+B0:
+	0: LdConst[4](u128: 3402..)
+	1: StLoc[6](max#1#4: u128)
+	2: LdU128(0)
+	3: LdU128(1)
+	4: CopyLoc[6](max#1#4: u128)
+	5: LdU128(2)
+	6: Div
+	7: CopyLoc[6](max#1#4: u128)
+	8: LdU128(1)
+	9: Sub
+	10: MoveLoc[6](max#1#4: u128)
+	11: VecPack(22, 5)
+	12: StLoc[5](cases#1#1: vector<u128>)
+B1:
+	13: ImmBorrowLoc[5](cases#1#1: vector<u128>)
+	14: Call vector::is_empty<u128>(&vector<u128>): bool
+	15: Not
+	16: BrFalse(67)
+B2:
+	17: MutBorrowLoc[5](cases#1#1: vector<u128>)
+	18: VecPopBack(22)
+	19: StLoc[4](case#1#1: u128)
+	20: ImmBorrowLoc[4](case#1#1: u128)
+	21: Call bcs::to_bytes<u128>(&u128): vector<u8>
+	22: Call bcs::new(vector<u8>): BCS
+	23: StLoc[3](bytes#1#1: BCS)
+	24: MutBorrowLoc[3](bytes#1#1: BCS)
+	25: Call bcs::peel_u128(&mut BCS): u128
+	26: StLoc[7](t1#1#6: u128)
+	27: MoveLoc[4](case#1#1: u128)
+	28: StLoc[9](t2#1#6: u128)
+	29: ImmBorrowLoc[7](t1#1#6: u128)
+	30: StLoc[8](t1#1#9: &u128)
+	31: ImmBorrowLoc[9](t2#1#6: u128)
+	32: StLoc[10](t2#1#9: &u128)
+	33: CopyLoc[8](t1#1#9: &u128)
+	34: CopyLoc[10](t2#1#9: &u128)
+	35: Eq
+	36: Not
+	37: BrFalse(54)
+B3:
+	38: LdConst[8](vector<u8>: "Ass..)
+	39: Call string::utf8(vector<u8>): String
+	40: StLoc[0](%#3: String)
+	41: ImmBorrowLoc[0](%#3: String)
+	42: Call debug::print<String>(&String)
+	43: MoveLoc[8](t1#1#9: &u128)
+	44: Call debug::print<u128>(&u128)
+	45: LdConst[9](vector<u8>: "!="..)
+	46: Call string::utf8(vector<u8>): String
+	47: StLoc[1](%#4: String)
+	48: ImmBorrowLoc[1](%#4: String)
+	49: Call debug::print<String>(&String)
+	50: MoveLoc[10](t2#1#9: &u128)
+	51: Call debug::print<u128>(&u128)
+	52: LdU64(13906834565185404927)
+	53: Abort
+B4:
+	54: MoveLoc[10](t2#1#9: &u128)
+	55: Pop
+	56: MoveLoc[8](t1#1#9: &u128)
+	57: Pop
+	58: MoveLoc[3](bytes#1#1: BCS)
+	59: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	60: StLoc[2](%#5: vector<u8>)
+	61: ImmBorrowLoc[2](%#5: vector<u8>)
+	62: Call vector::is_empty<u8>(&vector<u8>): bool
+	63: BrFalse(65)
+B5:
+	64: Branch(13)
+B6:
+	65: LdU64(13906834565185404927)
+	66: Abort
+B7:
+	67: Ret
+}
+
+test_u256() {
+L0:	%#3: String
+L1:	%#4: String
+L2:	%#5: vector<u8>
+L3:	bytes#1#1: BCS
+L4:	case#1#1: u256
+L5:	cases#1#1: vector<u256>
+L6:	max#1#4: u256
+L7:	t1#1#6: u256
+L8:	t1#1#9: &u256
+L9:	t2#1#6: u256
+L10:	t2#1#9: &u256
+B0:
+	0: LdConst[5](u256: 1157..)
+	1: StLoc[6](max#1#4: u256)
+	2: LdU256(0)
+	3: LdU256(1)
+	4: CopyLoc[6](max#1#4: u256)
+	5: LdU256(2)
+	6: Div
+	7: CopyLoc[6](max#1#4: u256)
+	8: LdU256(1)
+	9: Sub
+	10: MoveLoc[6](max#1#4: u256)
+	11: VecPack(24, 5)
+	12: StLoc[5](cases#1#1: vector<u256>)
+B1:
+	13: ImmBorrowLoc[5](cases#1#1: vector<u256>)
+	14: Call vector::is_empty<u256>(&vector<u256>): bool
+	15: Not
+	16: BrFalse(67)
+B2:
+	17: MutBorrowLoc[5](cases#1#1: vector<u256>)
+	18: VecPopBack(24)
+	19: StLoc[4](case#1#1: u256)
+	20: ImmBorrowLoc[4](case#1#1: u256)
+	21: Call bcs::to_bytes<u256>(&u256): vector<u8>
+	22: Call bcs::new(vector<u8>): BCS
+	23: StLoc[3](bytes#1#1: BCS)
+	24: MutBorrowLoc[3](bytes#1#1: BCS)
+	25: Call bcs::peel_u256(&mut BCS): u256
+	26: StLoc[7](t1#1#6: u256)
+	27: MoveLoc[4](case#1#1: u256)
+	28: StLoc[9](t2#1#6: u256)
+	29: ImmBorrowLoc[7](t1#1#6: u256)
+	30: StLoc[8](t1#1#9: &u256)
+	31: ImmBorrowLoc[9](t2#1#6: u256)
+	32: StLoc[10](t2#1#9: &u256)
+	33: CopyLoc[8](t1#1#9: &u256)
+	34: CopyLoc[10](t2#1#9: &u256)
+	35: Eq
+	36: Not
+	37: BrFalse(54)
+B3:
+	38: LdConst[8](vector<u8>: "Ass..)
+	39: Call string::utf8(vector<u8>): String
+	40: StLoc[0](%#3: String)
+	41: ImmBorrowLoc[0](%#3: String)
+	42: Call debug::print<String>(&String)
+	43: MoveLoc[8](t1#1#9: &u256)
+	44: Call debug::print<u256>(&u256)
+	45: LdConst[9](vector<u8>: "!="..)
+	46: Call string::utf8(vector<u8>): String
+	47: StLoc[1](%#4: String)
+	48: ImmBorrowLoc[1](%#4: String)
+	49: Call debug::print<String>(&String)
+	50: MoveLoc[10](t2#1#9: &u256)
+	51: Call debug::print<u256>(&u256)
+	52: LdU64(13906834586660241407)
+	53: Abort
+B4:
+	54: MoveLoc[10](t2#1#9: &u256)
+	55: Pop
+	56: MoveLoc[8](t1#1#9: &u256)
+	57: Pop
+	58: MoveLoc[3](bytes#1#1: BCS)
+	59: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	60: StLoc[2](%#5: vector<u8>)
+	61: ImmBorrowLoc[2](%#5: vector<u8>)
+	62: Call vector::is_empty<u8>(&vector<u8>): bool
+	63: BrFalse(65)
+B5:
+	64: Branch(13)
+B6:
+	65: LdU64(13906834586660241407)
+	66: Abort
+B7:
+	67: Ret
+}
+
+test_address() {
+L0:	%#2: String
+L1:	%#3: String
+L2:	%#4: vector<u8>
+L3:	bytes#1#1: BCS
+L4:	case#1#1: address
+L5:	cases#1#1: vector<address>
+L6:	t1#1#4: address
+L7:	t1#1#7: &address
+L8:	t2#1#4: address
+L9:	t2#1#7: &address
+B0:
+	0: LdConst[10](vector<address>: 0300..)
+	1: StLoc[5](cases#1#1: vector<address>)
+B1:
+	2: ImmBorrowLoc[5](cases#1#1: vector<address>)
+	3: Call vector::is_empty<address>(&vector<address>): bool
+	4: Not
+	5: BrFalse(57)
+B2:
+	6: MutBorrowLoc[5](cases#1#1: vector<address>)
+	7: VecPopBack(26)
+	8: StLoc[4](case#1#1: address)
+	9: ImmBorrowLoc[4](case#1#1: address)
+	10: Call bcs::to_bytes<address>(&address): vector<u8>
+	11: Call bcs::new(vector<u8>): BCS
+	12: StLoc[3](bytes#1#1: BCS)
+	13: MutBorrowLoc[3](bytes#1#1: BCS)
+	14: Call bcs::peel_address(&mut BCS): address
+	15: StLoc[6](t1#1#4: address)
+	16: MoveLoc[4](case#1#1: address)
+	17: StLoc[8](t2#1#4: address)
+	18: ImmBorrowLoc[6](t1#1#4: address)
+	19: StLoc[7](t1#1#7: &address)
+	20: ImmBorrowLoc[8](t2#1#4: address)
+	21: StLoc[9](t2#1#7: &address)
+	22: CopyLoc[7](t1#1#7: &address)
+	23: CopyLoc[9](t2#1#7: &address)
+	24: Eq
+	25: Not
+	26: BrFalse(44)
+B3:
+	27: Branch(28)
+B4:
+	28: LdConst[8](vector<u8>: "Ass..)
+	29: Call string::utf8(vector<u8>): String
+	30: StLoc[0](%#2: String)
+	31: ImmBorrowLoc[0](%#2: String)
+	32: Call debug::print<String>(&String)
+	33: MoveLoc[7](t1#1#7: &address)
+	34: Call debug::print<address>(&address)
+	35: LdConst[9](vector<u8>: "!="..)
+	36: Call string::utf8(vector<u8>): String
+	37: StLoc[1](%#3: String)
+	38: ImmBorrowLoc[1](%#3: String)
+	39: Call debug::print<String>(&String)
+	40: MoveLoc[9](t2#1#7: &address)
+	41: Call debug::print<address>(&address)
+	42: LdU64(13906834608135077887)
+	43: Abort
+B5:
+	44: MoveLoc[9](t2#1#7: &address)
+	45: Pop
+	46: MoveLoc[7](t1#1#7: &address)
+	47: Pop
+	48: MoveLoc[3](bytes#1#1: BCS)
+	49: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	50: StLoc[2](%#4: vector<u8>)
+	51: ImmBorrowLoc[2](%#4: vector<u8>)
+	52: Call vector::is_empty<u8>(&vector<u8>): bool
+	53: BrFalse(55)
+B6:
+	54: Branch(2)
+B7:
+	55: LdU64(13906834608135077887)
+	56: Abort
+B8:
+	57: Ret
+}
+
+test_vec() {
+L0:	$stop#0#121: u64
+L1:	$stop#0#154: u64
+L2:	$stop#0#187: u64
+L3:	$stop#0#22: u64
+L4:	$stop#0#220: u64
+L5:	$stop#0#253: u64
+L6:	$stop#0#55: u64
+L7:	$stop#0#88: u64
+L8:	%#10: &mut vector<bool>
+L9:	%#101: &mut vector<address>
+L10:	%#102: String
+L11:	%#103: String
+L12:	%#104: vector<u8>
+L13:	%#11: String
+L14:	%#12: String
+L15:	%#13: vector<u8>
+L16:	%#15: String
+L17:	%#16: String
+L18:	%#17: vector<u8>
+L19:	%#2: String
+L20:	%#21: u8
+L21:	%#23: &mut vector<u8>
+L22:	%#24: String
+L23:	%#25: String
+L24:	%#26: vector<u8>
+L25:	%#28: String
+L26:	%#29: String
+L27:	%#3: String
+L28:	%#30: vector<u8>
+L29:	%#34: u16
+L30:	%#36: &mut vector<u16>
+L31:	%#37: String
+L32:	%#38: String
+L33:	%#39: vector<u8>
+L34:	%#4: vector<u8>
+L35:	%#41: String
+L36:	%#42: String
+L37:	%#43: vector<u8>
+L38:	%#47: u32
+L39:	%#49: &mut vector<u32>
+L40:	%#50: String
+L41:	%#51: String
+L42:	%#52: vector<u8>
+L43:	%#54: String
+L44:	%#55: String
+L45:	%#56: vector<u8>
+L46:	%#60: u64
+L47:	%#62: &mut vector<u64>
+L48:	%#63: String
+L49:	%#64: String
+L50:	%#65: vector<u8>
+L51:	%#67: String
+L52:	%#68: String
+L53:	%#69: vector<u8>
+L54:	%#73: u128
+L55:	%#75: &mut vector<u128>
+L56:	%#76: String
+L57:	%#77: String
+L58:	%#78: vector<u8>
+L59:	%#8: bool
+L60:	%#80: String
+L61:	%#81: String
+L62:	%#82: vector<u8>
+L63:	%#86: u256
+L64:	%#88: &mut vector<u256>
+L65:	%#89: String
+L66:	%#90: String
+L67:	%#91: vector<u8>
+L68:	%#93: String
+L69:	%#94: String
+L70:	%#95: vector<u8>
+L71:	%#99: address
+L72:	address_cases#1#0: vector<vector<address>>
+L73:	bcs#1#115: &mut BCS
+L74:	bcs#1#148: &mut BCS
+L75:	bcs#1#16: &mut BCS
+L76:	bcs#1#181: &mut BCS
+L77:	bcs#1#214: &mut BCS
+L78:	bcs#1#247: &mut BCS
+L79:	bcs#1#49: &mut BCS
+L80:	bcs#1#82: &mut BCS
+L81:	bool_cases#1#0: vector<vector<bool>>
+L82:	bytes#1#1: BCS
+L83:	bytes#1#10: BCS
+L84:	bytes#1#100: BCS
+L85:	bytes#1#109: BCS
+L86:	bytes#1#133: BCS
+L87:	bytes#1#142: BCS
+L88:	bytes#1#166: BCS
+L89:	bytes#1#175: BCS
+L90:	bytes#1#199: BCS
+L91:	bytes#1#208: BCS
+L92:	bytes#1#232: BCS
+L93:	bytes#1#241: BCS
+L94:	bytes#1#34: BCS
+L95:	bytes#1#43: BCS
+L96:	bytes#1#67: BCS
+L97:	bytes#1#76: BCS
+L98:	case#1#1: vector<bool>
+L99:	case#1#10: vector<bool>
+L100:	case#1#100: vector<u32>
+L101:	case#1#109: vector<u32>
+L102:	case#1#133: vector<u64>
+L103:	case#1#142: vector<u64>
+L104:	case#1#166: vector<u128>
+L105:	case#1#175: vector<u128>
+L106:	case#1#199: vector<u256>
+L107:	case#1#208: vector<u256>
+L108:	case#1#232: vector<address>
+L109:	case#1#241: vector<address>
+L110:	case#1#34: vector<u8>
+L111:	case#1#43: vector<u8>
+L112:	case#1#67: vector<u16>
+L113:	case#1#76: vector<u16>
+L114:	cases#1#1: vector<vector<bool>>
+L115:	cases#1#10: vector<vector<bool>>
+L116:	cases#1#100: vector<vector<u32>>
+L117:	cases#1#109: vector<vector<u32>>
+L118:	cases#1#133: vector<vector<u64>>
+L119:	cases#1#142: vector<vector<u64>>
+L120:	cases#1#166: vector<vector<u128>>
+L121:	cases#1#175: vector<vector<u128>>
+L122:	cases#1#199: vector<vector<u256>>
+L123:	cases#1#208: vector<vector<u256>>
+L124:	cases#1#232: vector<vector<address>>
+L125:	cases#1#241: vector<vector<address>>
+L126:	cases#1#34: vector<vector<u8>>
+L127:	cases#1#43: vector<vector<u8>>
+L128:	cases#1#67: vector<vector<u16>>
+L129:	cases#1#76: vector<vector<u16>>
+L130:	i#1#124: u64
+L131:	i#1#127: u64
+L132:	i#1#157: u64
+L133:	i#1#160: u64
+L134:	i#1#190: u64
+L135:	i#1#193: u64
+L136:	i#1#223: u64
+L137:	i#1#226: u64
+L138:	i#1#25: u64
+L139:	i#1#256: u64
+L140:	i#1#259: u64
+L141:	i#1#28: u64
+L142:	i#1#58: u64
+L143:	i#1#61: u64
+L144:	i#1#91: u64
+L145:	i#1#94: u64
+L146:	stop#1#124: u64
+L147:	stop#1#157: u64
+L148:	stop#1#190: u64
+L149:	stop#1#223: u64
+L150:	stop#1#25: u64
+L151:	stop#1#256: u64
+L152:	stop#1#58: u64
+L153:	stop#1#91: u64
+L154:	t1#1#103: vector<u32>
+L155:	t1#1#106: &vector<u32>
+L156:	t1#1#112: vector<u32>
+L157:	t1#1#13: vector<bool>
+L158:	t1#1#130: &vector<u32>
+L159:	t1#1#136: vector<u64>
+L160:	t1#1#139: &vector<u64>
+L161:	t1#1#145: vector<u64>
+L162:	t1#1#163: &vector<u64>
+L163:	t1#1#169: vector<u128>
+L164:	t1#1#172: &vector<u128>
+L165:	t1#1#178: vector<u128>
+L166:	t1#1#196: &vector<u128>
+L167:	t1#1#202: vector<u256>
+L168:	t1#1#205: &vector<u256>
+L169:	t1#1#211: vector<u256>
+L170:	t1#1#229: &vector<u256>
+L171:	t1#1#235: vector<address>
+L172:	t1#1#238: &vector<address>
+L173:	t1#1#244: vector<address>
+L174:	t1#1#262: &vector<address>
+L175:	t1#1#31: &vector<bool>
+L176:	t1#1#37: vector<u8>
+L177:	t1#1#4: vector<bool>
+L178:	t1#1#40: &vector<u8>
+L179:	t1#1#46: vector<u8>
+L180:	t1#1#64: &vector<u8>
+L181:	t1#1#7: &vector<bool>
+L182:	t1#1#70: vector<u16>
+L183:	t1#1#73: &vector<u16>
+L184:	t1#1#79: vector<u16>
+L185:	t1#1#97: &vector<u16>
+L186:	t2#1#103: vector<u32>
+L187:	t2#1#106: &vector<u32>
+L188:	t2#1#112: vector<u32>
+L189:	t2#1#13: vector<bool>
+L190:	t2#1#130: &vector<u32>
+L191:	t2#1#136: vector<u64>
+L192:	t2#1#139: &vector<u64>
+L193:	t2#1#145: vector<u64>
+L194:	t2#1#163: &vector<u64>
+L195:	t2#1#169: vector<u128>
+L196:	t2#1#172: &vector<u128>
+L197:	t2#1#178: vector<u128>
+L198:	t2#1#196: &vector<u128>
+L199:	t2#1#202: vector<u256>
+L200:	t2#1#205: &vector<u256>
+L201:	t2#1#211: vector<u256>
+L202:	t2#1#229: &vector<u256>
+L203:	t2#1#235: vector<address>
+L204:	t2#1#238: &vector<address>
+L205:	t2#1#244: vector<address>
+L206:	t2#1#262: &vector<address>
+L207:	t2#1#31: &vector<bool>
+L208:	t2#1#37: vector<u8>
+L209:	t2#1#4: vector<bool>
+L210:	t2#1#40: &vector<u8>
+L211:	t2#1#46: vector<u8>
+L212:	t2#1#64: &vector<u8>
+L213:	t2#1#7: &vector<bool>
+L214:	t2#1#70: vector<u16>
+L215:	t2#1#73: &vector<u16>
+L216:	t2#1#79: vector<u16>
+L217:	t2#1#97: &vector<u16>
+L218:	u128_cases#1#0: vector<vector<u128>>
+L219:	u16_cases#1#0: vector<vector<u16>>
+L220:	u256_cases#1#0: vector<vector<u256>>
+L221:	u32_cases#1#0: vector<vector<u32>>
+L222:	u64_cases#1#0: vector<vector<u64>>
+L223:	u8_cases#1#0: vector<vector<u8>>
+L224:	v#1#117: vector<u32>
+L225:	v#1#150: vector<u64>
+L226:	v#1#18: vector<bool>
+L227:	v#1#183: vector<u128>
+L228:	v#1#216: vector<u256>
+L229:	v#1#249: vector<address>
+L230:	v#1#51: vector<u8>
+L231:	v#1#84: vector<u16>
+B0:
+	0: LdConst[11](vector<vector<bool>>: 0300..)
+	1: StLoc[81](bool_cases#1#0: vector<vector<bool>>)
+	2: CopyLoc[81](bool_cases#1#0: vector<vector<bool>>)
+	3: StLoc[114](cases#1#1: vector<vector<bool>>)
+B1:
+	4: ImmBorrowLoc[114](cases#1#1: vector<vector<bool>>)
+	5: Call vector::is_empty<vector<bool>>(&vector<vector<bool>>): bool
+	6: Not
+	7: BrFalse(59)
+B2:
+	8: MutBorrowLoc[114](cases#1#1: vector<vector<bool>>)
+	9: VecPopBack(28)
+	10: StLoc[98](case#1#1: vector<bool>)
+	11: ImmBorrowLoc[98](case#1#1: vector<bool>)
+	12: Call bcs::to_bytes<vector<bool>>(&vector<bool>): vector<u8>
+	13: Call bcs::new(vector<u8>): BCS
+	14: StLoc[82](bytes#1#1: BCS)
+	15: MutBorrowLoc[82](bytes#1#1: BCS)
+	16: Call bcs::peel_vec_bool(&mut BCS): vector<bool>
+	17: StLoc[177](t1#1#4: vector<bool>)
+	18: MoveLoc[98](case#1#1: vector<bool>)
+	19: StLoc[209](t2#1#4: vector<bool>)
+	20: ImmBorrowLoc[177](t1#1#4: vector<bool>)
+	21: StLoc[181](t1#1#7: &vector<bool>)
+	22: ImmBorrowLoc[209](t2#1#4: vector<bool>)
+	23: StLoc[213](t2#1#7: &vector<bool>)
+	24: CopyLoc[181](t1#1#7: &vector<bool>)
+	25: CopyLoc[213](t2#1#7: &vector<bool>)
+	26: Eq
+	27: Not
+	28: BrFalse(46)
+B3:
+	29: Branch(30)
+B4:
+	30: LdConst[8](vector<u8>: "Ass..)
+	31: Call string::utf8(vector<u8>): String
+	32: StLoc[19](%#2: String)
+	33: ImmBorrowLoc[19](%#2: String)
+	34: Call debug::print<String>(&String)
+	35: MoveLoc[181](t1#1#7: &vector<bool>)
+	36: Call debug::print<vector<bool>>(&vector<bool>)
+	37: LdConst[9](vector<u8>: "!="..)
+	38: Call string::utf8(vector<u8>): String
+	39: StLoc[27](%#3: String)
+	40: ImmBorrowLoc[27](%#3: String)
+	41: Call debug::print<String>(&String)
+	42: MoveLoc[213](t2#1#7: &vector<bool>)
+	43: Call debug::print<vector<bool>>(&vector<bool>)
+	44: LdU64(13906834668264620031)
+	45: Abort
+B5:
+	46: MoveLoc[213](t2#1#7: &vector<bool>)
+	47: Pop
+	48: MoveLoc[181](t1#1#7: &vector<bool>)
+	49: Pop
+	50: MoveLoc[82](bytes#1#1: BCS)
+	51: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	52: StLoc[34](%#4: vector<u8>)
+	53: ImmBorrowLoc[34](%#4: vector<u8>)
+	54: Call vector::is_empty<u8>(&vector<u8>): bool
+	55: BrFalse(57)
+B6:
+	56: Branch(4)
+B7:
+	57: LdU64(13906834668264620031)
+	58: Abort
+B8:
+	59: MoveLoc[81](bool_cases#1#0: vector<vector<bool>>)
+	60: StLoc[115](cases#1#10: vector<vector<bool>>)
+B9:
+	61: ImmBorrowLoc[115](cases#1#10: vector<vector<bool>>)
+	62: Call vector::is_empty<vector<bool>>(&vector<vector<bool>>): bool
+	63: Not
+	64: BrFalse(148)
+B10:
+	65: MutBorrowLoc[115](cases#1#10: vector<vector<bool>>)
+	66: VecPopBack(28)
+	67: StLoc[99](case#1#10: vector<bool>)
+	68: ImmBorrowLoc[99](case#1#10: vector<bool>)
+	69: Call bcs::to_bytes<vector<bool>>(&vector<bool>): vector<u8>
+	70: Call bcs::new(vector<u8>): BCS
+	71: StLoc[83](bytes#1#10: BCS)
+	72: MutBorrowLoc[83](bytes#1#10: BCS)
+	73: StLoc[75](bcs#1#16: &mut BCS)
+	74: LdConst[12](vector<bool>: 00)
+	75: StLoc[226](v#1#18: vector<bool>)
+	76: CopyLoc[75](bcs#1#16: &mut BCS)
+	77: Call bcs::peel_vec_length(&mut BCS): u64
+	78: StLoc[3]($stop#0#22: u64)
+	79: LdU64(0)
+	80: StLoc[138](i#1#25: u64)
+	81: MoveLoc[3]($stop#0#22: u64)
+	82: StLoc[150](stop#1#25: u64)
+B11:
+	83: CopyLoc[138](i#1#25: u64)
+	84: CopyLoc[150](stop#1#25: u64)
+	85: Lt
+	86: BrFalse(104)
+B12:
+	87: CopyLoc[138](i#1#25: u64)
+	88: StLoc[141](i#1#28: u64)
+	89: MutBorrowLoc[226](v#1#18: vector<bool>)
+	90: StLoc[8](%#10: &mut vector<bool>)
+	91: MoveLoc[141](i#1#28: u64)
+	92: Pop
+	93: CopyLoc[75](bcs#1#16: &mut BCS)
+	94: Call bcs::peel_bool(&mut BCS): bool
+	95: StLoc[59](%#8: bool)
+	96: MoveLoc[8](%#10: &mut vector<bool>)
+	97: MoveLoc[59](%#8: bool)
+	98: VecPushBack(11)
+	99: MoveLoc[138](i#1#25: u64)
+	100: LdU64(1)
+	101: Add
+	102: StLoc[138](i#1#25: u64)
+	103: Branch(83)
+B13:
+	104: MoveLoc[75](bcs#1#16: &mut BCS)
+	105: Pop
+	106: MoveLoc[226](v#1#18: vector<bool>)
+	107: StLoc[157](t1#1#13: vector<bool>)
+	108: MoveLoc[99](case#1#10: vector<bool>)
+	109: StLoc[189](t2#1#13: vector<bool>)
+	110: ImmBorrowLoc[157](t1#1#13: vector<bool>)
+	111: StLoc[175](t1#1#31: &vector<bool>)
+	112: ImmBorrowLoc[189](t2#1#13: vector<bool>)
+	113: StLoc[207](t2#1#31: &vector<bool>)
+	114: CopyLoc[175](t1#1#31: &vector<bool>)
+	115: CopyLoc[207](t2#1#31: &vector<bool>)
+	116: Eq
+	117: Not
+	118: BrFalse(135)
+B14:
+	119: LdConst[8](vector<u8>: "Ass..)
+	120: Call string::utf8(vector<u8>): String
+	121: StLoc[13](%#11: String)
+	122: ImmBorrowLoc[13](%#11: String)
+	123: Call debug::print<String>(&String)
+	124: MoveLoc[175](t1#1#31: &vector<bool>)
+	125: Call debug::print<vector<bool>>(&vector<bool>)
+	126: LdConst[9](vector<u8>: "!="..)
+	127: Call string::utf8(vector<u8>): String
+	128: StLoc[14](%#12: String)
+	129: ImmBorrowLoc[14](%#12: String)
+	130: Call debug::print<String>(&String)
+	131: MoveLoc[207](t2#1#31: &vector<bool>)
+	132: Call debug::print<vector<bool>>(&vector<bool>)
+	133: LdU64(13906834672559587327)
+	134: Abort
+B15:
+	135: MoveLoc[207](t2#1#31: &vector<bool>)
+	136: Pop
+	137: MoveLoc[175](t1#1#31: &vector<bool>)
+	138: Pop
+	139: MoveLoc[83](bytes#1#10: BCS)
+	140: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	141: StLoc[15](%#13: vector<u8>)
+	142: ImmBorrowLoc[15](%#13: vector<u8>)
+	143: Call vector::is_empty<u8>(&vector<u8>): bool
+	144: BrFalse(146)
+B16:
+	145: Branch(61)
+B17:
+	146: LdU64(13906834672559587327)
+	147: Abort
+B18:
+	148: LdConst[13](vector<u8>: "" /..)
+	149: LdConst[14](vector<u8>: "" ..)
+	150: LdU8(0)
+	151: LdU8(2)
+	152: LdConst[0](u8: 255)
+	153: VecPack(9, 3)
+	154: VecPack(6, 3)
+	155: StLoc[223](u8_cases#1#0: vector<vector<u8>>)
+	156: CopyLoc[223](u8_cases#1#0: vector<vector<u8>>)
+	157: StLoc[126](cases#1#34: vector<vector<u8>>)
+B19:
+	158: ImmBorrowLoc[126](cases#1#34: vector<vector<u8>>)
+	159: Call vector::is_empty<vector<u8>>(&vector<vector<u8>>): bool
+	160: Not
+	161: BrFalse(212)
+B20:
+	162: MutBorrowLoc[126](cases#1#34: vector<vector<u8>>)
+	163: VecPopBack(6)
+	164: StLoc[110](case#1#34: vector<u8>)
+	165: ImmBorrowLoc[110](case#1#34: vector<u8>)
+	166: Call bcs::to_bytes<vector<u8>>(&vector<u8>): vector<u8>
+	167: Call bcs::new(vector<u8>): BCS
+	168: StLoc[94](bytes#1#34: BCS)
+	169: MutBorrowLoc[94](bytes#1#34: BCS)
+	170: Call bcs::peel_vec_u8(&mut BCS): vector<u8>
+	171: StLoc[176](t1#1#37: vector<u8>)
+	172: MoveLoc[110](case#1#34: vector<u8>)
+	173: StLoc[208](t2#1#37: vector<u8>)
+	174: ImmBorrowLoc[176](t1#1#37: vector<u8>)
+	175: StLoc[178](t1#1#40: &vector<u8>)
+	176: ImmBorrowLoc[208](t2#1#37: vector<u8>)
+	177: StLoc[210](t2#1#40: &vector<u8>)
+	178: CopyLoc[178](t1#1#40: &vector<u8>)
+	179: CopyLoc[210](t2#1#40: &vector<u8>)
+	180: Eq
+	181: Not
+	182: BrFalse(199)
+B21:
+	183: LdConst[8](vector<u8>: "Ass..)
+	184: Call string::utf8(vector<u8>): String
+	185: StLoc[16](%#15: String)
+	186: ImmBorrowLoc[16](%#15: String)
+	187: Call debug::print<String>(&String)
+	188: MoveLoc[178](t1#1#40: &vector<u8>)
+	189: Call debug::print<vector<u8>>(&vector<u8>)
+	190: LdConst[9](vector<u8>: "!="..)
+	191: Call string::utf8(vector<u8>): String
+	192: StLoc[17](%#16: String)
+	193: ImmBorrowLoc[17](%#16: String)
+	194: Call debug::print<String>(&String)
+	195: MoveLoc[210](t2#1#40: &vector<u8>)
+	196: Call debug::print<vector<u8>>(&vector<u8>)
+	197: LdU64(13906834685444489215)
+	198: Abort
+B22:
+	199: MoveLoc[210](t2#1#40: &vector<u8>)
+	200: Pop
+	201: MoveLoc[178](t1#1#40: &vector<u8>)
+	202: Pop
+	203: MoveLoc[94](bytes#1#34: BCS)
+	204: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	205: StLoc[18](%#17: vector<u8>)
+	206: ImmBorrowLoc[18](%#17: vector<u8>)
+	207: Call vector::is_empty<u8>(&vector<u8>): bool
+	208: BrFalse(210)
+B23:
+	209: Branch(158)
+B24:
+	210: LdU64(13906834685444489215)
+	211: Abort
+B25:
+	212: MoveLoc[223](u8_cases#1#0: vector<vector<u8>>)
+	213: StLoc[127](cases#1#43: vector<vector<u8>>)
+B26:
+	214: ImmBorrowLoc[127](cases#1#43: vector<vector<u8>>)
+	215: Call vector::is_empty<vector<u8>>(&vector<vector<u8>>): bool
+	216: Not
+	217: BrFalse(302)
+B27:
+	218: Branch(219)
+B28:
+	219: MutBorrowLoc[127](cases#1#43: vector<vector<u8>>)
+	220: VecPopBack(6)
+	221: StLoc[111](case#1#43: vector<u8>)
+	222: ImmBorrowLoc[111](case#1#43: vector<u8>)
+	223: Call bcs::to_bytes<vector<u8>>(&vector<u8>): vector<u8>
+	224: Call bcs::new(vector<u8>): BCS
+	225: StLoc[95](bytes#1#43: BCS)
+	226: MutBorrowLoc[95](bytes#1#43: BCS)
+	227: StLoc[79](bcs#1#49: &mut BCS)
+	228: LdConst[13](vector<u8>: "" /..)
+	229: StLoc[230](v#1#51: vector<u8>)
+	230: CopyLoc[79](bcs#1#49: &mut BCS)
+	231: Call bcs::peel_vec_length(&mut BCS): u64
+	232: StLoc[6]($stop#0#55: u64)
+	233: LdU64(0)
+	234: StLoc[142](i#1#58: u64)
+	235: MoveLoc[6]($stop#0#55: u64)
+	236: StLoc[152](stop#1#58: u64)
+B29:
+	237: CopyLoc[142](i#1#58: u64)
+	238: CopyLoc[152](stop#1#58: u64)
+	239: Lt
+	240: BrFalse(258)
+B30:
+	241: CopyLoc[142](i#1#58: u64)
+	242: StLoc[143](i#1#61: u64)
+	243: MutBorrowLoc[230](v#1#51: vector<u8>)
+	244: StLoc[21](%#23: &mut vector<u8>)
+	245: MoveLoc[143](i#1#61: u64)
+	246: Pop
+	247: CopyLoc[79](bcs#1#49: &mut BCS)
+	248: Call bcs::peel_u8(&mut BCS): u8
+	249: StLoc[20](%#21: u8)
+	250: MoveLoc[21](%#23: &mut vector<u8>)
+	251: MoveLoc[20](%#21: u8)
+	252: VecPushBack(9)
+	253: MoveLoc[142](i#1#58: u64)
+	254: LdU64(1)
+	255: Add
+	256: StLoc[142](i#1#58: u64)
+	257: Branch(237)
+B31:
+	258: MoveLoc[79](bcs#1#49: &mut BCS)
+	259: Pop
+	260: MoveLoc[230](v#1#51: vector<u8>)
+	261: StLoc[179](t1#1#46: vector<u8>)
+	262: MoveLoc[111](case#1#43: vector<u8>)
+	263: StLoc[211](t2#1#46: vector<u8>)
+	264: ImmBorrowLoc[179](t1#1#46: vector<u8>)
+	265: StLoc[180](t1#1#64: &vector<u8>)
+	266: ImmBorrowLoc[211](t2#1#46: vector<u8>)
+	267: StLoc[212](t2#1#64: &vector<u8>)
+	268: CopyLoc[180](t1#1#64: &vector<u8>)
+	269: CopyLoc[212](t2#1#64: &vector<u8>)
+	270: Eq
+	271: Not
+	272: BrFalse(289)
+B32:
+	273: LdConst[8](vector<u8>: "Ass..)
+	274: Call string::utf8(vector<u8>): String
+	275: StLoc[22](%#24: String)
+	276: ImmBorrowLoc[22](%#24: String)
+	277: Call debug::print<String>(&String)
+	278: MoveLoc[180](t1#1#64: &vector<u8>)
+	279: Call debug::print<vector<u8>>(&vector<u8>)
+	280: LdConst[9](vector<u8>: "!="..)
+	281: Call string::utf8(vector<u8>): String
+	282: StLoc[23](%#25: String)
+	283: ImmBorrowLoc[23](%#25: String)
+	284: Call debug::print<String>(&String)
+	285: MoveLoc[212](t2#1#64: &vector<u8>)
+	286: Call debug::print<vector<u8>>(&vector<u8>)
+	287: LdU64(13906834689739456511)
+	288: Abort
+B33:
+	289: MoveLoc[212](t2#1#64: &vector<u8>)
+	290: Pop
+	291: MoveLoc[180](t1#1#64: &vector<u8>)
+	292: Pop
+	293: MoveLoc[95](bytes#1#43: BCS)
+	294: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	295: StLoc[24](%#26: vector<u8>)
+	296: ImmBorrowLoc[24](%#26: vector<u8>)
+	297: Call vector::is_empty<u8>(&vector<u8>): bool
+	298: BrFalse(300)
+B34:
+	299: Branch(214)
+B35:
+	300: LdU64(13906834689739456511)
+	301: Abort
+B36:
+	302: LdConst[15](vector<u16>: 00)
+	303: LdConst[16](vector<u16>: 010100)
+	304: LdU16(0)
+	305: LdU16(2)
+	306: LdConst[1](u16: 65535)
+	307: VecPack(17, 3)
+	308: VecPack(29, 3)
+	309: StLoc[219](u16_cases#1#0: vector<vector<u16>>)
+	310: CopyLoc[219](u16_cases#1#0: vector<vector<u16>>)
+	311: StLoc[128](cases#1#67: vector<vector<u16>>)
+B37:
+	312: ImmBorrowLoc[128](cases#1#67: vector<vector<u16>>)
+	313: Call vector::is_empty<vector<u16>>(&vector<vector<u16>>): bool
+	314: Not
+	315: BrFalse(367)
+B38:
+	316: Branch(317)
+B39:
+	317: MutBorrowLoc[128](cases#1#67: vector<vector<u16>>)
+	318: VecPopBack(29)
+	319: StLoc[112](case#1#67: vector<u16>)
+	320: ImmBorrowLoc[112](case#1#67: vector<u16>)
+	321: Call bcs::to_bytes<vector<u16>>(&vector<u16>): vector<u8>
+	322: Call bcs::new(vector<u8>): BCS
+	323: StLoc[96](bytes#1#67: BCS)
+	324: MutBorrowLoc[96](bytes#1#67: BCS)
+	325: Call bcs::peel_vec_u16(&mut BCS): vector<u16>
+	326: StLoc[182](t1#1#70: vector<u16>)
+	327: MoveLoc[112](case#1#67: vector<u16>)
+	328: StLoc[214](t2#1#70: vector<u16>)
+	329: ImmBorrowLoc[182](t1#1#70: vector<u16>)
+	330: StLoc[183](t1#1#73: &vector<u16>)
+	331: ImmBorrowLoc[214](t2#1#70: vector<u16>)
+	332: StLoc[215](t2#1#73: &vector<u16>)
+	333: CopyLoc[183](t1#1#73: &vector<u16>)
+	334: CopyLoc[215](t2#1#73: &vector<u16>)
+	335: Eq
+	336: Not
+	337: BrFalse(354)
+B40:
+	338: LdConst[8](vector<u8>: "Ass..)
+	339: Call string::utf8(vector<u8>): String
+	340: StLoc[25](%#28: String)
+	341: ImmBorrowLoc[25](%#28: String)
+	342: Call debug::print<String>(&String)
+	343: MoveLoc[183](t1#1#73: &vector<u16>)
+	344: Call debug::print<vector<u16>>(&vector<u16>)
+	345: LdConst[9](vector<u8>: "!="..)
+	346: Call string::utf8(vector<u8>): String
+	347: StLoc[26](%#29: String)
+	348: ImmBorrowLoc[26](%#29: String)
+	349: Call debug::print<String>(&String)
+	350: MoveLoc[215](t2#1#73: &vector<u16>)
+	351: Call debug::print<vector<u16>>(&vector<u16>)
+	352: LdU64(13906834702624358399)
+	353: Abort
+B41:
+	354: MoveLoc[215](t2#1#73: &vector<u16>)
+	355: Pop
+	356: MoveLoc[183](t1#1#73: &vector<u16>)
+	357: Pop
+	358: MoveLoc[96](bytes#1#67: BCS)
+	359: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	360: StLoc[28](%#30: vector<u8>)
+	361: ImmBorrowLoc[28](%#30: vector<u8>)
+	362: Call vector::is_empty<u8>(&vector<u8>): bool
+	363: BrFalse(365)
+B42:
+	364: Branch(312)
+B43:
+	365: LdU64(13906834702624358399)
+	366: Abort
+B44:
+	367: MoveLoc[219](u16_cases#1#0: vector<vector<u16>>)
+	368: StLoc[129](cases#1#76: vector<vector<u16>>)
+B45:
+	369: ImmBorrowLoc[129](cases#1#76: vector<vector<u16>>)
+	370: Call vector::is_empty<vector<u16>>(&vector<vector<u16>>): bool
+	371: Not
+	372: BrFalse(456)
+B46:
+	373: MutBorrowLoc[129](cases#1#76: vector<vector<u16>>)
+	374: VecPopBack(29)
+	375: StLoc[113](case#1#76: vector<u16>)
+	376: ImmBorrowLoc[113](case#1#76: vector<u16>)
+	377: Call bcs::to_bytes<vector<u16>>(&vector<u16>): vector<u8>
+	378: Call bcs::new(vector<u8>): BCS
+	379: StLoc[97](bytes#1#76: BCS)
+	380: MutBorrowLoc[97](bytes#1#76: BCS)
+	381: StLoc[80](bcs#1#82: &mut BCS)
+	382: LdConst[15](vector<u16>: 00)
+	383: StLoc[231](v#1#84: vector<u16>)
+	384: CopyLoc[80](bcs#1#82: &mut BCS)
+	385: Call bcs::peel_vec_length(&mut BCS): u64
+	386: StLoc[7]($stop#0#88: u64)
+	387: LdU64(0)
+	388: StLoc[144](i#1#91: u64)
+	389: MoveLoc[7]($stop#0#88: u64)
+	390: StLoc[153](stop#1#91: u64)
+B47:
+	391: CopyLoc[144](i#1#91: u64)
+	392: CopyLoc[153](stop#1#91: u64)
+	393: Lt
+	394: BrFalse(412)
+B48:
+	395: CopyLoc[144](i#1#91: u64)
+	396: StLoc[145](i#1#94: u64)
+	397: MutBorrowLoc[231](v#1#84: vector<u16>)
+	398: StLoc[30](%#36: &mut vector<u16>)
+	399: MoveLoc[145](i#1#94: u64)
+	400: Pop
+	401: CopyLoc[80](bcs#1#82: &mut BCS)
+	402: Call bcs::peel_u16(&mut BCS): u16
+	403: StLoc[29](%#34: u16)
+	404: MoveLoc[30](%#36: &mut vector<u16>)
+	405: MoveLoc[29](%#34: u16)
+	406: VecPushBack(17)
+	407: MoveLoc[144](i#1#91: u64)
+	408: LdU64(1)
+	409: Add
+	410: StLoc[144](i#1#91: u64)
+	411: Branch(391)
+B49:
+	412: MoveLoc[80](bcs#1#82: &mut BCS)
+	413: Pop
+	414: MoveLoc[231](v#1#84: vector<u16>)
+	415: StLoc[184](t1#1#79: vector<u16>)
+	416: MoveLoc[113](case#1#76: vector<u16>)
+	417: StLoc[216](t2#1#79: vector<u16>)
+	418: ImmBorrowLoc[184](t1#1#79: vector<u16>)
+	419: StLoc[185](t1#1#97: &vector<u16>)
+	420: ImmBorrowLoc[216](t2#1#79: vector<u16>)
+	421: StLoc[217](t2#1#97: &vector<u16>)
+	422: CopyLoc[185](t1#1#97: &vector<u16>)
+	423: CopyLoc[217](t2#1#97: &vector<u16>)
+	424: Eq
+	425: Not
+	426: BrFalse(443)
+B50:
+	427: LdConst[8](vector<u8>: "Ass..)
+	428: Call string::utf8(vector<u8>): String
+	429: StLoc[31](%#37: String)
+	430: ImmBorrowLoc[31](%#37: String)
+	431: Call debug::print<String>(&String)
+	432: MoveLoc[185](t1#1#97: &vector<u16>)
+	433: Call debug::print<vector<u16>>(&vector<u16>)
+	434: LdConst[9](vector<u8>: "!="..)
+	435: Call string::utf8(vector<u8>): String
+	436: StLoc[32](%#38: String)
+	437: ImmBorrowLoc[32](%#38: String)
+	438: Call debug::print<String>(&String)
+	439: MoveLoc[217](t2#1#97: &vector<u16>)
+	440: Call debug::print<vector<u16>>(&vector<u16>)
+	441: LdU64(13906834706919325695)
+	442: Abort
+B51:
+	443: MoveLoc[217](t2#1#97: &vector<u16>)
+	444: Pop
+	445: MoveLoc[185](t1#1#97: &vector<u16>)
+	446: Pop
+	447: MoveLoc[97](bytes#1#76: BCS)
+	448: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	449: StLoc[33](%#39: vector<u8>)
+	450: ImmBorrowLoc[33](%#39: vector<u8>)
+	451: Call vector::is_empty<u8>(&vector<u8>): bool
+	452: BrFalse(454)
+B52:
+	453: Branch(369)
+B53:
+	454: LdU64(13906834706919325695)
+	455: Abort
+B54:
+	456: LdConst[17](vector<u32>: 00)
+	457: LdConst[18](vector<u32>: 0101..)
+	458: LdU32(0)
+	459: LdU32(2)
+	460: LdConst[2](u32: 4294..)
+	461: VecPack(19, 3)
+	462: VecPack(30, 3)
+	463: StLoc[221](u32_cases#1#0: vector<vector<u32>>)
+	464: CopyLoc[221](u32_cases#1#0: vector<vector<u32>>)
+	465: StLoc[116](cases#1#100: vector<vector<u32>>)
+B55:
+	466: ImmBorrowLoc[116](cases#1#100: vector<vector<u32>>)
+	467: Call vector::is_empty<vector<u32>>(&vector<vector<u32>>): bool
+	468: Not
+	469: BrFalse(520)
+B56:
+	470: MutBorrowLoc[116](cases#1#100: vector<vector<u32>>)
+	471: VecPopBack(30)
+	472: StLoc[100](case#1#100: vector<u32>)
+	473: ImmBorrowLoc[100](case#1#100: vector<u32>)
+	474: Call bcs::to_bytes<vector<u32>>(&vector<u32>): vector<u8>
+	475: Call bcs::new(vector<u8>): BCS
+	476: StLoc[84](bytes#1#100: BCS)
+	477: MutBorrowLoc[84](bytes#1#100: BCS)
+	478: Call bcs::peel_vec_u32(&mut BCS): vector<u32>
+	479: StLoc[154](t1#1#103: vector<u32>)
+	480: MoveLoc[100](case#1#100: vector<u32>)
+	481: StLoc[186](t2#1#103: vector<u32>)
+	482: ImmBorrowLoc[154](t1#1#103: vector<u32>)
+	483: StLoc[155](t1#1#106: &vector<u32>)
+	484: ImmBorrowLoc[186](t2#1#103: vector<u32>)
+	485: StLoc[187](t2#1#106: &vector<u32>)
+	486: CopyLoc[155](t1#1#106: &vector<u32>)
+	487: CopyLoc[187](t2#1#106: &vector<u32>)
+	488: Eq
+	489: Not
+	490: BrFalse(507)
+B57:
+	491: LdConst[8](vector<u8>: "Ass..)
+	492: Call string::utf8(vector<u8>): String
+	493: StLoc[35](%#41: String)
+	494: ImmBorrowLoc[35](%#41: String)
+	495: Call debug::print<String>(&String)
+	496: MoveLoc[155](t1#1#106: &vector<u32>)
+	497: Call debug::print<vector<u32>>(&vector<u32>)
+	498: LdConst[9](vector<u8>: "!="..)
+	499: Call string::utf8(vector<u8>): String
+	500: StLoc[36](%#42: String)
+	501: ImmBorrowLoc[36](%#42: String)
+	502: Call debug::print<String>(&String)
+	503: MoveLoc[187](t2#1#106: &vector<u32>)
+	504: Call debug::print<vector<u32>>(&vector<u32>)
+	505: LdU64(13906834719804227583)
+	506: Abort
+B58:
+	507: MoveLoc[187](t2#1#106: &vector<u32>)
+	508: Pop
+	509: MoveLoc[155](t1#1#106: &vector<u32>)
+	510: Pop
+	511: MoveLoc[84](bytes#1#100: BCS)
+	512: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	513: StLoc[37](%#43: vector<u8>)
+	514: ImmBorrowLoc[37](%#43: vector<u8>)
+	515: Call vector::is_empty<u8>(&vector<u8>): bool
+	516: BrFalse(518)
+B59:
+	517: Branch(466)
+B60:
+	518: LdU64(13906834719804227583)
+	519: Abort
+B61:
+	520: MoveLoc[221](u32_cases#1#0: vector<vector<u32>>)
+	521: StLoc[117](cases#1#109: vector<vector<u32>>)
+B62:
+	522: ImmBorrowLoc[117](cases#1#109: vector<vector<u32>>)
+	523: Call vector::is_empty<vector<u32>>(&vector<vector<u32>>): bool
+	524: Not
+	525: BrFalse(609)
+B63:
+	526: MutBorrowLoc[117](cases#1#109: vector<vector<u32>>)
+	527: VecPopBack(30)
+	528: StLoc[101](case#1#109: vector<u32>)
+	529: ImmBorrowLoc[101](case#1#109: vector<u32>)
+	530: Call bcs::to_bytes<vector<u32>>(&vector<u32>): vector<u8>
+	531: Call bcs::new(vector<u8>): BCS
+	532: StLoc[85](bytes#1#109: BCS)
+	533: MutBorrowLoc[85](bytes#1#109: BCS)
+	534: StLoc[73](bcs#1#115: &mut BCS)
+	535: LdConst[17](vector<u32>: 00)
+	536: StLoc[224](v#1#117: vector<u32>)
+	537: CopyLoc[73](bcs#1#115: &mut BCS)
+	538: Call bcs::peel_vec_length(&mut BCS): u64
+	539: StLoc[0]($stop#0#121: u64)
+	540: LdU64(0)
+	541: StLoc[130](i#1#124: u64)
+	542: MoveLoc[0]($stop#0#121: u64)
+	543: StLoc[146](stop#1#124: u64)
+B64:
+	544: CopyLoc[130](i#1#124: u64)
+	545: CopyLoc[146](stop#1#124: u64)
+	546: Lt
+	547: BrFalse(565)
+B65:
+	548: CopyLoc[130](i#1#124: u64)
+	549: StLoc[131](i#1#127: u64)
+	550: MutBorrowLoc[224](v#1#117: vector<u32>)
+	551: StLoc[39](%#49: &mut vector<u32>)
+	552: MoveLoc[131](i#1#127: u64)
+	553: Pop
+	554: CopyLoc[73](bcs#1#115: &mut BCS)
+	555: Call bcs::peel_u32(&mut BCS): u32
+	556: StLoc[38](%#47: u32)
+	557: MoveLoc[39](%#49: &mut vector<u32>)
+	558: MoveLoc[38](%#47: u32)
+	559: VecPushBack(19)
+	560: MoveLoc[130](i#1#124: u64)
+	561: LdU64(1)
+	562: Add
+	563: StLoc[130](i#1#124: u64)
+	564: Branch(544)
+B66:
+	565: MoveLoc[73](bcs#1#115: &mut BCS)
+	566: Pop
+	567: MoveLoc[224](v#1#117: vector<u32>)
+	568: StLoc[156](t1#1#112: vector<u32>)
+	569: MoveLoc[101](case#1#109: vector<u32>)
+	570: StLoc[188](t2#1#112: vector<u32>)
+	571: ImmBorrowLoc[156](t1#1#112: vector<u32>)
+	572: StLoc[158](t1#1#130: &vector<u32>)
+	573: ImmBorrowLoc[188](t2#1#112: vector<u32>)
+	574: StLoc[190](t2#1#130: &vector<u32>)
+	575: CopyLoc[158](t1#1#130: &vector<u32>)
+	576: CopyLoc[190](t2#1#130: &vector<u32>)
+	577: Eq
+	578: Not
+	579: BrFalse(596)
+B67:
+	580: LdConst[8](vector<u8>: "Ass..)
+	581: Call string::utf8(vector<u8>): String
+	582: StLoc[40](%#50: String)
+	583: ImmBorrowLoc[40](%#50: String)
+	584: Call debug::print<String>(&String)
+	585: MoveLoc[158](t1#1#130: &vector<u32>)
+	586: Call debug::print<vector<u32>>(&vector<u32>)
+	587: LdConst[9](vector<u8>: "!="..)
+	588: Call string::utf8(vector<u8>): String
+	589: StLoc[41](%#51: String)
+	590: ImmBorrowLoc[41](%#51: String)
+	591: Call debug::print<String>(&String)
+	592: MoveLoc[190](t2#1#130: &vector<u32>)
+	593: Call debug::print<vector<u32>>(&vector<u32>)
+	594: LdU64(13906834724099194879)
+	595: Abort
+B68:
+	596: MoveLoc[190](t2#1#130: &vector<u32>)
+	597: Pop
+	598: MoveLoc[158](t1#1#130: &vector<u32>)
+	599: Pop
+	600: MoveLoc[85](bytes#1#109: BCS)
+	601: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	602: StLoc[42](%#52: vector<u8>)
+	603: ImmBorrowLoc[42](%#52: vector<u8>)
+	604: Call vector::is_empty<u8>(&vector<u8>): bool
+	605: BrFalse(607)
+B69:
+	606: Branch(522)
+B70:
+	607: LdU64(13906834724099194879)
+	608: Abort
+B71:
+	609: LdConst[19](vector<u64>: 00)
+	610: LdConst[20](vector<u64>: 0101..)
+	611: LdU64(0)
+	612: LdU64(2)
+	613: LdConst[3](u64: 1844..)
+	614: VecPack(7, 3)
+	615: VecPack(31, 3)
+	616: StLoc[222](u64_cases#1#0: vector<vector<u64>>)
+	617: CopyLoc[222](u64_cases#1#0: vector<vector<u64>>)
+	618: StLoc[118](cases#1#133: vector<vector<u64>>)
+B72:
+	619: ImmBorrowLoc[118](cases#1#133: vector<vector<u64>>)
+	620: Call vector::is_empty<vector<u64>>(&vector<vector<u64>>): bool
+	621: Not
+	622: BrFalse(674)
+B73:
+	623: Branch(624)
+B74:
+	624: MutBorrowLoc[118](cases#1#133: vector<vector<u64>>)
+	625: VecPopBack(31)
+	626: StLoc[102](case#1#133: vector<u64>)
+	627: ImmBorrowLoc[102](case#1#133: vector<u64>)
+	628: Call bcs::to_bytes<vector<u64>>(&vector<u64>): vector<u8>
+	629: Call bcs::new(vector<u8>): BCS
+	630: StLoc[86](bytes#1#133: BCS)
+	631: MutBorrowLoc[86](bytes#1#133: BCS)
+	632: Call bcs::peel_vec_u64(&mut BCS): vector<u64>
+	633: StLoc[159](t1#1#136: vector<u64>)
+	634: MoveLoc[102](case#1#133: vector<u64>)
+	635: StLoc[191](t2#1#136: vector<u64>)
+	636: ImmBorrowLoc[159](t1#1#136: vector<u64>)
+	637: StLoc[160](t1#1#139: &vector<u64>)
+	638: ImmBorrowLoc[191](t2#1#136: vector<u64>)
+	639: StLoc[192](t2#1#139: &vector<u64>)
+	640: CopyLoc[160](t1#1#139: &vector<u64>)
+	641: CopyLoc[192](t2#1#139: &vector<u64>)
+	642: Eq
+	643: Not
+	644: BrFalse(661)
+B75:
+	645: LdConst[8](vector<u8>: "Ass..)
+	646: Call string::utf8(vector<u8>): String
+	647: StLoc[43](%#54: String)
+	648: ImmBorrowLoc[43](%#54: String)
+	649: Call debug::print<String>(&String)
+	650: MoveLoc[160](t1#1#139: &vector<u64>)
+	651: Call debug::print<vector<u64>>(&vector<u64>)
+	652: LdConst[9](vector<u8>: "!="..)
+	653: Call string::utf8(vector<u8>): String
+	654: StLoc[44](%#55: String)
+	655: ImmBorrowLoc[44](%#55: String)
+	656: Call debug::print<String>(&String)
+	657: MoveLoc[192](t2#1#139: &vector<u64>)
+	658: Call debug::print<vector<u64>>(&vector<u64>)
+	659: LdU64(13906834736984096767)
+	660: Abort
+B76:
+	661: MoveLoc[192](t2#1#139: &vector<u64>)
+	662: Pop
+	663: MoveLoc[160](t1#1#139: &vector<u64>)
+	664: Pop
+	665: MoveLoc[86](bytes#1#133: BCS)
+	666: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	667: StLoc[45](%#56: vector<u8>)
+	668: ImmBorrowLoc[45](%#56: vector<u8>)
+	669: Call vector::is_empty<u8>(&vector<u8>): bool
+	670: BrFalse(672)
+B77:
+	671: Branch(619)
+B78:
+	672: LdU64(13906834736984096767)
+	673: Abort
+B79:
+	674: MoveLoc[222](u64_cases#1#0: vector<vector<u64>>)
+	675: StLoc[119](cases#1#142: vector<vector<u64>>)
+B80:
+	676: ImmBorrowLoc[119](cases#1#142: vector<vector<u64>>)
+	677: Call vector::is_empty<vector<u64>>(&vector<vector<u64>>): bool
+	678: Not
+	679: BrFalse(763)
+B81:
+	680: MutBorrowLoc[119](cases#1#142: vector<vector<u64>>)
+	681: VecPopBack(31)
+	682: StLoc[103](case#1#142: vector<u64>)
+	683: ImmBorrowLoc[103](case#1#142: vector<u64>)
+	684: Call bcs::to_bytes<vector<u64>>(&vector<u64>): vector<u8>
+	685: Call bcs::new(vector<u8>): BCS
+	686: StLoc[87](bytes#1#142: BCS)
+	687: MutBorrowLoc[87](bytes#1#142: BCS)
+	688: StLoc[74](bcs#1#148: &mut BCS)
+	689: LdConst[19](vector<u64>: 00)
+	690: StLoc[225](v#1#150: vector<u64>)
+	691: CopyLoc[74](bcs#1#148: &mut BCS)
+	692: Call bcs::peel_vec_length(&mut BCS): u64
+	693: StLoc[1]($stop#0#154: u64)
+	694: LdU64(0)
+	695: StLoc[132](i#1#157: u64)
+	696: MoveLoc[1]($stop#0#154: u64)
+	697: StLoc[147](stop#1#157: u64)
+B82:
+	698: CopyLoc[132](i#1#157: u64)
+	699: CopyLoc[147](stop#1#157: u64)
+	700: Lt
+	701: BrFalse(719)
+B83:
+	702: CopyLoc[132](i#1#157: u64)
+	703: StLoc[133](i#1#160: u64)
+	704: MutBorrowLoc[225](v#1#150: vector<u64>)
+	705: StLoc[47](%#62: &mut vector<u64>)
+	706: MoveLoc[133](i#1#160: u64)
+	707: Pop
+	708: CopyLoc[74](bcs#1#148: &mut BCS)
+	709: Call bcs::peel_u64(&mut BCS): u64
+	710: StLoc[46](%#60: u64)
+	711: MoveLoc[47](%#62: &mut vector<u64>)
+	712: MoveLoc[46](%#60: u64)
+	713: VecPushBack(7)
+	714: MoveLoc[132](i#1#157: u64)
+	715: LdU64(1)
+	716: Add
+	717: StLoc[132](i#1#157: u64)
+	718: Branch(698)
+B84:
+	719: MoveLoc[74](bcs#1#148: &mut BCS)
+	720: Pop
+	721: MoveLoc[225](v#1#150: vector<u64>)
+	722: StLoc[161](t1#1#145: vector<u64>)
+	723: MoveLoc[103](case#1#142: vector<u64>)
+	724: StLoc[193](t2#1#145: vector<u64>)
+	725: ImmBorrowLoc[161](t1#1#145: vector<u64>)
+	726: StLoc[162](t1#1#163: &vector<u64>)
+	727: ImmBorrowLoc[193](t2#1#145: vector<u64>)
+	728: StLoc[194](t2#1#163: &vector<u64>)
+	729: CopyLoc[162](t1#1#163: &vector<u64>)
+	730: CopyLoc[194](t2#1#163: &vector<u64>)
+	731: Eq
+	732: Not
+	733: BrFalse(750)
+B85:
+	734: LdConst[8](vector<u8>: "Ass..)
+	735: Call string::utf8(vector<u8>): String
+	736: StLoc[48](%#63: String)
+	737: ImmBorrowLoc[48](%#63: String)
+	738: Call debug::print<String>(&String)
+	739: MoveLoc[162](t1#1#163: &vector<u64>)
+	740: Call debug::print<vector<u64>>(&vector<u64>)
+	741: LdConst[9](vector<u8>: "!="..)
+	742: Call string::utf8(vector<u8>): String
+	743: StLoc[49](%#64: String)
+	744: ImmBorrowLoc[49](%#64: String)
+	745: Call debug::print<String>(&String)
+	746: MoveLoc[194](t2#1#163: &vector<u64>)
+	747: Call debug::print<vector<u64>>(&vector<u64>)
+	748: LdU64(13906834741279064063)
+	749: Abort
+B86:
+	750: MoveLoc[194](t2#1#163: &vector<u64>)
+	751: Pop
+	752: MoveLoc[162](t1#1#163: &vector<u64>)
+	753: Pop
+	754: MoveLoc[87](bytes#1#142: BCS)
+	755: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	756: StLoc[50](%#65: vector<u8>)
+	757: ImmBorrowLoc[50](%#65: vector<u8>)
+	758: Call vector::is_empty<u8>(&vector<u8>): bool
+	759: BrFalse(761)
+B87:
+	760: Branch(676)
+B88:
+	761: LdU64(13906834741279064063)
+	762: Abort
+B89:
+	763: LdConst[21](vector<u128>: 00)
+	764: LdConst[22](vector<u128>: 0101..)
+	765: LdU128(0)
+	766: LdU128(2)
+	767: LdConst[4](u128: 3402..)
+	768: VecPack(22, 3)
+	769: VecPack(32, 3)
+	770: StLoc[218](u128_cases#1#0: vector<vector<u128>>)
+	771: CopyLoc[218](u128_cases#1#0: vector<vector<u128>>)
+	772: StLoc[120](cases#1#166: vector<vector<u128>>)
+B90:
+	773: ImmBorrowLoc[120](cases#1#166: vector<vector<u128>>)
+	774: Call vector::is_empty<vector<u128>>(&vector<vector<u128>>): bool
+	775: Not
+	776: BrFalse(827)
+B91:
+	777: MutBorrowLoc[120](cases#1#166: vector<vector<u128>>)
+	778: VecPopBack(32)
+	779: StLoc[104](case#1#166: vector<u128>)
+	780: ImmBorrowLoc[104](case#1#166: vector<u128>)
+	781: Call bcs::to_bytes<vector<u128>>(&vector<u128>): vector<u8>
+	782: Call bcs::new(vector<u8>): BCS
+	783: StLoc[88](bytes#1#166: BCS)
+	784: MutBorrowLoc[88](bytes#1#166: BCS)
+	785: Call bcs::peel_vec_u128(&mut BCS): vector<u128>
+	786: StLoc[163](t1#1#169: vector<u128>)
+	787: MoveLoc[104](case#1#166: vector<u128>)
+	788: StLoc[195](t2#1#169: vector<u128>)
+	789: ImmBorrowLoc[163](t1#1#169: vector<u128>)
+	790: StLoc[164](t1#1#172: &vector<u128>)
+	791: ImmBorrowLoc[195](t2#1#169: vector<u128>)
+	792: StLoc[196](t2#1#172: &vector<u128>)
+	793: CopyLoc[164](t1#1#172: &vector<u128>)
+	794: CopyLoc[196](t2#1#172: &vector<u128>)
+	795: Eq
+	796: Not
+	797: BrFalse(814)
+B92:
+	798: LdConst[8](vector<u8>: "Ass..)
+	799: Call string::utf8(vector<u8>): String
+	800: StLoc[51](%#67: String)
+	801: ImmBorrowLoc[51](%#67: String)
+	802: Call debug::print<String>(&String)
+	803: MoveLoc[164](t1#1#172: &vector<u128>)
+	804: Call debug::print<vector<u128>>(&vector<u128>)
+	805: LdConst[9](vector<u8>: "!="..)
+	806: Call string::utf8(vector<u8>): String
+	807: StLoc[52](%#68: String)
+	808: ImmBorrowLoc[52](%#68: String)
+	809: Call debug::print<String>(&String)
+	810: MoveLoc[196](t2#1#172: &vector<u128>)
+	811: Call debug::print<vector<u128>>(&vector<u128>)
+	812: LdU64(13906834754163965951)
+	813: Abort
+B93:
+	814: MoveLoc[196](t2#1#172: &vector<u128>)
+	815: Pop
+	816: MoveLoc[164](t1#1#172: &vector<u128>)
+	817: Pop
+	818: MoveLoc[88](bytes#1#166: BCS)
+	819: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	820: StLoc[53](%#69: vector<u8>)
+	821: ImmBorrowLoc[53](%#69: vector<u8>)
+	822: Call vector::is_empty<u8>(&vector<u8>): bool
+	823: BrFalse(825)
+B94:
+	824: Branch(773)
+B95:
+	825: LdU64(13906834754163965951)
+	826: Abort
+B96:
+	827: MoveLoc[218](u128_cases#1#0: vector<vector<u128>>)
+	828: StLoc[121](cases#1#175: vector<vector<u128>>)
+	829: Branch(830)
+B97:
+	830: ImmBorrowLoc[121](cases#1#175: vector<vector<u128>>)
+	831: Call vector::is_empty<vector<u128>>(&vector<vector<u128>>): bool
+	832: Not
+	833: BrFalse(917)
+B98:
+	834: MutBorrowLoc[121](cases#1#175: vector<vector<u128>>)
+	835: VecPopBack(32)
+	836: StLoc[105](case#1#175: vector<u128>)
+	837: ImmBorrowLoc[105](case#1#175: vector<u128>)
+	838: Call bcs::to_bytes<vector<u128>>(&vector<u128>): vector<u8>
+	839: Call bcs::new(vector<u8>): BCS
+	840: StLoc[89](bytes#1#175: BCS)
+	841: MutBorrowLoc[89](bytes#1#175: BCS)
+	842: StLoc[76](bcs#1#181: &mut BCS)
+	843: LdConst[21](vector<u128>: 00)
+	844: StLoc[227](v#1#183: vector<u128>)
+	845: CopyLoc[76](bcs#1#181: &mut BCS)
+	846: Call bcs::peel_vec_length(&mut BCS): u64
+	847: StLoc[2]($stop#0#187: u64)
+	848: LdU64(0)
+	849: StLoc[134](i#1#190: u64)
+	850: MoveLoc[2]($stop#0#187: u64)
+	851: StLoc[148](stop#1#190: u64)
+B99:
+	852: CopyLoc[134](i#1#190: u64)
+	853: CopyLoc[148](stop#1#190: u64)
+	854: Lt
+	855: BrFalse(873)
+B100:
+	856: CopyLoc[134](i#1#190: u64)
+	857: StLoc[135](i#1#193: u64)
+	858: MutBorrowLoc[227](v#1#183: vector<u128>)
+	859: StLoc[55](%#75: &mut vector<u128>)
+	860: MoveLoc[135](i#1#193: u64)
+	861: Pop
+	862: CopyLoc[76](bcs#1#181: &mut BCS)
+	863: Call bcs::peel_u128(&mut BCS): u128
+	864: StLoc[54](%#73: u128)
+	865: MoveLoc[55](%#75: &mut vector<u128>)
+	866: MoveLoc[54](%#73: u128)
+	867: VecPushBack(22)
+	868: MoveLoc[134](i#1#190: u64)
+	869: LdU64(1)
+	870: Add
+	871: StLoc[134](i#1#190: u64)
+	872: Branch(852)
+B101:
+	873: MoveLoc[76](bcs#1#181: &mut BCS)
+	874: Pop
+	875: MoveLoc[227](v#1#183: vector<u128>)
+	876: StLoc[165](t1#1#178: vector<u128>)
+	877: MoveLoc[105](case#1#175: vector<u128>)
+	878: StLoc[197](t2#1#178: vector<u128>)
+	879: ImmBorrowLoc[165](t1#1#178: vector<u128>)
+	880: StLoc[166](t1#1#196: &vector<u128>)
+	881: ImmBorrowLoc[197](t2#1#178: vector<u128>)
+	882: StLoc[198](t2#1#196: &vector<u128>)
+	883: CopyLoc[166](t1#1#196: &vector<u128>)
+	884: CopyLoc[198](t2#1#196: &vector<u128>)
+	885: Eq
+	886: Not
+	887: BrFalse(904)
+B102:
+	888: LdConst[8](vector<u8>: "Ass..)
+	889: Call string::utf8(vector<u8>): String
+	890: StLoc[56](%#76: String)
+	891: ImmBorrowLoc[56](%#76: String)
+	892: Call debug::print<String>(&String)
+	893: MoveLoc[166](t1#1#196: &vector<u128>)
+	894: Call debug::print<vector<u128>>(&vector<u128>)
+	895: LdConst[9](vector<u8>: "!="..)
+	896: Call string::utf8(vector<u8>): String
+	897: StLoc[57](%#77: String)
+	898: ImmBorrowLoc[57](%#77: String)
+	899: Call debug::print<String>(&String)
+	900: MoveLoc[198](t2#1#196: &vector<u128>)
+	901: Call debug::print<vector<u128>>(&vector<u128>)
+	902: LdU64(13906834758458933247)
+	903: Abort
+B103:
+	904: MoveLoc[198](t2#1#196: &vector<u128>)
+	905: Pop
+	906: MoveLoc[166](t1#1#196: &vector<u128>)
+	907: Pop
+	908: MoveLoc[89](bytes#1#175: BCS)
+	909: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	910: StLoc[58](%#78: vector<u8>)
+	911: ImmBorrowLoc[58](%#78: vector<u8>)
+	912: Call vector::is_empty<u8>(&vector<u8>): bool
+	913: BrFalse(915)
+B104:
+	914: Branch(830)
+B105:
+	915: LdU64(13906834758458933247)
+	916: Abort
+B106:
+	917: LdConst[23](vector<u256>: 00)
+	918: LdConst[24](vector<u256>: 0101..)
+	919: LdU256(0)
+	920: LdU256(2)
+	921: LdConst[5](u256: 1157..)
+	922: VecPack(24, 3)
+	923: VecPack(33, 3)
+	924: StLoc[220](u256_cases#1#0: vector<vector<u256>>)
+	925: CopyLoc[220](u256_cases#1#0: vector<vector<u256>>)
+	926: StLoc[122](cases#1#199: vector<vector<u256>>)
+	927: Branch(928)
+B107:
+	928: ImmBorrowLoc[122](cases#1#199: vector<vector<u256>>)
+	929: Call vector::is_empty<vector<u256>>(&vector<vector<u256>>): bool
+	930: Not
+	931: BrFalse(982)
+B108:
+	932: MutBorrowLoc[122](cases#1#199: vector<vector<u256>>)
+	933: VecPopBack(33)
+	934: StLoc[106](case#1#199: vector<u256>)
+	935: ImmBorrowLoc[106](case#1#199: vector<u256>)
+	936: Call bcs::to_bytes<vector<u256>>(&vector<u256>): vector<u8>
+	937: Call bcs::new(vector<u8>): BCS
+	938: StLoc[90](bytes#1#199: BCS)
+	939: MutBorrowLoc[90](bytes#1#199: BCS)
+	940: Call bcs::peel_vec_u256(&mut BCS): vector<u256>
+	941: StLoc[167](t1#1#202: vector<u256>)
+	942: MoveLoc[106](case#1#199: vector<u256>)
+	943: StLoc[199](t2#1#202: vector<u256>)
+	944: ImmBorrowLoc[167](t1#1#202: vector<u256>)
+	945: StLoc[168](t1#1#205: &vector<u256>)
+	946: ImmBorrowLoc[199](t2#1#202: vector<u256>)
+	947: StLoc[200](t2#1#205: &vector<u256>)
+	948: CopyLoc[168](t1#1#205: &vector<u256>)
+	949: CopyLoc[200](t2#1#205: &vector<u256>)
+	950: Eq
+	951: Not
+	952: BrFalse(969)
+B109:
+	953: LdConst[8](vector<u8>: "Ass..)
+	954: Call string::utf8(vector<u8>): String
+	955: StLoc[60](%#80: String)
+	956: ImmBorrowLoc[60](%#80: String)
+	957: Call debug::print<String>(&String)
+	958: MoveLoc[168](t1#1#205: &vector<u256>)
+	959: Call debug::print<vector<u256>>(&vector<u256>)
+	960: LdConst[9](vector<u8>: "!="..)
+	961: Call string::utf8(vector<u8>): String
+	962: StLoc[61](%#81: String)
+	963: ImmBorrowLoc[61](%#81: String)
+	964: Call debug::print<String>(&String)
+	965: MoveLoc[200](t2#1#205: &vector<u256>)
+	966: Call debug::print<vector<u256>>(&vector<u256>)
+	967: LdU64(13906834771343835135)
+	968: Abort
+B110:
+	969: MoveLoc[200](t2#1#205: &vector<u256>)
+	970: Pop
+	971: MoveLoc[168](t1#1#205: &vector<u256>)
+	972: Pop
+	973: MoveLoc[90](bytes#1#199: BCS)
+	974: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	975: StLoc[62](%#82: vector<u8>)
+	976: ImmBorrowLoc[62](%#82: vector<u8>)
+	977: Call vector::is_empty<u8>(&vector<u8>): bool
+	978: BrFalse(980)
+B111:
+	979: Branch(928)
+B112:
+	980: LdU64(13906834771343835135)
+	981: Abort
+B113:
+	982: MoveLoc[220](u256_cases#1#0: vector<vector<u256>>)
+	983: StLoc[123](cases#1#208: vector<vector<u256>>)
+B114:
+	984: ImmBorrowLoc[123](cases#1#208: vector<vector<u256>>)
+	985: Call vector::is_empty<vector<u256>>(&vector<vector<u256>>): bool
+	986: Not
+	987: BrFalse(1071)
+B115:
+	988: MutBorrowLoc[123](cases#1#208: vector<vector<u256>>)
+	989: VecPopBack(33)
+	990: StLoc[107](case#1#208: vector<u256>)
+	991: ImmBorrowLoc[107](case#1#208: vector<u256>)
+	992: Call bcs::to_bytes<vector<u256>>(&vector<u256>): vector<u8>
+	993: Call bcs::new(vector<u8>): BCS
+	994: StLoc[91](bytes#1#208: BCS)
+	995: MutBorrowLoc[91](bytes#1#208: BCS)
+	996: StLoc[77](bcs#1#214: &mut BCS)
+	997: LdConst[23](vector<u256>: 00)
+	998: StLoc[228](v#1#216: vector<u256>)
+	999: CopyLoc[77](bcs#1#214: &mut BCS)
+	1000: Call bcs::peel_vec_length(&mut BCS): u64
+	1001: StLoc[4]($stop#0#220: u64)
+	1002: LdU64(0)
+	1003: StLoc[136](i#1#223: u64)
+	1004: MoveLoc[4]($stop#0#220: u64)
+	1005: StLoc[149](stop#1#223: u64)
+B116:
+	1006: CopyLoc[136](i#1#223: u64)
+	1007: CopyLoc[149](stop#1#223: u64)
+	1008: Lt
+	1009: BrFalse(1027)
+B117:
+	1010: CopyLoc[136](i#1#223: u64)
+	1011: StLoc[137](i#1#226: u64)
+	1012: MutBorrowLoc[228](v#1#216: vector<u256>)
+	1013: StLoc[64](%#88: &mut vector<u256>)
+	1014: MoveLoc[137](i#1#226: u64)
+	1015: Pop
+	1016: CopyLoc[77](bcs#1#214: &mut BCS)
+	1017: Call bcs::peel_u256(&mut BCS): u256
+	1018: StLoc[63](%#86: u256)
+	1019: MoveLoc[64](%#88: &mut vector<u256>)
+	1020: MoveLoc[63](%#86: u256)
+	1021: VecPushBack(24)
+	1022: MoveLoc[136](i#1#223: u64)
+	1023: LdU64(1)
+	1024: Add
+	1025: StLoc[136](i#1#223: u64)
+	1026: Branch(1006)
+B118:
+	1027: MoveLoc[77](bcs#1#214: &mut BCS)
+	1028: Pop
+	1029: MoveLoc[228](v#1#216: vector<u256>)
+	1030: StLoc[169](t1#1#211: vector<u256>)
+	1031: MoveLoc[107](case#1#208: vector<u256>)
+	1032: StLoc[201](t2#1#211: vector<u256>)
+	1033: ImmBorrowLoc[169](t1#1#211: vector<u256>)
+	1034: StLoc[170](t1#1#229: &vector<u256>)
+	1035: ImmBorrowLoc[201](t2#1#211: vector<u256>)
+	1036: StLoc[202](t2#1#229: &vector<u256>)
+	1037: CopyLoc[170](t1#1#229: &vector<u256>)
+	1038: CopyLoc[202](t2#1#229: &vector<u256>)
+	1039: Eq
+	1040: Not
+	1041: BrFalse(1058)
+B119:
+	1042: LdConst[8](vector<u8>: "Ass..)
+	1043: Call string::utf8(vector<u8>): String
+	1044: StLoc[65](%#89: String)
+	1045: ImmBorrowLoc[65](%#89: String)
+	1046: Call debug::print<String>(&String)
+	1047: MoveLoc[170](t1#1#229: &vector<u256>)
+	1048: Call debug::print<vector<u256>>(&vector<u256>)
+	1049: LdConst[9](vector<u8>: "!="..)
+	1050: Call string::utf8(vector<u8>): String
+	1051: StLoc[66](%#90: String)
+	1052: ImmBorrowLoc[66](%#90: String)
+	1053: Call debug::print<String>(&String)
+	1054: MoveLoc[202](t2#1#229: &vector<u256>)
+	1055: Call debug::print<vector<u256>>(&vector<u256>)
+	1056: LdU64(13906834775638802431)
+	1057: Abort
+B120:
+	1058: MoveLoc[202](t2#1#229: &vector<u256>)
+	1059: Pop
+	1060: MoveLoc[170](t1#1#229: &vector<u256>)
+	1061: Pop
+	1062: MoveLoc[91](bytes#1#208: BCS)
+	1063: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	1064: StLoc[67](%#91: vector<u8>)
+	1065: ImmBorrowLoc[67](%#91: vector<u8>)
+	1066: Call vector::is_empty<u8>(&vector<u8>): bool
+	1067: BrFalse(1069)
+B121:
+	1068: Branch(984)
+B122:
+	1069: LdU64(13906834775638802431)
+	1070: Abort
+B123:
+	1071: LdConst[25](vector<vector<address>>: 0300..)
+	1072: StLoc[72](address_cases#1#0: vector<vector<address>>)
+	1073: CopyLoc[72](address_cases#1#0: vector<vector<address>>)
+	1074: StLoc[124](cases#1#232: vector<vector<address>>)
+B124:
+	1075: ImmBorrowLoc[124](cases#1#232: vector<vector<address>>)
+	1076: Call vector::is_empty<vector<address>>(&vector<vector<address>>): bool
+	1077: Not
+	1078: BrFalse(1129)
+B125:
+	1079: MutBorrowLoc[124](cases#1#232: vector<vector<address>>)
+	1080: VecPopBack(34)
+	1081: StLoc[108](case#1#232: vector<address>)
+	1082: ImmBorrowLoc[108](case#1#232: vector<address>)
+	1083: Call bcs::to_bytes<vector<address>>(&vector<address>): vector<u8>
+	1084: Call bcs::new(vector<u8>): BCS
+	1085: StLoc[92](bytes#1#232: BCS)
+	1086: MutBorrowLoc[92](bytes#1#232: BCS)
+	1087: Call bcs::peel_vec_address(&mut BCS): vector<address>
+	1088: StLoc[171](t1#1#235: vector<address>)
+	1089: MoveLoc[108](case#1#232: vector<address>)
+	1090: StLoc[203](t2#1#235: vector<address>)
+	1091: ImmBorrowLoc[171](t1#1#235: vector<address>)
+	1092: StLoc[172](t1#1#238: &vector<address>)
+	1093: ImmBorrowLoc[203](t2#1#235: vector<address>)
+	1094: StLoc[204](t2#1#238: &vector<address>)
+	1095: CopyLoc[172](t1#1#238: &vector<address>)
+	1096: CopyLoc[204](t2#1#238: &vector<address>)
+	1097: Eq
+	1098: Not
+	1099: BrFalse(1116)
+B126:
+	1100: LdConst[8](vector<u8>: "Ass..)
+	1101: Call string::utf8(vector<u8>): String
+	1102: StLoc[68](%#93: String)
+	1103: ImmBorrowLoc[68](%#93: String)
+	1104: Call debug::print<String>(&String)
+	1105: MoveLoc[172](t1#1#238: &vector<address>)
+	1106: Call debug::print<vector<address>>(&vector<address>)
+	1107: LdConst[9](vector<u8>: "!="..)
+	1108: Call string::utf8(vector<u8>): String
+	1109: StLoc[69](%#94: String)
+	1110: ImmBorrowLoc[69](%#94: String)
+	1111: Call debug::print<String>(&String)
+	1112: MoveLoc[204](t2#1#238: &vector<address>)
+	1113: Call debug::print<vector<address>>(&vector<address>)
+	1114: LdU64(13906834788523704319)
+	1115: Abort
+B127:
+	1116: MoveLoc[204](t2#1#238: &vector<address>)
+	1117: Pop
+	1118: MoveLoc[172](t1#1#238: &vector<address>)
+	1119: Pop
+	1120: MoveLoc[92](bytes#1#232: BCS)
+	1121: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	1122: StLoc[70](%#95: vector<u8>)
+	1123: ImmBorrowLoc[70](%#95: vector<u8>)
+	1124: Call vector::is_empty<u8>(&vector<u8>): bool
+	1125: BrFalse(1127)
+B128:
+	1126: Branch(1075)
+B129:
+	1127: LdU64(13906834788523704319)
+	1128: Abort
+B130:
+	1129: MoveLoc[72](address_cases#1#0: vector<vector<address>>)
+	1130: StLoc[125](cases#1#241: vector<vector<address>>)
+B131:
+	1131: ImmBorrowLoc[125](cases#1#241: vector<vector<address>>)
+	1132: Call vector::is_empty<vector<address>>(&vector<vector<address>>): bool
+	1133: Not
+	1134: BrFalse(1218)
+B132:
+	1135: MutBorrowLoc[125](cases#1#241: vector<vector<address>>)
+	1136: VecPopBack(34)
+	1137: StLoc[109](case#1#241: vector<address>)
+	1138: ImmBorrowLoc[109](case#1#241: vector<address>)
+	1139: Call bcs::to_bytes<vector<address>>(&vector<address>): vector<u8>
+	1140: Call bcs::new(vector<u8>): BCS
+	1141: StLoc[93](bytes#1#241: BCS)
+	1142: MutBorrowLoc[93](bytes#1#241: BCS)
+	1143: StLoc[78](bcs#1#247: &mut BCS)
+	1144: LdConst[26](vector<address>: 00)
+	1145: StLoc[229](v#1#249: vector<address>)
+	1146: CopyLoc[78](bcs#1#247: &mut BCS)
+	1147: Call bcs::peel_vec_length(&mut BCS): u64
+	1148: StLoc[5]($stop#0#253: u64)
+	1149: LdU64(0)
+	1150: StLoc[139](i#1#256: u64)
+	1151: MoveLoc[5]($stop#0#253: u64)
+	1152: StLoc[151](stop#1#256: u64)
+B133:
+	1153: CopyLoc[139](i#1#256: u64)
+	1154: CopyLoc[151](stop#1#256: u64)
+	1155: Lt
+	1156: BrFalse(1174)
+B134:
+	1157: CopyLoc[139](i#1#256: u64)
+	1158: StLoc[140](i#1#259: u64)
+	1159: MutBorrowLoc[229](v#1#249: vector<address>)
+	1160: StLoc[9](%#101: &mut vector<address>)
+	1161: MoveLoc[140](i#1#259: u64)
+	1162: Pop
+	1163: CopyLoc[78](bcs#1#247: &mut BCS)
+	1164: Call bcs::peel_address(&mut BCS): address
+	1165: StLoc[71](%#99: address)
+	1166: MoveLoc[9](%#101: &mut vector<address>)
+	1167: MoveLoc[71](%#99: address)
+	1168: VecPushBack(26)
+	1169: MoveLoc[139](i#1#256: u64)
+	1170: LdU64(1)
+	1171: Add
+	1172: StLoc[139](i#1#256: u64)
+	1173: Branch(1153)
+B135:
+	1174: MoveLoc[78](bcs#1#247: &mut BCS)
+	1175: Pop
+	1176: MoveLoc[229](v#1#249: vector<address>)
+	1177: StLoc[173](t1#1#244: vector<address>)
+	1178: MoveLoc[109](case#1#241: vector<address>)
+	1179: StLoc[205](t2#1#244: vector<address>)
+	1180: ImmBorrowLoc[173](t1#1#244: vector<address>)
+	1181: StLoc[174](t1#1#262: &vector<address>)
+	1182: ImmBorrowLoc[205](t2#1#244: vector<address>)
+	1183: StLoc[206](t2#1#262: &vector<address>)
+	1184: CopyLoc[174](t1#1#262: &vector<address>)
+	1185: CopyLoc[206](t2#1#262: &vector<address>)
+	1186: Eq
+	1187: Not
+	1188: BrFalse(1205)
+B136:
+	1189: LdConst[8](vector<u8>: "Ass..)
+	1190: Call string::utf8(vector<u8>): String
+	1191: StLoc[10](%#102: String)
+	1192: ImmBorrowLoc[10](%#102: String)
+	1193: Call debug::print<String>(&String)
+	1194: MoveLoc[174](t1#1#262: &vector<address>)
+	1195: Call debug::print<vector<address>>(&vector<address>)
+	1196: LdConst[9](vector<u8>: "!="..)
+	1197: Call string::utf8(vector<u8>): String
+	1198: StLoc[11](%#103: String)
+	1199: ImmBorrowLoc[11](%#103: String)
+	1200: Call debug::print<String>(&String)
+	1201: MoveLoc[206](t2#1#262: &vector<address>)
+	1202: Call debug::print<vector<address>>(&vector<address>)
+	1203: LdU64(13906834792818671615)
+	1204: Abort
+B137:
+	1205: MoveLoc[206](t2#1#262: &vector<address>)
+	1206: Pop
+	1207: MoveLoc[174](t1#1#262: &vector<address>)
+	1208: Pop
+	1209: MoveLoc[93](bytes#1#241: BCS)
+	1210: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	1211: StLoc[12](%#104: vector<u8>)
+	1212: ImmBorrowLoc[12](%#104: vector<u8>)
+	1213: Call vector::is_empty<u8>(&vector<u8>): bool
+	1214: BrFalse(1216)
+B138:
+	1215: Branch(1131)
+B139:
+	1216: LdU64(13906834792818671615)
+	1217: Abort
+B140:
+	1218: Ret
+}
+
+test_option() {
+L0:	%#10: String
+L1:	%#11: vector<u8>
+L2:	%#13: String
+L3:	%#14: String
+L4:	%#15: vector<u8>
+L5:	%#19: Option<u8>
+L6:	%#2: String
+L7:	%#20: String
+L8:	%#21: String
+L9:	%#22: vector<u8>
+L10:	%#24: String
+L11:	%#25: String
+L12:	%#26: vector<u8>
+L13:	%#3: String
+L14:	%#30: Option<u64>
+L15:	%#31: String
+L16:	%#32: String
+L17:	%#33: vector<u8>
+L18:	%#35: String
+L19:	%#36: String
+L20:	%#37: vector<u8>
+L21:	%#4: vector<u8>
+L22:	%#41: Option<u128>
+L23:	%#42: String
+L24:	%#43: String
+L25:	%#44: vector<u8>
+L26:	%#46: String
+L27:	%#47: String
+L28:	%#48: vector<u8>
+L29:	%#52: Option<u256>
+L30:	%#53: String
+L31:	%#54: String
+L32:	%#55: vector<u8>
+L33:	%#57: String
+L34:	%#58: String
+L35:	%#59: vector<u8>
+L36:	%#63: Option<address>
+L37:	%#64: String
+L38:	%#65: String
+L39:	%#66: vector<u8>
+L40:	%#70: Option<Option<bool>>
+L41:	%#71: String
+L42:	%#72: String
+L43:	%#73: vector<u8>
+L44:	%#79: Option<bool>
+L45:	%#8: Option<bool>
+L46:	%#80: Option<Option<bool>>
+L47:	%#81: String
+L48:	%#82: String
+L49:	%#83: vector<u8>
+L50:	%#9: String
+L51:	address_cases#1#0: vector<Option<address>>
+L52:	bcs#1#116: &mut BCS
+L53:	bcs#1#127: &mut BCS
+L54:	bcs#1#138: &mut BCS
+L55:	bcs#1#140: &mut BCS
+L56:	bcs#1#16: &mut BCS
+L57:	bcs#1#36: &mut BCS
+L58:	bcs#1#56: &mut BCS
+L59:	bcs#1#76: &mut BCS
+L60:	bcs#1#96: &mut BCS
+L61:	bool_cases#1#0: vector<Option<bool>>
+L62:	bytes#1#1: BCS
+L63:	bytes#1#10: BCS
+L64:	bytes#1#101: BCS
+L65:	bytes#1#110: BCS
+L66:	bytes#1#121: BCS
+L67:	bytes#1#132: BCS
+L68:	bytes#1#21: BCS
+L69:	bytes#1#30: BCS
+L70:	bytes#1#41: BCS
+L71:	bytes#1#50: BCS
+L72:	bytes#1#61: BCS
+L73:	bytes#1#70: BCS
+L74:	bytes#1#81: BCS
+L75:	bytes#1#90: BCS
+L76:	case#1#1: Option<bool>
+L77:	case#1#10: Option<bool>
+L78:	case#1#101: Option<address>
+L79:	case#1#110: Option<address>
+L80:	case#1#121: Option<Option<bool>>
+L81:	case#1#132: Option<Option<bool>>
+L82:	case#1#21: Option<u8>
+L83:	case#1#30: Option<u8>
+L84:	case#1#41: Option<u64>
+L85:	case#1#50: Option<u64>
+L86:	case#1#61: Option<u128>
+L87:	case#1#70: Option<u128>
+L88:	case#1#81: Option<u256>
+L89:	case#1#90: Option<u256>
+L90:	cases#1#1: vector<Option<bool>>
+L91:	cases#1#10: vector<Option<bool>>
+L92:	cases#1#101: vector<Option<address>>
+L93:	cases#1#110: vector<Option<address>>
+L94:	cases#1#121: vector<Option<Option<bool>>>
+L95:	cases#1#132: vector<Option<Option<bool>>>
+L96:	cases#1#21: vector<Option<u8>>
+L97:	cases#1#30: vector<Option<u8>>
+L98:	cases#1#41: vector<Option<u64>>
+L99:	cases#1#50: vector<Option<u64>>
+L100:	cases#1#61: vector<Option<u128>>
+L101:	cases#1#70: vector<Option<u128>>
+L102:	cases#1#81: vector<Option<u256>>
+L103:	cases#1#90: vector<Option<u256>>
+L104:	opt_cases#1#0: vector<Option<Option<bool>>>
+L105:	t1#1#104: Option<address>
+L106:	t1#1#107: &Option<address>
+L107:	t1#1#113: Option<address>
+L108:	t1#1#118: &Option<address>
+L109:	t1#1#124: Option<Option<bool>>
+L110:	t1#1#129: &Option<Option<bool>>
+L111:	t1#1#13: Option<bool>
+L112:	t1#1#135: Option<Option<bool>>
+L113:	t1#1#142: &Option<Option<bool>>
+L114:	t1#1#18: &Option<bool>
+L115:	t1#1#24: Option<u8>
+L116:	t1#1#27: &Option<u8>
+L117:	t1#1#33: Option<u8>
+L118:	t1#1#38: &Option<u8>
+L119:	t1#1#4: Option<bool>
+L120:	t1#1#44: Option<u64>
+L121:	t1#1#47: &Option<u64>
+L122:	t1#1#53: Option<u64>
+L123:	t1#1#58: &Option<u64>
+L124:	t1#1#64: Option<u128>
+L125:	t1#1#67: &Option<u128>
+L126:	t1#1#7: &Option<bool>
+L127:	t1#1#73: Option<u128>
+L128:	t1#1#78: &Option<u128>
+L129:	t1#1#84: Option<u256>
+L130:	t1#1#87: &Option<u256>
+L131:	t1#1#93: Option<u256>
+L132:	t1#1#98: &Option<u256>
+L133:	t2#1#104: Option<address>
+L134:	t2#1#107: &Option<address>
+L135:	t2#1#113: Option<address>
+L136:	t2#1#118: &Option<address>
+L137:	t2#1#124: Option<Option<bool>>
+L138:	t2#1#129: &Option<Option<bool>>
+L139:	t2#1#13: Option<bool>
+L140:	t2#1#135: Option<Option<bool>>
+L141:	t2#1#142: &Option<Option<bool>>
+L142:	t2#1#18: &Option<bool>
+L143:	t2#1#24: Option<u8>
+L144:	t2#1#27: &Option<u8>
+L145:	t2#1#33: Option<u8>
+L146:	t2#1#38: &Option<u8>
+L147:	t2#1#4: Option<bool>
+L148:	t2#1#44: Option<u64>
+L149:	t2#1#47: &Option<u64>
+L150:	t2#1#53: Option<u64>
+L151:	t2#1#58: &Option<u64>
+L152:	t2#1#64: Option<u128>
+L153:	t2#1#67: &Option<u128>
+L154:	t2#1#7: &Option<bool>
+L155:	t2#1#73: Option<u128>
+L156:	t2#1#78: &Option<u128>
+L157:	t2#1#84: Option<u256>
+L158:	t2#1#87: &Option<u256>
+L159:	t2#1#93: Option<u256>
+L160:	t2#1#98: &Option<u256>
+L161:	u128_cases#1#0: vector<Option<u128>>
+L162:	u256_cases#1#0: vector<Option<u256>>
+L163:	u64_cases#1#0: vector<Option<u64>>
+L164:	u8_cases#1#0: vector<Option<u8>>
+B0:
+	0: Call option::none<bool>(): Option<bool>
+	1: LdTrue
+	2: Call option::some<bool>(bool): Option<bool>
+	3: LdFalse
+	4: Call option::some<bool>(bool): Option<bool>
+	5: VecPack(38, 3)
+	6: StLoc[61](bool_cases#1#0: vector<Option<bool>>)
+	7: CopyLoc[61](bool_cases#1#0: vector<Option<bool>>)
+	8: StLoc[90](cases#1#1: vector<Option<bool>>)
+B1:
+	9: ImmBorrowLoc[90](cases#1#1: vector<Option<bool>>)
+	10: Call vector::is_empty<Option<bool>>(&vector<Option<bool>>): bool
+	11: Not
+	12: BrFalse(64)
+B2:
+	13: MutBorrowLoc[90](cases#1#1: vector<Option<bool>>)
+	14: VecPopBack(38)
+	15: StLoc[76](case#1#1: Option<bool>)
+	16: ImmBorrowLoc[76](case#1#1: Option<bool>)
+	17: Call bcs::to_bytes<Option<bool>>(&Option<bool>): vector<u8>
+	18: Call bcs::new(vector<u8>): BCS
+	19: StLoc[62](bytes#1#1: BCS)
+	20: MutBorrowLoc[62](bytes#1#1: BCS)
+	21: Call bcs::peel_option_bool(&mut BCS): Option<bool>
+	22: StLoc[119](t1#1#4: Option<bool>)
+	23: MoveLoc[76](case#1#1: Option<bool>)
+	24: StLoc[147](t2#1#4: Option<bool>)
+	25: ImmBorrowLoc[119](t1#1#4: Option<bool>)
+	26: StLoc[126](t1#1#7: &Option<bool>)
+	27: ImmBorrowLoc[147](t2#1#4: Option<bool>)
+	28: StLoc[154](t2#1#7: &Option<bool>)
+	29: CopyLoc[126](t1#1#7: &Option<bool>)
+	30: CopyLoc[154](t2#1#7: &Option<bool>)
+	31: Eq
+	32: Not
+	33: BrFalse(51)
+B3:
+	34: Branch(35)
+B4:
+	35: LdConst[8](vector<u8>: "Ass..)
+	36: Call string::utf8(vector<u8>): String
+	37: StLoc[6](%#2: String)
+	38: ImmBorrowLoc[6](%#2: String)
+	39: Call debug::print<String>(&String)
+	40: MoveLoc[126](t1#1#7: &Option<bool>)
+	41: Call debug::print<Option<bool>>(&Option<bool>)
+	42: LdConst[9](vector<u8>: "!="..)
+	43: Call string::utf8(vector<u8>): String
+	44: StLoc[13](%#3: String)
+	45: ImmBorrowLoc[13](%#3: String)
+	46: Call debug::print<String>(&String)
+	47: MoveLoc[154](t2#1#7: &Option<bool>)
+	48: Call debug::print<Option<bool>>(&Option<bool>)
+	49: LdU64(13906834818588475391)
+	50: Abort
+B5:
+	51: MoveLoc[154](t2#1#7: &Option<bool>)
+	52: Pop
+	53: MoveLoc[126](t1#1#7: &Option<bool>)
+	54: Pop
+	55: MoveLoc[62](bytes#1#1: BCS)
+	56: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	57: StLoc[21](%#4: vector<u8>)
+	58: ImmBorrowLoc[21](%#4: vector<u8>)
+	59: Call vector::is_empty<u8>(&vector<u8>): bool
+	60: BrFalse(62)
+B6:
+	61: Branch(9)
+B7:
+	62: LdU64(13906834818588475391)
+	63: Abort
+B8:
+	64: MoveLoc[61](bool_cases#1#0: vector<Option<bool>>)
+	65: StLoc[91](cases#1#10: vector<Option<bool>>)
+B9:
+	66: ImmBorrowLoc[91](cases#1#10: vector<Option<bool>>)
+	67: Call vector::is_empty<Option<bool>>(&vector<Option<bool>>): bool
+	68: Not
+	69: BrFalse(133)
+B10:
+	70: MutBorrowLoc[91](cases#1#10: vector<Option<bool>>)
+	71: VecPopBack(38)
+	72: StLoc[77](case#1#10: Option<bool>)
+	73: ImmBorrowLoc[77](case#1#10: Option<bool>)
+	74: Call bcs::to_bytes<Option<bool>>(&Option<bool>): vector<u8>
+	75: Call bcs::new(vector<u8>): BCS
+	76: StLoc[63](bytes#1#10: BCS)
+	77: MutBorrowLoc[63](bytes#1#10: BCS)
+	78: StLoc[56](bcs#1#16: &mut BCS)
+	79: CopyLoc[56](bcs#1#16: &mut BCS)
+	80: Call bcs::peel_bool(&mut BCS): bool
+	81: BrFalse(87)
+B11:
+	82: MoveLoc[56](bcs#1#16: &mut BCS)
+	83: Call bcs::peel_bool(&mut BCS): bool
+	84: Call option::some<bool>(bool): Option<bool>
+	85: StLoc[45](%#8: Option<bool>)
+	86: Branch(91)
+B12:
+	87: MoveLoc[56](bcs#1#16: &mut BCS)
+	88: Pop
+	89: Call option::none<bool>(): Option<bool>
+	90: StLoc[45](%#8: Option<bool>)
+B13:
+	91: MoveLoc[45](%#8: Option<bool>)
+	92: StLoc[111](t1#1#13: Option<bool>)
+	93: MoveLoc[77](case#1#10: Option<bool>)
+	94: StLoc[139](t2#1#13: Option<bool>)
+	95: ImmBorrowLoc[111](t1#1#13: Option<bool>)
+	96: StLoc[114](t1#1#18: &Option<bool>)
+	97: ImmBorrowLoc[139](t2#1#13: Option<bool>)
+	98: StLoc[142](t2#1#18: &Option<bool>)
+	99: CopyLoc[114](t1#1#18: &Option<bool>)
+	100: CopyLoc[142](t2#1#18: &Option<bool>)
+	101: Eq
+	102: Not
+	103: BrFalse(120)
+B14:
+	104: LdConst[8](vector<u8>: "Ass..)
+	105: Call string::utf8(vector<u8>): String
+	106: StLoc[50](%#9: String)
+	107: ImmBorrowLoc[50](%#9: String)
+	108: Call debug::print<String>(&String)
+	109: MoveLoc[114](t1#1#18: &Option<bool>)
+	110: Call debug::print<Option<bool>>(&Option<bool>)
+	111: LdConst[9](vector<u8>: "!="..)
+	112: Call string::utf8(vector<u8>): String
+	113: StLoc[0](%#10: String)
+	114: ImmBorrowLoc[0](%#10: String)
+	115: Call debug::print<String>(&String)
+	116: MoveLoc[142](t2#1#18: &Option<bool>)
+	117: Call debug::print<Option<bool>>(&Option<bool>)
+	118: LdU64(13906834822883442687)
+	119: Abort
+B15:
+	120: MoveLoc[142](t2#1#18: &Option<bool>)
+	121: Pop
+	122: MoveLoc[114](t1#1#18: &Option<bool>)
+	123: Pop
+	124: MoveLoc[63](bytes#1#10: BCS)
+	125: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	126: StLoc[1](%#11: vector<u8>)
+	127: ImmBorrowLoc[1](%#11: vector<u8>)
+	128: Call vector::is_empty<u8>(&vector<u8>): bool
+	129: BrFalse(131)
+B16:
+	130: Branch(66)
+B17:
+	131: LdU64(13906834822883442687)
+	132: Abort
+B18:
+	133: Call option::none<u8>(): Option<u8>
+	134: LdU8(0)
+	135: Call option::some<u8>(u8): Option<u8>
+	136: LdConst[0](u8: 255)
+	137: Call option::some<u8>(u8): Option<u8>
+	138: VecPack(39, 3)
+	139: StLoc[164](u8_cases#1#0: vector<Option<u8>>)
+	140: CopyLoc[164](u8_cases#1#0: vector<Option<u8>>)
+	141: StLoc[96](cases#1#21: vector<Option<u8>>)
+B19:
+	142: ImmBorrowLoc[96](cases#1#21: vector<Option<u8>>)
+	143: Call vector::is_empty<Option<u8>>(&vector<Option<u8>>): bool
+	144: Not
+	145: BrFalse(196)
+B20:
+	146: MutBorrowLoc[96](cases#1#21: vector<Option<u8>>)
+	147: VecPopBack(39)
+	148: StLoc[82](case#1#21: Option<u8>)
+	149: ImmBorrowLoc[82](case#1#21: Option<u8>)
+	150: Call bcs::to_bytes<Option<u8>>(&Option<u8>): vector<u8>
+	151: Call bcs::new(vector<u8>): BCS
+	152: StLoc[68](bytes#1#21: BCS)
+	153: MutBorrowLoc[68](bytes#1#21: BCS)
+	154: Call bcs::peel_option_u8(&mut BCS): Option<u8>
+	155: StLoc[115](t1#1#24: Option<u8>)
+	156: MoveLoc[82](case#1#21: Option<u8>)
+	157: StLoc[143](t2#1#24: Option<u8>)
+	158: ImmBorrowLoc[115](t1#1#24: Option<u8>)
+	159: StLoc[116](t1#1#27: &Option<u8>)
+	160: ImmBorrowLoc[143](t2#1#24: Option<u8>)
+	161: StLoc[144](t2#1#27: &Option<u8>)
+	162: CopyLoc[116](t1#1#27: &Option<u8>)
+	163: CopyLoc[144](t2#1#27: &Option<u8>)
+	164: Eq
+	165: Not
+	166: BrFalse(183)
+B21:
+	167: LdConst[8](vector<u8>: "Ass..)
+	168: Call string::utf8(vector<u8>): String
+	169: StLoc[2](%#13: String)
+	170: ImmBorrowLoc[2](%#13: String)
+	171: Call debug::print<String>(&String)
+	172: MoveLoc[116](t1#1#27: &Option<u8>)
+	173: Call debug::print<Option<u8>>(&Option<u8>)
+	174: LdConst[9](vector<u8>: "!="..)
+	175: Call string::utf8(vector<u8>): String
+	176: StLoc[3](%#14: String)
+	177: ImmBorrowLoc[3](%#14: String)
+	178: Call debug::print<String>(&String)
+	179: MoveLoc[144](t2#1#27: &Option<u8>)
+	180: Call debug::print<Option<u8>>(&Option<u8>)
+	181: LdU64(13906834835768344575)
+	182: Abort
+B22:
+	183: MoveLoc[144](t2#1#27: &Option<u8>)
+	184: Pop
+	185: MoveLoc[116](t1#1#27: &Option<u8>)
+	186: Pop
+	187: MoveLoc[68](bytes#1#21: BCS)
+	188: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	189: StLoc[4](%#15: vector<u8>)
+	190: ImmBorrowLoc[4](%#15: vector<u8>)
+	191: Call vector::is_empty<u8>(&vector<u8>): bool
+	192: BrFalse(194)
+B23:
+	193: Branch(142)
+B24:
+	194: LdU64(13906834835768344575)
+	195: Abort
+B25:
+	196: MoveLoc[164](u8_cases#1#0: vector<Option<u8>>)
+	197: StLoc[97](cases#1#30: vector<Option<u8>>)
+B26:
+	198: ImmBorrowLoc[97](cases#1#30: vector<Option<u8>>)
+	199: Call vector::is_empty<Option<u8>>(&vector<Option<u8>>): bool
+	200: Not
+	201: BrFalse(266)
+B27:
+	202: Branch(203)
+B28:
+	203: MutBorrowLoc[97](cases#1#30: vector<Option<u8>>)
+	204: VecPopBack(39)
+	205: StLoc[83](case#1#30: Option<u8>)
+	206: ImmBorrowLoc[83](case#1#30: Option<u8>)
+	207: Call bcs::to_bytes<Option<u8>>(&Option<u8>): vector<u8>
+	208: Call bcs::new(vector<u8>): BCS
+	209: StLoc[69](bytes#1#30: BCS)
+	210: MutBorrowLoc[69](bytes#1#30: BCS)
+	211: StLoc[57](bcs#1#36: &mut BCS)
+	212: CopyLoc[57](bcs#1#36: &mut BCS)
+	213: Call bcs::peel_bool(&mut BCS): bool
+	214: BrFalse(220)
+B29:
+	215: MoveLoc[57](bcs#1#36: &mut BCS)
+	216: Call bcs::peel_u8(&mut BCS): u8
+	217: Call option::some<u8>(u8): Option<u8>
+	218: StLoc[5](%#19: Option<u8>)
+	219: Branch(224)
+B30:
+	220: MoveLoc[57](bcs#1#36: &mut BCS)
+	221: Pop
+	222: Call option::none<u8>(): Option<u8>
+	223: StLoc[5](%#19: Option<u8>)
+B31:
+	224: MoveLoc[5](%#19: Option<u8>)
+	225: StLoc[117](t1#1#33: Option<u8>)
+	226: MoveLoc[83](case#1#30: Option<u8>)
+	227: StLoc[145](t2#1#33: Option<u8>)
+	228: ImmBorrowLoc[117](t1#1#33: Option<u8>)
+	229: StLoc[118](t1#1#38: &Option<u8>)
+	230: ImmBorrowLoc[145](t2#1#33: Option<u8>)
+	231: StLoc[146](t2#1#38: &Option<u8>)
+	232: CopyLoc[118](t1#1#38: &Option<u8>)
+	233: CopyLoc[146](t2#1#38: &Option<u8>)
+	234: Eq
+	235: Not
+	236: BrFalse(253)
+B32:
+	237: LdConst[8](vector<u8>: "Ass..)
+	238: Call string::utf8(vector<u8>): String
+	239: StLoc[7](%#20: String)
+	240: ImmBorrowLoc[7](%#20: String)
+	241: Call debug::print<String>(&String)
+	242: MoveLoc[118](t1#1#38: &Option<u8>)
+	243: Call debug::print<Option<u8>>(&Option<u8>)
+	244: LdConst[9](vector<u8>: "!="..)
+	245: Call string::utf8(vector<u8>): String
+	246: StLoc[8](%#21: String)
+	247: ImmBorrowLoc[8](%#21: String)
+	248: Call debug::print<String>(&String)
+	249: MoveLoc[146](t2#1#38: &Option<u8>)
+	250: Call debug::print<Option<u8>>(&Option<u8>)
+	251: LdU64(13906834840063311871)
+	252: Abort
+B33:
+	253: MoveLoc[146](t2#1#38: &Option<u8>)
+	254: Pop
+	255: MoveLoc[118](t1#1#38: &Option<u8>)
+	256: Pop
+	257: MoveLoc[69](bytes#1#30: BCS)
+	258: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	259: StLoc[9](%#22: vector<u8>)
+	260: ImmBorrowLoc[9](%#22: vector<u8>)
+	261: Call vector::is_empty<u8>(&vector<u8>): bool
+	262: BrFalse(264)
+B34:
+	263: Branch(198)
+B35:
+	264: LdU64(13906834840063311871)
+	265: Abort
+B36:
+	266: Call option::none<u64>(): Option<u64>
+	267: LdU64(0)
+	268: Call option::some<u64>(u64): Option<u64>
+	269: LdConst[3](u64: 1844..)
+	270: Call option::some<u64>(u64): Option<u64>
+	271: VecPack(40, 3)
+	272: StLoc[163](u64_cases#1#0: vector<Option<u64>>)
+	273: CopyLoc[163](u64_cases#1#0: vector<Option<u64>>)
+	274: StLoc[98](cases#1#41: vector<Option<u64>>)
+B37:
+	275: ImmBorrowLoc[98](cases#1#41: vector<Option<u64>>)
+	276: Call vector::is_empty<Option<u64>>(&vector<Option<u64>>): bool
+	277: Not
+	278: BrFalse(329)
+B38:
+	279: MutBorrowLoc[98](cases#1#41: vector<Option<u64>>)
+	280: VecPopBack(40)
+	281: StLoc[84](case#1#41: Option<u64>)
+	282: ImmBorrowLoc[84](case#1#41: Option<u64>)
+	283: Call bcs::to_bytes<Option<u64>>(&Option<u64>): vector<u8>
+	284: Call bcs::new(vector<u8>): BCS
+	285: StLoc[70](bytes#1#41: BCS)
+	286: MutBorrowLoc[70](bytes#1#41: BCS)
+	287: Call bcs::peel_option_u64(&mut BCS): Option<u64>
+	288: StLoc[120](t1#1#44: Option<u64>)
+	289: MoveLoc[84](case#1#41: Option<u64>)
+	290: StLoc[148](t2#1#44: Option<u64>)
+	291: ImmBorrowLoc[120](t1#1#44: Option<u64>)
+	292: StLoc[121](t1#1#47: &Option<u64>)
+	293: ImmBorrowLoc[148](t2#1#44: Option<u64>)
+	294: StLoc[149](t2#1#47: &Option<u64>)
+	295: CopyLoc[121](t1#1#47: &Option<u64>)
+	296: CopyLoc[149](t2#1#47: &Option<u64>)
+	297: Eq
+	298: Not
+	299: BrFalse(316)
+B39:
+	300: LdConst[8](vector<u8>: "Ass..)
+	301: Call string::utf8(vector<u8>): String
+	302: StLoc[10](%#24: String)
+	303: ImmBorrowLoc[10](%#24: String)
+	304: Call debug::print<String>(&String)
+	305: MoveLoc[121](t1#1#47: &Option<u64>)
+	306: Call debug::print<Option<u64>>(&Option<u64>)
+	307: LdConst[9](vector<u8>: "!="..)
+	308: Call string::utf8(vector<u8>): String
+	309: StLoc[11](%#25: String)
+	310: ImmBorrowLoc[11](%#25: String)
+	311: Call debug::print<String>(&String)
+	312: MoveLoc[149](t2#1#47: &Option<u64>)
+	313: Call debug::print<Option<u64>>(&Option<u64>)
+	314: LdU64(13906834852948213759)
+	315: Abort
+B40:
+	316: MoveLoc[149](t2#1#47: &Option<u64>)
+	317: Pop
+	318: MoveLoc[121](t1#1#47: &Option<u64>)
+	319: Pop
+	320: MoveLoc[70](bytes#1#41: BCS)
+	321: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	322: StLoc[12](%#26: vector<u8>)
+	323: ImmBorrowLoc[12](%#26: vector<u8>)
+	324: Call vector::is_empty<u8>(&vector<u8>): bool
+	325: BrFalse(327)
+B41:
+	326: Branch(275)
+B42:
+	327: LdU64(13906834852948213759)
+	328: Abort
+B43:
+	329: MoveLoc[163](u64_cases#1#0: vector<Option<u64>>)
+	330: StLoc[99](cases#1#50: vector<Option<u64>>)
+B44:
+	331: ImmBorrowLoc[99](cases#1#50: vector<Option<u64>>)
+	332: Call vector::is_empty<Option<u64>>(&vector<Option<u64>>): bool
+	333: Not
+	334: BrFalse(398)
+B45:
+	335: MutBorrowLoc[99](cases#1#50: vector<Option<u64>>)
+	336: VecPopBack(40)
+	337: StLoc[85](case#1#50: Option<u64>)
+	338: ImmBorrowLoc[85](case#1#50: Option<u64>)
+	339: Call bcs::to_bytes<Option<u64>>(&Option<u64>): vector<u8>
+	340: Call bcs::new(vector<u8>): BCS
+	341: StLoc[71](bytes#1#50: BCS)
+	342: MutBorrowLoc[71](bytes#1#50: BCS)
+	343: StLoc[58](bcs#1#56: &mut BCS)
+	344: CopyLoc[58](bcs#1#56: &mut BCS)
+	345: Call bcs::peel_bool(&mut BCS): bool
+	346: BrFalse(352)
+B46:
+	347: MoveLoc[58](bcs#1#56: &mut BCS)
+	348: Call bcs::peel_u64(&mut BCS): u64
+	349: Call option::some<u64>(u64): Option<u64>
+	350: StLoc[14](%#30: Option<u64>)
+	351: Branch(356)
+B47:
+	352: MoveLoc[58](bcs#1#56: &mut BCS)
+	353: Pop
+	354: Call option::none<u64>(): Option<u64>
+	355: StLoc[14](%#30: Option<u64>)
+B48:
+	356: MoveLoc[14](%#30: Option<u64>)
+	357: StLoc[122](t1#1#53: Option<u64>)
+	358: MoveLoc[85](case#1#50: Option<u64>)
+	359: StLoc[150](t2#1#53: Option<u64>)
+	360: ImmBorrowLoc[122](t1#1#53: Option<u64>)
+	361: StLoc[123](t1#1#58: &Option<u64>)
+	362: ImmBorrowLoc[150](t2#1#53: Option<u64>)
+	363: StLoc[151](t2#1#58: &Option<u64>)
+	364: CopyLoc[123](t1#1#58: &Option<u64>)
+	365: CopyLoc[151](t2#1#58: &Option<u64>)
+	366: Eq
+	367: Not
+	368: BrFalse(385)
+B49:
+	369: LdConst[8](vector<u8>: "Ass..)
+	370: Call string::utf8(vector<u8>): String
+	371: StLoc[15](%#31: String)
+	372: ImmBorrowLoc[15](%#31: String)
+	373: Call debug::print<String>(&String)
+	374: MoveLoc[123](t1#1#58: &Option<u64>)
+	375: Call debug::print<Option<u64>>(&Option<u64>)
+	376: LdConst[9](vector<u8>: "!="..)
+	377: Call string::utf8(vector<u8>): String
+	378: StLoc[16](%#32: String)
+	379: ImmBorrowLoc[16](%#32: String)
+	380: Call debug::print<String>(&String)
+	381: MoveLoc[151](t2#1#58: &Option<u64>)
+	382: Call debug::print<Option<u64>>(&Option<u64>)
+	383: LdU64(13906834857243181055)
+	384: Abort
+B50:
+	385: MoveLoc[151](t2#1#58: &Option<u64>)
+	386: Pop
+	387: MoveLoc[123](t1#1#58: &Option<u64>)
+	388: Pop
+	389: MoveLoc[71](bytes#1#50: BCS)
+	390: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	391: StLoc[17](%#33: vector<u8>)
+	392: ImmBorrowLoc[17](%#33: vector<u8>)
+	393: Call vector::is_empty<u8>(&vector<u8>): bool
+	394: BrFalse(396)
+B51:
+	395: Branch(331)
+B52:
+	396: LdU64(13906834857243181055)
+	397: Abort
+B53:
+	398: Call option::none<u128>(): Option<u128>
+	399: LdU128(0)
+	400: Call option::some<u128>(u128): Option<u128>
+	401: LdConst[4](u128: 3402..)
+	402: Call option::some<u128>(u128): Option<u128>
+	403: VecPack(41, 3)
+	404: StLoc[161](u128_cases#1#0: vector<Option<u128>>)
+	405: CopyLoc[161](u128_cases#1#0: vector<Option<u128>>)
+	406: StLoc[100](cases#1#61: vector<Option<u128>>)
+B54:
+	407: ImmBorrowLoc[100](cases#1#61: vector<Option<u128>>)
+	408: Call vector::is_empty<Option<u128>>(&vector<Option<u128>>): bool
+	409: Not
+	410: BrFalse(461)
+B55:
+	411: MutBorrowLoc[100](cases#1#61: vector<Option<u128>>)
+	412: VecPopBack(41)
+	413: StLoc[86](case#1#61: Option<u128>)
+	414: ImmBorrowLoc[86](case#1#61: Option<u128>)
+	415: Call bcs::to_bytes<Option<u128>>(&Option<u128>): vector<u8>
+	416: Call bcs::new(vector<u8>): BCS
+	417: StLoc[72](bytes#1#61: BCS)
+	418: MutBorrowLoc[72](bytes#1#61: BCS)
+	419: Call bcs::peel_option_u128(&mut BCS): Option<u128>
+	420: StLoc[124](t1#1#64: Option<u128>)
+	421: MoveLoc[86](case#1#61: Option<u128>)
+	422: StLoc[152](t2#1#64: Option<u128>)
+	423: ImmBorrowLoc[124](t1#1#64: Option<u128>)
+	424: StLoc[125](t1#1#67: &Option<u128>)
+	425: ImmBorrowLoc[152](t2#1#64: Option<u128>)
+	426: StLoc[153](t2#1#67: &Option<u128>)
+	427: CopyLoc[125](t1#1#67: &Option<u128>)
+	428: CopyLoc[153](t2#1#67: &Option<u128>)
+	429: Eq
+	430: Not
+	431: BrFalse(448)
+B56:
+	432: LdConst[8](vector<u8>: "Ass..)
+	433: Call string::utf8(vector<u8>): String
+	434: StLoc[18](%#35: String)
+	435: ImmBorrowLoc[18](%#35: String)
+	436: Call debug::print<String>(&String)
+	437: MoveLoc[125](t1#1#67: &Option<u128>)
+	438: Call debug::print<Option<u128>>(&Option<u128>)
+	439: LdConst[9](vector<u8>: "!="..)
+	440: Call string::utf8(vector<u8>): String
+	441: StLoc[19](%#36: String)
+	442: ImmBorrowLoc[19](%#36: String)
+	443: Call debug::print<String>(&String)
+	444: MoveLoc[153](t2#1#67: &Option<u128>)
+	445: Call debug::print<Option<u128>>(&Option<u128>)
+	446: LdU64(13906834870128082943)
+	447: Abort
+B57:
+	448: MoveLoc[153](t2#1#67: &Option<u128>)
+	449: Pop
+	450: MoveLoc[125](t1#1#67: &Option<u128>)
+	451: Pop
+	452: MoveLoc[72](bytes#1#61: BCS)
+	453: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	454: StLoc[20](%#37: vector<u8>)
+	455: ImmBorrowLoc[20](%#37: vector<u8>)
+	456: Call vector::is_empty<u8>(&vector<u8>): bool
+	457: BrFalse(459)
+B58:
+	458: Branch(407)
+B59:
+	459: LdU64(13906834870128082943)
+	460: Abort
+B60:
+	461: MoveLoc[161](u128_cases#1#0: vector<Option<u128>>)
+	462: StLoc[101](cases#1#70: vector<Option<u128>>)
+B61:
+	463: ImmBorrowLoc[101](cases#1#70: vector<Option<u128>>)
+	464: Call vector::is_empty<Option<u128>>(&vector<Option<u128>>): bool
+	465: Not
+	466: BrFalse(530)
+B62:
+	467: MutBorrowLoc[101](cases#1#70: vector<Option<u128>>)
+	468: VecPopBack(41)
+	469: StLoc[87](case#1#70: Option<u128>)
+	470: ImmBorrowLoc[87](case#1#70: Option<u128>)
+	471: Call bcs::to_bytes<Option<u128>>(&Option<u128>): vector<u8>
+	472: Call bcs::new(vector<u8>): BCS
+	473: StLoc[73](bytes#1#70: BCS)
+	474: MutBorrowLoc[73](bytes#1#70: BCS)
+	475: StLoc[59](bcs#1#76: &mut BCS)
+	476: CopyLoc[59](bcs#1#76: &mut BCS)
+	477: Call bcs::peel_bool(&mut BCS): bool
+	478: BrFalse(484)
+B63:
+	479: MoveLoc[59](bcs#1#76: &mut BCS)
+	480: Call bcs::peel_u128(&mut BCS): u128
+	481: Call option::some<u128>(u128): Option<u128>
+	482: StLoc[22](%#41: Option<u128>)
+	483: Branch(488)
+B64:
+	484: MoveLoc[59](bcs#1#76: &mut BCS)
+	485: Pop
+	486: Call option::none<u128>(): Option<u128>
+	487: StLoc[22](%#41: Option<u128>)
+B65:
+	488: MoveLoc[22](%#41: Option<u128>)
+	489: StLoc[127](t1#1#73: Option<u128>)
+	490: MoveLoc[87](case#1#70: Option<u128>)
+	491: StLoc[155](t2#1#73: Option<u128>)
+	492: ImmBorrowLoc[127](t1#1#73: Option<u128>)
+	493: StLoc[128](t1#1#78: &Option<u128>)
+	494: ImmBorrowLoc[155](t2#1#73: Option<u128>)
+	495: StLoc[156](t2#1#78: &Option<u128>)
+	496: CopyLoc[128](t1#1#78: &Option<u128>)
+	497: CopyLoc[156](t2#1#78: &Option<u128>)
+	498: Eq
+	499: Not
+	500: BrFalse(517)
+B66:
+	501: LdConst[8](vector<u8>: "Ass..)
+	502: Call string::utf8(vector<u8>): String
+	503: StLoc[23](%#42: String)
+	504: ImmBorrowLoc[23](%#42: String)
+	505: Call debug::print<String>(&String)
+	506: MoveLoc[128](t1#1#78: &Option<u128>)
+	507: Call debug::print<Option<u128>>(&Option<u128>)
+	508: LdConst[9](vector<u8>: "!="..)
+	509: Call string::utf8(vector<u8>): String
+	510: StLoc[24](%#43: String)
+	511: ImmBorrowLoc[24](%#43: String)
+	512: Call debug::print<String>(&String)
+	513: MoveLoc[156](t2#1#78: &Option<u128>)
+	514: Call debug::print<Option<u128>>(&Option<u128>)
+	515: LdU64(13906834874423050239)
+	516: Abort
+B67:
+	517: MoveLoc[156](t2#1#78: &Option<u128>)
+	518: Pop
+	519: MoveLoc[128](t1#1#78: &Option<u128>)
+	520: Pop
+	521: MoveLoc[73](bytes#1#70: BCS)
+	522: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	523: StLoc[25](%#44: vector<u8>)
+	524: ImmBorrowLoc[25](%#44: vector<u8>)
+	525: Call vector::is_empty<u8>(&vector<u8>): bool
+	526: BrFalse(528)
+B68:
+	527: Branch(463)
+B69:
+	528: LdU64(13906834874423050239)
+	529: Abort
+B70:
+	530: Call option::none<u256>(): Option<u256>
+	531: LdU256(0)
+	532: Call option::some<u256>(u256): Option<u256>
+	533: LdConst[5](u256: 1157..)
+	534: Call option::some<u256>(u256): Option<u256>
+	535: VecPack(42, 3)
+	536: StLoc[162](u256_cases#1#0: vector<Option<u256>>)
+	537: CopyLoc[162](u256_cases#1#0: vector<Option<u256>>)
+	538: StLoc[102](cases#1#81: vector<Option<u256>>)
+B71:
+	539: ImmBorrowLoc[102](cases#1#81: vector<Option<u256>>)
+	540: Call vector::is_empty<Option<u256>>(&vector<Option<u256>>): bool
+	541: Not
+	542: BrFalse(593)
+B72:
+	543: MutBorrowLoc[102](cases#1#81: vector<Option<u256>>)
+	544: VecPopBack(42)
+	545: StLoc[88](case#1#81: Option<u256>)
+	546: ImmBorrowLoc[88](case#1#81: Option<u256>)
+	547: Call bcs::to_bytes<Option<u256>>(&Option<u256>): vector<u8>
+	548: Call bcs::new(vector<u8>): BCS
+	549: StLoc[74](bytes#1#81: BCS)
+	550: MutBorrowLoc[74](bytes#1#81: BCS)
+	551: Call bcs::peel_option_u256(&mut BCS): Option<u256>
+	552: StLoc[129](t1#1#84: Option<u256>)
+	553: MoveLoc[88](case#1#81: Option<u256>)
+	554: StLoc[157](t2#1#84: Option<u256>)
+	555: ImmBorrowLoc[129](t1#1#84: Option<u256>)
+	556: StLoc[130](t1#1#87: &Option<u256>)
+	557: ImmBorrowLoc[157](t2#1#84: Option<u256>)
+	558: StLoc[158](t2#1#87: &Option<u256>)
+	559: CopyLoc[130](t1#1#87: &Option<u256>)
+	560: CopyLoc[158](t2#1#87: &Option<u256>)
+	561: Eq
+	562: Not
+	563: BrFalse(580)
+B73:
+	564: LdConst[8](vector<u8>: "Ass..)
+	565: Call string::utf8(vector<u8>): String
+	566: StLoc[26](%#46: String)
+	567: ImmBorrowLoc[26](%#46: String)
+	568: Call debug::print<String>(&String)
+	569: MoveLoc[130](t1#1#87: &Option<u256>)
+	570: Call debug::print<Option<u256>>(&Option<u256>)
+	571: LdConst[9](vector<u8>: "!="..)
+	572: Call string::utf8(vector<u8>): String
+	573: StLoc[27](%#47: String)
+	574: ImmBorrowLoc[27](%#47: String)
+	575: Call debug::print<String>(&String)
+	576: MoveLoc[158](t2#1#87: &Option<u256>)
+	577: Call debug::print<Option<u256>>(&Option<u256>)
+	578: LdU64(13906834887307952127)
+	579: Abort
+B74:
+	580: MoveLoc[158](t2#1#87: &Option<u256>)
+	581: Pop
+	582: MoveLoc[130](t1#1#87: &Option<u256>)
+	583: Pop
+	584: MoveLoc[74](bytes#1#81: BCS)
+	585: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	586: StLoc[28](%#48: vector<u8>)
+	587: ImmBorrowLoc[28](%#48: vector<u8>)
+	588: Call vector::is_empty<u8>(&vector<u8>): bool
+	589: BrFalse(591)
+B75:
+	590: Branch(539)
+B76:
+	591: LdU64(13906834887307952127)
+	592: Abort
+B77:
+	593: MoveLoc[162](u256_cases#1#0: vector<Option<u256>>)
+	594: StLoc[103](cases#1#90: vector<Option<u256>>)
+B78:
+	595: ImmBorrowLoc[103](cases#1#90: vector<Option<u256>>)
+	596: Call vector::is_empty<Option<u256>>(&vector<Option<u256>>): bool
+	597: Not
+	598: BrFalse(662)
+B79:
+	599: MutBorrowLoc[103](cases#1#90: vector<Option<u256>>)
+	600: VecPopBack(42)
+	601: StLoc[89](case#1#90: Option<u256>)
+	602: ImmBorrowLoc[89](case#1#90: Option<u256>)
+	603: Call bcs::to_bytes<Option<u256>>(&Option<u256>): vector<u8>
+	604: Call bcs::new(vector<u8>): BCS
+	605: StLoc[75](bytes#1#90: BCS)
+	606: MutBorrowLoc[75](bytes#1#90: BCS)
+	607: StLoc[60](bcs#1#96: &mut BCS)
+	608: CopyLoc[60](bcs#1#96: &mut BCS)
+	609: Call bcs::peel_bool(&mut BCS): bool
+	610: BrFalse(616)
+B80:
+	611: MoveLoc[60](bcs#1#96: &mut BCS)
+	612: Call bcs::peel_u256(&mut BCS): u256
+	613: Call option::some<u256>(u256): Option<u256>
+	614: StLoc[29](%#52: Option<u256>)
+	615: Branch(620)
+B81:
+	616: MoveLoc[60](bcs#1#96: &mut BCS)
+	617: Pop
+	618: Call option::none<u256>(): Option<u256>
+	619: StLoc[29](%#52: Option<u256>)
+B82:
+	620: MoveLoc[29](%#52: Option<u256>)
+	621: StLoc[131](t1#1#93: Option<u256>)
+	622: MoveLoc[89](case#1#90: Option<u256>)
+	623: StLoc[159](t2#1#93: Option<u256>)
+	624: ImmBorrowLoc[131](t1#1#93: Option<u256>)
+	625: StLoc[132](t1#1#98: &Option<u256>)
+	626: ImmBorrowLoc[159](t2#1#93: Option<u256>)
+	627: StLoc[160](t2#1#98: &Option<u256>)
+	628: CopyLoc[132](t1#1#98: &Option<u256>)
+	629: CopyLoc[160](t2#1#98: &Option<u256>)
+	630: Eq
+	631: Not
+	632: BrFalse(649)
+B83:
+	633: LdConst[8](vector<u8>: "Ass..)
+	634: Call string::utf8(vector<u8>): String
+	635: StLoc[30](%#53: String)
+	636: ImmBorrowLoc[30](%#53: String)
+	637: Call debug::print<String>(&String)
+	638: MoveLoc[132](t1#1#98: &Option<u256>)
+	639: Call debug::print<Option<u256>>(&Option<u256>)
+	640: LdConst[9](vector<u8>: "!="..)
+	641: Call string::utf8(vector<u8>): String
+	642: StLoc[31](%#54: String)
+	643: ImmBorrowLoc[31](%#54: String)
+	644: Call debug::print<String>(&String)
+	645: MoveLoc[160](t2#1#98: &Option<u256>)
+	646: Call debug::print<Option<u256>>(&Option<u256>)
+	647: LdU64(13906834891602919423)
+	648: Abort
+B84:
+	649: MoveLoc[160](t2#1#98: &Option<u256>)
+	650: Pop
+	651: MoveLoc[132](t1#1#98: &Option<u256>)
+	652: Pop
+	653: MoveLoc[75](bytes#1#90: BCS)
+	654: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	655: StLoc[32](%#55: vector<u8>)
+	656: ImmBorrowLoc[32](%#55: vector<u8>)
+	657: Call vector::is_empty<u8>(&vector<u8>): bool
+	658: BrFalse(660)
+B85:
+	659: Branch(595)
+B86:
+	660: LdU64(13906834891602919423)
+	661: Abort
+B87:
+	662: Call option::none<address>(): Option<address>
+	663: LdConst[27](address: 0x00..)
+	664: Call option::some<address>(address): Option<address>
+	665: LdConst[28](address: 0x00..)
+	666: Call option::some<address>(address): Option<address>
+	667: VecPack(43, 3)
+	668: StLoc[51](address_cases#1#0: vector<Option<address>>)
+	669: CopyLoc[51](address_cases#1#0: vector<Option<address>>)
+	670: StLoc[92](cases#1#101: vector<Option<address>>)
+B88:
+	671: ImmBorrowLoc[92](cases#1#101: vector<Option<address>>)
+	672: Call vector::is_empty<Option<address>>(&vector<Option<address>>): bool
+	673: Not
+	674: BrFalse(725)
+B89:
+	675: MutBorrowLoc[92](cases#1#101: vector<Option<address>>)
+	676: VecPopBack(43)
+	677: StLoc[78](case#1#101: Option<address>)
+	678: ImmBorrowLoc[78](case#1#101: Option<address>)
+	679: Call bcs::to_bytes<Option<address>>(&Option<address>): vector<u8>
+	680: Call bcs::new(vector<u8>): BCS
+	681: StLoc[64](bytes#1#101: BCS)
+	682: MutBorrowLoc[64](bytes#1#101: BCS)
+	683: Call bcs::peel_option_address(&mut BCS): Option<address>
+	684: StLoc[105](t1#1#104: Option<address>)
+	685: MoveLoc[78](case#1#101: Option<address>)
+	686: StLoc[133](t2#1#104: Option<address>)
+	687: ImmBorrowLoc[105](t1#1#104: Option<address>)
+	688: StLoc[106](t1#1#107: &Option<address>)
+	689: ImmBorrowLoc[133](t2#1#104: Option<address>)
+	690: StLoc[134](t2#1#107: &Option<address>)
+	691: CopyLoc[106](t1#1#107: &Option<address>)
+	692: CopyLoc[134](t2#1#107: &Option<address>)
+	693: Eq
+	694: Not
+	695: BrFalse(712)
+B90:
+	696: LdConst[8](vector<u8>: "Ass..)
+	697: Call string::utf8(vector<u8>): String
+	698: StLoc[33](%#57: String)
+	699: ImmBorrowLoc[33](%#57: String)
+	700: Call debug::print<String>(&String)
+	701: MoveLoc[106](t1#1#107: &Option<address>)
+	702: Call debug::print<Option<address>>(&Option<address>)
+	703: LdConst[9](vector<u8>: "!="..)
+	704: Call string::utf8(vector<u8>): String
+	705: StLoc[34](%#58: String)
+	706: ImmBorrowLoc[34](%#58: String)
+	707: Call debug::print<String>(&String)
+	708: MoveLoc[134](t2#1#107: &Option<address>)
+	709: Call debug::print<Option<address>>(&Option<address>)
+	710: LdU64(13906834904487821311)
+	711: Abort
+B91:
+	712: MoveLoc[134](t2#1#107: &Option<address>)
+	713: Pop
+	714: MoveLoc[106](t1#1#107: &Option<address>)
+	715: Pop
+	716: MoveLoc[64](bytes#1#101: BCS)
+	717: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	718: StLoc[35](%#59: vector<u8>)
+	719: ImmBorrowLoc[35](%#59: vector<u8>)
+	720: Call vector::is_empty<u8>(&vector<u8>): bool
+	721: BrFalse(723)
+B92:
+	722: Branch(671)
+B93:
+	723: LdU64(13906834904487821311)
+	724: Abort
+B94:
+	725: MoveLoc[51](address_cases#1#0: vector<Option<address>>)
+	726: StLoc[93](cases#1#110: vector<Option<address>>)
+B95:
+	727: ImmBorrowLoc[93](cases#1#110: vector<Option<address>>)
+	728: Call vector::is_empty<Option<address>>(&vector<Option<address>>): bool
+	729: Not
+	730: BrFalse(794)
+B96:
+	731: MutBorrowLoc[93](cases#1#110: vector<Option<address>>)
+	732: VecPopBack(43)
+	733: StLoc[79](case#1#110: Option<address>)
+	734: ImmBorrowLoc[79](case#1#110: Option<address>)
+	735: Call bcs::to_bytes<Option<address>>(&Option<address>): vector<u8>
+	736: Call bcs::new(vector<u8>): BCS
+	737: StLoc[65](bytes#1#110: BCS)
+	738: MutBorrowLoc[65](bytes#1#110: BCS)
+	739: StLoc[52](bcs#1#116: &mut BCS)
+	740: CopyLoc[52](bcs#1#116: &mut BCS)
+	741: Call bcs::peel_bool(&mut BCS): bool
+	742: BrFalse(748)
+B97:
+	743: MoveLoc[52](bcs#1#116: &mut BCS)
+	744: Call bcs::peel_address(&mut BCS): address
+	745: Call option::some<address>(address): Option<address>
+	746: StLoc[36](%#63: Option<address>)
+	747: Branch(752)
+B98:
+	748: MoveLoc[52](bcs#1#116: &mut BCS)
+	749: Pop
+	750: Call option::none<address>(): Option<address>
+	751: StLoc[36](%#63: Option<address>)
+B99:
+	752: MoveLoc[36](%#63: Option<address>)
+	753: StLoc[107](t1#1#113: Option<address>)
+	754: MoveLoc[79](case#1#110: Option<address>)
+	755: StLoc[135](t2#1#113: Option<address>)
+	756: ImmBorrowLoc[107](t1#1#113: Option<address>)
+	757: StLoc[108](t1#1#118: &Option<address>)
+	758: ImmBorrowLoc[135](t2#1#113: Option<address>)
+	759: StLoc[136](t2#1#118: &Option<address>)
+	760: CopyLoc[108](t1#1#118: &Option<address>)
+	761: CopyLoc[136](t2#1#118: &Option<address>)
+	762: Eq
+	763: Not
+	764: BrFalse(781)
+B100:
+	765: LdConst[8](vector<u8>: "Ass..)
+	766: Call string::utf8(vector<u8>): String
+	767: StLoc[37](%#64: String)
+	768: ImmBorrowLoc[37](%#64: String)
+	769: Call debug::print<String>(&String)
+	770: MoveLoc[108](t1#1#118: &Option<address>)
+	771: Call debug::print<Option<address>>(&Option<address>)
+	772: LdConst[9](vector<u8>: "!="..)
+	773: Call string::utf8(vector<u8>): String
+	774: StLoc[38](%#65: String)
+	775: ImmBorrowLoc[38](%#65: String)
+	776: Call debug::print<String>(&String)
+	777: MoveLoc[136](t2#1#118: &Option<address>)
+	778: Call debug::print<Option<address>>(&Option<address>)
+	779: LdU64(13906834908782788607)
+	780: Abort
+B101:
+	781: MoveLoc[136](t2#1#118: &Option<address>)
+	782: Pop
+	783: MoveLoc[108](t1#1#118: &Option<address>)
+	784: Pop
+	785: MoveLoc[65](bytes#1#110: BCS)
+	786: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	787: StLoc[39](%#66: vector<u8>)
+	788: ImmBorrowLoc[39](%#66: vector<u8>)
+	789: Call vector::is_empty<u8>(&vector<u8>): bool
+	790: BrFalse(792)
+B102:
+	791: Branch(727)
+B103:
+	792: LdU64(13906834908782788607)
+	793: Abort
+B104:
+	794: Call option::none<Option<bool>>(): Option<Option<bool>>
+	795: Call option::none<bool>(): Option<bool>
+	796: Call option::some<Option<bool>>(Option<bool>): Option<Option<bool>>
+	797: LdTrue
+	798: Call option::some<bool>(bool): Option<bool>
+	799: Call option::some<Option<bool>>(Option<bool>): Option<Option<bool>>
+	800: VecPack(44, 3)
+	801: StLoc[104](opt_cases#1#0: vector<Option<Option<bool>>>)
+	802: CopyLoc[104](opt_cases#1#0: vector<Option<Option<bool>>>)
+	803: StLoc[94](cases#1#121: vector<Option<Option<bool>>>)
+B105:
+	804: ImmBorrowLoc[94](cases#1#121: vector<Option<Option<bool>>>)
+	805: Call vector::is_empty<Option<Option<bool>>>(&vector<Option<Option<bool>>>): bool
+	806: Not
+	807: BrFalse(871)
+B106:
+	808: MutBorrowLoc[94](cases#1#121: vector<Option<Option<bool>>>)
+	809: VecPopBack(44)
+	810: StLoc[80](case#1#121: Option<Option<bool>>)
+	811: ImmBorrowLoc[80](case#1#121: Option<Option<bool>>)
+	812: Call bcs::to_bytes<Option<Option<bool>>>(&Option<Option<bool>>): vector<u8>
+	813: Call bcs::new(vector<u8>): BCS
+	814: StLoc[66](bytes#1#121: BCS)
+	815: MutBorrowLoc[66](bytes#1#121: BCS)
+	816: StLoc[53](bcs#1#127: &mut BCS)
+	817: CopyLoc[53](bcs#1#127: &mut BCS)
+	818: Call bcs::peel_bool(&mut BCS): bool
+	819: BrFalse(825)
+B107:
+	820: MoveLoc[53](bcs#1#127: &mut BCS)
+	821: Call bcs::peel_option_bool(&mut BCS): Option<bool>
+	822: Call option::some<Option<bool>>(Option<bool>): Option<Option<bool>>
+	823: StLoc[40](%#70: Option<Option<bool>>)
+	824: Branch(829)
+B108:
+	825: MoveLoc[53](bcs#1#127: &mut BCS)
+	826: Pop
+	827: Call option::none<Option<bool>>(): Option<Option<bool>>
+	828: StLoc[40](%#70: Option<Option<bool>>)
+B109:
+	829: MoveLoc[40](%#70: Option<Option<bool>>)
+	830: StLoc[109](t1#1#124: Option<Option<bool>>)
+	831: MoveLoc[80](case#1#121: Option<Option<bool>>)
+	832: StLoc[137](t2#1#124: Option<Option<bool>>)
+	833: ImmBorrowLoc[109](t1#1#124: Option<Option<bool>>)
+	834: StLoc[110](t1#1#129: &Option<Option<bool>>)
+	835: ImmBorrowLoc[137](t2#1#124: Option<Option<bool>>)
+	836: StLoc[138](t2#1#129: &Option<Option<bool>>)
+	837: CopyLoc[110](t1#1#129: &Option<Option<bool>>)
+	838: CopyLoc[138](t2#1#129: &Option<Option<bool>>)
+	839: Eq
+	840: Not
+	841: BrFalse(858)
+B110:
+	842: LdConst[8](vector<u8>: "Ass..)
+	843: Call string::utf8(vector<u8>): String
+	844: StLoc[41](%#71: String)
+	845: ImmBorrowLoc[41](%#71: String)
+	846: Call debug::print<String>(&String)
+	847: MoveLoc[110](t1#1#129: &Option<Option<bool>>)
+	848: Call debug::print<Option<Option<bool>>>(&Option<Option<bool>>)
+	849: LdConst[9](vector<u8>: "!="..)
+	850: Call string::utf8(vector<u8>): String
+	851: StLoc[42](%#72: String)
+	852: ImmBorrowLoc[42](%#72: String)
+	853: Call debug::print<String>(&String)
+	854: MoveLoc[138](t2#1#129: &Option<Option<bool>>)
+	855: Call debug::print<Option<Option<bool>>>(&Option<Option<bool>>)
+	856: LdU64(13906834938847559679)
+	857: Abort
+B111:
+	858: MoveLoc[138](t2#1#129: &Option<Option<bool>>)
+	859: Pop
+	860: MoveLoc[110](t1#1#129: &Option<Option<bool>>)
+	861: Pop
+	862: MoveLoc[66](bytes#1#121: BCS)
+	863: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	864: StLoc[43](%#73: vector<u8>)
+	865: ImmBorrowLoc[43](%#73: vector<u8>)
+	866: Call vector::is_empty<u8>(&vector<u8>): bool
+	867: BrFalse(869)
+B112:
+	868: Branch(804)
+B113:
+	869: LdU64(13906834938847559679)
+	870: Abort
+B114:
+	871: MoveLoc[104](opt_cases#1#0: vector<Option<Option<bool>>>)
+	872: StLoc[95](cases#1#132: vector<Option<Option<bool>>>)
+B115:
+	873: ImmBorrowLoc[95](cases#1#132: vector<Option<Option<bool>>>)
+	874: Call vector::is_empty<Option<Option<bool>>>(&vector<Option<Option<bool>>>): bool
+	875: Not
+	876: BrFalse(953)
+B116:
+	877: MutBorrowLoc[95](cases#1#132: vector<Option<Option<bool>>>)
+	878: VecPopBack(44)
+	879: StLoc[81](case#1#132: Option<Option<bool>>)
+	880: ImmBorrowLoc[81](case#1#132: Option<Option<bool>>)
+	881: Call bcs::to_bytes<Option<Option<bool>>>(&Option<Option<bool>>): vector<u8>
+	882: Call bcs::new(vector<u8>): BCS
+	883: StLoc[67](bytes#1#132: BCS)
+	884: MutBorrowLoc[67](bytes#1#132: BCS)
+	885: StLoc[54](bcs#1#138: &mut BCS)
+	886: CopyLoc[54](bcs#1#138: &mut BCS)
+	887: Call bcs::peel_bool(&mut BCS): bool
+	888: BrFalse(907)
+B117:
+	889: MoveLoc[54](bcs#1#138: &mut BCS)
+	890: StLoc[55](bcs#1#140: &mut BCS)
+	891: CopyLoc[55](bcs#1#140: &mut BCS)
+	892: Call bcs::peel_bool(&mut BCS): bool
+	893: BrFalse(899)
+B118:
+	894: MoveLoc[55](bcs#1#140: &mut BCS)
+	895: Call bcs::peel_bool(&mut BCS): bool
+	896: Call option::some<bool>(bool): Option<bool>
+	897: StLoc[44](%#79: Option<bool>)
+	898: Branch(903)
+B119:
+	899: MoveLoc[55](bcs#1#140: &mut BCS)
+	900: Pop
+	901: Call option::none<bool>(): Option<bool>
+	902: StLoc[44](%#79: Option<bool>)
+B120:
+	903: MoveLoc[44](%#79: Option<bool>)
+	904: Call option::some<Option<bool>>(Option<bool>): Option<Option<bool>>
+	905: StLoc[46](%#80: Option<Option<bool>>)
+	906: Branch(911)
+B121:
+	907: MoveLoc[54](bcs#1#138: &mut BCS)
+	908: Pop
+	909: Call option::none<Option<bool>>(): Option<Option<bool>>
+	910: StLoc[46](%#80: Option<Option<bool>>)
+B122:
+	911: MoveLoc[46](%#80: Option<Option<bool>>)
+	912: StLoc[112](t1#1#135: Option<Option<bool>>)
+	913: MoveLoc[81](case#1#132: Option<Option<bool>>)
+	914: StLoc[140](t2#1#135: Option<Option<bool>>)
+	915: ImmBorrowLoc[112](t1#1#135: Option<Option<bool>>)
+	916: StLoc[113](t1#1#142: &Option<Option<bool>>)
+	917: ImmBorrowLoc[140](t2#1#135: Option<Option<bool>>)
+	918: StLoc[141](t2#1#142: &Option<Option<bool>>)
+	919: CopyLoc[113](t1#1#142: &Option<Option<bool>>)
+	920: CopyLoc[141](t2#1#142: &Option<Option<bool>>)
+	921: Eq
+	922: Not
+	923: BrFalse(940)
+B123:
+	924: LdConst[8](vector<u8>: "Ass..)
+	925: Call string::utf8(vector<u8>): String
+	926: StLoc[47](%#81: String)
+	927: ImmBorrowLoc[47](%#81: String)
+	928: Call debug::print<String>(&String)
+	929: MoveLoc[113](t1#1#142: &Option<Option<bool>>)
+	930: Call debug::print<Option<Option<bool>>>(&Option<Option<bool>>)
+	931: LdConst[9](vector<u8>: "!="..)
+	932: Call string::utf8(vector<u8>): String
+	933: StLoc[48](%#82: String)
+	934: ImmBorrowLoc[48](%#82: String)
+	935: Call debug::print<String>(&String)
+	936: MoveLoc[141](t2#1#142: &Option<Option<bool>>)
+	937: Call debug::print<Option<Option<bool>>>(&Option<Option<bool>>)
+	938: LdU64(13906834943142526975)
+	939: Abort
+B124:
+	940: MoveLoc[141](t2#1#142: &Option<Option<bool>>)
+	941: Pop
+	942: MoveLoc[113](t1#1#142: &Option<Option<bool>>)
+	943: Pop
+	944: MoveLoc[67](bytes#1#132: BCS)
+	945: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	946: StLoc[49](%#83: vector<u8>)
+	947: ImmBorrowLoc[49](%#83: vector<u8>)
+	948: Call vector::is_empty<u8>(&vector<u8>): bool
+	949: BrFalse(951)
+B125:
+	950: Branch(873)
+B126:
+	951: LdU64(13906834943142526975)
+	952: Abort
+B127:
+	953: Ret
+}
+
+test_enum() {
+L0:	%#2: String
+L1:	%#3: String
+L2:	%#4: vector<u8>
+L3:	bytes#1#1: BCS
+L4:	case#1#1: Enum
+L5:	cases#1#1: vector<Enum>
+L6:	t1#1#4: Enum
+L7:	t1#1#7: &Enum
+L8:	t2#1#4: Enum
+L9:	t2#1#7: &Enum
+B0:
+	0: PackVariant(VariantHandleIndex(0))
+	1: LdU8(1)
+	2: PackVariant(VariantHandleIndex(1))
+	3: LdU16(2)
+	4: PackVariant(VariantHandleIndex(2))
+	5: VecPack(2, 3)
+	6: StLoc[5](cases#1#1: vector<Enum>)
+B1:
+	7: ImmBorrowLoc[5](cases#1#1: vector<Enum>)
+	8: Call vector::is_empty<Enum>(&vector<Enum>): bool
+	9: Not
+	10: BrFalse(62)
+B2:
+	11: MutBorrowLoc[5](cases#1#1: vector<Enum>)
+	12: VecPopBack(2)
+	13: StLoc[4](case#1#1: Enum)
+	14: ImmBorrowLoc[4](case#1#1: Enum)
+	15: Call bcs::to_bytes<Enum>(&Enum): vector<u8>
+	16: Call bcs::new(vector<u8>): BCS
+	17: StLoc[3](bytes#1#1: BCS)
+	18: MutBorrowLoc[3](bytes#1#1: BCS)
+	19: Call peel_test_enum(&mut BCS): Enum
+	20: StLoc[6](t1#1#4: Enum)
+	21: MoveLoc[4](case#1#1: Enum)
+	22: StLoc[8](t2#1#4: Enum)
+	23: ImmBorrowLoc[6](t1#1#4: Enum)
+	24: StLoc[7](t1#1#7: &Enum)
+	25: ImmBorrowLoc[8](t2#1#4: Enum)
+	26: StLoc[9](t2#1#7: &Enum)
+	27: CopyLoc[7](t1#1#7: &Enum)
+	28: CopyLoc[9](t2#1#7: &Enum)
+	29: Eq
+	30: Not
+	31: BrFalse(49)
+B3:
+	32: Branch(33)
+B4:
+	33: LdConst[8](vector<u8>: "Ass..)
+	34: Call string::utf8(vector<u8>): String
+	35: StLoc[0](%#2: String)
+	36: ImmBorrowLoc[0](%#2: String)
+	37: Call debug::print<String>(&String)
+	38: MoveLoc[7](t1#1#7: &Enum)
+	39: Call debug::print<Enum>(&Enum)
+	40: LdConst[9](vector<u8>: "!="..)
+	41: Call string::utf8(vector<u8>): String
+	42: StLoc[1](%#3: String)
+	43: ImmBorrowLoc[1](%#3: String)
+	44: Call debug::print<String>(&String)
+	45: MoveLoc[9](t2#1#7: &Enum)
+	46: Call debug::print<Enum>(&Enum)
+	47: LdU64(13906834981797232639)
+	48: Abort
+B5:
+	49: MoveLoc[9](t2#1#7: &Enum)
+	50: Pop
+	51: MoveLoc[7](t1#1#7: &Enum)
+	52: Pop
+	53: MoveLoc[3](bytes#1#1: BCS)
+	54: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	55: StLoc[2](%#4: vector<u8>)
+	56: ImmBorrowLoc[2](%#4: vector<u8>)
+	57: Call vector::is_empty<u8>(&vector<u8>): bool
+	58: BrFalse(60)
+B6:
+	59: Branch(7)
+B7:
+	60: LdU64(13906834981797232639)
+	61: Abort
+B8:
+	62: Ret
+}
+
+peel_test_enum(bytes#0#0: &mut BCS): Enum {
+L1:	%#4: Enum
+L2:	%#5: Enum
+L3:	__match_tmp%#match_subject#2#2#0: &u32
+L4:	__match_tmp%#unpack_subject#1#1#0: u32
+B0:
+	0: CopyLoc[0](bytes#0#0: &mut BCS)
+	1: Call bcs::peel_enum_tag(&mut BCS): u32
+	2: StLoc[4](__match_tmp%#unpack_subject#1#1#0: u32)
+	3: ImmBorrowLoc[4](__match_tmp%#unpack_subject#1#1#0: u32)
+	4: StLoc[3](__match_tmp%#match_subject#2#2#0: &u32)
+	5: CopyLoc[3](__match_tmp%#match_subject#2#2#0: &u32)
+	6: ReadRef
+	7: LdU32(0)
+	8: Eq
+	9: BrFalse(17)
+B1:
+	10: MoveLoc[0](bytes#0#0: &mut BCS)
+	11: Pop
+	12: MoveLoc[3](__match_tmp%#match_subject#2#2#0: &u32)
+	13: Pop
+	14: PackVariant(VariantHandleIndex(0))
+	15: StLoc[2](%#5: Enum)
+	16: Branch(45)
+B2:
+	17: CopyLoc[3](__match_tmp%#match_subject#2#2#0: &u32)
+	18: ReadRef
+	19: LdU32(1)
+	20: Eq
+	21: BrFalse(29)
+B3:
+	22: MoveLoc[3](__match_tmp%#match_subject#2#2#0: &u32)
+	23: Pop
+	24: MoveLoc[0](bytes#0#0: &mut BCS)
+	25: Call bcs::peel_u8(&mut BCS): u8
+	26: PackVariant(VariantHandleIndex(1))
+	27: StLoc[1](%#4: Enum)
+	28: Branch(43)
+B4:
+	29: MoveLoc[3](__match_tmp%#match_subject#2#2#0: &u32)
+	30: ReadRef
+	31: LdU32(2)
+	32: Eq
+	33: BrFalse(35)
+B5:
+	34: Branch(39)
+B6:
+	35: MoveLoc[0](bytes#0#0: &mut BCS)
+	36: Pop
+	37: LdU64(13906835024746905599)
+	38: Abort
+B7:
+	39: MoveLoc[0](bytes#0#0: &mut BCS)
+	40: Call bcs::peel_u16(&mut BCS): u16
+	41: PackVariant(VariantHandleIndex(2))
+	42: StLoc[1](%#4: Enum)
+B8:
+	43: MoveLoc[1](%#4: Enum)
+	44: StLoc[2](%#5: Enum)
+B9:
+	45: MoveLoc[2](%#5: Enum)
+	46: Ret
+}
+
+test_complex() {
+L0:	$stop#0#122: u64
+L1:	$stop#0#146: u64
+L2:	$stop#0#22: u64
+L3:	$stop#0#46: u64
+L4:	$stop#0#61: u64
+L5:	$stop#0#98: u64
+L6:	%#10: &mut vector<vector<u8>>
+L7:	%#11: String
+L8:	%#12: String
+L9:	%#13: vector<u8>
+L10:	%#17: vector<u8>
+L11:	%#2: String
+L12:	%#21: u8
+L13:	%#23: &mut vector<u8>
+L14:	%#24: &mut vector<vector<u8>>
+L15:	%#25: String
+L16:	%#26: String
+L17:	%#27: vector<u8>
+L18:	%#3: String
+L19:	%#31: Option<vector<u8>>
+L20:	%#32: String
+L21:	%#33: String
+L22:	%#34: vector<u8>
+L23:	%#4: vector<u8>
+L24:	%#40: u8
+L25:	%#42: &mut vector<u8>
+L26:	%#43: Option<vector<u8>>
+L27:	%#44: String
+L28:	%#45: String
+L29:	%#46: vector<u8>
+L30:	%#50: Option<u8>
+L31:	%#52: &mut vector<Option<u8>>
+L32:	%#53: String
+L33:	%#54: String
+L34:	%#55: vector<u8>
+L35:	%#59: Option<u8>
+L36:	%#63: Option<u8>
+L37:	%#64: &mut vector<Option<u8>>
+L38:	%#65: String
+L39:	%#66: String
+L40:	%#67: vector<u8>
+L41:	%#8: vector<u8>
+L42:	bcs#1#116: &mut BCS
+L43:	bcs#1#140: &mut BCS
+L44:	bcs#1#155: &mut BCS
+L45:	bcs#1#16: &mut BCS
+L46:	bcs#1#40: &mut BCS
+L47:	bcs#1#55: &mut BCS
+L48:	bcs#1#79: &mut BCS
+L49:	bcs#1#90: &mut BCS
+L50:	bcs#1#92: &mut BCS
+L51:	bytes#1#1: BCS
+L52:	bytes#1#10: BCS
+L53:	bytes#1#110: BCS
+L54:	bytes#1#134: BCS
+L55:	bytes#1#34: BCS
+L56:	bytes#1#73: BCS
+L57:	bytes#1#84: BCS
+L58:	case#1#1: vector<vector<u8>>
+L59:	case#1#10: vector<vector<u8>>
+L60:	case#1#110: vector<Option<u8>>
+L61:	case#1#134: vector<Option<u8>>
+L62:	case#1#34: vector<vector<u8>>
+L63:	case#1#73: Option<vector<u8>>
+L64:	case#1#84: Option<vector<u8>>
+L65:	cases#1#1: vector<vector<vector<u8>>>
+L66:	cases#1#10: vector<vector<vector<u8>>>
+L67:	cases#1#110: vector<vector<Option<u8>>>
+L68:	cases#1#134: vector<vector<Option<u8>>>
+L69:	cases#1#34: vector<vector<vector<u8>>>
+L70:	cases#1#73: vector<Option<vector<u8>>>
+L71:	cases#1#84: vector<Option<vector<u8>>>
+L72:	i#1#101: u64
+L73:	i#1#104: u64
+L74:	i#1#125: u64
+L75:	i#1#128: u64
+L76:	i#1#149: u64
+L77:	i#1#152: u64
+L78:	i#1#25: u64
+L79:	i#1#28: u64
+L80:	i#1#49: u64
+L81:	i#1#52: u64
+L82:	i#1#64: u64
+L83:	i#1#67: u64
+L84:	opt_vec_u8_cases#1#0: vector<Option<vector<u8>>>
+L85:	stop#1#101: u64
+L86:	stop#1#125: u64
+L87:	stop#1#149: u64
+L88:	stop#1#25: u64
+L89:	stop#1#49: u64
+L90:	stop#1#64: u64
+L91:	t1#1#107: &Option<vector<u8>>
+L92:	t1#1#113: vector<Option<u8>>
+L93:	t1#1#13: vector<vector<u8>>
+L94:	t1#1#131: &vector<Option<u8>>
+L95:	t1#1#137: vector<Option<u8>>
+L96:	t1#1#157: &vector<Option<u8>>
+L97:	t1#1#31: &vector<vector<u8>>
+L98:	t1#1#37: vector<vector<u8>>
+L99:	t1#1#4: vector<vector<u8>>
+L100:	t1#1#7: &vector<vector<u8>>
+L101:	t1#1#70: &vector<vector<u8>>
+L102:	t1#1#76: Option<vector<u8>>
+L103:	t1#1#81: &Option<vector<u8>>
+L104:	t1#1#87: Option<vector<u8>>
+L105:	t2#1#107: &Option<vector<u8>>
+L106:	t2#1#113: vector<Option<u8>>
+L107:	t2#1#13: vector<vector<u8>>
+L108:	t2#1#131: &vector<Option<u8>>
+L109:	t2#1#137: vector<Option<u8>>
+L110:	t2#1#157: &vector<Option<u8>>
+L111:	t2#1#31: &vector<vector<u8>>
+L112:	t2#1#37: vector<vector<u8>>
+L113:	t2#1#4: vector<vector<u8>>
+L114:	t2#1#7: &vector<vector<u8>>
+L115:	t2#1#70: &vector<vector<u8>>
+L116:	t2#1#76: Option<vector<u8>>
+L117:	t2#1#81: &Option<vector<u8>>
+L118:	t2#1#87: Option<vector<u8>>
+L119:	v#1#118: vector<Option<u8>>
+L120:	v#1#142: vector<Option<u8>>
+L121:	v#1#18: vector<vector<u8>>
+L122:	v#1#42: vector<vector<u8>>
+L123:	v#1#57: vector<u8>
+L124:	v#1#94: vector<u8>
+L125:	vec_opt_u8_cases#1#0: vector<vector<Option<u8>>>
+L126:	vec_vec_u8_cases#1#0: vector<vector<vector<u8>>>
+B0:
+	0: LdConst[29](vector<vector<vector<u8>>>: 0300..)
+	1: StLoc[126](vec_vec_u8_cases#1#0: vector<vector<vector<u8>>>)
+	2: CopyLoc[126](vec_vec_u8_cases#1#0: vector<vector<vector<u8>>>)
+	3: StLoc[65](cases#1#1: vector<vector<vector<u8>>>)
+B1:
+	4: ImmBorrowLoc[65](cases#1#1: vector<vector<vector<u8>>>)
+	5: Call vector::is_empty<vector<vector<u8>>>(&vector<vector<vector<u8>>>): bool
+	6: Not
+	7: BrFalse(59)
+B2:
+	8: MutBorrowLoc[65](cases#1#1: vector<vector<vector<u8>>>)
+	9: VecPopBack(48)
+	10: StLoc[58](case#1#1: vector<vector<u8>>)
+	11: ImmBorrowLoc[58](case#1#1: vector<vector<u8>>)
+	12: Call bcs::to_bytes<vector<vector<u8>>>(&vector<vector<u8>>): vector<u8>
+	13: Call bcs::new(vector<u8>): BCS
+	14: StLoc[51](bytes#1#1: BCS)
+	15: MutBorrowLoc[51](bytes#1#1: BCS)
+	16: Call bcs::peel_vec_vec_u8(&mut BCS): vector<vector<u8>>
+	17: StLoc[99](t1#1#4: vector<vector<u8>>)
+	18: MoveLoc[58](case#1#1: vector<vector<u8>>)
+	19: StLoc[113](t2#1#4: vector<vector<u8>>)
+	20: ImmBorrowLoc[99](t1#1#4: vector<vector<u8>>)
+	21: StLoc[100](t1#1#7: &vector<vector<u8>>)
+	22: ImmBorrowLoc[113](t2#1#4: vector<vector<u8>>)
+	23: StLoc[114](t2#1#7: &vector<vector<u8>>)
+	24: CopyLoc[100](t1#1#7: &vector<vector<u8>>)
+	25: CopyLoc[114](t2#1#7: &vector<vector<u8>>)
+	26: Eq
+	27: Not
+	28: BrFalse(46)
+B3:
+	29: Branch(30)
+B4:
+	30: LdConst[8](vector<u8>: "Ass..)
+	31: Call string::utf8(vector<u8>): String
+	32: StLoc[11](%#2: String)
+	33: ImmBorrowLoc[11](%#2: String)
+	34: Call debug::print<String>(&String)
+	35: MoveLoc[100](t1#1#7: &vector<vector<u8>>)
+	36: Call debug::print<vector<vector<u8>>>(&vector<vector<u8>>)
+	37: LdConst[9](vector<u8>: "!="..)
+	38: Call string::utf8(vector<u8>): String
+	39: StLoc[18](%#3: String)
+	40: ImmBorrowLoc[18](%#3: String)
+	41: Call debug::print<String>(&String)
+	42: MoveLoc[114](t2#1#7: &vector<vector<u8>>)
+	43: Call debug::print<vector<vector<u8>>>(&vector<vector<u8>>)
+	44: LdU64(13906835054811676671)
+	45: Abort
+B5:
+	46: MoveLoc[114](t2#1#7: &vector<vector<u8>>)
+	47: Pop
+	48: MoveLoc[100](t1#1#7: &vector<vector<u8>>)
+	49: Pop
+	50: MoveLoc[51](bytes#1#1: BCS)
+	51: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	52: StLoc[23](%#4: vector<u8>)
+	53: ImmBorrowLoc[23](%#4: vector<u8>)
+	54: Call vector::is_empty<u8>(&vector<u8>): bool
+	55: BrFalse(57)
+B6:
+	56: Branch(4)
+B7:
+	57: LdU64(13906835054811676671)
+	58: Abort
+B8:
+	59: CopyLoc[126](vec_vec_u8_cases#1#0: vector<vector<vector<u8>>>)
+	60: StLoc[66](cases#1#10: vector<vector<vector<u8>>>)
+B9:
+	61: ImmBorrowLoc[66](cases#1#10: vector<vector<vector<u8>>>)
+	62: Call vector::is_empty<vector<vector<u8>>>(&vector<vector<vector<u8>>>): bool
+	63: Not
+	64: BrFalse(148)
+B10:
+	65: MutBorrowLoc[66](cases#1#10: vector<vector<vector<u8>>>)
+	66: VecPopBack(48)
+	67: StLoc[59](case#1#10: vector<vector<u8>>)
+	68: ImmBorrowLoc[59](case#1#10: vector<vector<u8>>)
+	69: Call bcs::to_bytes<vector<vector<u8>>>(&vector<vector<u8>>): vector<u8>
+	70: Call bcs::new(vector<u8>): BCS
+	71: StLoc[52](bytes#1#10: BCS)
+	72: MutBorrowLoc[52](bytes#1#10: BCS)
+	73: StLoc[45](bcs#1#16: &mut BCS)
+	74: LdConst[30](vector<vector<u8>>: 00)
+	75: StLoc[121](v#1#18: vector<vector<u8>>)
+	76: CopyLoc[45](bcs#1#16: &mut BCS)
+	77: Call bcs::peel_vec_length(&mut BCS): u64
+	78: StLoc[2]($stop#0#22: u64)
+	79: LdU64(0)
+	80: StLoc[78](i#1#25: u64)
+	81: MoveLoc[2]($stop#0#22: u64)
+	82: StLoc[88](stop#1#25: u64)
+B11:
+	83: CopyLoc[78](i#1#25: u64)
+	84: CopyLoc[88](stop#1#25: u64)
+	85: Lt
+	86: BrFalse(104)
+B12:
+	87: CopyLoc[78](i#1#25: u64)
+	88: StLoc[79](i#1#28: u64)
+	89: MutBorrowLoc[121](v#1#18: vector<vector<u8>>)
+	90: StLoc[6](%#10: &mut vector<vector<u8>>)
+	91: MoveLoc[79](i#1#28: u64)
+	92: Pop
+	93: CopyLoc[45](bcs#1#16: &mut BCS)
+	94: Call bcs::peel_vec_u8(&mut BCS): vector<u8>
+	95: StLoc[41](%#8: vector<u8>)
+	96: MoveLoc[6](%#10: &mut vector<vector<u8>>)
+	97: MoveLoc[41](%#8: vector<u8>)
+	98: VecPushBack(6)
+	99: MoveLoc[78](i#1#25: u64)
+	100: LdU64(1)
+	101: Add
+	102: StLoc[78](i#1#25: u64)
+	103: Branch(83)
+B13:
+	104: MoveLoc[45](bcs#1#16: &mut BCS)
+	105: Pop
+	106: MoveLoc[121](v#1#18: vector<vector<u8>>)
+	107: StLoc[93](t1#1#13: vector<vector<u8>>)
+	108: MoveLoc[59](case#1#10: vector<vector<u8>>)
+	109: StLoc[107](t2#1#13: vector<vector<u8>>)
+	110: ImmBorrowLoc[93](t1#1#13: vector<vector<u8>>)
+	111: StLoc[97](t1#1#31: &vector<vector<u8>>)
+	112: ImmBorrowLoc[107](t2#1#13: vector<vector<u8>>)
+	113: StLoc[111](t2#1#31: &vector<vector<u8>>)
+	114: CopyLoc[97](t1#1#31: &vector<vector<u8>>)
+	115: CopyLoc[111](t2#1#31: &vector<vector<u8>>)
+	116: Eq
+	117: Not
+	118: BrFalse(135)
+B14:
+	119: LdConst[8](vector<u8>: "Ass..)
+	120: Call string::utf8(vector<u8>): String
+	121: StLoc[7](%#11: String)
+	122: ImmBorrowLoc[7](%#11: String)
+	123: Call debug::print<String>(&String)
+	124: MoveLoc[97](t1#1#31: &vector<vector<u8>>)
+	125: Call debug::print<vector<vector<u8>>>(&vector<vector<u8>>)
+	126: LdConst[9](vector<u8>: "!="..)
+	127: Call string::utf8(vector<u8>): String
+	128: StLoc[8](%#12: String)
+	129: ImmBorrowLoc[8](%#12: String)
+	130: Call debug::print<String>(&String)
+	131: MoveLoc[111](t2#1#31: &vector<vector<u8>>)
+	132: Call debug::print<vector<vector<u8>>>(&vector<vector<u8>>)
+	133: LdU64(13906835059106643967)
+	134: Abort
+B15:
+	135: MoveLoc[111](t2#1#31: &vector<vector<u8>>)
+	136: Pop
+	137: MoveLoc[97](t1#1#31: &vector<vector<u8>>)
+	138: Pop
+	139: MoveLoc[52](bytes#1#10: BCS)
+	140: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	141: StLoc[9](%#13: vector<u8>)
+	142: ImmBorrowLoc[9](%#13: vector<u8>)
+	143: Call vector::is_empty<u8>(&vector<u8>): bool
+	144: BrFalse(146)
+B16:
+	145: Branch(61)
+B17:
+	146: LdU64(13906835059106643967)
+	147: Abort
+B18:
+	148: MoveLoc[126](vec_vec_u8_cases#1#0: vector<vector<vector<u8>>>)
+	149: StLoc[69](cases#1#34: vector<vector<vector<u8>>>)
+B19:
+	150: ImmBorrowLoc[69](cases#1#34: vector<vector<vector<u8>>>)
+	151: Call vector::is_empty<vector<vector<u8>>>(&vector<vector<vector<u8>>>): bool
+	152: Not
+	153: BrFalse(270)
+B20:
+	154: MutBorrowLoc[69](cases#1#34: vector<vector<vector<u8>>>)
+	155: VecPopBack(48)
+	156: StLoc[62](case#1#34: vector<vector<u8>>)
+	157: ImmBorrowLoc[62](case#1#34: vector<vector<u8>>)
+	158: Call bcs::to_bytes<vector<vector<u8>>>(&vector<vector<u8>>): vector<u8>
+	159: Call bcs::new(vector<u8>): BCS
+	160: StLoc[55](bytes#1#34: BCS)
+	161: MutBorrowLoc[55](bytes#1#34: BCS)
+	162: StLoc[46](bcs#1#40: &mut BCS)
+	163: LdConst[30](vector<vector<u8>>: 00)
+	164: StLoc[122](v#1#42: vector<vector<u8>>)
+	165: CopyLoc[46](bcs#1#40: &mut BCS)
+	166: Call bcs::peel_vec_length(&mut BCS): u64
+	167: StLoc[3]($stop#0#46: u64)
+	168: LdU64(0)
+	169: StLoc[80](i#1#49: u64)
+	170: MoveLoc[3]($stop#0#46: u64)
+	171: StLoc[89](stop#1#49: u64)
+B21:
+	172: CopyLoc[80](i#1#49: u64)
+	173: CopyLoc[89](stop#1#49: u64)
+	174: Lt
+	175: BrFalse(226)
+B22:
+	176: CopyLoc[80](i#1#49: u64)
+	177: StLoc[81](i#1#52: u64)
+	178: MutBorrowLoc[122](v#1#42: vector<vector<u8>>)
+	179: StLoc[14](%#24: &mut vector<vector<u8>>)
+	180: MoveLoc[81](i#1#52: u64)
+	181: Pop
+	182: CopyLoc[46](bcs#1#40: &mut BCS)
+	183: StLoc[47](bcs#1#55: &mut BCS)
+	184: LdConst[13](vector<u8>: "" /..)
+	185: StLoc[123](v#1#57: vector<u8>)
+	186: CopyLoc[47](bcs#1#55: &mut BCS)
+	187: Call bcs::peel_vec_length(&mut BCS): u64
+	188: StLoc[4]($stop#0#61: u64)
+	189: LdU64(0)
+	190: StLoc[82](i#1#64: u64)
+	191: MoveLoc[4]($stop#0#61: u64)
+	192: StLoc[90](stop#1#64: u64)
+B23:
+	193: CopyLoc[82](i#1#64: u64)
+	194: CopyLoc[90](stop#1#64: u64)
+	195: Lt
+	196: BrFalse(214)
+B24:
+	197: CopyLoc[82](i#1#64: u64)
+	198: StLoc[83](i#1#67: u64)
+	199: MutBorrowLoc[123](v#1#57: vector<u8>)
+	200: StLoc[13](%#23: &mut vector<u8>)
+	201: MoveLoc[83](i#1#67: u64)
+	202: Pop
+	203: CopyLoc[47](bcs#1#55: &mut BCS)
+	204: Call bcs::peel_u8(&mut BCS): u8
+	205: StLoc[12](%#21: u8)
+	206: MoveLoc[13](%#23: &mut vector<u8>)
+	207: MoveLoc[12](%#21: u8)
+	208: VecPushBack(9)
+	209: MoveLoc[82](i#1#64: u64)
+	210: LdU64(1)
+	211: Add
+	212: StLoc[82](i#1#64: u64)
+	213: Branch(193)
+B25:
+	214: MoveLoc[47](bcs#1#55: &mut BCS)
+	215: Pop
+	216: MoveLoc[123](v#1#57: vector<u8>)
+	217: StLoc[10](%#17: vector<u8>)
+	218: MoveLoc[14](%#24: &mut vector<vector<u8>>)
+	219: MoveLoc[10](%#17: vector<u8>)
+	220: VecPushBack(6)
+	221: MoveLoc[80](i#1#49: u64)
+	222: LdU64(1)
+	223: Add
+	224: StLoc[80](i#1#49: u64)
+	225: Branch(172)
+B26:
+	226: MoveLoc[46](bcs#1#40: &mut BCS)
+	227: Pop
+	228: MoveLoc[122](v#1#42: vector<vector<u8>>)
+	229: StLoc[98](t1#1#37: vector<vector<u8>>)
+	230: MoveLoc[62](case#1#34: vector<vector<u8>>)
+	231: StLoc[112](t2#1#37: vector<vector<u8>>)
+	232: ImmBorrowLoc[98](t1#1#37: vector<vector<u8>>)
+	233: StLoc[101](t1#1#70: &vector<vector<u8>>)
+	234: ImmBorrowLoc[112](t2#1#37: vector<vector<u8>>)
+	235: StLoc[115](t2#1#70: &vector<vector<u8>>)
+	236: CopyLoc[101](t1#1#70: &vector<vector<u8>>)
+	237: CopyLoc[115](t2#1#70: &vector<vector<u8>>)
+	238: Eq
+	239: Not
+	240: BrFalse(257)
+B27:
+	241: LdConst[8](vector<u8>: "Ass..)
+	242: Call string::utf8(vector<u8>): String
+	243: StLoc[15](%#25: String)
+	244: ImmBorrowLoc[15](%#25: String)
+	245: Call debug::print<String>(&String)
+	246: MoveLoc[101](t1#1#70: &vector<vector<u8>>)
+	247: Call debug::print<vector<vector<u8>>>(&vector<vector<u8>>)
+	248: LdConst[9](vector<u8>: "!="..)
+	249: Call string::utf8(vector<u8>): String
+	250: StLoc[16](%#26: String)
+	251: ImmBorrowLoc[16](%#26: String)
+	252: Call debug::print<String>(&String)
+	253: MoveLoc[115](t2#1#70: &vector<vector<u8>>)
+	254: Call debug::print<vector<vector<u8>>>(&vector<vector<u8>>)
+	255: LdU64(13906835063401611263)
+	256: Abort
+B28:
+	257: MoveLoc[115](t2#1#70: &vector<vector<u8>>)
+	258: Pop
+	259: MoveLoc[101](t1#1#70: &vector<vector<u8>>)
+	260: Pop
+	261: MoveLoc[55](bytes#1#34: BCS)
+	262: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	263: StLoc[17](%#27: vector<u8>)
+	264: ImmBorrowLoc[17](%#27: vector<u8>)
+	265: Call vector::is_empty<u8>(&vector<u8>): bool
+	266: BrFalse(268)
+B29:
+	267: Branch(150)
+B30:
+	268: LdU64(13906835063401611263)
+	269: Abort
+B31:
+	270: Call option::none<vector<u8>>(): Option<vector<u8>>
+	271: LdConst[13](vector<u8>: "" /..)
+	272: Call option::some<vector<u8>>(vector<u8>): Option<vector<u8>>
+	273: LdConst[14](vector<u8>: "" ..)
+	274: Call option::some<vector<u8>>(vector<u8>): Option<vector<u8>>
+	275: LdU8(1)
+	276: LdU8(2)
+	277: LdConst[0](u8: 255)
+	278: VecPack(9, 3)
+	279: Call option::some<vector<u8>>(vector<u8>): Option<vector<u8>>
+	280: VecPack(49, 4)
+	281: StLoc[84](opt_vec_u8_cases#1#0: vector<Option<vector<u8>>>)
+	282: CopyLoc[84](opt_vec_u8_cases#1#0: vector<Option<vector<u8>>>)
+	283: StLoc[70](cases#1#73: vector<Option<vector<u8>>>)
+B32:
+	284: ImmBorrowLoc[70](cases#1#73: vector<Option<vector<u8>>>)
+	285: Call vector::is_empty<Option<vector<u8>>>(&vector<Option<vector<u8>>>): bool
+	286: Not
+	287: BrFalse(352)
+B33:
+	288: MutBorrowLoc[70](cases#1#73: vector<Option<vector<u8>>>)
+	289: VecPopBack(49)
+	290: StLoc[63](case#1#73: Option<vector<u8>>)
+	291: ImmBorrowLoc[63](case#1#73: Option<vector<u8>>)
+	292: Call bcs::to_bytes<Option<vector<u8>>>(&Option<vector<u8>>): vector<u8>
+	293: Call bcs::new(vector<u8>): BCS
+	294: StLoc[56](bytes#1#73: BCS)
+	295: MutBorrowLoc[56](bytes#1#73: BCS)
+	296: StLoc[48](bcs#1#79: &mut BCS)
+	297: CopyLoc[48](bcs#1#79: &mut BCS)
+	298: Call bcs::peel_bool(&mut BCS): bool
+	299: BrFalse(305)
+B34:
+	300: MoveLoc[48](bcs#1#79: &mut BCS)
+	301: Call bcs::peel_vec_u8(&mut BCS): vector<u8>
+	302: Call option::some<vector<u8>>(vector<u8>): Option<vector<u8>>
+	303: StLoc[19](%#31: Option<vector<u8>>)
+	304: Branch(310)
+B35:
+	305: MoveLoc[48](bcs#1#79: &mut BCS)
+	306: Pop
+	307: Call option::none<vector<u8>>(): Option<vector<u8>>
+	308: StLoc[19](%#31: Option<vector<u8>>)
+	309: Branch(310)
+B36:
+	310: MoveLoc[19](%#31: Option<vector<u8>>)
+	311: StLoc[102](t1#1#76: Option<vector<u8>>)
+	312: MoveLoc[63](case#1#73: Option<vector<u8>>)
+	313: StLoc[116](t2#1#76: Option<vector<u8>>)
+	314: ImmBorrowLoc[102](t1#1#76: Option<vector<u8>>)
+	315: StLoc[103](t1#1#81: &Option<vector<u8>>)
+	316: ImmBorrowLoc[116](t2#1#76: Option<vector<u8>>)
+	317: StLoc[117](t2#1#81: &Option<vector<u8>>)
+	318: CopyLoc[103](t1#1#81: &Option<vector<u8>>)
+	319: CopyLoc[117](t2#1#81: &Option<vector<u8>>)
+	320: Eq
+	321: Not
+	322: BrFalse(339)
+B37:
+	323: LdConst[8](vector<u8>: "Ass..)
+	324: Call string::utf8(vector<u8>): String
+	325: StLoc[20](%#32: String)
+	326: ImmBorrowLoc[20](%#32: String)
+	327: Call debug::print<String>(&String)
+	328: MoveLoc[103](t1#1#81: &Option<vector<u8>>)
+	329: Call debug::print<Option<vector<u8>>>(&Option<vector<u8>>)
+	330: LdConst[9](vector<u8>: "!="..)
+	331: Call string::utf8(vector<u8>): String
+	332: StLoc[21](%#33: String)
+	333: ImmBorrowLoc[21](%#33: String)
+	334: Call debug::print<String>(&String)
+	335: MoveLoc[117](t2#1#81: &Option<vector<u8>>)
+	336: Call debug::print<Option<vector<u8>>>(&Option<vector<u8>>)
+	337: LdU64(13906835097761349631)
+	338: Abort
+B38:
+	339: MoveLoc[117](t2#1#81: &Option<vector<u8>>)
+	340: Pop
+	341: MoveLoc[103](t1#1#81: &Option<vector<u8>>)
+	342: Pop
+	343: MoveLoc[56](bytes#1#73: BCS)
+	344: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	345: StLoc[22](%#34: vector<u8>)
+	346: ImmBorrowLoc[22](%#34: vector<u8>)
+	347: Call vector::is_empty<u8>(&vector<u8>): bool
+	348: BrFalse(350)
+B39:
+	349: Branch(284)
+B40:
+	350: LdU64(13906835097761349631)
+	351: Abort
+B41:
+	352: MoveLoc[84](opt_vec_u8_cases#1#0: vector<Option<vector<u8>>>)
+	353: StLoc[71](cases#1#84: vector<Option<vector<u8>>>)
+B42:
+	354: ImmBorrowLoc[71](cases#1#84: vector<Option<vector<u8>>>)
+	355: Call vector::is_empty<Option<vector<u8>>>(&vector<Option<vector<u8>>>): bool
+	356: Not
+	357: BrFalse(454)
+B43:
+	358: MutBorrowLoc[71](cases#1#84: vector<Option<vector<u8>>>)
+	359: VecPopBack(49)
+	360: StLoc[64](case#1#84: Option<vector<u8>>)
+	361: ImmBorrowLoc[64](case#1#84: Option<vector<u8>>)
+	362: Call bcs::to_bytes<Option<vector<u8>>>(&Option<vector<u8>>): vector<u8>
+	363: Call bcs::new(vector<u8>): BCS
+	364: StLoc[57](bytes#1#84: BCS)
+	365: MutBorrowLoc[57](bytes#1#84: BCS)
+	366: StLoc[49](bcs#1#90: &mut BCS)
+	367: CopyLoc[49](bcs#1#90: &mut BCS)
+	368: Call bcs::peel_bool(&mut BCS): bool
+	369: BrFalse(408)
+B44:
+	370: MoveLoc[49](bcs#1#90: &mut BCS)
+	371: StLoc[50](bcs#1#92: &mut BCS)
+	372: LdConst[13](vector<u8>: "" /..)
+	373: StLoc[124](v#1#94: vector<u8>)
+	374: CopyLoc[50](bcs#1#92: &mut BCS)
+	375: Call bcs::peel_vec_length(&mut BCS): u64
+	376: StLoc[5]($stop#0#98: u64)
+	377: LdU64(0)
+	378: StLoc[72](i#1#101: u64)
+	379: MoveLoc[5]($stop#0#98: u64)
+	380: StLoc[85](stop#1#101: u64)
+B45:
+	381: CopyLoc[72](i#1#101: u64)
+	382: CopyLoc[85](stop#1#101: u64)
+	383: Lt
+	384: BrFalse(402)
+B46:
+	385: CopyLoc[72](i#1#101: u64)
+	386: StLoc[73](i#1#104: u64)
+	387: MutBorrowLoc[124](v#1#94: vector<u8>)
+	388: StLoc[25](%#42: &mut vector<u8>)
+	389: MoveLoc[73](i#1#104: u64)
+	390: Pop
+	391: CopyLoc[50](bcs#1#92: &mut BCS)
+	392: Call bcs::peel_u8(&mut BCS): u8
+	393: StLoc[24](%#40: u8)
+	394: MoveLoc[25](%#42: &mut vector<u8>)
+	395: MoveLoc[24](%#40: u8)
+	396: VecPushBack(9)
+	397: MoveLoc[72](i#1#101: u64)
+	398: LdU64(1)
+	399: Add
+	400: StLoc[72](i#1#101: u64)
+	401: Branch(381)
+B47:
+	402: MoveLoc[50](bcs#1#92: &mut BCS)
+	403: Pop
+	404: MoveLoc[124](v#1#94: vector<u8>)
+	405: Call option::some<vector<u8>>(vector<u8>): Option<vector<u8>>
+	406: StLoc[26](%#43: Option<vector<u8>>)
+	407: Branch(412)
+B48:
+	408: MoveLoc[49](bcs#1#90: &mut BCS)
+	409: Pop
+	410: Call option::none<vector<u8>>(): Option<vector<u8>>
+	411: StLoc[26](%#43: Option<vector<u8>>)
+B49:
+	412: MoveLoc[26](%#43: Option<vector<u8>>)
+	413: StLoc[104](t1#1#87: Option<vector<u8>>)
+	414: MoveLoc[64](case#1#84: Option<vector<u8>>)
+	415: StLoc[118](t2#1#87: Option<vector<u8>>)
+	416: ImmBorrowLoc[104](t1#1#87: Option<vector<u8>>)
+	417: StLoc[91](t1#1#107: &Option<vector<u8>>)
+	418: ImmBorrowLoc[118](t2#1#87: Option<vector<u8>>)
+	419: StLoc[105](t2#1#107: &Option<vector<u8>>)
+	420: CopyLoc[91](t1#1#107: &Option<vector<u8>>)
+	421: CopyLoc[105](t2#1#107: &Option<vector<u8>>)
+	422: Eq
+	423: Not
+	424: BrFalse(441)
+B50:
+	425: LdConst[8](vector<u8>: "Ass..)
+	426: Call string::utf8(vector<u8>): String
+	427: StLoc[27](%#44: String)
+	428: ImmBorrowLoc[27](%#44: String)
+	429: Call debug::print<String>(&String)
+	430: MoveLoc[91](t1#1#107: &Option<vector<u8>>)
+	431: Call debug::print<Option<vector<u8>>>(&Option<vector<u8>>)
+	432: LdConst[9](vector<u8>: "!="..)
+	433: Call string::utf8(vector<u8>): String
+	434: StLoc[28](%#45: String)
+	435: ImmBorrowLoc[28](%#45: String)
+	436: Call debug::print<String>(&String)
+	437: MoveLoc[105](t2#1#107: &Option<vector<u8>>)
+	438: Call debug::print<Option<vector<u8>>>(&Option<vector<u8>>)
+	439: LdU64(13906835102056316927)
+	440: Abort
+B51:
+	441: MoveLoc[105](t2#1#107: &Option<vector<u8>>)
+	442: Pop
+	443: MoveLoc[91](t1#1#107: &Option<vector<u8>>)
+	444: Pop
+	445: MoveLoc[57](bytes#1#84: BCS)
+	446: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	447: StLoc[29](%#46: vector<u8>)
+	448: ImmBorrowLoc[29](%#46: vector<u8>)
+	449: Call vector::is_empty<u8>(&vector<u8>): bool
+	450: BrFalse(452)
+B52:
+	451: Branch(354)
+B53:
+	452: LdU64(13906835102056316927)
+	453: Abort
+B54:
+	454: Call option::none<u8>(): Option<u8>
+	455: VecPack(39, 1)
+	456: LdU8(1)
+	457: Call option::some<u8>(u8): Option<u8>
+	458: VecPack(39, 1)
+	459: LdU8(1)
+	460: Call option::some<u8>(u8): Option<u8>
+	461: Call option::none<u8>(): Option<u8>
+	462: LdConst[0](u8: 255)
+	463: Call option::some<u8>(u8): Option<u8>
+	464: VecPack(39, 3)
+	465: VecPack(50, 3)
+	466: StLoc[125](vec_opt_u8_cases#1#0: vector<vector<Option<u8>>>)
+	467: CopyLoc[125](vec_opt_u8_cases#1#0: vector<vector<Option<u8>>>)
+	468: StLoc[67](cases#1#110: vector<vector<Option<u8>>>)
+B55:
+	469: ImmBorrowLoc[67](cases#1#110: vector<vector<Option<u8>>>)
+	470: Call vector::is_empty<vector<Option<u8>>>(&vector<vector<Option<u8>>>): bool
+	471: Not
+	472: BrFalse(556)
+B56:
+	473: MutBorrowLoc[67](cases#1#110: vector<vector<Option<u8>>>)
+	474: VecPopBack(50)
+	475: StLoc[60](case#1#110: vector<Option<u8>>)
+	476: ImmBorrowLoc[60](case#1#110: vector<Option<u8>>)
+	477: Call bcs::to_bytes<vector<Option<u8>>>(&vector<Option<u8>>): vector<u8>
+	478: Call bcs::new(vector<u8>): BCS
+	479: StLoc[53](bytes#1#110: BCS)
+	480: MutBorrowLoc[53](bytes#1#110: BCS)
+	481: StLoc[42](bcs#1#116: &mut BCS)
+	482: VecPack(39, 0)
+	483: StLoc[119](v#1#118: vector<Option<u8>>)
+	484: CopyLoc[42](bcs#1#116: &mut BCS)
+	485: Call bcs::peel_vec_length(&mut BCS): u64
+	486: StLoc[0]($stop#0#122: u64)
+	487: LdU64(0)
+	488: StLoc[74](i#1#125: u64)
+	489: MoveLoc[0]($stop#0#122: u64)
+	490: StLoc[86](stop#1#125: u64)
+B57:
+	491: CopyLoc[74](i#1#125: u64)
+	492: CopyLoc[86](stop#1#125: u64)
+	493: Lt
+	494: BrFalse(512)
+B58:
+	495: CopyLoc[74](i#1#125: u64)
+	496: StLoc[75](i#1#128: u64)
+	497: MutBorrowLoc[119](v#1#118: vector<Option<u8>>)
+	498: StLoc[31](%#52: &mut vector<Option<u8>>)
+	499: MoveLoc[75](i#1#128: u64)
+	500: Pop
+	501: CopyLoc[42](bcs#1#116: &mut BCS)
+	502: Call bcs::peel_option_u8(&mut BCS): Option<u8>
+	503: StLoc[30](%#50: Option<u8>)
+	504: MoveLoc[31](%#52: &mut vector<Option<u8>>)
+	505: MoveLoc[30](%#50: Option<u8>)
+	506: VecPushBack(39)
+	507: MoveLoc[74](i#1#125: u64)
+	508: LdU64(1)
+	509: Add
+	510: StLoc[74](i#1#125: u64)
+	511: Branch(491)
+B59:
+	512: MoveLoc[42](bcs#1#116: &mut BCS)
+	513: Pop
+	514: MoveLoc[119](v#1#118: vector<Option<u8>>)
+	515: StLoc[92](t1#1#113: vector<Option<u8>>)
+	516: MoveLoc[60](case#1#110: vector<Option<u8>>)
+	517: StLoc[106](t2#1#113: vector<Option<u8>>)
+	518: ImmBorrowLoc[92](t1#1#113: vector<Option<u8>>)
+	519: StLoc[94](t1#1#131: &vector<Option<u8>>)
+	520: ImmBorrowLoc[106](t2#1#113: vector<Option<u8>>)
+	521: StLoc[108](t2#1#131: &vector<Option<u8>>)
+	522: CopyLoc[94](t1#1#131: &vector<Option<u8>>)
+	523: CopyLoc[108](t2#1#131: &vector<Option<u8>>)
+	524: Eq
+	525: Not
+	526: BrFalse(543)
+B60:
+	527: LdConst[8](vector<u8>: "Ass..)
+	528: Call string::utf8(vector<u8>): String
+	529: StLoc[32](%#53: String)
+	530: ImmBorrowLoc[32](%#53: String)
+	531: Call debug::print<String>(&String)
+	532: MoveLoc[94](t1#1#131: &vector<Option<u8>>)
+	533: Call debug::print<vector<Option<u8>>>(&vector<Option<u8>>)
+	534: LdConst[9](vector<u8>: "!="..)
+	535: Call string::utf8(vector<u8>): String
+	536: StLoc[33](%#54: String)
+	537: ImmBorrowLoc[33](%#54: String)
+	538: Call debug::print<String>(&String)
+	539: MoveLoc[108](t2#1#131: &vector<Option<u8>>)
+	540: Call debug::print<vector<Option<u8>>>(&vector<Option<u8>>)
+	541: LdU64(13906835132121087999)
+	542: Abort
+B61:
+	543: MoveLoc[108](t2#1#131: &vector<Option<u8>>)
+	544: Pop
+	545: MoveLoc[94](t1#1#131: &vector<Option<u8>>)
+	546: Pop
+	547: MoveLoc[53](bytes#1#110: BCS)
+	548: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	549: StLoc[34](%#55: vector<u8>)
+	550: ImmBorrowLoc[34](%#55: vector<u8>)
+	551: Call vector::is_empty<u8>(&vector<u8>): bool
+	552: BrFalse(554)
+B62:
+	553: Branch(469)
+B63:
+	554: LdU64(13906835132121087999)
+	555: Abort
+B64:
+	556: MoveLoc[125](vec_opt_u8_cases#1#0: vector<vector<Option<u8>>>)
+	557: StLoc[68](cases#1#134: vector<vector<Option<u8>>>)
+B65:
+	558: ImmBorrowLoc[68](cases#1#134: vector<vector<Option<u8>>>)
+	559: Call vector::is_empty<vector<Option<u8>>>(&vector<vector<Option<u8>>>): bool
+	560: Not
+	561: BrFalse(659)
+B66:
+	562: MutBorrowLoc[68](cases#1#134: vector<vector<Option<u8>>>)
+	563: VecPopBack(50)
+	564: StLoc[61](case#1#134: vector<Option<u8>>)
+	565: ImmBorrowLoc[61](case#1#134: vector<Option<u8>>)
+	566: Call bcs::to_bytes<vector<Option<u8>>>(&vector<Option<u8>>): vector<u8>
+	567: Call bcs::new(vector<u8>): BCS
+	568: StLoc[54](bytes#1#134: BCS)
+	569: MutBorrowLoc[54](bytes#1#134: BCS)
+	570: StLoc[43](bcs#1#140: &mut BCS)
+	571: VecPack(39, 0)
+	572: StLoc[120](v#1#142: vector<Option<u8>>)
+	573: CopyLoc[43](bcs#1#140: &mut BCS)
+	574: Call bcs::peel_vec_length(&mut BCS): u64
+	575: StLoc[1]($stop#0#146: u64)
+	576: LdU64(0)
+	577: StLoc[76](i#1#149: u64)
+	578: MoveLoc[1]($stop#0#146: u64)
+	579: StLoc[87](stop#1#149: u64)
+B67:
+	580: CopyLoc[76](i#1#149: u64)
+	581: CopyLoc[87](stop#1#149: u64)
+	582: Lt
+	583: BrFalse(615)
+B68:
+	584: CopyLoc[76](i#1#149: u64)
+	585: StLoc[77](i#1#152: u64)
+	586: MutBorrowLoc[120](v#1#142: vector<Option<u8>>)
+	587: StLoc[37](%#64: &mut vector<Option<u8>>)
+	588: MoveLoc[77](i#1#152: u64)
+	589: Pop
+	590: CopyLoc[43](bcs#1#140: &mut BCS)
+	591: StLoc[44](bcs#1#155: &mut BCS)
+	592: CopyLoc[44](bcs#1#155: &mut BCS)
+	593: Call bcs::peel_bool(&mut BCS): bool
+	594: BrFalse(601)
+B69:
+	595: Branch(596)
+B70:
+	596: MoveLoc[44](bcs#1#155: &mut BCS)
+	597: Call bcs::peel_u8(&mut BCS): u8
+	598: Call option::some<u8>(u8): Option<u8>
+	599: StLoc[36](%#63: Option<u8>)
+	600: Branch(605)
+B71:
+	601: MoveLoc[44](bcs#1#155: &mut BCS)
+	602: Pop
+	603: Call option::none<u8>(): Option<u8>
+	604: StLoc[36](%#63: Option<u8>)
+B72:
+	605: MoveLoc[36](%#63: Option<u8>)
+	606: StLoc[35](%#59: Option<u8>)
+	607: MoveLoc[37](%#64: &mut vector<Option<u8>>)
+	608: MoveLoc[35](%#59: Option<u8>)
+	609: VecPushBack(39)
+	610: MoveLoc[76](i#1#149: u64)
+	611: LdU64(1)
+	612: Add
+	613: StLoc[76](i#1#149: u64)
+	614: Branch(580)
+B73:
+	615: MoveLoc[43](bcs#1#140: &mut BCS)
+	616: Pop
+	617: MoveLoc[120](v#1#142: vector<Option<u8>>)
+	618: StLoc[95](t1#1#137: vector<Option<u8>>)
+	619: MoveLoc[61](case#1#134: vector<Option<u8>>)
+	620: StLoc[109](t2#1#137: vector<Option<u8>>)
+	621: ImmBorrowLoc[95](t1#1#137: vector<Option<u8>>)
+	622: StLoc[96](t1#1#157: &vector<Option<u8>>)
+	623: ImmBorrowLoc[109](t2#1#137: vector<Option<u8>>)
+	624: StLoc[110](t2#1#157: &vector<Option<u8>>)
+	625: CopyLoc[96](t1#1#157: &vector<Option<u8>>)
+	626: CopyLoc[110](t2#1#157: &vector<Option<u8>>)
+	627: Eq
+	628: Not
+	629: BrFalse(646)
+B74:
+	630: LdConst[8](vector<u8>: "Ass..)
+	631: Call string::utf8(vector<u8>): String
+	632: StLoc[38](%#65: String)
+	633: ImmBorrowLoc[38](%#65: String)
+	634: Call debug::print<String>(&String)
+	635: MoveLoc[96](t1#1#157: &vector<Option<u8>>)
+	636: Call debug::print<vector<Option<u8>>>(&vector<Option<u8>>)
+	637: LdConst[9](vector<u8>: "!="..)
+	638: Call string::utf8(vector<u8>): String
+	639: StLoc[39](%#66: String)
+	640: ImmBorrowLoc[39](%#66: String)
+	641: Call debug::print<String>(&String)
+	642: MoveLoc[110](t2#1#157: &vector<Option<u8>>)
+	643: Call debug::print<vector<Option<u8>>>(&vector<Option<u8>>)
+	644: LdU64(13906835136416055295)
+	645: Abort
+B75:
+	646: MoveLoc[110](t2#1#157: &vector<Option<u8>>)
+	647: Pop
+	648: MoveLoc[96](t1#1#157: &vector<Option<u8>>)
+	649: Pop
+	650: MoveLoc[54](bytes#1#134: BCS)
+	651: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	652: StLoc[40](%#67: vector<u8>)
+	653: ImmBorrowLoc[40](%#67: vector<u8>)
+	654: Call vector::is_empty<u8>(&vector<u8>): bool
+	655: BrFalse(657)
+B76:
+	656: Branch(558)
+B77:
+	657: LdU64(13906835136416055295)
+	658: Abort
+B78:
+	659: Ret
+}
+
+peel_info(bytes#0#0: &mut BCS): Info {
+L1:	$stop#0#7: u64
+L2:	%#1: vector<bool>
+L3:	%#3: bool
+L4:	%#5: &mut vector<bool>
+L5:	%#6: u128
+L6:	%#7: u64
+L7:	%#8: u8
+L8:	%#9: bool
+L9:	bcs#1#1: &mut BCS
+L10:	i#1#10: u64
+L11:	i#1#13: u64
+L12:	stop#1#10: u64
+L13:	v#1#3: vector<bool>
+B0:
+	0: CopyLoc[0](bytes#0#0: &mut BCS)
+	1: Call bcs::peel_bool(&mut BCS): bool
+	2: StLoc[8](%#9: bool)
+	3: CopyLoc[0](bytes#0#0: &mut BCS)
+	4: Call bcs::peel_u8(&mut BCS): u8
+	5: StLoc[7](%#8: u8)
+	6: CopyLoc[0](bytes#0#0: &mut BCS)
+	7: Call bcs::peel_u64(&mut BCS): u64
+	8: StLoc[6](%#7: u64)
+	9: CopyLoc[0](bytes#0#0: &mut BCS)
+	10: Call bcs::peel_u128(&mut BCS): u128
+	11: StLoc[5](%#6: u128)
+	12: CopyLoc[0](bytes#0#0: &mut BCS)
+	13: StLoc[9](bcs#1#1: &mut BCS)
+	14: LdConst[12](vector<bool>: 00)
+	15: StLoc[13](v#1#3: vector<bool>)
+	16: CopyLoc[9](bcs#1#1: &mut BCS)
+	17: Call bcs::peel_vec_length(&mut BCS): u64
+	18: StLoc[1]($stop#0#7: u64)
+	19: LdU64(0)
+	20: StLoc[10](i#1#10: u64)
+	21: MoveLoc[1]($stop#0#7: u64)
+	22: StLoc[12](stop#1#10: u64)
+B1:
+	23: CopyLoc[10](i#1#10: u64)
+	24: CopyLoc[12](stop#1#10: u64)
+	25: Lt
+	26: BrFalse(44)
+B2:
+	27: CopyLoc[10](i#1#10: u64)
+	28: StLoc[11](i#1#13: u64)
+	29: MutBorrowLoc[13](v#1#3: vector<bool>)
+	30: StLoc[4](%#5: &mut vector<bool>)
+	31: MoveLoc[11](i#1#13: u64)
+	32: Pop
+	33: CopyLoc[9](bcs#1#1: &mut BCS)
+	34: Call bcs::peel_bool(&mut BCS): bool
+	35: StLoc[3](%#3: bool)
+	36: MoveLoc[4](%#5: &mut vector<bool>)
+	37: MoveLoc[3](%#3: bool)
+	38: VecPushBack(11)
+	39: MoveLoc[10](i#1#10: u64)
+	40: LdU64(1)
+	41: Add
+	42: StLoc[10](i#1#10: u64)
+	43: Branch(23)
+B3:
+	44: MoveLoc[9](bcs#1#1: &mut BCS)
+	45: Pop
+	46: MoveLoc[13](v#1#3: vector<bool>)
+	47: StLoc[2](%#1: vector<bool>)
+	48: MoveLoc[8](%#9: bool)
+	49: MoveLoc[7](%#8: u8)
+	50: MoveLoc[6](%#7: u64)
+	51: MoveLoc[5](%#6: u128)
+	52: MoveLoc[2](%#1: vector<bool>)
+	53: MoveLoc[0](bytes#0#0: &mut BCS)
+	54: Call bcs::peel_address(&mut BCS): address
+	55: Pack[0](Info)
+	56: Ret
+}
+
+test_struct(a#0#0: bool, b#0#0: u8, c#0#0: u64, d#0#0: u128, k#0#0: vector<bool>, s#0#0: address) {
+L6:	$stop#0#31: u64
+L7:	$stop#0#56: u64
+L8:	%#1: String
+L9:	%#10: String
+L10:	%#11: String
+L11:	%#12: String
+L12:	%#16: Info
+L13:	%#18: &mut vector<Info>
+L14:	%#19: String
+L15:	%#2: String
+L16:	%#20: String
+L17:	%#21: vector<u8>
+L18:	%#25: Option<Info>
+L19:	%#26: String
+L20:	%#27: String
+L21:	%#28: vector<u8>
+L22:	%#3: String
+L23:	%#4: String
+L24:	%#5: String
+L25:	%#6: String
+L26:	%#7: String
+L27:	%#8: String
+L28:	%#9: String
+L29:	bcs#1#50: &mut BCS
+L30:	bcs#1#74: &mut BCS
+L31:	bytes#1#0: BCS
+L32:	bytes#1#44: BCS
+L33:	bytes#1#68: BCS
+L34:	case#1#44: vector<Info>
+L35:	case#1#68: Option<Info>
+L36:	cases#1#44: vector<vector<Info>>
+L37:	cases#1#68: vector<Option<Info>>
+L38:	i#1#34: u64
+L39:	i#1#37: u64
+L40:	i#1#59: u64
+L41:	i#1#62: u64
+L42:	info#1#0: Info
+L43:	len#1#0: u64
+L44:	stop#1#34: u64
+L45:	stop#1#59: u64
+L46:	t1#1#1: bool
+L47:	t1#1#10: &u8
+L48:	t1#1#13: u64
+L49:	t1#1#16: &u64
+L50:	t1#1#19: u128
+L51:	t1#1#22: &u128
+L52:	t1#1#25: u64
+L53:	t1#1#28: &u64
+L54:	t1#1#38: bool
+L55:	t1#1#4: &bool
+L56:	t1#1#41: &bool
+L57:	t1#1#47: vector<Info>
+L58:	t1#1#65: &vector<Info>
+L59:	t1#1#7: u8
+L60:	t1#1#71: Option<Info>
+L61:	t1#1#76: &Option<Info>
+L62:	t2#1#1: bool
+L63:	t2#1#10: &u8
+L64:	t2#1#13: u64
+L65:	t2#1#16: &u64
+L66:	t2#1#19: u128
+L67:	t2#1#22: &u128
+L68:	t2#1#25: u64
+L69:	t2#1#28: &u64
+L70:	t2#1#38: bool
+L71:	t2#1#4: &bool
+L72:	t2#1#41: &bool
+L73:	t2#1#47: vector<Info>
+L74:	t2#1#65: &vector<Info>
+L75:	t2#1#7: u8
+L76:	t2#1#71: Option<Info>
+L77:	t2#1#76: &Option<Info>
+L78:	v#1#52: vector<Info>
+B0:
+	0: MoveLoc[0](a#0#0: bool)
+	1: MoveLoc[1](b#0#0: u8)
+	2: MoveLoc[2](c#0#0: u64)
+	3: MoveLoc[3](d#0#0: u128)
+	4: MoveLoc[4](k#0#0: vector<bool>)
+	5: MoveLoc[5](s#0#0: address)
+	6: Pack[0](Info)
+	7: StLoc[42](info#1#0: Info)
+	8: ImmBorrowLoc[42](info#1#0: Info)
+	9: Call bcs::to_bytes<Info>(&Info): vector<u8>
+	10: Call bcs::new(vector<u8>): BCS
+	11: StLoc[31](bytes#1#0: BCS)
+	12: ImmBorrowLoc[42](info#1#0: Info)
+	13: ImmBorrowField[0](Info.a: bool)
+	14: ReadRef
+	15: StLoc[46](t1#1#1: bool)
+	16: MutBorrowLoc[31](bytes#1#0: BCS)
+	17: Call bcs::peel_bool(&mut BCS): bool
+	18: StLoc[62](t2#1#1: bool)
+	19: ImmBorrowLoc[46](t1#1#1: bool)
+	20: StLoc[55](t1#1#4: &bool)
+	21: ImmBorrowLoc[62](t2#1#1: bool)
+	22: StLoc[71](t2#1#4: &bool)
+	23: CopyLoc[55](t1#1#4: &bool)
+	24: CopyLoc[71](t2#1#4: &bool)
+	25: Eq
+	26: Not
+	27: BrFalse(44)
+B1:
+	28: LdConst[8](vector<u8>: "Ass..)
+	29: Call string::utf8(vector<u8>): String
+	30: StLoc[8](%#1: String)
+	31: ImmBorrowLoc[8](%#1: String)
+	32: Call debug::print<String>(&String)
+	33: MoveLoc[55](t1#1#4: &bool)
+	34: Call debug::print<bool>(&bool)
+	35: LdConst[9](vector<u8>: "!="..)
+	36: Call string::utf8(vector<u8>): String
+	37: StLoc[15](%#2: String)
+	38: ImmBorrowLoc[15](%#2: String)
+	39: Call debug::print<String>(&String)
+	40: MoveLoc[71](t2#1#4: &bool)
+	41: Call debug::print<bool>(&bool)
+	42: LdU64(13906835226610368511)
+	43: Abort
+B2:
+	44: MoveLoc[71](t2#1#4: &bool)
+	45: Pop
+	46: MoveLoc[55](t1#1#4: &bool)
+	47: Pop
+	48: ImmBorrowLoc[42](info#1#0: Info)
+	49: ImmBorrowField[1](Info.b: u8)
+	50: ReadRef
+	51: StLoc[59](t1#1#7: u8)
+	52: MutBorrowLoc[31](bytes#1#0: BCS)
+	53: Call bcs::peel_u8(&mut BCS): u8
+	54: StLoc[75](t2#1#7: u8)
+	55: ImmBorrowLoc[59](t1#1#7: u8)
+	56: StLoc[47](t1#1#10: &u8)
+	57: ImmBorrowLoc[75](t2#1#7: u8)
+	58: StLoc[63](t2#1#10: &u8)
+	59: CopyLoc[47](t1#1#10: &u8)
+	60: CopyLoc[63](t2#1#10: &u8)
+	61: Eq
+	62: Not
+	63: BrFalse(80)
+B3:
+	64: LdConst[8](vector<u8>: "Ass..)
+	65: Call string::utf8(vector<u8>): String
+	66: StLoc[22](%#3: String)
+	67: ImmBorrowLoc[22](%#3: String)
+	68: Call debug::print<String>(&String)
+	69: MoveLoc[47](t1#1#10: &u8)
+	70: Call debug::print<u8>(&u8)
+	71: LdConst[9](vector<u8>: "!="..)
+	72: Call string::utf8(vector<u8>): String
+	73: StLoc[23](%#4: String)
+	74: ImmBorrowLoc[23](%#4: String)
+	75: Call debug::print<String>(&String)
+	76: MoveLoc[63](t2#1#10: &u8)
+	77: Call debug::print<u8>(&u8)
+	78: LdU64(13906835230905335807)
+	79: Abort
+B4:
+	80: MoveLoc[63](t2#1#10: &u8)
+	81: Pop
+	82: MoveLoc[47](t1#1#10: &u8)
+	83: Pop
+	84: ImmBorrowLoc[42](info#1#0: Info)
+	85: ImmBorrowField[2](Info.c: u64)
+	86: ReadRef
+	87: StLoc[48](t1#1#13: u64)
+	88: MutBorrowLoc[31](bytes#1#0: BCS)
+	89: Call bcs::peel_u64(&mut BCS): u64
+	90: StLoc[64](t2#1#13: u64)
+	91: ImmBorrowLoc[48](t1#1#13: u64)
+	92: StLoc[49](t1#1#16: &u64)
+	93: ImmBorrowLoc[64](t2#1#13: u64)
+	94: StLoc[65](t2#1#16: &u64)
+	95: CopyLoc[49](t1#1#16: &u64)
+	96: CopyLoc[65](t2#1#16: &u64)
+	97: Eq
+	98: Not
+	99: BrFalse(116)
+B5:
+	100: LdConst[8](vector<u8>: "Ass..)
+	101: Call string::utf8(vector<u8>): String
+	102: StLoc[24](%#5: String)
+	103: ImmBorrowLoc[24](%#5: String)
+	104: Call debug::print<String>(&String)
+	105: MoveLoc[49](t1#1#16: &u64)
+	106: Call debug::print<u64>(&u64)
+	107: LdConst[9](vector<u8>: "!="..)
+	108: Call string::utf8(vector<u8>): String
+	109: StLoc[25](%#6: String)
+	110: ImmBorrowLoc[25](%#6: String)
+	111: Call debug::print<String>(&String)
+	112: MoveLoc[65](t2#1#16: &u64)
+	113: Call debug::print<u64>(&u64)
+	114: LdU64(13906835235200303103)
+	115: Abort
+B6:
+	116: MoveLoc[65](t2#1#16: &u64)
+	117: Pop
+	118: MoveLoc[49](t1#1#16: &u64)
+	119: Pop
+	120: ImmBorrowLoc[42](info#1#0: Info)
+	121: ImmBorrowField[3](Info.d: u128)
+	122: ReadRef
+	123: StLoc[50](t1#1#19: u128)
+	124: MutBorrowLoc[31](bytes#1#0: BCS)
+	125: Call bcs::peel_u128(&mut BCS): u128
+	126: StLoc[66](t2#1#19: u128)
+	127: ImmBorrowLoc[50](t1#1#19: u128)
+	128: StLoc[51](t1#1#22: &u128)
+	129: ImmBorrowLoc[66](t2#1#19: u128)
+	130: StLoc[67](t2#1#22: &u128)
+	131: CopyLoc[51](t1#1#22: &u128)
+	132: CopyLoc[67](t2#1#22: &u128)
+	133: Eq
+	134: Not
+	135: BrFalse(152)
+B7:
+	136: LdConst[8](vector<u8>: "Ass..)
+	137: Call string::utf8(vector<u8>): String
+	138: StLoc[26](%#7: String)
+	139: ImmBorrowLoc[26](%#7: String)
+	140: Call debug::print<String>(&String)
+	141: MoveLoc[51](t1#1#22: &u128)
+	142: Call debug::print<u128>(&u128)
+	143: LdConst[9](vector<u8>: "!="..)
+	144: Call string::utf8(vector<u8>): String
+	145: StLoc[27](%#8: String)
+	146: ImmBorrowLoc[27](%#8: String)
+	147: Call debug::print<String>(&String)
+	148: MoveLoc[67](t2#1#22: &u128)
+	149: Call debug::print<u128>(&u128)
+	150: LdU64(13906835239495270399)
+	151: Abort
+B8:
+	152: MoveLoc[67](t2#1#22: &u128)
+	153: Pop
+	154: MoveLoc[51](t1#1#22: &u128)
+	155: Pop
+	156: MutBorrowLoc[31](bytes#1#0: BCS)
+	157: Call bcs::peel_vec_length(&mut BCS): u64
+	158: StLoc[43](len#1#0: u64)
+	159: ImmBorrowLoc[42](info#1#0: Info)
+	160: ImmBorrowField[4](Info.k: vector<bool>)
+	161: VecLen(11)
+	162: StLoc[52](t1#1#25: u64)
+	163: CopyLoc[43](len#1#0: u64)
+	164: StLoc[68](t2#1#25: u64)
+	165: ImmBorrowLoc[52](t1#1#25: u64)
+	166: StLoc[53](t1#1#28: &u64)
+	167: ImmBorrowLoc[68](t2#1#25: u64)
+	168: StLoc[69](t2#1#28: &u64)
+	169: CopyLoc[53](t1#1#28: &u64)
+	170: CopyLoc[69](t2#1#28: &u64)
+	171: Eq
+	172: Not
+	173: BrFalse(190)
+B9:
+	174: LdConst[8](vector<u8>: "Ass..)
+	175: Call string::utf8(vector<u8>): String
+	176: StLoc[28](%#9: String)
+	177: ImmBorrowLoc[28](%#9: String)
+	178: Call debug::print<String>(&String)
+	179: MoveLoc[53](t1#1#28: &u64)
+	180: Call debug::print<u64>(&u64)
+	181: LdConst[9](vector<u8>: "!="..)
+	182: Call string::utf8(vector<u8>): String
+	183: StLoc[9](%#10: String)
+	184: ImmBorrowLoc[9](%#10: String)
+	185: Call debug::print<String>(&String)
+	186: MoveLoc[69](t2#1#28: &u64)
+	187: Call debug::print<u64>(&u64)
+	188: LdU64(13906835252380172287)
+	189: Abort
+B10:
+	190: MoveLoc[69](t2#1#28: &u64)
+	191: Pop
+	192: MoveLoc[53](t1#1#28: &u64)
+	193: Pop
+	194: MoveLoc[43](len#1#0: u64)
+	195: StLoc[6]($stop#0#31: u64)
+	196: LdU64(0)
+	197: StLoc[38](i#1#34: u64)
+	198: MoveLoc[6]($stop#0#31: u64)
+	199: StLoc[44](stop#1#34: u64)
+B11:
+	200: CopyLoc[38](i#1#34: u64)
+	201: CopyLoc[44](stop#1#34: u64)
+	202: Lt
+	203: BrFalse(249)
+B12:
+	204: CopyLoc[38](i#1#34: u64)
+	205: StLoc[39](i#1#37: u64)
+	206: ImmBorrowLoc[42](info#1#0: Info)
+	207: ImmBorrowField[4](Info.k: vector<bool>)
+	208: MoveLoc[39](i#1#37: u64)
+	209: VecImmBorrow(11)
+	210: ReadRef
+	211: StLoc[54](t1#1#38: bool)
+	212: MutBorrowLoc[31](bytes#1#0: BCS)
+	213: Call bcs::peel_bool(&mut BCS): bool
+	214: StLoc[70](t2#1#38: bool)
+	215: ImmBorrowLoc[54](t1#1#38: bool)
+	216: StLoc[56](t1#1#41: &bool)
+	217: ImmBorrowLoc[70](t2#1#38: bool)
+	218: StLoc[72](t2#1#41: &bool)
+	219: CopyLoc[56](t1#1#41: &bool)
+	220: CopyLoc[72](t2#1#41: &bool)
+	221: Eq
+	222: Not
+	223: BrFalse(240)
+B13:
+	224: LdConst[8](vector<u8>: "Ass..)
+	225: Call string::utf8(vector<u8>): String
+	226: StLoc[10](%#11: String)
+	227: ImmBorrowLoc[10](%#11: String)
+	228: Call debug::print<String>(&String)
+	229: MoveLoc[56](t1#1#41: &bool)
+	230: Call debug::print<bool>(&bool)
+	231: LdConst[9](vector<u8>: "!="..)
+	232: Call string::utf8(vector<u8>): String
+	233: StLoc[11](%#12: String)
+	234: ImmBorrowLoc[11](%#12: String)
+	235: Call debug::print<String>(&String)
+	236: MoveLoc[72](t2#1#41: &bool)
+	237: Call debug::print<bool>(&bool)
+	238: LdU64(13906835256675139583)
+	239: Abort
+B14:
+	240: MoveLoc[72](t2#1#41: &bool)
+	241: Pop
+	242: MoveLoc[56](t1#1#41: &bool)
+	243: Pop
+	244: MoveLoc[38](i#1#34: u64)
+	245: LdU64(1)
+	246: Add
+	247: StLoc[38](i#1#34: u64)
+	248: Branch(200)
+B15:
+	249: ImmBorrowLoc[42](info#1#0: Info)
+	250: ImmBorrowField[5](Info.s: address)
+	251: ReadRef
+	252: MutBorrowLoc[31](bytes#1#0: BCS)
+	253: Call bcs::peel_address(&mut BCS): address
+	254: Eq
+	255: BrFalse(257)
+B16:
+	256: Branch(259)
+B17:
+	257: LdU64(13906835265265074175)
+	258: Abort
+B18:
+	259: VecPack(3, 0)
+	260: CopyLoc[42](info#1#0: Info)
+	261: VecPack(3, 1)
+	262: CopyLoc[42](info#1#0: Info)
+	263: CopyLoc[42](info#1#0: Info)
+	264: CopyLoc[42](info#1#0: Info)
+	265: VecPack(3, 3)
+	266: VecPack(53, 3)
+	267: StLoc[36](cases#1#44: vector<vector<Info>>)
+B19:
+	268: ImmBorrowLoc[36](cases#1#44: vector<vector<Info>>)
+	269: Call vector::is_empty<vector<Info>>(&vector<vector<Info>>): bool
+	270: Not
+	271: BrFalse(355)
+B20:
+	272: MutBorrowLoc[36](cases#1#44: vector<vector<Info>>)
+	273: VecPopBack(53)
+	274: StLoc[34](case#1#44: vector<Info>)
+	275: ImmBorrowLoc[34](case#1#44: vector<Info>)
+	276: Call bcs::to_bytes<vector<Info>>(&vector<Info>): vector<u8>
+	277: Call bcs::new(vector<u8>): BCS
+	278: StLoc[32](bytes#1#44: BCS)
+	279: MutBorrowLoc[32](bytes#1#44: BCS)
+	280: StLoc[29](bcs#1#50: &mut BCS)
+	281: VecPack(3, 0)
+	282: StLoc[78](v#1#52: vector<Info>)
+	283: CopyLoc[29](bcs#1#50: &mut BCS)
+	284: Call bcs::peel_vec_length(&mut BCS): u64
+	285: StLoc[7]($stop#0#56: u64)
+	286: LdU64(0)
+	287: StLoc[40](i#1#59: u64)
+	288: MoveLoc[7]($stop#0#56: u64)
+	289: StLoc[45](stop#1#59: u64)
+B21:
+	290: CopyLoc[40](i#1#59: u64)
+	291: CopyLoc[45](stop#1#59: u64)
+	292: Lt
+	293: BrFalse(311)
+B22:
+	294: CopyLoc[40](i#1#59: u64)
+	295: StLoc[41](i#1#62: u64)
+	296: MutBorrowLoc[78](v#1#52: vector<Info>)
+	297: StLoc[13](%#18: &mut vector<Info>)
+	298: MoveLoc[41](i#1#62: u64)
+	299: Pop
+	300: CopyLoc[29](bcs#1#50: &mut BCS)
+	301: Call peel_info(&mut BCS): Info
+	302: StLoc[12](%#16: Info)
+	303: MoveLoc[13](%#18: &mut vector<Info>)
+	304: MoveLoc[12](%#16: Info)
+	305: VecPushBack(3)
+	306: MoveLoc[40](i#1#59: u64)
+	307: LdU64(1)
+	308: Add
+	309: StLoc[40](i#1#59: u64)
+	310: Branch(290)
+B23:
+	311: MoveLoc[29](bcs#1#50: &mut BCS)
+	312: Pop
+	313: MoveLoc[78](v#1#52: vector<Info>)
+	314: StLoc[57](t1#1#47: vector<Info>)
+	315: MoveLoc[34](case#1#44: vector<Info>)
+	316: StLoc[73](t2#1#47: vector<Info>)
+	317: ImmBorrowLoc[57](t1#1#47: vector<Info>)
+	318: StLoc[58](t1#1#65: &vector<Info>)
+	319: ImmBorrowLoc[73](t2#1#47: vector<Info>)
+	320: StLoc[74](t2#1#65: &vector<Info>)
+	321: CopyLoc[58](t1#1#65: &vector<Info>)
+	322: CopyLoc[74](t2#1#65: &vector<Info>)
+	323: Eq
+	324: Not
+	325: BrFalse(342)
+B24:
+	326: LdConst[8](vector<u8>: "Ass..)
+	327: Call string::utf8(vector<u8>): String
+	328: StLoc[14](%#19: String)
+	329: ImmBorrowLoc[14](%#19: String)
+	330: Call debug::print<String>(&String)
+	331: MoveLoc[58](t1#1#65: &vector<Info>)
+	332: Call debug::print<vector<Info>>(&vector<Info>)
+	333: LdConst[9](vector<u8>: "!="..)
+	334: Call string::utf8(vector<u8>): String
+	335: StLoc[16](%#20: String)
+	336: ImmBorrowLoc[16](%#20: String)
+	337: Call debug::print<String>(&String)
+	338: MoveLoc[74](t2#1#65: &vector<Info>)
+	339: Call debug::print<vector<Info>>(&vector<Info>)
+	340: LdU64(13906835278149976063)
+	341: Abort
+B25:
+	342: MoveLoc[74](t2#1#65: &vector<Info>)
+	343: Pop
+	344: MoveLoc[58](t1#1#65: &vector<Info>)
+	345: Pop
+	346: MoveLoc[32](bytes#1#44: BCS)
+	347: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	348: StLoc[17](%#21: vector<u8>)
+	349: ImmBorrowLoc[17](%#21: vector<u8>)
+	350: Call vector::is_empty<u8>(&vector<u8>): bool
+	351: BrFalse(353)
+B26:
+	352: Branch(268)
+B27:
+	353: LdU64(13906835278149976063)
+	354: Abort
+B28:
+	355: Call option::none<Info>(): Option<Info>
+	356: MoveLoc[42](info#1#0: Info)
+	357: Call option::some<Info>(Info): Option<Info>
+	358: VecPack(54, 2)
+	359: StLoc[37](cases#1#68: vector<Option<Info>>)
+B29:
+	360: ImmBorrowLoc[37](cases#1#68: vector<Option<Info>>)
+	361: Call vector::is_empty<Option<Info>>(&vector<Option<Info>>): bool
+	362: Not
+	363: BrFalse(427)
+B30:
+	364: MutBorrowLoc[37](cases#1#68: vector<Option<Info>>)
+	365: VecPopBack(54)
+	366: StLoc[35](case#1#68: Option<Info>)
+	367: ImmBorrowLoc[35](case#1#68: Option<Info>)
+	368: Call bcs::to_bytes<Option<Info>>(&Option<Info>): vector<u8>
+	369: Call bcs::new(vector<u8>): BCS
+	370: StLoc[33](bytes#1#68: BCS)
+	371: MutBorrowLoc[33](bytes#1#68: BCS)
+	372: StLoc[30](bcs#1#74: &mut BCS)
+	373: CopyLoc[30](bcs#1#74: &mut BCS)
+	374: Call bcs::peel_bool(&mut BCS): bool
+	375: BrFalse(381)
+B31:
+	376: MoveLoc[30](bcs#1#74: &mut BCS)
+	377: Call peel_info(&mut BCS): Info
+	378: Call option::some<Info>(Info): Option<Info>
+	379: StLoc[18](%#25: Option<Info>)
+	380: Branch(385)
+B32:
+	381: MoveLoc[30](bcs#1#74: &mut BCS)
+	382: Pop
+	383: Call option::none<Info>(): Option<Info>
+	384: StLoc[18](%#25: Option<Info>)
+B33:
+	385: MoveLoc[18](%#25: Option<Info>)
+	386: StLoc[60](t1#1#71: Option<Info>)
+	387: MoveLoc[35](case#1#68: Option<Info>)
+	388: StLoc[76](t2#1#71: Option<Info>)
+	389: ImmBorrowLoc[60](t1#1#71: Option<Info>)
+	390: StLoc[61](t1#1#76: &Option<Info>)
+	391: ImmBorrowLoc[76](t2#1#71: Option<Info>)
+	392: StLoc[77](t2#1#76: &Option<Info>)
+	393: CopyLoc[61](t1#1#76: &Option<Info>)
+	394: CopyLoc[77](t2#1#76: &Option<Info>)
+	395: Eq
+	396: Not
+	397: BrFalse(414)
+B34:
+	398: LdConst[8](vector<u8>: "Ass..)
+	399: Call string::utf8(vector<u8>): String
+	400: StLoc[19](%#26: String)
+	401: ImmBorrowLoc[19](%#26: String)
+	402: Call debug::print<String>(&String)
+	403: MoveLoc[61](t1#1#76: &Option<Info>)
+	404: Call debug::print<Option<Info>>(&Option<Info>)
+	405: LdConst[9](vector<u8>: "!="..)
+	406: Call string::utf8(vector<u8>): String
+	407: StLoc[20](%#27: String)
+	408: ImmBorrowLoc[20](%#27: String)
+	409: Call debug::print<String>(&String)
+	410: MoveLoc[77](t2#1#76: &Option<Info>)
+	411: Call debug::print<Option<Info>>(&Option<Info>)
+	412: LdU64(13906835291034877951)
+	413: Abort
+B35:
+	414: MoveLoc[77](t2#1#76: &Option<Info>)
+	415: Pop
+	416: MoveLoc[61](t1#1#76: &Option<Info>)
+	417: Pop
+	418: MoveLoc[33](bytes#1#68: BCS)
+	419: Call bcs::into_remainder_bytes(BCS): vector<u8>
+	420: StLoc[21](%#28: vector<u8>)
+	421: ImmBorrowLoc[21](%#28: vector<u8>)
+	422: Call vector::is_empty<u8>(&vector<u8>): bool
+	423: BrFalse(425)
+B36:
+	424: Branch(360)
+B37:
+	425: LdU64(13906835291034877951)
+	426: Abort
+B38:
+	427: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u8: 255
+	1 => u16: 65535
+	2 => u32: 4294967295
+	3 => u64: 18446744073709551615
+	4 => u128: 340282366920938463463374607431768211455
+	5 => u256: 115792089237316195423570985008687907853269984665640564039457584007913129639935
+	6 => vector<u8>: 05ffffffff80
+	7 => vector<bool>: 020100
+	8 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	9 => vector<u8>: "!=" // interpreted as UTF8 string
+	10 => vector<address>: 0300000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff
+	11 => vector<vector<bool>>: 0300010103000100
+	12 => vector<bool>: 00
+	13 => vector<u8>: "" // interpreted as UTF8 string
+	14 => vector<u8>: "" // interpreted as UTF8 string
+	15 => vector<u16>: 00
+	16 => vector<u16>: 010100
+	17 => vector<u32>: 00
+	18 => vector<u32>: 0101000000
+	19 => vector<u64>: 00
+	20 => vector<u64>: 010100000000000000
+	21 => vector<u128>: 00
+	22 => vector<u128>: 0101000000000000000000000000000000
+	23 => vector<u256>: 00
+	24 => vector<u256>: 010100000000000000000000000000000000000000000000000000000000000000
+	25 => vector<vector<address>>: 030001000000000000000000000000000000000000000000000000000000000000000003000000000000000000000000000000000000000000000000000000000000000100000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000003
+	26 => vector<address>: 00
+	27 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	28 => address: 0x0000000000000000000000000000000000000000000000000000000000000001
+	29 => vector<vector<vector<u8>>>: 0300010b68656c6c6f20776f726c64020568656c6c6f05776f726c64
+	30 => vector<vector<u8>>: 00
+]
+}

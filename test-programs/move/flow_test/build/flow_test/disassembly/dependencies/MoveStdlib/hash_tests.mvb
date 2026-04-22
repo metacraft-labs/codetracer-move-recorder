@@ -1,0 +1,115 @@
+// Move bytecode v6
+module 1.hash_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::hash;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+sha2_256_expected_hash() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	t1#1#1: vector<u8>
+L3:	t1#1#4: &vector<u8>
+L4:	t2#1#1: vector<u8>
+L5:	t2#1#4: &vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "abc..)
+	1: Call hash::sha2_256(vector<u8>): vector<u8>
+	2: StLoc[2](t1#1#1: vector<u8>)
+	3: LdConst[1](vector<u8>: 20ba..)
+	4: StLoc[4](t2#1#1: vector<u8>)
+	5: ImmBorrowLoc[2](t1#1#1: vector<u8>)
+	6: StLoc[3](t1#1#4: &vector<u8>)
+	7: ImmBorrowLoc[4](t2#1#1: vector<u8>)
+	8: StLoc[5](t2#1#4: &vector<u8>)
+	9: CopyLoc[3](t1#1#4: &vector<u8>)
+	10: CopyLoc[5](t2#1#4: &vector<u8>)
+	11: Eq
+	12: Not
+	13: BrFalse(30)
+B1:
+	14: LdConst[2](vector<u8>: "Ass..)
+	15: Call string::utf8(vector<u8>): String
+	16: StLoc[0](%#1: String)
+	17: ImmBorrowLoc[0](%#1: String)
+	18: Call debug::print<String>(&String)
+	19: MoveLoc[3](t1#1#4: &vector<u8>)
+	20: Call debug::print<vector<u8>>(&vector<u8>)
+	21: LdConst[3](vector<u8>: "!="..)
+	22: Call string::utf8(vector<u8>): String
+	23: StLoc[1](%#2: String)
+	24: ImmBorrowLoc[1](%#2: String)
+	25: Call debug::print<String>(&String)
+	26: MoveLoc[5](t2#1#4: &vector<u8>)
+	27: Call debug::print<vector<u8>>(&vector<u8>)
+	28: LdU64(13906834247357825023)
+	29: Abort
+B2:
+	30: MoveLoc[5](t2#1#4: &vector<u8>)
+	31: Pop
+	32: MoveLoc[3](t1#1#4: &vector<u8>)
+	33: Pop
+	34: Ret
+}
+
+sha3_256_expected_hash() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	t1#1#1: vector<u8>
+L3:	t1#1#4: &vector<u8>
+L4:	t2#1#1: vector<u8>
+L5:	t2#1#4: &vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "abc..)
+	1: Call hash::sha3_256(vector<u8>): vector<u8>
+	2: StLoc[2](t1#1#1: vector<u8>)
+	3: LdConst[4](vector<u8>: 203a..)
+	4: StLoc[4](t2#1#1: vector<u8>)
+	5: ImmBorrowLoc[2](t1#1#1: vector<u8>)
+	6: StLoc[3](t1#1#4: &vector<u8>)
+	7: ImmBorrowLoc[4](t2#1#1: vector<u8>)
+	8: StLoc[5](t2#1#4: &vector<u8>)
+	9: CopyLoc[3](t1#1#4: &vector<u8>)
+	10: CopyLoc[5](t2#1#4: &vector<u8>)
+	11: Eq
+	12: Not
+	13: BrFalse(30)
+B1:
+	14: LdConst[2](vector<u8>: "Ass..)
+	15: Call string::utf8(vector<u8>): String
+	16: StLoc[0](%#1: String)
+	17: ImmBorrowLoc[0](%#1: String)
+	18: Call debug::print<String>(&String)
+	19: MoveLoc[3](t1#1#4: &vector<u8>)
+	20: Call debug::print<vector<u8>>(&vector<u8>)
+	21: LdConst[3](vector<u8>: "!="..)
+	22: Call string::utf8(vector<u8>): String
+	23: StLoc[1](%#2: String)
+	24: ImmBorrowLoc[1](%#2: String)
+	25: Call debug::print<String>(&String)
+	26: MoveLoc[5](t2#1#4: &vector<u8>)
+	27: Call debug::print<vector<u8>>(&vector<u8>)
+	28: LdU64(13906834277422596095)
+	29: Abort
+B2:
+	30: MoveLoc[5](t2#1#4: &vector<u8>)
+	31: Pop
+	32: MoveLoc[3](t1#1#4: &vector<u8>)
+	33: Pop
+	34: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "abc" // interpreted as UTF8 string
+	1 => vector<u8>: 20ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad
+	2 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	3 => vector<u8>: "!=" // interpreted as UTF8 string
+	4 => vector<u8>: 203a985da74fe225b2045c172d6bd390bd855f086e3e9d525b46bfe24511431532
+]
+}

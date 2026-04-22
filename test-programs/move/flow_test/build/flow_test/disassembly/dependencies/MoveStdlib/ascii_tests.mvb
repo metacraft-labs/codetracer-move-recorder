@@ -1,0 +1,1752 @@
+// Move bytecode v6
+module 1.ascii_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::ascii;
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+ascii_chars() {
+L0:	%#2: u8
+L1:	%#3: &mut vector<u8>
+L2:	%#4: String
+L3:	%#5: String
+L4:	%#6: vector<u8>
+L5:	%#7: String
+L6:	%#8: String
+L7:	i#1#10: u64
+L8:	i#1#11: u64
+L9:	i#1#7: u64
+L10:	str#1#0: String
+L11:	t1#1#12: u64
+L12:	t1#1#15: &u64
+L13:	t1#1#18: u64
+L14:	t1#1#21: &u64
+L15:	t2#1#12: u64
+L16:	t2#1#15: &u64
+L17:	t2#1#18: u64
+L18:	t2#1#21: &u64
+L19:	v#1#1: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "" /..)
+	1: StLoc[19](v#1#1: vector<u8>)
+	2: LdU64(0)
+	3: StLoc[9](i#1#7: u64)
+B1:
+	4: CopyLoc[9](i#1#7: u64)
+	5: LdU64(128)
+	6: Lt
+	7: BrFalse(34)
+B2:
+	8: CopyLoc[9](i#1#7: u64)
+	9: StLoc[7](i#1#10: u64)
+	10: MutBorrowLoc[19](v#1#1: vector<u8>)
+	11: StLoc[1](%#3: &mut vector<u8>)
+	12: MoveLoc[7](i#1#10: u64)
+	13: StLoc[8](i#1#11: u64)
+	14: CopyLoc[8](i#1#11: u64)
+	15: CastU8
+	16: Call ascii::is_valid_char(u8): bool
+	17: BrFalse(19)
+B3:
+	18: Branch(23)
+B4:
+	19: MoveLoc[1](%#3: &mut vector<u8>)
+	20: Pop
+	21: LdU64(13906834243062857727)
+	22: Abort
+B5:
+	23: MoveLoc[8](i#1#11: u64)
+	24: CastU8
+	25: StLoc[0](%#2: u8)
+	26: MoveLoc[1](%#3: &mut vector<u8>)
+	27: MoveLoc[0](%#2: u8)
+	28: VecPushBack(2)
+	29: MoveLoc[9](i#1#7: u64)
+	30: LdU64(1)
+	31: Add
+	32: StLoc[9](i#1#7: u64)
+	33: Branch(4)
+B6:
+	34: MoveLoc[19](v#1#1: vector<u8>)
+	35: Call ascii::string(vector<u8>): String
+	36: StLoc[10](str#1#0: String)
+	37: ImmBorrowLoc[10](str#1#0: String)
+	38: Call ascii::as_bytes(&String): &vector<u8>
+	39: VecLen(2)
+	40: StLoc[11](t1#1#12: u64)
+	41: LdU64(128)
+	42: StLoc[15](t2#1#12: u64)
+	43: ImmBorrowLoc[11](t1#1#12: u64)
+	44: StLoc[12](t1#1#15: &u64)
+	45: ImmBorrowLoc[15](t2#1#12: u64)
+	46: StLoc[16](t2#1#15: &u64)
+	47: CopyLoc[12](t1#1#15: &u64)
+	48: CopyLoc[16](t2#1#15: &u64)
+	49: Eq
+	50: Not
+	51: BrFalse(68)
+B7:
+	52: LdConst[1](vector<u8>: "Ass..)
+	53: Call string::utf8(vector<u8>): String
+	54: StLoc[2](%#4: String)
+	55: ImmBorrowLoc[2](%#4: String)
+	56: Call debug::print<String>(&String)
+	57: MoveLoc[12](t1#1#15: &u64)
+	58: Call debug::print<u64>(&u64)
+	59: LdConst[2](vector<u8>: "!="..)
+	60: Call string::utf8(vector<u8>): String
+	61: StLoc[3](%#5: String)
+	62: ImmBorrowLoc[3](%#5: String)
+	63: Call debug::print<String>(&String)
+	64: MoveLoc[16](t2#1#15: &u64)
+	65: Call debug::print<u64>(&u64)
+	66: LdU64(13906834264537694207)
+	67: Abort
+B8:
+	68: MoveLoc[16](t2#1#15: &u64)
+	69: Pop
+	70: MoveLoc[12](t1#1#15: &u64)
+	71: Pop
+	72: ImmBorrowLoc[10](str#1#0: String)
+	73: Call ascii::all_characters_printable(&String): bool
+	74: Not
+	75: BrFalse(77)
+B9:
+	76: Branch(79)
+B10:
+	77: LdU64(13906834268832661503)
+	78: Abort
+B11:
+	79: MoveLoc[10](str#1#0: String)
+	80: Call ascii::into_bytes(String): vector<u8>
+	81: StLoc[4](%#6: vector<u8>)
+	82: ImmBorrowLoc[4](%#6: vector<u8>)
+	83: VecLen(2)
+	84: StLoc[13](t1#1#18: u64)
+	85: LdU64(128)
+	86: StLoc[17](t2#1#18: u64)
+	87: ImmBorrowLoc[13](t1#1#18: u64)
+	88: StLoc[14](t1#1#21: &u64)
+	89: ImmBorrowLoc[17](t2#1#18: u64)
+	90: StLoc[18](t2#1#21: &u64)
+	91: CopyLoc[14](t1#1#21: &u64)
+	92: CopyLoc[18](t2#1#21: &u64)
+	93: Eq
+	94: Not
+	95: BrFalse(112)
+B12:
+	96: LdConst[1](vector<u8>: "Ass..)
+	97: Call string::utf8(vector<u8>): String
+	98: StLoc[5](%#7: String)
+	99: ImmBorrowLoc[5](%#7: String)
+	100: Call debug::print<String>(&String)
+	101: MoveLoc[14](t1#1#21: &u64)
+	102: Call debug::print<u64>(&u64)
+	103: LdConst[2](vector<u8>: "!="..)
+	104: Call string::utf8(vector<u8>): String
+	105: StLoc[6](%#8: String)
+	106: ImmBorrowLoc[6](%#8: String)
+	107: Call debug::print<String>(&String)
+	108: MoveLoc[18](t2#1#21: &u64)
+	109: Call debug::print<u64>(&u64)
+	110: LdU64(13906834273127628799)
+	111: Abort
+B13:
+	112: MoveLoc[18](t2#1#21: &u64)
+	113: Pop
+	114: MoveLoc[14](t1#1#21: &u64)
+	115: Pop
+	116: Ret
+}
+
+ascii_push_chars() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	i#1#4: u8
+L5:	i#1#7: u8
+L6:	str#1#0: String
+L7:	t1#1#11: &u64
+L8:	t1#1#14: u64
+L9:	t1#1#17: &u64
+L10:	t1#1#8: u64
+L11:	t2#1#11: &u64
+L12:	t2#1#14: u64
+L13:	t2#1#17: &u64
+L14:	t2#1#8: u64
+B0:
+	0: LdConst[0](vector<u8>: "" /..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[6](str#1#0: String)
+	3: LdU8(0)
+	4: StLoc[4](i#1#4: u8)
+B1:
+	5: CopyLoc[4](i#1#4: u8)
+	6: LdU8(128)
+	7: Lt
+	8: BrFalse(20)
+B2:
+	9: CopyLoc[4](i#1#4: u8)
+	10: StLoc[5](i#1#7: u8)
+	11: MutBorrowLoc[6](str#1#0: String)
+	12: MoveLoc[5](i#1#7: u8)
+	13: Call ascii::char(u8): Char
+	14: Call ascii::push_char(&mut String, Char)
+	15: MoveLoc[4](i#1#4: u8)
+	16: LdU8(1)
+	17: Add
+	18: StLoc[4](i#1#4: u8)
+	19: Branch(5)
+B3:
+	20: ImmBorrowLoc[6](str#1#0: String)
+	21: Call ascii::as_bytes(&String): &vector<u8>
+	22: VecLen(2)
+	23: StLoc[10](t1#1#8: u64)
+	24: LdU64(128)
+	25: StLoc[14](t2#1#8: u64)
+	26: ImmBorrowLoc[10](t1#1#8: u64)
+	27: StLoc[7](t1#1#11: &u64)
+	28: ImmBorrowLoc[14](t2#1#8: u64)
+	29: StLoc[11](t2#1#11: &u64)
+	30: CopyLoc[7](t1#1#11: &u64)
+	31: CopyLoc[11](t2#1#11: &u64)
+	32: Eq
+	33: Not
+	34: BrFalse(51)
+B4:
+	35: LdConst[1](vector<u8>: "Ass..)
+	36: Call string::utf8(vector<u8>): String
+	37: StLoc[0](%#1: String)
+	38: ImmBorrowLoc[0](%#1: String)
+	39: Call debug::print<String>(&String)
+	40: MoveLoc[7](t1#1#11: &u64)
+	41: Call debug::print<u64>(&u64)
+	42: LdConst[2](vector<u8>: "!="..)
+	43: Call string::utf8(vector<u8>): String
+	44: StLoc[1](%#2: String)
+	45: ImmBorrowLoc[1](%#2: String)
+	46: Call debug::print<String>(&String)
+	47: MoveLoc[11](t2#1#11: &u64)
+	48: Call debug::print<u64>(&u64)
+	49: LdU64(13906834316077301759)
+	50: Abort
+B5:
+	51: MoveLoc[11](t2#1#11: &u64)
+	52: Pop
+	53: MoveLoc[7](t1#1#11: &u64)
+	54: Pop
+	55: ImmBorrowLoc[6](str#1#0: String)
+	56: Call ascii::length(&String): u64
+	57: StLoc[8](t1#1#14: u64)
+	58: LdU64(128)
+	59: StLoc[12](t2#1#14: u64)
+	60: ImmBorrowLoc[8](t1#1#14: u64)
+	61: StLoc[9](t1#1#17: &u64)
+	62: ImmBorrowLoc[12](t2#1#14: u64)
+	63: StLoc[13](t2#1#17: &u64)
+	64: CopyLoc[9](t1#1#17: &u64)
+	65: CopyLoc[13](t2#1#17: &u64)
+	66: Eq
+	67: Not
+	68: BrFalse(85)
+B6:
+	69: LdConst[1](vector<u8>: "Ass..)
+	70: Call string::utf8(vector<u8>): String
+	71: StLoc[2](%#3: String)
+	72: ImmBorrowLoc[2](%#3: String)
+	73: Call debug::print<String>(&String)
+	74: MoveLoc[9](t1#1#17: &u64)
+	75: Call debug::print<u64>(&u64)
+	76: LdConst[2](vector<u8>: "!="..)
+	77: Call string::utf8(vector<u8>): String
+	78: StLoc[3](%#4: String)
+	79: ImmBorrowLoc[3](%#4: String)
+	80: Call debug::print<String>(&String)
+	81: MoveLoc[13](t2#1#17: &u64)
+	82: Call debug::print<u64>(&u64)
+	83: LdU64(13906834320372269055)
+	84: Abort
+B7:
+	85: MoveLoc[13](t2#1#17: &u64)
+	86: Pop
+	87: MoveLoc[9](t1#1#17: &u64)
+	88: Pop
+	89: ImmBorrowLoc[6](str#1#0: String)
+	90: Call ascii::all_characters_printable(&String): bool
+	91: Not
+	92: BrFalse(94)
+B8:
+	93: Branch(96)
+B9:
+	94: LdU64(13906834324667236351)
+	95: Abort
+B10:
+	96: Ret
+}
+
+ascii_push_char_pop_char() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	%#5: String
+L5:	%#6: String
+L6:	i#1#0: u8
+L7:	str#1#0: String
+L8:	t1#1#1: u8
+L9:	t1#1#10: &u64
+L10:	t1#1#13: u64
+L11:	t1#1#16: &u64
+L12:	t1#1#4: &u8
+L13:	t1#1#7: u64
+L14:	t2#1#1: u8
+L15:	t2#1#10: &u64
+L16:	t2#1#13: u64
+L17:	t2#1#16: &u64
+L18:	t2#1#4: &u8
+L19:	t2#1#7: u64
+B0:
+	0: LdU8(0)
+	1: StLoc[6](i#1#0: u8)
+	2: LdConst[0](vector<u8>: "" /..)
+	3: Call ascii::string(vector<u8>): String
+	4: StLoc[7](str#1#0: String)
+B1:
+	5: CopyLoc[6](i#1#0: u8)
+	6: LdU8(128)
+	7: Lt
+	8: BrFalse(19)
+B2:
+	9: Branch(10)
+B3:
+	10: MutBorrowLoc[7](str#1#0: String)
+	11: CopyLoc[6](i#1#0: u8)
+	12: Call ascii::char(u8): Char
+	13: Call ascii::push_char(&mut String, Char)
+	14: MoveLoc[6](i#1#0: u8)
+	15: LdU8(1)
+	16: Add
+	17: StLoc[6](i#1#0: u8)
+	18: Branch(5)
+B4:
+	19: CopyLoc[6](i#1#0: u8)
+	20: LdU8(0)
+	21: Gt
+	22: BrFalse(65)
+B5:
+	23: MutBorrowLoc[7](str#1#0: String)
+	24: Call ascii::pop_char(&mut String): Char
+	25: Call ascii::byte(Char): u8
+	26: StLoc[8](t1#1#1: u8)
+	27: CopyLoc[6](i#1#0: u8)
+	28: LdU8(1)
+	29: Sub
+	30: StLoc[14](t2#1#1: u8)
+	31: ImmBorrowLoc[8](t1#1#1: u8)
+	32: StLoc[12](t1#1#4: &u8)
+	33: ImmBorrowLoc[14](t2#1#1: u8)
+	34: StLoc[18](t2#1#4: &u8)
+	35: CopyLoc[12](t1#1#4: &u8)
+	36: CopyLoc[18](t2#1#4: &u8)
+	37: Eq
+	38: Not
+	39: BrFalse(56)
+B6:
+	40: LdConst[1](vector<u8>: "Ass..)
+	41: Call string::utf8(vector<u8>): String
+	42: StLoc[0](%#1: String)
+	43: ImmBorrowLoc[0](%#1: String)
+	44: Call debug::print<String>(&String)
+	45: MoveLoc[12](t1#1#4: &u8)
+	46: Call debug::print<u8>(&u8)
+	47: LdConst[2](vector<u8>: "!="..)
+	48: Call string::utf8(vector<u8>): String
+	49: StLoc[1](%#2: String)
+	50: ImmBorrowLoc[1](%#2: String)
+	51: Call debug::print<String>(&String)
+	52: MoveLoc[18](t2#1#4: &u8)
+	53: Call debug::print<u8>(&u8)
+	54: LdU64(13906834393386713087)
+	55: Abort
+B7:
+	56: MoveLoc[18](t2#1#4: &u8)
+	57: Pop
+	58: MoveLoc[12](t1#1#4: &u8)
+	59: Pop
+	60: MoveLoc[6](i#1#0: u8)
+	61: LdU8(1)
+	62: Sub
+	63: StLoc[6](i#1#0: u8)
+	64: Branch(19)
+B8:
+	65: ImmBorrowLoc[7](str#1#0: String)
+	66: Call ascii::as_bytes(&String): &vector<u8>
+	67: VecLen(2)
+	68: StLoc[13](t1#1#7: u64)
+	69: LdU64(0)
+	70: StLoc[19](t2#1#7: u64)
+	71: ImmBorrowLoc[13](t1#1#7: u64)
+	72: StLoc[9](t1#1#10: &u64)
+	73: ImmBorrowLoc[19](t2#1#7: u64)
+	74: StLoc[15](t2#1#10: &u64)
+	75: CopyLoc[9](t1#1#10: &u64)
+	76: CopyLoc[15](t2#1#10: &u64)
+	77: Eq
+	78: Not
+	79: BrFalse(96)
+B9:
+	80: LdConst[1](vector<u8>: "Ass..)
+	81: Call string::utf8(vector<u8>): String
+	82: StLoc[2](%#3: String)
+	83: ImmBorrowLoc[2](%#3: String)
+	84: Call debug::print<String>(&String)
+	85: MoveLoc[9](t1#1#10: &u64)
+	86: Call debug::print<u64>(&u64)
+	87: LdConst[2](vector<u8>: "!="..)
+	88: Call string::utf8(vector<u8>): String
+	89: StLoc[3](%#4: String)
+	90: ImmBorrowLoc[3](%#4: String)
+	91: Call debug::print<String>(&String)
+	92: MoveLoc[15](t2#1#10: &u64)
+	93: Call debug::print<u64>(&u64)
+	94: LdU64(13906834410566582271)
+	95: Abort
+B10:
+	96: MoveLoc[15](t2#1#10: &u64)
+	97: Pop
+	98: MoveLoc[9](t1#1#10: &u64)
+	99: Pop
+	100: ImmBorrowLoc[7](str#1#0: String)
+	101: Call ascii::length(&String): u64
+	102: StLoc[10](t1#1#13: u64)
+	103: LdU64(0)
+	104: StLoc[16](t2#1#13: u64)
+	105: ImmBorrowLoc[10](t1#1#13: u64)
+	106: StLoc[11](t1#1#16: &u64)
+	107: ImmBorrowLoc[16](t2#1#13: u64)
+	108: StLoc[17](t2#1#16: &u64)
+	109: CopyLoc[11](t1#1#16: &u64)
+	110: CopyLoc[17](t2#1#16: &u64)
+	111: Eq
+	112: Not
+	113: BrFalse(130)
+B11:
+	114: LdConst[1](vector<u8>: "Ass..)
+	115: Call string::utf8(vector<u8>): String
+	116: StLoc[4](%#5: String)
+	117: ImmBorrowLoc[4](%#5: String)
+	118: Call debug::print<String>(&String)
+	119: MoveLoc[11](t1#1#16: &u64)
+	120: Call debug::print<u64>(&u64)
+	121: LdConst[2](vector<u8>: "!="..)
+	122: Call string::utf8(vector<u8>): String
+	123: StLoc[5](%#6: String)
+	124: ImmBorrowLoc[5](%#6: String)
+	125: Call debug::print<String>(&String)
+	126: MoveLoc[17](t2#1#16: &u64)
+	127: Call debug::print<u64>(&u64)
+	128: LdU64(13906834414861549567)
+	129: Abort
+B12:
+	130: MoveLoc[17](t2#1#16: &u64)
+	131: Pop
+	132: MoveLoc[11](t1#1#16: &u64)
+	133: Pop
+	134: ImmBorrowLoc[7](str#1#0: String)
+	135: Call ascii::all_characters_printable(&String): bool
+	136: BrFalse(138)
+B13:
+	137: Branch(140)
+B14:
+	138: LdU64(13906834419156516863)
+	139: Abort
+B15:
+	140: Ret
+}
+
+printable_chars() {
+L0:	i#1#0: u8
+L1:	str#1#0: String
+L2:	vec#1#0: vector<u8>
+B0:
+	0: LdU8(32)
+	1: StLoc[0](i#1#0: u8)
+	2: LdConst[0](vector<u8>: "" /..)
+	3: StLoc[2](vec#1#0: vector<u8>)
+B1:
+	4: CopyLoc[0](i#1#0: u8)
+	5: LdU8(126)
+	6: Le
+	7: BrFalse(23)
+B2:
+	8: Branch(9)
+B3:
+	9: CopyLoc[0](i#1#0: u8)
+	10: Call ascii::is_printable_char(u8): bool
+	11: BrFalse(13)
+B4:
+	12: Branch(15)
+B5:
+	13: LdU64(13906834462106189823)
+	14: Abort
+B6:
+	15: MutBorrowLoc[2](vec#1#0: vector<u8>)
+	16: CopyLoc[0](i#1#0: u8)
+	17: VecPushBack(2)
+	18: MoveLoc[0](i#1#0: u8)
+	19: LdU8(1)
+	20: Add
+	21: StLoc[0](i#1#0: u8)
+	22: Branch(4)
+B7:
+	23: MoveLoc[2](vec#1#0: vector<u8>)
+	24: Call ascii::string(vector<u8>): String
+	25: StLoc[1](str#1#0: String)
+	26: ImmBorrowLoc[1](str#1#0: String)
+	27: Call ascii::all_characters_printable(&String): bool
+	28: BrFalse(30)
+B8:
+	29: Branch(32)
+B9:
+	30: LdU64(13906834487875993599)
+	31: Abort
+B10:
+	32: Ret
+}
+
+printable_chars_dont_allow_tab() {
+L0:	str#1#0: String
+B0:
+	0: LdConst[3](vector<u8>: "	" ..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[0](str#1#0: String)
+	3: ImmBorrowLoc[0](str#1#0: String)
+	4: Call ascii::all_characters_printable(&String): bool
+	5: Not
+	6: BrFalse(8)
+B1:
+	7: Branch(10)
+B2:
+	8: LdU64(13906834513645797375)
+	9: Abort
+B3:
+	10: Ret
+}
+
+printable_chars_dont_allow_newline() {
+L0:	str#1#0: String
+B0:
+	0: LdConst[4](vector<u8>: "
+" ..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[0](str#1#0: String)
+	3: ImmBorrowLoc[0](str#1#0: String)
+	4: Call ascii::all_characters_printable(&String): bool
+	5: Not
+	6: BrFalse(8)
+B1:
+	7: Branch(10)
+B2:
+	8: LdU64(13906834539415601151)
+	9: Abort
+B3:
+	10: Ret
+}
+
+invalid_ascii_characters() {
+L0:	i#1#0: u8
+L1:	try_str#1#0: Option<String>
+B0:
+	0: LdU8(128)
+	1: StLoc[0](i#1#0: u8)
+B1:
+	2: CopyLoc[0](i#1#0: u8)
+	3: LdU8(255)
+	4: Lt
+	5: BrFalse(22)
+B2:
+	6: Branch(7)
+B3:
+	7: CopyLoc[0](i#1#0: u8)
+	8: VecPack(2, 1)
+	9: Call ascii::try_string(vector<u8>): Option<String>
+	10: StLoc[1](try_str#1#0: Option<String>)
+	11: ImmBorrowLoc[1](try_str#1#0: Option<String>)
+	12: Call option::is_none<String>(&Option<String>): bool
+	13: BrFalse(15)
+B4:
+	14: Branch(17)
+B5:
+	15: LdU64(13906834578070306815)
+	16: Abort
+B6:
+	17: MoveLoc[0](i#1#0: u8)
+	18: LdU8(1)
+	19: Add
+	20: StLoc[0](i#1#0: u8)
+	21: Branch(2)
+B7:
+	22: Ret
+}
+
+nonvisible_chars() {
+L0:	i#1#0: u8
+L1:	i#2#0: u8
+L2:	str#1#0: String
+L3:	str#2#0: String
+B0:
+	0: LdU8(0)
+	1: StLoc[0](i#1#0: u8)
+B1:
+	2: CopyLoc[0](i#1#0: u8)
+	3: LdU8(9)
+	4: Lt
+	5: BrFalse(23)
+B2:
+	6: Branch(7)
+B3:
+	7: CopyLoc[0](i#1#0: u8)
+	8: VecPack(2, 1)
+	9: Call ascii::string(vector<u8>): String
+	10: StLoc[2](str#1#0: String)
+	11: ImmBorrowLoc[2](str#1#0: String)
+	12: Call ascii::all_characters_printable(&String): bool
+	13: Not
+	14: BrFalse(16)
+B4:
+	15: Branch(18)
+B5:
+	16: LdU64(13906834625314947071)
+	17: Abort
+B6:
+	18: MoveLoc[0](i#1#0: u8)
+	19: LdU8(1)
+	20: Add
+	21: StLoc[0](i#1#0: u8)
+	22: Branch(2)
+B7:
+	23: LdU8(11)
+	24: StLoc[1](i#2#0: u8)
+B8:
+	25: CopyLoc[1](i#2#0: u8)
+	26: LdU8(15)
+	27: Le
+	28: BrFalse(45)
+B9:
+	29: CopyLoc[1](i#2#0: u8)
+	30: VecPack(2, 1)
+	31: Call ascii::string(vector<u8>): String
+	32: StLoc[3](str#2#0: String)
+	33: ImmBorrowLoc[3](str#2#0: String)
+	34: Call ascii::all_characters_printable(&String): bool
+	35: Not
+	36: BrFalse(38)
+B10:
+	37: Branch(40)
+B11:
+	38: LdU64(13906834659674685439)
+	39: Abort
+B12:
+	40: MoveLoc[1](i#2#0: u8)
+	41: LdU8(1)
+	42: Add
+	43: StLoc[1](i#2#0: u8)
+	44: Branch(25)
+B13:
+	45: Ret
+}
+
+append() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	str#1#0: String
+L3:	t1#1#1: String
+L4:	t1#1#4: &String
+L5:	t2#1#1: String
+L6:	t2#1#4: &String
+B0:
+	0: LdConst[5](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[2](str#1#0: String)
+	3: MutBorrowLoc[2](str#1#0: String)
+	4: LdConst[6](vector<u8>: " wo..)
+	5: Call ascii::string(vector<u8>): String
+	6: Call ascii::append(&mut String, String)
+	7: MoveLoc[2](str#1#0: String)
+	8: StLoc[3](t1#1#1: String)
+	9: LdConst[7](vector<u8>: "hel..)
+	10: Call ascii::string(vector<u8>): String
+	11: StLoc[5](t2#1#1: String)
+	12: ImmBorrowLoc[3](t1#1#1: String)
+	13: StLoc[4](t1#1#4: &String)
+	14: ImmBorrowLoc[5](t2#1#1: String)
+	15: StLoc[6](t2#1#4: &String)
+	16: CopyLoc[4](t1#1#4: &String)
+	17: CopyLoc[6](t2#1#4: &String)
+	18: Eq
+	19: Not
+	20: BrFalse(37)
+B1:
+	21: LdConst[1](vector<u8>: "Ass..)
+	22: Call string::utf8(vector<u8>): String
+	23: StLoc[0](%#1: String)
+	24: ImmBorrowLoc[0](%#1: String)
+	25: Call debug::print<String>(&String)
+	26: MoveLoc[4](t1#1#4: &String)
+	27: Call debug::print<String>(&String)
+	28: LdConst[2](vector<u8>: "!="..)
+	29: Call string::utf8(vector<u8>): String
+	30: StLoc[1](%#2: String)
+	31: ImmBorrowLoc[1](%#2: String)
+	32: Call debug::print<String>(&String)
+	33: MoveLoc[6](t2#1#4: &String)
+	34: Call debug::print<String>(&String)
+	35: LdU64(13906834702624358399)
+	36: Abort
+B2:
+	37: MoveLoc[6](t2#1#4: &String)
+	38: Pop
+	39: MoveLoc[4](t1#1#4: &String)
+	40: Pop
+	41: Ret
+}
+
+to_uppercase() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	str#1#0: String
+L3:	t1#1#1: String
+L4:	t1#1#4: &String
+L5:	t2#1#1: String
+L6:	t2#1#4: &String
+B0:
+	0: LdConst[8](vector<u8>: "azh..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[2](str#1#0: String)
+	3: ImmBorrowLoc[2](str#1#0: String)
+	4: Call ascii::to_uppercase(&String): String
+	5: StLoc[3](t1#1#1: String)
+	6: LdConst[9](vector<u8>: "AZH..)
+	7: Call ascii::string(vector<u8>): String
+	8: StLoc[5](t2#1#1: String)
+	9: ImmBorrowLoc[3](t1#1#1: String)
+	10: StLoc[4](t1#1#4: &String)
+	11: ImmBorrowLoc[5](t2#1#1: String)
+	12: StLoc[6](t2#1#4: &String)
+	13: CopyLoc[4](t1#1#4: &String)
+	14: CopyLoc[6](t2#1#4: &String)
+	15: Eq
+	16: Not
+	17: BrFalse(34)
+B1:
+	18: LdConst[1](vector<u8>: "Ass..)
+	19: Call string::utf8(vector<u8>): String
+	20: StLoc[0](%#1: String)
+	21: ImmBorrowLoc[0](%#1: String)
+	22: Call debug::print<String>(&String)
+	23: MoveLoc[4](t1#1#4: &String)
+	24: Call debug::print<String>(&String)
+	25: LdConst[2](vector<u8>: "!="..)
+	26: Call string::utf8(vector<u8>): String
+	27: StLoc[1](%#2: String)
+	28: ImmBorrowLoc[1](%#2: String)
+	29: Call debug::print<String>(&String)
+	30: MoveLoc[6](t2#1#4: &String)
+	31: Call debug::print<String>(&String)
+	32: LdU64(13906834728394162175)
+	33: Abort
+B2:
+	34: MoveLoc[6](t2#1#4: &String)
+	35: Pop
+	36: MoveLoc[4](t1#1#4: &String)
+	37: Pop
+	38: Ret
+}
+
+to_lowercase() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	str#1#0: String
+L3:	t1#1#1: String
+L4:	t1#1#4: &String
+L5:	t2#1#1: String
+L6:	t2#1#4: &String
+B0:
+	0: LdConst[9](vector<u8>: "AZH..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[2](str#1#0: String)
+	3: ImmBorrowLoc[2](str#1#0: String)
+	4: Call ascii::to_lowercase(&String): String
+	5: StLoc[3](t1#1#1: String)
+	6: LdConst[8](vector<u8>: "azh..)
+	7: Call ascii::string(vector<u8>): String
+	8: StLoc[5](t2#1#1: String)
+	9: ImmBorrowLoc[3](t1#1#1: String)
+	10: StLoc[4](t1#1#4: &String)
+	11: ImmBorrowLoc[5](t2#1#1: String)
+	12: StLoc[6](t2#1#4: &String)
+	13: CopyLoc[4](t1#1#4: &String)
+	14: CopyLoc[6](t2#1#4: &String)
+	15: Eq
+	16: Not
+	17: BrFalse(34)
+B1:
+	18: LdConst[1](vector<u8>: "Ass..)
+	19: Call string::utf8(vector<u8>): String
+	20: StLoc[0](%#1: String)
+	21: ImmBorrowLoc[0](%#1: String)
+	22: Call debug::print<String>(&String)
+	23: MoveLoc[4](t1#1#4: &String)
+	24: Call debug::print<String>(&String)
+	25: LdConst[2](vector<u8>: "!="..)
+	26: Call string::utf8(vector<u8>): String
+	27: StLoc[1](%#2: String)
+	28: ImmBorrowLoc[1](%#2: String)
+	29: Call debug::print<String>(&String)
+	30: MoveLoc[6](t2#1#4: &String)
+	31: Call debug::print<String>(&String)
+	32: LdU64(13906834754163965951)
+	33: Abort
+B2:
+	34: MoveLoc[6](t2#1#4: &String)
+	35: Pop
+	36: MoveLoc[4](t1#1#4: &String)
+	37: Pop
+	38: Ret
+}
+
+substring() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	str#1#0: String
+L5:	t1#1#1: String
+L6:	t1#1#10: &String
+L7:	t1#1#4: &String
+L8:	t1#1#7: String
+L9:	t2#1#1: String
+L10:	t2#1#10: &String
+L11:	t2#1#4: &String
+L12:	t2#1#7: String
+B0:
+	0: LdConst[7](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[4](str#1#0: String)
+	3: ImmBorrowLoc[4](str#1#0: String)
+	4: LdU64(0)
+	5: LdU64(5)
+	6: Call ascii::substring(&String, u64, u64): String
+	7: StLoc[5](t1#1#1: String)
+	8: LdConst[5](vector<u8>: "hel..)
+	9: Call ascii::string(vector<u8>): String
+	10: StLoc[9](t2#1#1: String)
+	11: ImmBorrowLoc[5](t1#1#1: String)
+	12: StLoc[7](t1#1#4: &String)
+	13: ImmBorrowLoc[9](t2#1#1: String)
+	14: StLoc[11](t2#1#4: &String)
+	15: CopyLoc[7](t1#1#4: &String)
+	16: CopyLoc[11](t2#1#4: &String)
+	17: Eq
+	18: Not
+	19: BrFalse(36)
+B1:
+	20: LdConst[1](vector<u8>: "Ass..)
+	21: Call string::utf8(vector<u8>): String
+	22: StLoc[0](%#1: String)
+	23: ImmBorrowLoc[0](%#1: String)
+	24: Call debug::print<String>(&String)
+	25: MoveLoc[7](t1#1#4: &String)
+	26: Call debug::print<String>(&String)
+	27: LdConst[2](vector<u8>: "!="..)
+	28: Call string::utf8(vector<u8>): String
+	29: StLoc[1](%#2: String)
+	30: ImmBorrowLoc[1](%#2: String)
+	31: Call debug::print<String>(&String)
+	32: MoveLoc[11](t2#1#4: &String)
+	33: Call debug::print<String>(&String)
+	34: LdU64(13906834779933769727)
+	35: Abort
+B2:
+	36: MoveLoc[11](t2#1#4: &String)
+	37: Pop
+	38: MoveLoc[7](t1#1#4: &String)
+	39: Pop
+	40: ImmBorrowLoc[4](str#1#0: String)
+	41: LdU64(6)
+	42: LdU64(11)
+	43: Call ascii::substring(&String, u64, u64): String
+	44: StLoc[8](t1#1#7: String)
+	45: LdConst[10](vector<u8>: "wor..)
+	46: Call ascii::string(vector<u8>): String
+	47: StLoc[12](t2#1#7: String)
+	48: ImmBorrowLoc[8](t1#1#7: String)
+	49: StLoc[6](t1#1#10: &String)
+	50: ImmBorrowLoc[12](t2#1#7: String)
+	51: StLoc[10](t2#1#10: &String)
+	52: CopyLoc[6](t1#1#10: &String)
+	53: CopyLoc[10](t2#1#10: &String)
+	54: Eq
+	55: Not
+	56: BrFalse(73)
+B3:
+	57: LdConst[1](vector<u8>: "Ass..)
+	58: Call string::utf8(vector<u8>): String
+	59: StLoc[2](%#3: String)
+	60: ImmBorrowLoc[2](%#3: String)
+	61: Call debug::print<String>(&String)
+	62: MoveLoc[6](t1#1#10: &String)
+	63: Call debug::print<String>(&String)
+	64: LdConst[2](vector<u8>: "!="..)
+	65: Call string::utf8(vector<u8>): String
+	66: StLoc[3](%#4: String)
+	67: ImmBorrowLoc[3](%#4: String)
+	68: Call debug::print<String>(&String)
+	69: MoveLoc[10](t2#1#10: &String)
+	70: Call debug::print<String>(&String)
+	71: LdU64(13906834784228737023)
+	72: Abort
+B4:
+	73: MoveLoc[10](t2#1#10: &String)
+	74: Pop
+	75: MoveLoc[6](t1#1#10: &String)
+	76: Pop
+	77: Ret
+}
+
+substring_len_one() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	str#1#0: String
+L5:	t1#1#1: String
+L6:	t1#1#10: &String
+L7:	t1#1#4: &String
+L8:	t1#1#7: String
+L9:	t2#1#1: String
+L10:	t2#1#10: &String
+L11:	t2#1#4: &String
+L12:	t2#1#7: String
+B0:
+	0: LdConst[7](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[4](str#1#0: String)
+	3: ImmBorrowLoc[4](str#1#0: String)
+	4: LdU64(0)
+	5: LdU64(1)
+	6: Call ascii::substring(&String, u64, u64): String
+	7: StLoc[5](t1#1#1: String)
+	8: LdConst[11](vector<u8>: "h" ..)
+	9: Call ascii::string(vector<u8>): String
+	10: StLoc[9](t2#1#1: String)
+	11: ImmBorrowLoc[5](t1#1#1: String)
+	12: StLoc[7](t1#1#4: &String)
+	13: ImmBorrowLoc[9](t2#1#1: String)
+	14: StLoc[11](t2#1#4: &String)
+	15: CopyLoc[7](t1#1#4: &String)
+	16: CopyLoc[11](t2#1#4: &String)
+	17: Eq
+	18: Not
+	19: BrFalse(36)
+B1:
+	20: LdConst[1](vector<u8>: "Ass..)
+	21: Call string::utf8(vector<u8>): String
+	22: StLoc[0](%#1: String)
+	23: ImmBorrowLoc[0](%#1: String)
+	24: Call debug::print<String>(&String)
+	25: MoveLoc[7](t1#1#4: &String)
+	26: Call debug::print<String>(&String)
+	27: LdConst[2](vector<u8>: "!="..)
+	28: Call string::utf8(vector<u8>): String
+	29: StLoc[1](%#2: String)
+	30: ImmBorrowLoc[1](%#2: String)
+	31: Call debug::print<String>(&String)
+	32: MoveLoc[11](t2#1#4: &String)
+	33: Call debug::print<String>(&String)
+	34: LdU64(13906834809998540799)
+	35: Abort
+B2:
+	36: MoveLoc[11](t2#1#4: &String)
+	37: Pop
+	38: MoveLoc[7](t1#1#4: &String)
+	39: Pop
+	40: ImmBorrowLoc[4](str#1#0: String)
+	41: LdU64(6)
+	42: LdU64(7)
+	43: Call ascii::substring(&String, u64, u64): String
+	44: StLoc[8](t1#1#7: String)
+	45: LdConst[12](vector<u8>: "w" ..)
+	46: Call ascii::string(vector<u8>): String
+	47: StLoc[12](t2#1#7: String)
+	48: ImmBorrowLoc[8](t1#1#7: String)
+	49: StLoc[6](t1#1#10: &String)
+	50: ImmBorrowLoc[12](t2#1#7: String)
+	51: StLoc[10](t2#1#10: &String)
+	52: CopyLoc[6](t1#1#10: &String)
+	53: CopyLoc[10](t2#1#10: &String)
+	54: Eq
+	55: Not
+	56: BrFalse(73)
+B3:
+	57: LdConst[1](vector<u8>: "Ass..)
+	58: Call string::utf8(vector<u8>): String
+	59: StLoc[2](%#3: String)
+	60: ImmBorrowLoc[2](%#3: String)
+	61: Call debug::print<String>(&String)
+	62: MoveLoc[6](t1#1#10: &String)
+	63: Call debug::print<String>(&String)
+	64: LdConst[2](vector<u8>: "!="..)
+	65: Call string::utf8(vector<u8>): String
+	66: StLoc[3](%#4: String)
+	67: ImmBorrowLoc[3](%#4: String)
+	68: Call debug::print<String>(&String)
+	69: MoveLoc[10](t2#1#10: &String)
+	70: Call debug::print<String>(&String)
+	71: LdU64(13906834814293508095)
+	72: Abort
+B4:
+	73: MoveLoc[10](t2#1#10: &String)
+	74: Pop
+	75: MoveLoc[6](t1#1#10: &String)
+	76: Pop
+	77: Ret
+}
+
+substring_len_zero() {
+L0:	%#1: String
+L1:	str#1#0: String
+B0:
+	0: LdConst[7](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[1](str#1#0: String)
+	3: ImmBorrowLoc[1](str#1#0: String)
+	4: LdU64(0)
+	5: LdU64(0)
+	6: Call ascii::substring(&String, u64, u64): String
+	7: StLoc[0](%#1: String)
+	8: ImmBorrowLoc[0](%#1: String)
+	9: Call ascii::is_empty(&String): bool
+	10: BrFalse(12)
+B1:
+	11: Branch(14)
+B2:
+	12: LdU64(13906834840063311871)
+	13: Abort
+B3:
+	14: Ret
+}
+
+index_of() {
+L0:	%#1: String
+L1:	%#10: &String
+L2:	%#11: String
+L3:	%#12: String
+L4:	%#13: String
+L5:	%#14: &String
+L6:	%#15: String
+L7:	%#16: String
+L8:	%#17: String
+L9:	%#18: &String
+L10:	%#19: String
+L11:	%#2: &String
+L12:	%#20: String
+L13:	%#21: String
+L14:	%#22: &String
+L15:	%#23: String
+L16:	%#24: String
+L17:	%#25: String
+L18:	%#26: &String
+L19:	%#27: String
+L20:	%#28: String
+L21:	%#29: String
+L22:	%#3: String
+L23:	%#30: &String
+L24:	%#31: String
+L25:	%#32: String
+L26:	%#33: String
+L27:	%#34: String
+L28:	%#35: &String
+L29:	%#36: String
+L30:	%#37: String
+L31:	%#4: String
+L32:	%#5: String
+L33:	%#6: &String
+L34:	%#7: String
+L35:	%#8: String
+L36:	%#9: String
+L37:	str#1#0: String
+L38:	t1#1#1: u64
+L39:	t1#1#10: &u64
+L40:	t1#1#13: u64
+L41:	t1#1#16: &u64
+L42:	t1#1#19: u64
+L43:	t1#1#22: &u64
+L44:	t1#1#25: u64
+L45:	t1#1#28: &u64
+L46:	t1#1#31: u64
+L47:	t1#1#34: &u64
+L48:	t1#1#37: u64
+L49:	t1#1#4: &u64
+L50:	t1#1#40: &u64
+L51:	t1#1#43: u64
+L52:	t1#1#46: &u64
+L53:	t1#1#49: u64
+L54:	t1#1#52: &u64
+L55:	t1#1#7: u64
+L56:	t2#1#1: u64
+L57:	t2#1#10: &u64
+L58:	t2#1#13: u64
+L59:	t2#1#16: &u64
+L60:	t2#1#19: u64
+L61:	t2#1#22: &u64
+L62:	t2#1#25: u64
+L63:	t2#1#28: &u64
+L64:	t2#1#31: u64
+L65:	t2#1#34: &u64
+L66:	t2#1#37: u64
+L67:	t2#1#4: &u64
+L68:	t2#1#40: &u64
+L69:	t2#1#43: u64
+L70:	t2#1#46: &u64
+L71:	t2#1#49: u64
+L72:	t2#1#52: &u64
+L73:	t2#1#7: u64
+B0:
+	0: LdConst[13](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[37](str#1#0: String)
+	3: ImmBorrowLoc[37](str#1#0: String)
+	4: StLoc[11](%#2: &String)
+	5: LdConst[5](vector<u8>: "hel..)
+	6: Call ascii::string(vector<u8>): String
+	7: StLoc[0](%#1: String)
+	8: MoveLoc[11](%#2: &String)
+	9: ImmBorrowLoc[0](%#1: String)
+	10: Call ascii::index_of(&String, &String): u64
+	11: StLoc[38](t1#1#1: u64)
+	12: LdU64(0)
+	13: StLoc[56](t2#1#1: u64)
+	14: ImmBorrowLoc[38](t1#1#1: u64)
+	15: StLoc[49](t1#1#4: &u64)
+	16: ImmBorrowLoc[56](t2#1#1: u64)
+	17: StLoc[67](t2#1#4: &u64)
+	18: CopyLoc[49](t1#1#4: &u64)
+	19: CopyLoc[67](t2#1#4: &u64)
+	20: Eq
+	21: Not
+	22: BrFalse(39)
+B1:
+	23: LdConst[1](vector<u8>: "Ass..)
+	24: Call string::utf8(vector<u8>): String
+	25: StLoc[22](%#3: String)
+	26: ImmBorrowLoc[22](%#3: String)
+	27: Call debug::print<String>(&String)
+	28: MoveLoc[49](t1#1#4: &u64)
+	29: Call debug::print<u64>(&u64)
+	30: LdConst[2](vector<u8>: "!="..)
+	31: Call string::utf8(vector<u8>): String
+	32: StLoc[31](%#4: String)
+	33: ImmBorrowLoc[31](%#4: String)
+	34: Call debug::print<String>(&String)
+	35: MoveLoc[67](t2#1#4: &u64)
+	36: Call debug::print<u64>(&u64)
+	37: LdU64(13906834865833115647)
+	38: Abort
+B2:
+	39: MoveLoc[67](t2#1#4: &u64)
+	40: Pop
+	41: MoveLoc[49](t1#1#4: &u64)
+	42: Pop
+	43: ImmBorrowLoc[37](str#1#0: String)
+	44: StLoc[33](%#6: &String)
+	45: LdConst[10](vector<u8>: "wor..)
+	46: Call ascii::string(vector<u8>): String
+	47: StLoc[32](%#5: String)
+	48: MoveLoc[33](%#6: &String)
+	49: ImmBorrowLoc[32](%#5: String)
+	50: Call ascii::index_of(&String, &String): u64
+	51: StLoc[55](t1#1#7: u64)
+	52: LdU64(6)
+	53: StLoc[73](t2#1#7: u64)
+	54: ImmBorrowLoc[55](t1#1#7: u64)
+	55: StLoc[39](t1#1#10: &u64)
+	56: ImmBorrowLoc[73](t2#1#7: u64)
+	57: StLoc[57](t2#1#10: &u64)
+	58: CopyLoc[39](t1#1#10: &u64)
+	59: CopyLoc[57](t2#1#10: &u64)
+	60: Eq
+	61: Not
+	62: BrFalse(79)
+B3:
+	63: LdConst[1](vector<u8>: "Ass..)
+	64: Call string::utf8(vector<u8>): String
+	65: StLoc[34](%#7: String)
+	66: ImmBorrowLoc[34](%#7: String)
+	67: Call debug::print<String>(&String)
+	68: MoveLoc[39](t1#1#10: &u64)
+	69: Call debug::print<u64>(&u64)
+	70: LdConst[2](vector<u8>: "!="..)
+	71: Call string::utf8(vector<u8>): String
+	72: StLoc[35](%#8: String)
+	73: ImmBorrowLoc[35](%#8: String)
+	74: Call debug::print<String>(&String)
+	75: MoveLoc[57](t2#1#10: &u64)
+	76: Call debug::print<u64>(&u64)
+	77: LdU64(13906834870128082943)
+	78: Abort
+B4:
+	79: MoveLoc[57](t2#1#10: &u64)
+	80: Pop
+	81: MoveLoc[39](t1#1#10: &u64)
+	82: Pop
+	83: ImmBorrowLoc[37](str#1#0: String)
+	84: StLoc[1](%#10: &String)
+	85: LdConst[14](vector<u8>: "o" ..)
+	86: Call ascii::string(vector<u8>): String
+	87: StLoc[36](%#9: String)
+	88: MoveLoc[1](%#10: &String)
+	89: ImmBorrowLoc[36](%#9: String)
+	90: Call ascii::index_of(&String, &String): u64
+	91: StLoc[40](t1#1#13: u64)
+	92: LdU64(4)
+	93: StLoc[58](t2#1#13: u64)
+	94: ImmBorrowLoc[40](t1#1#13: u64)
+	95: StLoc[41](t1#1#16: &u64)
+	96: ImmBorrowLoc[58](t2#1#13: u64)
+	97: StLoc[59](t2#1#16: &u64)
+	98: CopyLoc[41](t1#1#16: &u64)
+	99: CopyLoc[59](t2#1#16: &u64)
+	100: Eq
+	101: Not
+	102: BrFalse(119)
+B5:
+	103: LdConst[1](vector<u8>: "Ass..)
+	104: Call string::utf8(vector<u8>): String
+	105: StLoc[2](%#11: String)
+	106: ImmBorrowLoc[2](%#11: String)
+	107: Call debug::print<String>(&String)
+	108: MoveLoc[41](t1#1#16: &u64)
+	109: Call debug::print<u64>(&u64)
+	110: LdConst[2](vector<u8>: "!="..)
+	111: Call string::utf8(vector<u8>): String
+	112: StLoc[3](%#12: String)
+	113: ImmBorrowLoc[3](%#12: String)
+	114: Call debug::print<String>(&String)
+	115: MoveLoc[59](t2#1#16: &u64)
+	116: Call debug::print<u64>(&u64)
+	117: LdU64(13906834874423050239)
+	118: Abort
+B6:
+	119: MoveLoc[59](t2#1#16: &u64)
+	120: Pop
+	121: MoveLoc[41](t1#1#16: &u64)
+	122: Pop
+	123: ImmBorrowLoc[37](str#1#0: String)
+	124: StLoc[5](%#14: &String)
+	125: LdConst[15](vector<u8>: "z" ..)
+	126: Call ascii::string(vector<u8>): String
+	127: StLoc[4](%#13: String)
+	128: MoveLoc[5](%#14: &String)
+	129: ImmBorrowLoc[4](%#13: String)
+	130: Call ascii::index_of(&String, &String): u64
+	131: StLoc[42](t1#1#19: u64)
+	132: ImmBorrowLoc[37](str#1#0: String)
+	133: Call ascii::length(&String): u64
+	134: StLoc[60](t2#1#19: u64)
+	135: ImmBorrowLoc[42](t1#1#19: u64)
+	136: StLoc[43](t1#1#22: &u64)
+	137: ImmBorrowLoc[60](t2#1#19: u64)
+	138: StLoc[61](t2#1#22: &u64)
+	139: CopyLoc[43](t1#1#22: &u64)
+	140: CopyLoc[61](t2#1#22: &u64)
+	141: Eq
+	142: Not
+	143: BrFalse(160)
+B7:
+	144: LdConst[1](vector<u8>: "Ass..)
+	145: Call string::utf8(vector<u8>): String
+	146: StLoc[6](%#15: String)
+	147: ImmBorrowLoc[6](%#15: String)
+	148: Call debug::print<String>(&String)
+	149: MoveLoc[43](t1#1#22: &u64)
+	150: Call debug::print<u64>(&u64)
+	151: LdConst[2](vector<u8>: "!="..)
+	152: Call string::utf8(vector<u8>): String
+	153: StLoc[7](%#16: String)
+	154: ImmBorrowLoc[7](%#16: String)
+	155: Call debug::print<String>(&String)
+	156: MoveLoc[61](t2#1#22: &u64)
+	157: Call debug::print<u64>(&u64)
+	158: LdU64(13906834878718017535)
+	159: Abort
+B8:
+	160: MoveLoc[61](t2#1#22: &u64)
+	161: Pop
+	162: MoveLoc[43](t1#1#22: &u64)
+	163: Pop
+	164: ImmBorrowLoc[37](str#1#0: String)
+	165: StLoc[9](%#18: &String)
+	166: LdConst[16](vector<u8>: "o "..)
+	167: Call ascii::string(vector<u8>): String
+	168: StLoc[8](%#17: String)
+	169: MoveLoc[9](%#18: &String)
+	170: ImmBorrowLoc[8](%#17: String)
+	171: Call ascii::index_of(&String, &String): u64
+	172: StLoc[44](t1#1#25: u64)
+	173: LdU64(4)
+	174: StLoc[62](t2#1#25: u64)
+	175: ImmBorrowLoc[44](t1#1#25: u64)
+	176: StLoc[45](t1#1#28: &u64)
+	177: ImmBorrowLoc[62](t2#1#25: u64)
+	178: StLoc[63](t2#1#28: &u64)
+	179: CopyLoc[45](t1#1#28: &u64)
+	180: CopyLoc[63](t2#1#28: &u64)
+	181: Eq
+	182: Not
+	183: BrFalse(200)
+B9:
+	184: LdConst[1](vector<u8>: "Ass..)
+	185: Call string::utf8(vector<u8>): String
+	186: StLoc[10](%#19: String)
+	187: ImmBorrowLoc[10](%#19: String)
+	188: Call debug::print<String>(&String)
+	189: MoveLoc[45](t1#1#28: &u64)
+	190: Call debug::print<u64>(&u64)
+	191: LdConst[2](vector<u8>: "!="..)
+	192: Call string::utf8(vector<u8>): String
+	193: StLoc[12](%#20: String)
+	194: ImmBorrowLoc[12](%#20: String)
+	195: Call debug::print<String>(&String)
+	196: MoveLoc[63](t2#1#28: &u64)
+	197: Call debug::print<u64>(&u64)
+	198: LdU64(13906834883012984831)
+	199: Abort
+B10:
+	200: MoveLoc[63](t2#1#28: &u64)
+	201: Pop
+	202: MoveLoc[45](t1#1#28: &u64)
+	203: Pop
+	204: ImmBorrowLoc[37](str#1#0: String)
+	205: StLoc[14](%#22: &String)
+	206: LdConst[17](vector<u8>: "or"..)
+	207: Call ascii::string(vector<u8>): String
+	208: StLoc[13](%#21: String)
+	209: MoveLoc[14](%#22: &String)
+	210: ImmBorrowLoc[13](%#21: String)
+	211: Call ascii::index_of(&String, &String): u64
+	212: StLoc[46](t1#1#31: u64)
+	213: LdU64(7)
+	214: StLoc[64](t2#1#31: u64)
+	215: ImmBorrowLoc[46](t1#1#31: u64)
+	216: StLoc[47](t1#1#34: &u64)
+	217: ImmBorrowLoc[64](t2#1#31: u64)
+	218: StLoc[65](t2#1#34: &u64)
+	219: CopyLoc[47](t1#1#34: &u64)
+	220: CopyLoc[65](t2#1#34: &u64)
+	221: Eq
+	222: Not
+	223: BrFalse(240)
+B11:
+	224: LdConst[1](vector<u8>: "Ass..)
+	225: Call string::utf8(vector<u8>): String
+	226: StLoc[15](%#23: String)
+	227: ImmBorrowLoc[15](%#23: String)
+	228: Call debug::print<String>(&String)
+	229: MoveLoc[47](t1#1#34: &u64)
+	230: Call debug::print<u64>(&u64)
+	231: LdConst[2](vector<u8>: "!="..)
+	232: Call string::utf8(vector<u8>): String
+	233: StLoc[16](%#24: String)
+	234: ImmBorrowLoc[16](%#24: String)
+	235: Call debug::print<String>(&String)
+	236: MoveLoc[65](t2#1#34: &u64)
+	237: Call debug::print<u64>(&u64)
+	238: LdU64(13906834887307952127)
+	239: Abort
+B12:
+	240: MoveLoc[65](t2#1#34: &u64)
+	241: Pop
+	242: MoveLoc[47](t1#1#34: &u64)
+	243: Pop
+	244: ImmBorrowLoc[37](str#1#0: String)
+	245: StLoc[18](%#26: &String)
+	246: LdConst[0](vector<u8>: "" /..)
+	247: Call ascii::string(vector<u8>): String
+	248: StLoc[17](%#25: String)
+	249: MoveLoc[18](%#26: &String)
+	250: ImmBorrowLoc[17](%#25: String)
+	251: Call ascii::index_of(&String, &String): u64
+	252: StLoc[48](t1#1#37: u64)
+	253: LdU64(0)
+	254: StLoc[66](t2#1#37: u64)
+	255: ImmBorrowLoc[48](t1#1#37: u64)
+	256: StLoc[50](t1#1#40: &u64)
+	257: ImmBorrowLoc[66](t2#1#37: u64)
+	258: StLoc[68](t2#1#40: &u64)
+	259: CopyLoc[50](t1#1#40: &u64)
+	260: CopyLoc[68](t2#1#40: &u64)
+	261: Eq
+	262: Not
+	263: BrFalse(280)
+B13:
+	264: LdConst[1](vector<u8>: "Ass..)
+	265: Call string::utf8(vector<u8>): String
+	266: StLoc[19](%#27: String)
+	267: ImmBorrowLoc[19](%#27: String)
+	268: Call debug::print<String>(&String)
+	269: MoveLoc[50](t1#1#40: &u64)
+	270: Call debug::print<u64>(&u64)
+	271: LdConst[2](vector<u8>: "!="..)
+	272: Call string::utf8(vector<u8>): String
+	273: StLoc[20](%#28: String)
+	274: ImmBorrowLoc[20](%#28: String)
+	275: Call debug::print<String>(&String)
+	276: MoveLoc[68](t2#1#40: &u64)
+	277: Call debug::print<u64>(&u64)
+	278: LdU64(13906834891602919423)
+	279: Abort
+B14:
+	280: MoveLoc[68](t2#1#40: &u64)
+	281: Pop
+	282: MoveLoc[50](t1#1#40: &u64)
+	283: Pop
+	284: ImmBorrowLoc[37](str#1#0: String)
+	285: StLoc[23](%#30: &String)
+	286: LdConst[18](vector<u8>: "orw..)
+	287: Call ascii::string(vector<u8>): String
+	288: StLoc[21](%#29: String)
+	289: MoveLoc[23](%#30: &String)
+	290: ImmBorrowLoc[21](%#29: String)
+	291: Call ascii::index_of(&String, &String): u64
+	292: StLoc[51](t1#1#43: u64)
+	293: LdU64(12)
+	294: StLoc[69](t2#1#43: u64)
+	295: ImmBorrowLoc[51](t1#1#43: u64)
+	296: StLoc[52](t1#1#46: &u64)
+	297: ImmBorrowLoc[69](t2#1#43: u64)
+	298: StLoc[70](t2#1#46: &u64)
+	299: CopyLoc[52](t1#1#46: &u64)
+	300: CopyLoc[70](t2#1#46: &u64)
+	301: Eq
+	302: Not
+	303: BrFalse(320)
+B15:
+	304: LdConst[1](vector<u8>: "Ass..)
+	305: Call string::utf8(vector<u8>): String
+	306: StLoc[24](%#31: String)
+	307: ImmBorrowLoc[24](%#31: String)
+	308: Call debug::print<String>(&String)
+	309: MoveLoc[52](t1#1#46: &u64)
+	310: Call debug::print<u64>(&u64)
+	311: LdConst[2](vector<u8>: "!="..)
+	312: Call string::utf8(vector<u8>): String
+	313: StLoc[25](%#32: String)
+	314: ImmBorrowLoc[25](%#32: String)
+	315: Call debug::print<String>(&String)
+	316: MoveLoc[70](t2#1#46: &u64)
+	317: Call debug::print<u64>(&u64)
+	318: LdU64(13906834895897886719)
+	319: Abort
+B16:
+	320: MoveLoc[70](t2#1#46: &u64)
+	321: Pop
+	322: MoveLoc[52](t1#1#46: &u64)
+	323: Pop
+	324: LdConst[19](vector<u8>: "oro..)
+	325: Call ascii::string(vector<u8>): String
+	326: StLoc[27](%#34: String)
+	327: ImmBorrowLoc[27](%#34: String)
+	328: StLoc[28](%#35: &String)
+	329: LdConst[18](vector<u8>: "orw..)
+	330: Call ascii::string(vector<u8>): String
+	331: StLoc[26](%#33: String)
+	332: MoveLoc[28](%#35: &String)
+	333: ImmBorrowLoc[26](%#33: String)
+	334: Call ascii::index_of(&String, &String): u64
+	335: StLoc[53](t1#1#49: u64)
+	336: LdU64(2)
+	337: StLoc[71](t2#1#49: u64)
+	338: ImmBorrowLoc[53](t1#1#49: u64)
+	339: StLoc[54](t1#1#52: &u64)
+	340: ImmBorrowLoc[71](t2#1#49: u64)
+	341: StLoc[72](t2#1#52: &u64)
+	342: CopyLoc[54](t1#1#52: &u64)
+	343: CopyLoc[72](t2#1#52: &u64)
+	344: Eq
+	345: Not
+	346: BrFalse(363)
+B17:
+	347: LdConst[1](vector<u8>: "Ass..)
+	348: Call string::utf8(vector<u8>): String
+	349: StLoc[29](%#36: String)
+	350: ImmBorrowLoc[29](%#36: String)
+	351: Call debug::print<String>(&String)
+	352: MoveLoc[54](t1#1#52: &u64)
+	353: Call debug::print<u64>(&u64)
+	354: LdConst[2](vector<u8>: "!="..)
+	355: Call string::utf8(vector<u8>): String
+	356: StLoc[30](%#37: String)
+	357: ImmBorrowLoc[30](%#37: String)
+	358: Call debug::print<String>(&String)
+	359: MoveLoc[72](t2#1#52: &u64)
+	360: Call debug::print<u64>(&u64)
+	361: LdU64(13906834900192854015)
+	362: Abort
+B18:
+	363: MoveLoc[72](t2#1#52: &u64)
+	364: Pop
+	365: MoveLoc[54](t1#1#52: &u64)
+	366: Pop
+	367: Ret
+}
+
+substring_i_out_of_bounds_fail() {
+L0:	str#1#0: String
+B0:
+	0: LdConst[7](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[0](str#1#0: String)
+	3: ImmBorrowLoc[0](str#1#0: String)
+	4: LdU64(12)
+	5: LdU64(13)
+	6: Call ascii::substring(&String, u64, u64): String
+	7: Pop
+	8: Ret
+}
+
+substring_j_lt_i_fail() {
+L0:	str#1#0: String
+B0:
+	0: LdConst[7](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[0](str#1#0: String)
+	3: ImmBorrowLoc[0](str#1#0: String)
+	4: LdU64(9)
+	5: LdU64(8)
+	6: Call ascii::substring(&String, u64, u64): String
+	7: Pop
+	8: Ret
+}
+
+substring_j_out_of_bounds_fail() {
+L0:	str#1#0: String
+B0:
+	0: LdConst[7](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[0](str#1#0: String)
+	3: ImmBorrowLoc[0](str#1#0: String)
+	4: LdU64(9)
+	5: LdU64(13)
+	6: Call ascii::substring(&String, u64, u64): String
+	7: Pop
+	8: Ret
+}
+
+insert() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	str#1#0: String
+L5:	t1#1#1: String
+L6:	t1#1#10: &String
+L7:	t1#1#4: &String
+L8:	t1#1#7: String
+L9:	t2#1#1: String
+L10:	t2#1#10: &String
+L11:	t2#1#4: &String
+L12:	t2#1#7: String
+B0:
+	0: LdConst[5](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[4](str#1#0: String)
+	3: MutBorrowLoc[4](str#1#0: String)
+	4: LdU64(5)
+	5: LdConst[6](vector<u8>: " wo..)
+	6: Call ascii::string(vector<u8>): String
+	7: Call ascii::insert(&mut String, u64, String)
+	8: CopyLoc[4](str#1#0: String)
+	9: StLoc[5](t1#1#1: String)
+	10: LdConst[7](vector<u8>: "hel..)
+	11: Call ascii::string(vector<u8>): String
+	12: StLoc[9](t2#1#1: String)
+	13: ImmBorrowLoc[5](t1#1#1: String)
+	14: StLoc[7](t1#1#4: &String)
+	15: ImmBorrowLoc[9](t2#1#1: String)
+	16: StLoc[11](t2#1#4: &String)
+	17: CopyLoc[7](t1#1#4: &String)
+	18: CopyLoc[11](t2#1#4: &String)
+	19: Eq
+	20: Not
+	21: BrFalse(38)
+B1:
+	22: LdConst[1](vector<u8>: "Ass..)
+	23: Call string::utf8(vector<u8>): String
+	24: StLoc[0](%#1: String)
+	25: ImmBorrowLoc[0](%#1: String)
+	26: Call debug::print<String>(&String)
+	27: MoveLoc[7](t1#1#4: &String)
+	28: Call debug::print<String>(&String)
+	29: LdConst[2](vector<u8>: "!="..)
+	30: Call string::utf8(vector<u8>): String
+	31: StLoc[1](%#2: String)
+	32: ImmBorrowLoc[1](%#2: String)
+	33: Call debug::print<String>(&String)
+	34: MoveLoc[11](t2#1#4: &String)
+	35: Call debug::print<String>(&String)
+	36: LdU64(13906835007567036415)
+	37: Abort
+B2:
+	38: MoveLoc[11](t2#1#4: &String)
+	39: Pop
+	40: MoveLoc[7](t1#1#4: &String)
+	41: Pop
+	42: MutBorrowLoc[4](str#1#0: String)
+	43: LdU64(5)
+	44: LdConst[20](vector<u8>: " cr..)
+	45: Call ascii::string(vector<u8>): String
+	46: Call ascii::insert(&mut String, u64, String)
+	47: MoveLoc[4](str#1#0: String)
+	48: StLoc[8](t1#1#7: String)
+	49: LdConst[21](vector<u8>: "hel..)
+	50: Call ascii::string(vector<u8>): String
+	51: StLoc[12](t2#1#7: String)
+	52: ImmBorrowLoc[8](t1#1#7: String)
+	53: StLoc[6](t1#1#10: &String)
+	54: ImmBorrowLoc[12](t2#1#7: String)
+	55: StLoc[10](t2#1#10: &String)
+	56: CopyLoc[6](t1#1#10: &String)
+	57: CopyLoc[10](t2#1#10: &String)
+	58: Eq
+	59: Not
+	60: BrFalse(77)
+B3:
+	61: LdConst[1](vector<u8>: "Ass..)
+	62: Call string::utf8(vector<u8>): String
+	63: StLoc[2](%#3: String)
+	64: ImmBorrowLoc[2](%#3: String)
+	65: Call debug::print<String>(&String)
+	66: MoveLoc[6](t1#1#10: &String)
+	67: Call debug::print<String>(&String)
+	68: LdConst[2](vector<u8>: "!="..)
+	69: Call string::utf8(vector<u8>): String
+	70: StLoc[3](%#4: String)
+	71: ImmBorrowLoc[3](%#4: String)
+	72: Call debug::print<String>(&String)
+	73: MoveLoc[10](t2#1#10: &String)
+	74: Call debug::print<String>(&String)
+	75: LdU64(13906835020451938303)
+	76: Abort
+B4:
+	77: MoveLoc[10](t2#1#10: &String)
+	78: Pop
+	79: MoveLoc[6](t1#1#10: &String)
+	80: Pop
+	81: Ret
+}
+
+insert_empty() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	str#1#0: String
+L3:	t1#1#1: String
+L4:	t1#1#4: &String
+L5:	t2#1#1: String
+L6:	t2#1#4: &String
+B0:
+	0: LdConst[5](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[2](str#1#0: String)
+	3: MutBorrowLoc[2](str#1#0: String)
+	4: LdU64(5)
+	5: LdConst[0](vector<u8>: "" /..)
+	6: Call ascii::string(vector<u8>): String
+	7: Call ascii::insert(&mut String, u64, String)
+	8: MoveLoc[2](str#1#0: String)
+	9: StLoc[3](t1#1#1: String)
+	10: LdConst[5](vector<u8>: "hel..)
+	11: Call ascii::string(vector<u8>): String
+	12: StLoc[5](t2#1#1: String)
+	13: ImmBorrowLoc[3](t1#1#1: String)
+	14: StLoc[4](t1#1#4: &String)
+	15: ImmBorrowLoc[5](t2#1#1: String)
+	16: StLoc[6](t2#1#4: &String)
+	17: CopyLoc[4](t1#1#4: &String)
+	18: CopyLoc[6](t2#1#4: &String)
+	19: Eq
+	20: Not
+	21: BrFalse(38)
+B1:
+	22: LdConst[1](vector<u8>: "Ass..)
+	23: Call string::utf8(vector<u8>): String
+	24: StLoc[0](%#1: String)
+	25: ImmBorrowLoc[0](%#1: String)
+	26: Call debug::print<String>(&String)
+	27: MoveLoc[4](t1#1#4: &String)
+	28: Call debug::print<String>(&String)
+	29: LdConst[2](vector<u8>: "!="..)
+	30: Call string::utf8(vector<u8>): String
+	31: StLoc[1](%#2: String)
+	32: ImmBorrowLoc[1](%#2: String)
+	33: Call debug::print<String>(&String)
+	34: MoveLoc[6](t2#1#4: &String)
+	35: Call debug::print<String>(&String)
+	36: LdU64(13906835050516709375)
+	37: Abort
+B2:
+	38: MoveLoc[6](t2#1#4: &String)
+	39: Pop
+	40: MoveLoc[4](t1#1#4: &String)
+	41: Pop
+	42: Ret
+}
+
+insert_out_of_bounds_fail() {
+L0:	str#1#0: String
+B0:
+	0: LdConst[5](vector<u8>: "hel..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[0](str#1#0: String)
+	3: MutBorrowLoc[0](str#1#0: String)
+	4: LdU64(6)
+	5: LdConst[6](vector<u8>: " wo..)
+	6: Call ascii::string(vector<u8>): String
+	7: Call ascii::insert(&mut String, u64, String)
+	8: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "" // interpreted as UTF8 string
+	1 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	2 => vector<u8>: "!=" // interpreted as UTF8 string
+	3 => vector<u8>: "	" // interpreted as UTF8 string
+	4 => vector<u8>: "
+" // interpreted as UTF8 string
+	5 => vector<u8>: "hello" // interpreted as UTF8 string
+	6 => vector<u8>: " world" // interpreted as UTF8 string
+	7 => vector<u8>: "hello world" // interpreted as UTF8 string
+	8 => vector<u8>: "azhello_world_!" // interpreted as UTF8 string
+	9 => vector<u8>: "AZHELLO_WORLD_!" // interpreted as UTF8 string
+	10 => vector<u8>: "world" // interpreted as UTF8 string
+	11 => vector<u8>: "h" // interpreted as UTF8 string
+	12 => vector<u8>: "w" // interpreted as UTF8 string
+	13 => vector<u8>: "hello world orwell" // interpreted as UTF8 string
+	14 => vector<u8>: "o" // interpreted as UTF8 string
+	15 => vector<u8>: "z" // interpreted as UTF8 string
+	16 => vector<u8>: "o " // interpreted as UTF8 string
+	17 => vector<u8>: "or" // interpreted as UTF8 string
+	18 => vector<u8>: "orwell" // interpreted as UTF8 string
+	19 => vector<u8>: "ororwell" // interpreted as UTF8 string
+	20 => vector<u8>: " cruel" // interpreted as UTF8 string
+	21 => vector<u8>: "hello cruel world" // interpreted as UTF8 string
+]
+}

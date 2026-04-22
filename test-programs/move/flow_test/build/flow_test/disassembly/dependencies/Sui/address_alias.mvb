@@ -1,0 +1,220 @@
+// Move bytecode v6
+module 2.address_alias {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::derived_object;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::party;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::vec_set;
+
+struct AddressAliasState has key {
+	id: UID,
+	version: u64
+}
+
+struct AddressAliases has key {
+	id: UID,
+	aliases: VecSet<address>
+}
+
+struct AliasKey has copy, drop, store {
+	pos0: address
+}
+
+create(ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[0](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[12](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdU64(13835058231375822849)
+	7: Abort
+B3:
+	8: Call object::address_alias_state(): UID
+	9: LdConst[10](u64: 0)
+	10: Pack[0](AddressAliasState)
+	11: Call transfer::share_object<AddressAliasState>(AddressAliasState)
+	12: Ret
+}
+
+entry public enable(address_alias_state#0#0: &mut AddressAliasState, ctx#0#0: &TxContext) {
+B0:
+	0: CopyLoc[0](address_alias_state#0#0: &mut AddressAliasState)
+	1: ImmBorrowField[0](AddressAliasState.id: UID)
+	2: CopyLoc[1](ctx#0#0: &TxContext)
+	3: Call tx_context::sender(&TxContext): address
+	4: Pack[2](AliasKey)
+	5: Call derived_object::exists<AliasKey>(&UID, AliasKey): bool
+	6: Not
+	7: BrFalse(9)
+B1:
+	8: Branch(15)
+B2:
+	9: MoveLoc[1](ctx#0#0: &TxContext)
+	10: Pop
+	11: MoveLoc[0](address_alias_state#0#0: &mut AddressAliasState)
+	12: Pop
+	13: LdU64(13835621305883557893)
+	14: Abort
+B3:
+	15: MoveLoc[0](address_alias_state#0#0: &mut AddressAliasState)
+	16: MutBorrowField[0](AddressAliasState.id: UID)
+	17: CopyLoc[1](ctx#0#0: &TxContext)
+	18: Call tx_context::sender(&TxContext): address
+	19: Pack[2](AliasKey)
+	20: Call derived_object::claim<AliasKey>(&mut UID, AliasKey): UID
+	21: CopyLoc[1](ctx#0#0: &TxContext)
+	22: Call tx_context::sender(&TxContext): address
+	23: Call vec_set::singleton<address>(address): VecSet<address>
+	24: Pack[1](AddressAliases)
+	25: MoveLoc[1](ctx#0#0: &TxContext)
+	26: Call tx_context::sender(&TxContext): address
+	27: Call party::single_owner(address): Party
+	28: Call transfer::party_transfer<AddressAliases>(AddressAliases, Party)
+	29: Ret
+}
+
+entry public add(aliases#0#0: &mut AddressAliases, alias#0#0: address) {
+B0:
+	0: CopyLoc[0](aliases#0#0: &mut AddressAliases)
+	1: ImmBorrowField[1](AddressAliases.aliases: VecSet<address>)
+	2: ImmBorrowLoc[1](alias#0#0: address)
+	3: Call vec_set::contains<address>(&VecSet<address>, &address): bool
+	4: Not
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](aliases#0#0: &mut AddressAliases)
+	8: Pop
+	9: LdU64(13835621361718132741)
+	10: Abort
+B3:
+	11: CopyLoc[0](aliases#0#0: &mut AddressAliases)
+	12: MutBorrowField[1](AddressAliases.aliases: VecSet<address>)
+	13: MoveLoc[1](alias#0#0: address)
+	14: Call vec_set::insert<address>(&mut VecSet<address>, address)
+	15: MoveLoc[0](aliases#0#0: &mut AddressAliases)
+	16: ImmBorrowField[1](AddressAliases.aliases: VecSet<address>)
+	17: Call vec_set::length<address>(&VecSet<address>): u64
+	18: LdConst[11](u64: 8)
+	19: Le
+	20: BrFalse(22)
+B4:
+	21: Branch(24)
+B5:
+	22: LdU64(13836184320261750793)
+	23: Abort
+B6:
+	24: Ret
+}
+
+entry public replace_all(aliases#0#0: &mut AddressAliases, new_aliases#0#0: vector<address>) {
+L2:	new_aliases#1#0: VecSet<address>
+B0:
+	0: MoveLoc[1](new_aliases#0#0: vector<address>)
+	1: Call vec_set::from_keys<address>(vector<address>): VecSet<address>
+	2: StLoc[2](new_aliases#1#0: VecSet<address>)
+	3: ImmBorrowLoc[2](new_aliases#1#0: VecSet<address>)
+	4: Call vec_set::length<address>(&VecSet<address>): u64
+	5: LdU64(0)
+	6: Gt
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](aliases#0#0: &mut AddressAliases)
+	10: Pop
+	11: LdU64(13835902871054712839)
+	12: Abort
+B3:
+	13: ImmBorrowLoc[2](new_aliases#1#0: VecSet<address>)
+	14: Call vec_set::length<address>(&VecSet<address>): u64
+	15: LdConst[11](u64: 8)
+	16: Le
+	17: BrFalse(19)
+B4:
+	18: Branch(23)
+B5:
+	19: MoveLoc[0](aliases#0#0: &mut AddressAliases)
+	20: Pop
+	21: LdU64(13836184350326521865)
+	22: Abort
+B6:
+	23: MoveLoc[2](new_aliases#1#0: VecSet<address>)
+	24: MoveLoc[0](aliases#0#0: &mut AddressAliases)
+	25: MutBorrowField[1](AddressAliases.aliases: VecSet<address>)
+	26: WriteRef
+	27: Ret
+}
+
+entry public remove(aliases#0#0: &mut AddressAliases, alias#0#0: address) {
+B0:
+	0: CopyLoc[0](aliases#0#0: &mut AddressAliases)
+	1: ImmBorrowField[1](AddressAliases.aliases: VecSet<address>)
+	2: ImmBorrowLoc[1](alias#0#0: address)
+	3: Call vec_set::contains<address>(&VecSet<address>, &address): bool
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](aliases#0#0: &mut AddressAliases)
+	7: Pop
+	8: LdU64(13835339951165800451)
+	9: Abort
+B3:
+	10: CopyLoc[0](aliases#0#0: &mut AddressAliases)
+	11: ImmBorrowField[1](AddressAliases.aliases: VecSet<address>)
+	12: Call vec_set::length<address>(&VecSet<address>): u64
+	13: LdU64(1)
+	14: Gt
+	15: BrFalse(17)
+B4:
+	16: Branch(21)
+B5:
+	17: MoveLoc[0](aliases#0#0: &mut AddressAliases)
+	18: Pop
+	19: LdU64(13835902905414451207)
+	20: Abort
+B6:
+	21: MoveLoc[0](aliases#0#0: &mut AddressAliases)
+	22: MutBorrowField[1](AddressAliases.aliases: VecSet<address>)
+	23: ImmBorrowLoc[1](alias#0#0: address)
+	24: Call vec_set::remove<address>(&mut VecSet<address>, &address)
+	25: Ret
+}
+
+public create_for_testing(ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[0](ctx#0#0: &TxContext)
+	1: Call create(&TxContext)
+	2: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "ENotSystemAddress" // interpreted as UTF8 string
+	1 => vector<u8>: "Only the system can create the alias state object." // interpreted as UTF8 string
+	2 => vector<u8>: "ENoSuchAlias" // interpreted as UTF8 string
+	3 => vector<u8>: "Given alias does not exist." // interpreted as UTF8 string
+	4 => vector<u8>: "EAliasAlreadyExists" // interpreted as UTF8 string
+	5 => vector<u8>: "Alias already exists." // interpreted as UTF8 string
+	6 => vector<u8>: "ECannotRemoveLastAlias" // interpreted as UTF8 string
+	7 => vector<u8>: "Cannot remove the last alias." // interpreted as UTF8 string
+	8 => vector<u8>: "ETooManyAliases" // interpreted as UTF8 string
+	9 => vector<u8>: "The number of aliases exceeds the maximum allowed." // interpreted as UTF8 string
+	10 => u64: 0
+	11 => u64: 8
+	12 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

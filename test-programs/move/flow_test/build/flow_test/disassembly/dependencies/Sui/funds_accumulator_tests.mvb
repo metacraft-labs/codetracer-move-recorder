@@ -1,0 +1,1179 @@
+// Move bytecode v6
+module 2.funds_accumulator_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::funds_accumulator;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+
+struct TestToken has store {
+	dummy_field: bool
+}
+
+struct TestObject has key {
+	id: UID
+}
+
+test_withdrawal_fields(owner#0#0: address, limit#0#0: u256) {
+L2:	%#1: String
+L3:	%#2: String
+L4:	%#3: String
+L5:	%#4: String
+L6:	t1#1#1: address
+L7:	t1#1#10: &u256
+L8:	t1#1#4: &address
+L9:	t1#1#7: u256
+L10:	t2#1#1: address
+L11:	t2#1#10: &u256
+L12:	t2#1#4: &address
+L13:	t2#1#7: u256
+L14:	withdrawal#1#0: Withdrawal<TestToken>
+B0:
+	0: CopyLoc[0](owner#0#0: address)
+	1: CopyLoc[1](limit#0#0: u256)
+	2: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	3: StLoc[14](withdrawal#1#0: Withdrawal<TestToken>)
+	4: ImmBorrowLoc[14](withdrawal#1#0: Withdrawal<TestToken>)
+	5: Call funds_accumulator::withdrawal_owner<TestToken>(&Withdrawal<TestToken>): address
+	6: StLoc[6](t1#1#1: address)
+	7: MoveLoc[0](owner#0#0: address)
+	8: StLoc[10](t2#1#1: address)
+	9: ImmBorrowLoc[6](t1#1#1: address)
+	10: StLoc[8](t1#1#4: &address)
+	11: ImmBorrowLoc[10](t2#1#1: address)
+	12: StLoc[12](t2#1#4: &address)
+	13: CopyLoc[8](t1#1#4: &address)
+	14: CopyLoc[12](t2#1#4: &address)
+	15: Eq
+	16: Not
+	17: BrFalse(34)
+B1:
+	18: LdConst[0](vector<u8>: "Ass..)
+	19: Call string::utf8(vector<u8>): String
+	20: StLoc[2](%#1: String)
+	21: ImmBorrowLoc[2](%#1: String)
+	22: Call debug::print<String>(&String)
+	23: MoveLoc[8](t1#1#4: &address)
+	24: Call debug::print<address>(&address)
+	25: LdConst[1](vector<u8>: "!="..)
+	26: Call string::utf8(vector<u8>): String
+	27: StLoc[3](%#2: String)
+	28: ImmBorrowLoc[3](%#2: String)
+	29: Call debug::print<String>(&String)
+	30: MoveLoc[12](t2#1#4: &address)
+	31: Call debug::print<address>(&address)
+	32: LdU64(13906834243062857727)
+	33: Abort
+B2:
+	34: MoveLoc[12](t2#1#4: &address)
+	35: Pop
+	36: MoveLoc[8](t1#1#4: &address)
+	37: Pop
+	38: ImmBorrowLoc[14](withdrawal#1#0: Withdrawal<TestToken>)
+	39: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	40: StLoc[9](t1#1#7: u256)
+	41: MoveLoc[1](limit#0#0: u256)
+	42: StLoc[13](t2#1#7: u256)
+	43: ImmBorrowLoc[9](t1#1#7: u256)
+	44: StLoc[7](t1#1#10: &u256)
+	45: ImmBorrowLoc[13](t2#1#7: u256)
+	46: StLoc[11](t2#1#10: &u256)
+	47: CopyLoc[7](t1#1#10: &u256)
+	48: CopyLoc[11](t2#1#10: &u256)
+	49: Eq
+	50: Not
+	51: BrFalse(68)
+B3:
+	52: LdConst[0](vector<u8>: "Ass..)
+	53: Call string::utf8(vector<u8>): String
+	54: StLoc[4](%#3: String)
+	55: ImmBorrowLoc[4](%#3: String)
+	56: Call debug::print<String>(&String)
+	57: MoveLoc[7](t1#1#10: &u256)
+	58: Call debug::print<u256>(&u256)
+	59: LdConst[1](vector<u8>: "!="..)
+	60: Call string::utf8(vector<u8>): String
+	61: StLoc[5](%#4: String)
+	62: ImmBorrowLoc[5](%#4: String)
+	63: Call debug::print<String>(&String)
+	64: MoveLoc[11](t2#1#10: &u256)
+	65: Call debug::print<u256>(&u256)
+	66: LdU64(13906834247357825023)
+	67: Abort
+B4:
+	68: MoveLoc[11](t2#1#10: &u256)
+	69: Pop
+	70: MoveLoc[7](t1#1#10: &u256)
+	71: Pop
+	72: Ret
+}
+
+test_withdrawal_split(owner#0#0: address) {
+L1:	%#1: String
+L2:	%#2: String
+L3:	%#3: String
+L4:	%#4: String
+L5:	%#5: String
+L6:	%#6: String
+L7:	initial#1#0: u256
+L8:	split#1#0: u256
+L9:	sub#1#0: Withdrawal<TestToken>
+L10:	t1#1#1: u256
+L11:	t1#1#10: &address
+L12:	t1#1#13: u256
+L13:	t1#1#16: &u256
+L14:	t1#1#4: &u256
+L15:	t1#1#7: address
+L16:	t2#1#1: u256
+L17:	t2#1#10: &address
+L18:	t2#1#13: u256
+L19:	t2#1#16: &u256
+L20:	t2#1#4: &u256
+L21:	t2#1#7: address
+L22:	withdrawal#1#0: Withdrawal<TestToken>
+B0:
+	0: LdU256(1000)
+	1: StLoc[7](initial#1#0: u256)
+	2: CopyLoc[0](owner#0#0: address)
+	3: CopyLoc[7](initial#1#0: u256)
+	4: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	5: StLoc[22](withdrawal#1#0: Withdrawal<TestToken>)
+	6: LdU256(300)
+	7: StLoc[8](split#1#0: u256)
+	8: MutBorrowLoc[22](withdrawal#1#0: Withdrawal<TestToken>)
+	9: CopyLoc[8](split#1#0: u256)
+	10: Call funds_accumulator::withdrawal_split<TestToken>(&mut Withdrawal<TestToken>, u256): Withdrawal<TestToken>
+	11: StLoc[9](sub#1#0: Withdrawal<TestToken>)
+	12: ImmBorrowLoc[22](withdrawal#1#0: Withdrawal<TestToken>)
+	13: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	14: StLoc[10](t1#1#1: u256)
+	15: MoveLoc[7](initial#1#0: u256)
+	16: CopyLoc[8](split#1#0: u256)
+	17: Sub
+	18: StLoc[16](t2#1#1: u256)
+	19: ImmBorrowLoc[10](t1#1#1: u256)
+	20: StLoc[14](t1#1#4: &u256)
+	21: ImmBorrowLoc[16](t2#1#1: u256)
+	22: StLoc[20](t2#1#4: &u256)
+	23: CopyLoc[14](t1#1#4: &u256)
+	24: CopyLoc[20](t2#1#4: &u256)
+	25: Eq
+	26: Not
+	27: BrFalse(44)
+B1:
+	28: LdConst[0](vector<u8>: "Ass..)
+	29: Call string::utf8(vector<u8>): String
+	30: StLoc[1](%#1: String)
+	31: ImmBorrowLoc[1](%#1: String)
+	32: Call debug::print<String>(&String)
+	33: MoveLoc[14](t1#1#4: &u256)
+	34: Call debug::print<u256>(&u256)
+	35: LdConst[1](vector<u8>: "!="..)
+	36: Call string::utf8(vector<u8>): String
+	37: StLoc[2](%#2: String)
+	38: ImmBorrowLoc[2](%#2: String)
+	39: Call debug::print<String>(&String)
+	40: MoveLoc[20](t2#1#4: &u256)
+	41: Call debug::print<u256>(&u256)
+	42: LdU64(13906834290307497983)
+	43: Abort
+B2:
+	44: MoveLoc[20](t2#1#4: &u256)
+	45: Pop
+	46: MoveLoc[14](t1#1#4: &u256)
+	47: Pop
+	48: ImmBorrowLoc[9](sub#1#0: Withdrawal<TestToken>)
+	49: Call funds_accumulator::withdrawal_owner<TestToken>(&Withdrawal<TestToken>): address
+	50: StLoc[15](t1#1#7: address)
+	51: MoveLoc[0](owner#0#0: address)
+	52: StLoc[21](t2#1#7: address)
+	53: ImmBorrowLoc[15](t1#1#7: address)
+	54: StLoc[11](t1#1#10: &address)
+	55: ImmBorrowLoc[21](t2#1#7: address)
+	56: StLoc[17](t2#1#10: &address)
+	57: CopyLoc[11](t1#1#10: &address)
+	58: CopyLoc[17](t2#1#10: &address)
+	59: Eq
+	60: Not
+	61: BrFalse(78)
+B3:
+	62: LdConst[0](vector<u8>: "Ass..)
+	63: Call string::utf8(vector<u8>): String
+	64: StLoc[3](%#3: String)
+	65: ImmBorrowLoc[3](%#3: String)
+	66: Call debug::print<String>(&String)
+	67: MoveLoc[11](t1#1#10: &address)
+	68: Call debug::print<address>(&address)
+	69: LdConst[1](vector<u8>: "!="..)
+	70: Call string::utf8(vector<u8>): String
+	71: StLoc[4](%#4: String)
+	72: ImmBorrowLoc[4](%#4: String)
+	73: Call debug::print<String>(&String)
+	74: MoveLoc[17](t2#1#10: &address)
+	75: Call debug::print<address>(&address)
+	76: LdU64(13906834294602465279)
+	77: Abort
+B4:
+	78: MoveLoc[17](t2#1#10: &address)
+	79: Pop
+	80: MoveLoc[11](t1#1#10: &address)
+	81: Pop
+	82: ImmBorrowLoc[9](sub#1#0: Withdrawal<TestToken>)
+	83: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	84: StLoc[12](t1#1#13: u256)
+	85: MoveLoc[8](split#1#0: u256)
+	86: StLoc[18](t2#1#13: u256)
+	87: ImmBorrowLoc[12](t1#1#13: u256)
+	88: StLoc[13](t1#1#16: &u256)
+	89: ImmBorrowLoc[18](t2#1#13: u256)
+	90: StLoc[19](t2#1#16: &u256)
+	91: CopyLoc[13](t1#1#16: &u256)
+	92: CopyLoc[19](t2#1#16: &u256)
+	93: Eq
+	94: Not
+	95: BrFalse(112)
+B5:
+	96: LdConst[0](vector<u8>: "Ass..)
+	97: Call string::utf8(vector<u8>): String
+	98: StLoc[5](%#5: String)
+	99: ImmBorrowLoc[5](%#5: String)
+	100: Call debug::print<String>(&String)
+	101: MoveLoc[13](t1#1#16: &u256)
+	102: Call debug::print<u256>(&u256)
+	103: LdConst[1](vector<u8>: "!="..)
+	104: Call string::utf8(vector<u8>): String
+	105: StLoc[6](%#6: String)
+	106: ImmBorrowLoc[6](%#6: String)
+	107: Call debug::print<String>(&String)
+	108: MoveLoc[19](t2#1#16: &u256)
+	109: Call debug::print<u256>(&u256)
+	110: LdU64(13906834298897432575)
+	111: Abort
+B6:
+	112: MoveLoc[19](t2#1#16: &u256)
+	113: Pop
+	114: MoveLoc[13](t1#1#16: &u256)
+	115: Pop
+	116: Ret
+}
+
+test_withdrawal_split_zero(owner#0#0: address, limit#0#0: u256) {
+L2:	%#1: String
+L3:	%#2: String
+L4:	%#3: String
+L5:	%#4: String
+L6:	%#5: String
+L7:	%#6: String
+L8:	sub#1#0: Withdrawal<TestToken>
+L9:	t1#1#1: u256
+L10:	t1#1#10: &address
+L11:	t1#1#13: u256
+L12:	t1#1#16: &u256
+L13:	t1#1#4: &u256
+L14:	t1#1#7: address
+L15:	t2#1#1: u256
+L16:	t2#1#10: &address
+L17:	t2#1#13: u256
+L18:	t2#1#16: &u256
+L19:	t2#1#4: &u256
+L20:	t2#1#7: address
+L21:	withdrawal#1#0: Withdrawal<TestToken>
+B0:
+	0: CopyLoc[0](owner#0#0: address)
+	1: CopyLoc[1](limit#0#0: u256)
+	2: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	3: StLoc[21](withdrawal#1#0: Withdrawal<TestToken>)
+	4: MutBorrowLoc[21](withdrawal#1#0: Withdrawal<TestToken>)
+	5: LdU256(0)
+	6: Call funds_accumulator::withdrawal_split<TestToken>(&mut Withdrawal<TestToken>, u256): Withdrawal<TestToken>
+	7: StLoc[8](sub#1#0: Withdrawal<TestToken>)
+	8: ImmBorrowLoc[21](withdrawal#1#0: Withdrawal<TestToken>)
+	9: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	10: StLoc[9](t1#1#1: u256)
+	11: MoveLoc[1](limit#0#0: u256)
+	12: StLoc[15](t2#1#1: u256)
+	13: ImmBorrowLoc[9](t1#1#1: u256)
+	14: StLoc[13](t1#1#4: &u256)
+	15: ImmBorrowLoc[15](t2#1#1: u256)
+	16: StLoc[19](t2#1#4: &u256)
+	17: CopyLoc[13](t1#1#4: &u256)
+	18: CopyLoc[19](t2#1#4: &u256)
+	19: Eq
+	20: Not
+	21: BrFalse(38)
+B1:
+	22: LdConst[0](vector<u8>: "Ass..)
+	23: Call string::utf8(vector<u8>): String
+	24: StLoc[2](%#1: String)
+	25: ImmBorrowLoc[2](%#1: String)
+	26: Call debug::print<String>(&String)
+	27: MoveLoc[13](t1#1#4: &u256)
+	28: Call debug::print<u256>(&u256)
+	29: LdConst[1](vector<u8>: "!="..)
+	30: Call string::utf8(vector<u8>): String
+	31: StLoc[3](%#2: String)
+	32: ImmBorrowLoc[3](%#2: String)
+	33: Call debug::print<String>(&String)
+	34: MoveLoc[19](t2#1#4: &u256)
+	35: Call debug::print<u256>(&u256)
+	36: LdU64(13906834333257170943)
+	37: Abort
+B2:
+	38: MoveLoc[19](t2#1#4: &u256)
+	39: Pop
+	40: MoveLoc[13](t1#1#4: &u256)
+	41: Pop
+	42: ImmBorrowLoc[8](sub#1#0: Withdrawal<TestToken>)
+	43: Call funds_accumulator::withdrawal_owner<TestToken>(&Withdrawal<TestToken>): address
+	44: StLoc[14](t1#1#7: address)
+	45: MoveLoc[0](owner#0#0: address)
+	46: StLoc[20](t2#1#7: address)
+	47: ImmBorrowLoc[14](t1#1#7: address)
+	48: StLoc[10](t1#1#10: &address)
+	49: ImmBorrowLoc[20](t2#1#7: address)
+	50: StLoc[16](t2#1#10: &address)
+	51: CopyLoc[10](t1#1#10: &address)
+	52: CopyLoc[16](t2#1#10: &address)
+	53: Eq
+	54: Not
+	55: BrFalse(72)
+B3:
+	56: LdConst[0](vector<u8>: "Ass..)
+	57: Call string::utf8(vector<u8>): String
+	58: StLoc[4](%#3: String)
+	59: ImmBorrowLoc[4](%#3: String)
+	60: Call debug::print<String>(&String)
+	61: MoveLoc[10](t1#1#10: &address)
+	62: Call debug::print<address>(&address)
+	63: LdConst[1](vector<u8>: "!="..)
+	64: Call string::utf8(vector<u8>): String
+	65: StLoc[5](%#4: String)
+	66: ImmBorrowLoc[5](%#4: String)
+	67: Call debug::print<String>(&String)
+	68: MoveLoc[16](t2#1#10: &address)
+	69: Call debug::print<address>(&address)
+	70: LdU64(13906834337552138239)
+	71: Abort
+B4:
+	72: MoveLoc[16](t2#1#10: &address)
+	73: Pop
+	74: MoveLoc[10](t1#1#10: &address)
+	75: Pop
+	76: ImmBorrowLoc[8](sub#1#0: Withdrawal<TestToken>)
+	77: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	78: StLoc[11](t1#1#13: u256)
+	79: LdU256(0)
+	80: StLoc[17](t2#1#13: u256)
+	81: ImmBorrowLoc[11](t1#1#13: u256)
+	82: StLoc[12](t1#1#16: &u256)
+	83: ImmBorrowLoc[17](t2#1#13: u256)
+	84: StLoc[18](t2#1#16: &u256)
+	85: CopyLoc[12](t1#1#16: &u256)
+	86: CopyLoc[18](t2#1#16: &u256)
+	87: Eq
+	88: Not
+	89: BrFalse(106)
+B5:
+	90: LdConst[0](vector<u8>: "Ass..)
+	91: Call string::utf8(vector<u8>): String
+	92: StLoc[6](%#5: String)
+	93: ImmBorrowLoc[6](%#5: String)
+	94: Call debug::print<String>(&String)
+	95: MoveLoc[12](t1#1#16: &u256)
+	96: Call debug::print<u256>(&u256)
+	97: LdConst[1](vector<u8>: "!="..)
+	98: Call string::utf8(vector<u8>): String
+	99: StLoc[7](%#6: String)
+	100: ImmBorrowLoc[7](%#6: String)
+	101: Call debug::print<String>(&String)
+	102: MoveLoc[18](t2#1#16: &u256)
+	103: Call debug::print<u256>(&u256)
+	104: LdU64(13906834341847105535)
+	105: Abort
+B6:
+	106: MoveLoc[18](t2#1#16: &u256)
+	107: Pop
+	108: MoveLoc[12](t1#1#16: &u256)
+	109: Pop
+	110: Ret
+}
+
+test_withdrawal_split_full(owner#0#0: address, limit#0#0: u256) {
+L2:	%#1: String
+L3:	%#2: String
+L4:	%#3: String
+L5:	%#4: String
+L6:	%#5: String
+L7:	%#6: String
+L8:	sub#1#0: Withdrawal<TestToken>
+L9:	t1#1#1: u256
+L10:	t1#1#10: &address
+L11:	t1#1#13: u256
+L12:	t1#1#16: &u256
+L13:	t1#1#4: &u256
+L14:	t1#1#7: address
+L15:	t2#1#1: u256
+L16:	t2#1#10: &address
+L17:	t2#1#13: u256
+L18:	t2#1#16: &u256
+L19:	t2#1#4: &u256
+L20:	t2#1#7: address
+L21:	withdrawal#1#0: Withdrawal<TestToken>
+B0:
+	0: CopyLoc[0](owner#0#0: address)
+	1: CopyLoc[1](limit#0#0: u256)
+	2: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	3: StLoc[21](withdrawal#1#0: Withdrawal<TestToken>)
+	4: MutBorrowLoc[21](withdrawal#1#0: Withdrawal<TestToken>)
+	5: CopyLoc[1](limit#0#0: u256)
+	6: Call funds_accumulator::withdrawal_split<TestToken>(&mut Withdrawal<TestToken>, u256): Withdrawal<TestToken>
+	7: StLoc[8](sub#1#0: Withdrawal<TestToken>)
+	8: ImmBorrowLoc[21](withdrawal#1#0: Withdrawal<TestToken>)
+	9: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	10: StLoc[9](t1#1#1: u256)
+	11: LdU256(0)
+	12: StLoc[15](t2#1#1: u256)
+	13: ImmBorrowLoc[9](t1#1#1: u256)
+	14: StLoc[13](t1#1#4: &u256)
+	15: ImmBorrowLoc[15](t2#1#1: u256)
+	16: StLoc[19](t2#1#4: &u256)
+	17: CopyLoc[13](t1#1#4: &u256)
+	18: CopyLoc[19](t2#1#4: &u256)
+	19: Eq
+	20: Not
+	21: BrFalse(38)
+B1:
+	22: LdConst[0](vector<u8>: "Ass..)
+	23: Call string::utf8(vector<u8>): String
+	24: StLoc[2](%#1: String)
+	25: ImmBorrowLoc[2](%#1: String)
+	26: Call debug::print<String>(&String)
+	27: MoveLoc[13](t1#1#4: &u256)
+	28: Call debug::print<u256>(&u256)
+	29: LdConst[1](vector<u8>: "!="..)
+	30: Call string::utf8(vector<u8>): String
+	31: StLoc[3](%#2: String)
+	32: ImmBorrowLoc[3](%#2: String)
+	33: Call debug::print<String>(&String)
+	34: MoveLoc[19](t2#1#4: &u256)
+	35: Call debug::print<u256>(&u256)
+	36: LdU64(13906834376206843903)
+	37: Abort
+B2:
+	38: MoveLoc[19](t2#1#4: &u256)
+	39: Pop
+	40: MoveLoc[13](t1#1#4: &u256)
+	41: Pop
+	42: ImmBorrowLoc[8](sub#1#0: Withdrawal<TestToken>)
+	43: Call funds_accumulator::withdrawal_owner<TestToken>(&Withdrawal<TestToken>): address
+	44: StLoc[14](t1#1#7: address)
+	45: MoveLoc[0](owner#0#0: address)
+	46: StLoc[20](t2#1#7: address)
+	47: ImmBorrowLoc[14](t1#1#7: address)
+	48: StLoc[10](t1#1#10: &address)
+	49: ImmBorrowLoc[20](t2#1#7: address)
+	50: StLoc[16](t2#1#10: &address)
+	51: CopyLoc[10](t1#1#10: &address)
+	52: CopyLoc[16](t2#1#10: &address)
+	53: Eq
+	54: Not
+	55: BrFalse(72)
+B3:
+	56: LdConst[0](vector<u8>: "Ass..)
+	57: Call string::utf8(vector<u8>): String
+	58: StLoc[4](%#3: String)
+	59: ImmBorrowLoc[4](%#3: String)
+	60: Call debug::print<String>(&String)
+	61: MoveLoc[10](t1#1#10: &address)
+	62: Call debug::print<address>(&address)
+	63: LdConst[1](vector<u8>: "!="..)
+	64: Call string::utf8(vector<u8>): String
+	65: StLoc[5](%#4: String)
+	66: ImmBorrowLoc[5](%#4: String)
+	67: Call debug::print<String>(&String)
+	68: MoveLoc[16](t2#1#10: &address)
+	69: Call debug::print<address>(&address)
+	70: LdU64(13906834380501811199)
+	71: Abort
+B4:
+	72: MoveLoc[16](t2#1#10: &address)
+	73: Pop
+	74: MoveLoc[10](t1#1#10: &address)
+	75: Pop
+	76: ImmBorrowLoc[8](sub#1#0: Withdrawal<TestToken>)
+	77: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	78: StLoc[11](t1#1#13: u256)
+	79: MoveLoc[1](limit#0#0: u256)
+	80: StLoc[17](t2#1#13: u256)
+	81: ImmBorrowLoc[11](t1#1#13: u256)
+	82: StLoc[12](t1#1#16: &u256)
+	83: ImmBorrowLoc[17](t2#1#13: u256)
+	84: StLoc[18](t2#1#16: &u256)
+	85: CopyLoc[12](t1#1#16: &u256)
+	86: CopyLoc[18](t2#1#16: &u256)
+	87: Eq
+	88: Not
+	89: BrFalse(106)
+B5:
+	90: LdConst[0](vector<u8>: "Ass..)
+	91: Call string::utf8(vector<u8>): String
+	92: StLoc[6](%#5: String)
+	93: ImmBorrowLoc[6](%#5: String)
+	94: Call debug::print<String>(&String)
+	95: MoveLoc[12](t1#1#16: &u256)
+	96: Call debug::print<u256>(&u256)
+	97: LdConst[1](vector<u8>: "!="..)
+	98: Call string::utf8(vector<u8>): String
+	99: StLoc[7](%#6: String)
+	100: ImmBorrowLoc[7](%#6: String)
+	101: Call debug::print<String>(&String)
+	102: MoveLoc[18](t2#1#16: &u256)
+	103: Call debug::print<u256>(&u256)
+	104: LdU64(13906834384796778495)
+	105: Abort
+B6:
+	106: MoveLoc[18](t2#1#16: &u256)
+	107: Pop
+	108: MoveLoc[12](t1#1#16: &u256)
+	109: Pop
+	110: Ret
+}
+
+test_withdrawal_split_exceeds_limit(owner#0#0: address, limit#0#0: u128) {
+L2:	limit#1#0: u256
+L3:	withdrawal#1#0: Withdrawal<TestToken>
+B0:
+	0: MoveLoc[1](limit#0#0: u128)
+	1: CastU256
+	2: StLoc[2](limit#1#0: u256)
+	3: MoveLoc[0](owner#0#0: address)
+	4: CopyLoc[2](limit#1#0: u256)
+	5: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	6: StLoc[3](withdrawal#1#0: Withdrawal<TestToken>)
+	7: MutBorrowLoc[3](withdrawal#1#0: Withdrawal<TestToken>)
+	8: MoveLoc[2](limit#1#0: u256)
+	9: LdU256(1)
+	10: Add
+	11: Call funds_accumulator::withdrawal_split<TestToken>(&mut Withdrawal<TestToken>, u256): Withdrawal<TestToken>
+	12: Pop
+	13: Ret
+}
+
+test_withdrawal_join(owner#0#0: address, limit1#0#0: u128, limit2#0#0: u128) {
+L3:	%#1: String
+L4:	%#2: String
+L5:	%#3: String
+L6:	%#4: String
+L7:	limit1#1#0: u256
+L8:	limit2#1#0: u256
+L9:	t1#1#1: address
+L10:	t1#1#10: &u256
+L11:	t1#1#4: &address
+L12:	t1#1#7: u256
+L13:	t2#1#1: address
+L14:	t2#1#10: &u256
+L15:	t2#1#4: &address
+L16:	t2#1#7: u256
+L17:	withdrawal1#1#0: Withdrawal<TestToken>
+L18:	withdrawal2#1#0: Withdrawal<TestToken>
+B0:
+	0: MoveLoc[1](limit1#0#0: u128)
+	1: CastU256
+	2: StLoc[7](limit1#1#0: u256)
+	3: MoveLoc[2](limit2#0#0: u128)
+	4: CastU256
+	5: StLoc[8](limit2#1#0: u256)
+	6: CopyLoc[0](owner#0#0: address)
+	7: CopyLoc[7](limit1#1#0: u256)
+	8: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	9: StLoc[17](withdrawal1#1#0: Withdrawal<TestToken>)
+	10: CopyLoc[0](owner#0#0: address)
+	11: CopyLoc[8](limit2#1#0: u256)
+	12: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	13: StLoc[18](withdrawal2#1#0: Withdrawal<TestToken>)
+	14: MutBorrowLoc[17](withdrawal1#1#0: Withdrawal<TestToken>)
+	15: MoveLoc[18](withdrawal2#1#0: Withdrawal<TestToken>)
+	16: Call funds_accumulator::withdrawal_join<TestToken>(&mut Withdrawal<TestToken>, Withdrawal<TestToken>)
+	17: ImmBorrowLoc[17](withdrawal1#1#0: Withdrawal<TestToken>)
+	18: Call funds_accumulator::withdrawal_owner<TestToken>(&Withdrawal<TestToken>): address
+	19: StLoc[9](t1#1#1: address)
+	20: MoveLoc[0](owner#0#0: address)
+	21: StLoc[13](t2#1#1: address)
+	22: ImmBorrowLoc[9](t1#1#1: address)
+	23: StLoc[11](t1#1#4: &address)
+	24: ImmBorrowLoc[13](t2#1#1: address)
+	25: StLoc[15](t2#1#4: &address)
+	26: CopyLoc[11](t1#1#4: &address)
+	27: CopyLoc[15](t2#1#4: &address)
+	28: Eq
+	29: Not
+	30: BrFalse(47)
+B1:
+	31: LdConst[0](vector<u8>: "Ass..)
+	32: Call string::utf8(vector<u8>): String
+	33: StLoc[3](%#1: String)
+	34: ImmBorrowLoc[3](%#1: String)
+	35: Call debug::print<String>(&String)
+	36: MoveLoc[11](t1#1#4: &address)
+	37: Call debug::print<address>(&address)
+	38: LdConst[1](vector<u8>: "!="..)
+	39: Call string::utf8(vector<u8>): String
+	40: StLoc[4](%#2: String)
+	41: ImmBorrowLoc[4](%#2: String)
+	42: Call debug::print<String>(&String)
+	43: MoveLoc[15](t2#1#4: &address)
+	44: Call debug::print<address>(&address)
+	45: LdU64(13906834462106189823)
+	46: Abort
+B2:
+	47: MoveLoc[15](t2#1#4: &address)
+	48: Pop
+	49: MoveLoc[11](t1#1#4: &address)
+	50: Pop
+	51: ImmBorrowLoc[17](withdrawal1#1#0: Withdrawal<TestToken>)
+	52: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	53: StLoc[12](t1#1#7: u256)
+	54: MoveLoc[7](limit1#1#0: u256)
+	55: MoveLoc[8](limit2#1#0: u256)
+	56: Add
+	57: StLoc[16](t2#1#7: u256)
+	58: ImmBorrowLoc[12](t1#1#7: u256)
+	59: StLoc[10](t1#1#10: &u256)
+	60: ImmBorrowLoc[16](t2#1#7: u256)
+	61: StLoc[14](t2#1#10: &u256)
+	62: CopyLoc[10](t1#1#10: &u256)
+	63: CopyLoc[14](t2#1#10: &u256)
+	64: Eq
+	65: Not
+	66: BrFalse(83)
+B3:
+	67: LdConst[0](vector<u8>: "Ass..)
+	68: Call string::utf8(vector<u8>): String
+	69: StLoc[5](%#3: String)
+	70: ImmBorrowLoc[5](%#3: String)
+	71: Call debug::print<String>(&String)
+	72: MoveLoc[10](t1#1#10: &u256)
+	73: Call debug::print<u256>(&u256)
+	74: LdConst[1](vector<u8>: "!="..)
+	75: Call string::utf8(vector<u8>): String
+	76: StLoc[6](%#4: String)
+	77: ImmBorrowLoc[6](%#4: String)
+	78: Call debug::print<String>(&String)
+	79: MoveLoc[14](t2#1#10: &u256)
+	80: Call debug::print<u256>(&u256)
+	81: LdU64(13906834466401157119)
+	82: Abort
+B4:
+	83: MoveLoc[14](t2#1#10: &u256)
+	84: Pop
+	85: MoveLoc[10](t1#1#10: &u256)
+	86: Pop
+	87: Ret
+}
+
+test_withdrawal_join_zero(owner#0#0: address, limit#0#0: u256) {
+L2:	%#1: String
+L3:	%#2: String
+L4:	%#3: String
+L5:	%#4: String
+L6:	%#5: String
+L7:	%#6: String
+L8:	%#7: String
+L9:	%#8: String
+L10:	non_zero#1#0: Withdrawal<TestToken>
+L11:	non_zero#2#0: Withdrawal<TestToken>
+L12:	t1#1#1: address
+L13:	t1#1#10: &u256
+L14:	t1#1#13: address
+L15:	t1#1#16: &address
+L16:	t1#1#19: u256
+L17:	t1#1#22: &u256
+L18:	t1#1#4: &address
+L19:	t1#1#7: u256
+L20:	t2#1#1: address
+L21:	t2#1#10: &u256
+L22:	t2#1#13: address
+L23:	t2#1#16: &address
+L24:	t2#1#19: u256
+L25:	t2#1#22: &u256
+L26:	t2#1#4: &address
+L27:	t2#1#7: u256
+L28:	zero#1#0: Withdrawal<TestToken>
+L29:	zero#2#0: Withdrawal<TestToken>
+B0:
+	0: CopyLoc[0](owner#0#0: address)
+	1: CopyLoc[1](limit#0#0: u256)
+	2: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	3: StLoc[10](non_zero#1#0: Withdrawal<TestToken>)
+	4: CopyLoc[0](owner#0#0: address)
+	5: LdU256(0)
+	6: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	7: StLoc[28](zero#1#0: Withdrawal<TestToken>)
+	8: MutBorrowLoc[10](non_zero#1#0: Withdrawal<TestToken>)
+	9: MoveLoc[28](zero#1#0: Withdrawal<TestToken>)
+	10: Call funds_accumulator::withdrawal_join<TestToken>(&mut Withdrawal<TestToken>, Withdrawal<TestToken>)
+	11: ImmBorrowLoc[10](non_zero#1#0: Withdrawal<TestToken>)
+	12: Call funds_accumulator::withdrawal_owner<TestToken>(&Withdrawal<TestToken>): address
+	13: StLoc[12](t1#1#1: address)
+	14: CopyLoc[0](owner#0#0: address)
+	15: StLoc[20](t2#1#1: address)
+	16: ImmBorrowLoc[12](t1#1#1: address)
+	17: StLoc[18](t1#1#4: &address)
+	18: ImmBorrowLoc[20](t2#1#1: address)
+	19: StLoc[26](t2#1#4: &address)
+	20: CopyLoc[18](t1#1#4: &address)
+	21: CopyLoc[26](t2#1#4: &address)
+	22: Eq
+	23: Not
+	24: BrFalse(41)
+B1:
+	25: LdConst[0](vector<u8>: "Ass..)
+	26: Call string::utf8(vector<u8>): String
+	27: StLoc[2](%#1: String)
+	28: ImmBorrowLoc[2](%#1: String)
+	29: Call debug::print<String>(&String)
+	30: MoveLoc[18](t1#1#4: &address)
+	31: Call debug::print<address>(&address)
+	32: LdConst[1](vector<u8>: "!="..)
+	33: Call string::utf8(vector<u8>): String
+	34: StLoc[3](%#2: String)
+	35: ImmBorrowLoc[3](%#2: String)
+	36: Call debug::print<String>(&String)
+	37: MoveLoc[26](t2#1#4: &address)
+	38: Call debug::print<address>(&address)
+	39: LdU64(13906834505055862783)
+	40: Abort
+B2:
+	41: MoveLoc[26](t2#1#4: &address)
+	42: Pop
+	43: MoveLoc[18](t1#1#4: &address)
+	44: Pop
+	45: ImmBorrowLoc[10](non_zero#1#0: Withdrawal<TestToken>)
+	46: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	47: StLoc[19](t1#1#7: u256)
+	48: CopyLoc[1](limit#0#0: u256)
+	49: StLoc[27](t2#1#7: u256)
+	50: ImmBorrowLoc[19](t1#1#7: u256)
+	51: StLoc[13](t1#1#10: &u256)
+	52: ImmBorrowLoc[27](t2#1#7: u256)
+	53: StLoc[21](t2#1#10: &u256)
+	54: CopyLoc[13](t1#1#10: &u256)
+	55: CopyLoc[21](t2#1#10: &u256)
+	56: Eq
+	57: Not
+	58: BrFalse(75)
+B3:
+	59: LdConst[0](vector<u8>: "Ass..)
+	60: Call string::utf8(vector<u8>): String
+	61: StLoc[4](%#3: String)
+	62: ImmBorrowLoc[4](%#3: String)
+	63: Call debug::print<String>(&String)
+	64: MoveLoc[13](t1#1#10: &u256)
+	65: Call debug::print<u256>(&u256)
+	66: LdConst[1](vector<u8>: "!="..)
+	67: Call string::utf8(vector<u8>): String
+	68: StLoc[5](%#4: String)
+	69: ImmBorrowLoc[5](%#4: String)
+	70: Call debug::print<String>(&String)
+	71: MoveLoc[21](t2#1#10: &u256)
+	72: Call debug::print<u256>(&u256)
+	73: LdU64(13906834509350830079)
+	74: Abort
+B4:
+	75: MoveLoc[21](t2#1#10: &u256)
+	76: Pop
+	77: MoveLoc[13](t1#1#10: &u256)
+	78: Pop
+	79: CopyLoc[0](owner#0#0: address)
+	80: LdU256(0)
+	81: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	82: StLoc[29](zero#2#0: Withdrawal<TestToken>)
+	83: CopyLoc[0](owner#0#0: address)
+	84: CopyLoc[1](limit#0#0: u256)
+	85: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	86: StLoc[11](non_zero#2#0: Withdrawal<TestToken>)
+	87: MutBorrowLoc[29](zero#2#0: Withdrawal<TestToken>)
+	88: MoveLoc[11](non_zero#2#0: Withdrawal<TestToken>)
+	89: Call funds_accumulator::withdrawal_join<TestToken>(&mut Withdrawal<TestToken>, Withdrawal<TestToken>)
+	90: ImmBorrowLoc[29](zero#2#0: Withdrawal<TestToken>)
+	91: Call funds_accumulator::withdrawal_owner<TestToken>(&Withdrawal<TestToken>): address
+	92: StLoc[14](t1#1#13: address)
+	93: MoveLoc[0](owner#0#0: address)
+	94: StLoc[22](t2#1#13: address)
+	95: ImmBorrowLoc[14](t1#1#13: address)
+	96: StLoc[15](t1#1#16: &address)
+	97: ImmBorrowLoc[22](t2#1#13: address)
+	98: StLoc[23](t2#1#16: &address)
+	99: CopyLoc[15](t1#1#16: &address)
+	100: CopyLoc[23](t2#1#16: &address)
+	101: Eq
+	102: Not
+	103: BrFalse(120)
+B5:
+	104: LdConst[0](vector<u8>: "Ass..)
+	105: Call string::utf8(vector<u8>): String
+	106: StLoc[6](%#5: String)
+	107: ImmBorrowLoc[6](%#5: String)
+	108: Call debug::print<String>(&String)
+	109: MoveLoc[15](t1#1#16: &address)
+	110: Call debug::print<address>(&address)
+	111: LdConst[1](vector<u8>: "!="..)
+	112: Call string::utf8(vector<u8>): String
+	113: StLoc[7](%#6: String)
+	114: ImmBorrowLoc[7](%#6: String)
+	115: Call debug::print<String>(&String)
+	116: MoveLoc[23](t2#1#16: &address)
+	117: Call debug::print<address>(&address)
+	118: LdU64(13906834535120633855)
+	119: Abort
+B6:
+	120: MoveLoc[23](t2#1#16: &address)
+	121: Pop
+	122: MoveLoc[15](t1#1#16: &address)
+	123: Pop
+	124: ImmBorrowLoc[29](zero#2#0: Withdrawal<TestToken>)
+	125: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	126: StLoc[16](t1#1#19: u256)
+	127: MoveLoc[1](limit#0#0: u256)
+	128: StLoc[24](t2#1#19: u256)
+	129: ImmBorrowLoc[16](t1#1#19: u256)
+	130: StLoc[17](t1#1#22: &u256)
+	131: ImmBorrowLoc[24](t2#1#19: u256)
+	132: StLoc[25](t2#1#22: &u256)
+	133: CopyLoc[17](t1#1#22: &u256)
+	134: CopyLoc[25](t2#1#22: &u256)
+	135: Eq
+	136: Not
+	137: BrFalse(154)
+B7:
+	138: LdConst[0](vector<u8>: "Ass..)
+	139: Call string::utf8(vector<u8>): String
+	140: StLoc[8](%#7: String)
+	141: ImmBorrowLoc[8](%#7: String)
+	142: Call debug::print<String>(&String)
+	143: MoveLoc[17](t1#1#22: &u256)
+	144: Call debug::print<u256>(&u256)
+	145: LdConst[1](vector<u8>: "!="..)
+	146: Call string::utf8(vector<u8>): String
+	147: StLoc[9](%#8: String)
+	148: ImmBorrowLoc[9](%#8: String)
+	149: Call debug::print<String>(&String)
+	150: MoveLoc[25](t2#1#22: &u256)
+	151: Call debug::print<u256>(&u256)
+	152: LdU64(13906834539415601151)
+	153: Abort
+B8:
+	154: MoveLoc[25](t2#1#22: &u256)
+	155: Pop
+	156: MoveLoc[17](t1#1#22: &u256)
+	157: Pop
+	158: Ret
+}
+
+test_withdrawal_join_different_owners() {
+L0:	withdrawal1#1#0: Withdrawal<TestToken>
+L1:	withdrawal2#1#0: Withdrawal<TestToken>
+B0:
+	0: LdConst[2](address: 0x00..)
+	1: LdU256(500)
+	2: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	3: StLoc[0](withdrawal1#1#0: Withdrawal<TestToken>)
+	4: LdConst[3](address: 0x00..)
+	5: LdU256(300)
+	6: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	7: StLoc[1](withdrawal2#1#0: Withdrawal<TestToken>)
+	8: MutBorrowLoc[0](withdrawal1#1#0: Withdrawal<TestToken>)
+	9: MoveLoc[1](withdrawal2#1#0: Withdrawal<TestToken>)
+	10: Call funds_accumulator::withdrawal_join<TestToken>(&mut Withdrawal<TestToken>, Withdrawal<TestToken>)
+	11: Ret
+}
+
+test_withdrawal_join_overflow(owner#0#0: address) {
+L1:	withdrawal1#1#0: Withdrawal<TestToken>
+L2:	withdrawal2#1#0: Withdrawal<TestToken>
+B0:
+	0: CopyLoc[0](owner#0#0: address)
+	1: LdU256(115792089237316195423570985008687907853269984665640564039457584007913129639935)
+	2: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	3: StLoc[1](withdrawal1#1#0: Withdrawal<TestToken>)
+	4: MoveLoc[0](owner#0#0: address)
+	5: LdU256(1)
+	6: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	7: StLoc[2](withdrawal2#1#0: Withdrawal<TestToken>)
+	8: MutBorrowLoc[1](withdrawal1#1#0: Withdrawal<TestToken>)
+	9: MoveLoc[2](withdrawal2#1#0: Withdrawal<TestToken>)
+	10: Call funds_accumulator::withdrawal_join<TestToken>(&mut Withdrawal<TestToken>, Withdrawal<TestToken>)
+	11: Ret
+}
+
+test_withdrawal_split_join(owner#0#0: address, l1#0#0: u128, l2#0#0: u128, l3#0#0: u128) {
+L4:	%#1: String
+L5:	%#10: String
+L6:	%#2: String
+L7:	%#3: String
+L8:	%#4: String
+L9:	%#5: String
+L10:	%#6: String
+L11:	%#7: String
+L12:	%#8: String
+L13:	%#9: String
+L14:	l1#1#0: u256
+L15:	l2#1#0: u256
+L16:	l3#1#0: u256
+L17:	t1#1#1: u256
+L18:	t1#1#10: &u256
+L19:	t1#1#13: u256
+L20:	t1#1#16: &u256
+L21:	t1#1#19: u256
+L22:	t1#1#22: &u256
+L23:	t1#1#25: u256
+L24:	t1#1#28: &u256
+L25:	t1#1#4: &u256
+L26:	t1#1#7: u256
+L27:	t2#1#1: u256
+L28:	t2#1#10: &u256
+L29:	t2#1#13: u256
+L30:	t2#1#16: &u256
+L31:	t2#1#19: u256
+L32:	t2#1#22: &u256
+L33:	t2#1#25: u256
+L34:	t2#1#28: &u256
+L35:	t2#1#4: &u256
+L36:	t2#1#7: u256
+L37:	w1#1#0: Withdrawal<TestToken>
+L38:	w2#1#0: Withdrawal<TestToken>
+L39:	w3#1#0: Withdrawal<TestToken>
+B0:
+	0: MoveLoc[1](l1#0#0: u128)
+	1: CastU256
+	2: StLoc[14](l1#1#0: u256)
+	3: MoveLoc[2](l2#0#0: u128)
+	4: CastU256
+	5: StLoc[15](l2#1#0: u256)
+	6: MoveLoc[3](l3#0#0: u128)
+	7: CastU256
+	8: StLoc[16](l3#1#0: u256)
+	9: MoveLoc[0](owner#0#0: address)
+	10: CopyLoc[14](l1#1#0: u256)
+	11: CopyLoc[15](l2#1#0: u256)
+	12: Add
+	13: CopyLoc[16](l3#1#0: u256)
+	14: Add
+	15: Call funds_accumulator::create_withdrawal<TestToken>(address, u256): Withdrawal<TestToken>
+	16: StLoc[37](w1#1#0: Withdrawal<TestToken>)
+	17: MutBorrowLoc[37](w1#1#0: Withdrawal<TestToken>)
+	18: CopyLoc[15](l2#1#0: u256)
+	19: Call funds_accumulator::withdrawal_split<TestToken>(&mut Withdrawal<TestToken>, u256): Withdrawal<TestToken>
+	20: StLoc[38](w2#1#0: Withdrawal<TestToken>)
+	21: MutBorrowLoc[37](w1#1#0: Withdrawal<TestToken>)
+	22: CopyLoc[16](l3#1#0: u256)
+	23: Call funds_accumulator::withdrawal_split<TestToken>(&mut Withdrawal<TestToken>, u256): Withdrawal<TestToken>
+	24: StLoc[39](w3#1#0: Withdrawal<TestToken>)
+	25: ImmBorrowLoc[37](w1#1#0: Withdrawal<TestToken>)
+	26: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	27: StLoc[17](t1#1#1: u256)
+	28: CopyLoc[14](l1#1#0: u256)
+	29: StLoc[27](t2#1#1: u256)
+	30: ImmBorrowLoc[17](t1#1#1: u256)
+	31: StLoc[25](t1#1#4: &u256)
+	32: ImmBorrowLoc[27](t2#1#1: u256)
+	33: StLoc[35](t2#1#4: &u256)
+	34: CopyLoc[25](t1#1#4: &u256)
+	35: CopyLoc[35](t2#1#4: &u256)
+	36: Eq
+	37: Not
+	38: BrFalse(55)
+B1:
+	39: LdConst[0](vector<u8>: "Ass..)
+	40: Call string::utf8(vector<u8>): String
+	41: StLoc[4](%#1: String)
+	42: ImmBorrowLoc[4](%#1: String)
+	43: Call debug::print<String>(&String)
+	44: MoveLoc[25](t1#1#4: &u256)
+	45: Call debug::print<u256>(&u256)
+	46: LdConst[1](vector<u8>: "!="..)
+	47: Call string::utf8(vector<u8>): String
+	48: StLoc[6](%#2: String)
+	49: ImmBorrowLoc[6](%#2: String)
+	50: Call debug::print<String>(&String)
+	51: MoveLoc[35](t2#1#4: &u256)
+	52: Call debug::print<u256>(&u256)
+	53: LdU64(13906834676854554623)
+	54: Abort
+B2:
+	55: MoveLoc[35](t2#1#4: &u256)
+	56: Pop
+	57: MoveLoc[25](t1#1#4: &u256)
+	58: Pop
+	59: ImmBorrowLoc[38](w2#1#0: Withdrawal<TestToken>)
+	60: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	61: StLoc[26](t1#1#7: u256)
+	62: CopyLoc[15](l2#1#0: u256)
+	63: StLoc[36](t2#1#7: u256)
+	64: ImmBorrowLoc[26](t1#1#7: u256)
+	65: StLoc[18](t1#1#10: &u256)
+	66: ImmBorrowLoc[36](t2#1#7: u256)
+	67: StLoc[28](t2#1#10: &u256)
+	68: CopyLoc[18](t1#1#10: &u256)
+	69: CopyLoc[28](t2#1#10: &u256)
+	70: Eq
+	71: Not
+	72: BrFalse(89)
+B3:
+	73: LdConst[0](vector<u8>: "Ass..)
+	74: Call string::utf8(vector<u8>): String
+	75: StLoc[7](%#3: String)
+	76: ImmBorrowLoc[7](%#3: String)
+	77: Call debug::print<String>(&String)
+	78: MoveLoc[18](t1#1#10: &u256)
+	79: Call debug::print<u256>(&u256)
+	80: LdConst[1](vector<u8>: "!="..)
+	81: Call string::utf8(vector<u8>): String
+	82: StLoc[8](%#4: String)
+	83: ImmBorrowLoc[8](%#4: String)
+	84: Call debug::print<String>(&String)
+	85: MoveLoc[28](t2#1#10: &u256)
+	86: Call debug::print<u256>(&u256)
+	87: LdU64(13906834681149521919)
+	88: Abort
+B4:
+	89: MoveLoc[28](t2#1#10: &u256)
+	90: Pop
+	91: MoveLoc[18](t1#1#10: &u256)
+	92: Pop
+	93: ImmBorrowLoc[39](w3#1#0: Withdrawal<TestToken>)
+	94: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	95: StLoc[19](t1#1#13: u256)
+	96: CopyLoc[16](l3#1#0: u256)
+	97: StLoc[29](t2#1#13: u256)
+	98: ImmBorrowLoc[19](t1#1#13: u256)
+	99: StLoc[20](t1#1#16: &u256)
+	100: ImmBorrowLoc[29](t2#1#13: u256)
+	101: StLoc[30](t2#1#16: &u256)
+	102: CopyLoc[20](t1#1#16: &u256)
+	103: CopyLoc[30](t2#1#16: &u256)
+	104: Eq
+	105: Not
+	106: BrFalse(123)
+B5:
+	107: LdConst[0](vector<u8>: "Ass..)
+	108: Call string::utf8(vector<u8>): String
+	109: StLoc[9](%#5: String)
+	110: ImmBorrowLoc[9](%#5: String)
+	111: Call debug::print<String>(&String)
+	112: MoveLoc[20](t1#1#16: &u256)
+	113: Call debug::print<u256>(&u256)
+	114: LdConst[1](vector<u8>: "!="..)
+	115: Call string::utf8(vector<u8>): String
+	116: StLoc[10](%#6: String)
+	117: ImmBorrowLoc[10](%#6: String)
+	118: Call debug::print<String>(&String)
+	119: MoveLoc[30](t2#1#16: &u256)
+	120: Call debug::print<u256>(&u256)
+	121: LdU64(13906834685444489215)
+	122: Abort
+B6:
+	123: MoveLoc[30](t2#1#16: &u256)
+	124: Pop
+	125: MoveLoc[20](t1#1#16: &u256)
+	126: Pop
+	127: MutBorrowLoc[37](w1#1#0: Withdrawal<TestToken>)
+	128: MoveLoc[38](w2#1#0: Withdrawal<TestToken>)
+	129: Call funds_accumulator::withdrawal_join<TestToken>(&mut Withdrawal<TestToken>, Withdrawal<TestToken>)
+	130: ImmBorrowLoc[37](w1#1#0: Withdrawal<TestToken>)
+	131: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	132: StLoc[21](t1#1#19: u256)
+	133: CopyLoc[14](l1#1#0: u256)
+	134: CopyLoc[15](l2#1#0: u256)
+	135: Add
+	136: StLoc[31](t2#1#19: u256)
+	137: ImmBorrowLoc[21](t1#1#19: u256)
+	138: StLoc[22](t1#1#22: &u256)
+	139: ImmBorrowLoc[31](t2#1#19: u256)
+	140: StLoc[32](t2#1#22: &u256)
+	141: CopyLoc[22](t1#1#22: &u256)
+	142: CopyLoc[32](t2#1#22: &u256)
+	143: Eq
+	144: Not
+	145: BrFalse(162)
+B7:
+	146: LdConst[0](vector<u8>: "Ass..)
+	147: Call string::utf8(vector<u8>): String
+	148: StLoc[11](%#7: String)
+	149: ImmBorrowLoc[11](%#7: String)
+	150: Call debug::print<String>(&String)
+	151: MoveLoc[22](t1#1#22: &u256)
+	152: Call debug::print<u256>(&u256)
+	153: LdConst[1](vector<u8>: "!="..)
+	154: Call string::utf8(vector<u8>): String
+	155: StLoc[12](%#8: String)
+	156: ImmBorrowLoc[12](%#8: String)
+	157: Call debug::print<String>(&String)
+	158: MoveLoc[32](t2#1#22: &u256)
+	159: Call debug::print<u256>(&u256)
+	160: LdU64(13906834698329391103)
+	161: Abort
+B8:
+	162: MoveLoc[32](t2#1#22: &u256)
+	163: Pop
+	164: MoveLoc[22](t1#1#22: &u256)
+	165: Pop
+	166: MutBorrowLoc[37](w1#1#0: Withdrawal<TestToken>)
+	167: MoveLoc[39](w3#1#0: Withdrawal<TestToken>)
+	168: Call funds_accumulator::withdrawal_join<TestToken>(&mut Withdrawal<TestToken>, Withdrawal<TestToken>)
+	169: ImmBorrowLoc[37](w1#1#0: Withdrawal<TestToken>)
+	170: Call funds_accumulator::withdrawal_limit<TestToken>(&Withdrawal<TestToken>): u256
+	171: StLoc[23](t1#1#25: u256)
+	172: MoveLoc[14](l1#1#0: u256)
+	173: MoveLoc[15](l2#1#0: u256)
+	174: Add
+	175: MoveLoc[16](l3#1#0: u256)
+	176: Add
+	177: StLoc[33](t2#1#25: u256)
+	178: ImmBorrowLoc[23](t1#1#25: u256)
+	179: StLoc[24](t1#1#28: &u256)
+	180: ImmBorrowLoc[33](t2#1#25: u256)
+	181: StLoc[34](t2#1#28: &u256)
+	182: CopyLoc[24](t1#1#28: &u256)
+	183: CopyLoc[34](t2#1#28: &u256)
+	184: Eq
+	185: Not
+	186: BrFalse(203)
+B9:
+	187: LdConst[0](vector<u8>: "Ass..)
+	188: Call string::utf8(vector<u8>): String
+	189: StLoc[13](%#9: String)
+	190: ImmBorrowLoc[13](%#9: String)
+	191: Call debug::print<String>(&String)
+	192: MoveLoc[24](t1#1#28: &u256)
+	193: Call debug::print<u256>(&u256)
+	194: LdConst[1](vector<u8>: "!="..)
+	195: Call string::utf8(vector<u8>): String
+	196: StLoc[5](%#10: String)
+	197: ImmBorrowLoc[5](%#10: String)
+	198: Call debug::print<String>(&String)
+	199: MoveLoc[34](t2#1#28: &u256)
+	200: Call debug::print<u256>(&u256)
+	201: LdU64(13906834711214292991)
+	202: Abort
+B10:
+	203: MoveLoc[34](t2#1#28: &u256)
+	204: Pop
+	205: MoveLoc[24](t1#1#28: &u256)
+	206: Pop
+	207: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	1 => vector<u8>: "!=" // interpreted as UTF8 string
+	2 => address: 0x0000000000000000000000000000000000000000000000000000000000000001
+	3 => address: 0x0000000000000000000000000000000000000000000000000000000000000002
+]
+}

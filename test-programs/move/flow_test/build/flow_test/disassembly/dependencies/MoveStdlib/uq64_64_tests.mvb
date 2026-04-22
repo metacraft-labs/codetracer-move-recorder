@@ -1,0 +1,1332 @@
+// Move bytecode v6
+module 1.uq64_64_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::uq64_64;
+
+from_quotient_zero() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	t1#1#1: u128
+L3:	t1#1#4: &u128
+L4:	t2#1#1: u128
+L5:	t2#1#4: &u128
+B0:
+	0: LdU128(0)
+	1: LdU128(1)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: Call uq64_64::to_raw(UQ64_64): u128
+	4: StLoc[2](t1#1#1: u128)
+	5: LdU128(0)
+	6: StLoc[4](t2#1#1: u128)
+	7: ImmBorrowLoc[2](t1#1#1: u128)
+	8: StLoc[3](t1#1#4: &u128)
+	9: ImmBorrowLoc[4](t2#1#1: u128)
+	10: StLoc[5](t2#1#4: &u128)
+	11: CopyLoc[3](t1#1#4: &u128)
+	12: CopyLoc[5](t2#1#4: &u128)
+	13: Eq
+	14: Not
+	15: BrFalse(32)
+B1:
+	16: LdConst[0](vector<u8>: "Ass..)
+	17: Call string::utf8(vector<u8>): String
+	18: StLoc[0](%#1: String)
+	19: ImmBorrowLoc[0](%#1: String)
+	20: Call debug::print<String>(&String)
+	21: MoveLoc[3](t1#1#4: &u128)
+	22: Call debug::print<u128>(&u128)
+	23: LdConst[1](vector<u8>: "!="..)
+	24: Call string::utf8(vector<u8>): String
+	25: StLoc[1](%#2: String)
+	26: ImmBorrowLoc[1](%#2: String)
+	27: Call debug::print<String>(&String)
+	28: MoveLoc[5](t2#1#4: &u128)
+	29: Call debug::print<u128>(&u128)
+	30: LdU64(13906834286012530687)
+	31: Abort
+B2:
+	32: MoveLoc[5](t2#1#4: &u128)
+	33: Pop
+	34: MoveLoc[3](t1#1#4: &u128)
+	35: Pop
+	36: Ret
+}
+
+from_quotient_max_numerator_denominator() {
+L0:	%#4: String
+L1:	%#5: String
+L2:	t1#1#3: u128
+L3:	t1#1#6: &u128
+L4:	t2#1#3: u128
+L5:	t2#1#6: &u128
+B0:
+	0: LdU128(340282366920938463463374607431768211455)
+	1: LdU128(340282366920938463463374607431768211455)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: Call uq64_64::to_raw(UQ64_64): u128
+	4: StLoc[2](t1#1#3: u128)
+	5: LdU128(18446744073709551616)
+	6: StLoc[4](t2#1#3: u128)
+	7: ImmBorrowLoc[2](t1#1#3: u128)
+	8: StLoc[3](t1#1#6: &u128)
+	9: ImmBorrowLoc[4](t2#1#3: u128)
+	10: StLoc[5](t2#1#6: &u128)
+	11: CopyLoc[3](t1#1#6: &u128)
+	12: CopyLoc[5](t2#1#6: &u128)
+	13: Eq
+	14: Not
+	15: BrFalse(32)
+B1:
+	16: LdConst[0](vector<u8>: "Ass..)
+	17: Call string::utf8(vector<u8>): String
+	18: StLoc[0](%#4: String)
+	19: ImmBorrowLoc[0](%#4: String)
+	20: Call debug::print<String>(&String)
+	21: MoveLoc[3](t1#1#6: &u128)
+	22: Call debug::print<u128>(&u128)
+	23: LdConst[1](vector<u8>: "!="..)
+	24: Call string::utf8(vector<u8>): String
+	25: StLoc[1](%#5: String)
+	26: ImmBorrowLoc[1](%#5: String)
+	27: Call debug::print<String>(&String)
+	28: MoveLoc[5](t2#1#6: &u128)
+	29: Call debug::print<u128>(&u128)
+	30: LdU64(13906834320372269055)
+	31: Abort
+B2:
+	32: MoveLoc[5](t2#1#6: &u128)
+	33: Pop
+	34: MoveLoc[3](t1#1#6: &u128)
+	35: Pop
+	36: Ret
+}
+
+from_quotient_div_zero() {
+B0:
+	0: LdU128(2)
+	1: LdU128(0)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: Pop
+	4: Ret
+}
+
+from_quotient_ratio_too_large() {
+B0:
+	0: LdU128(18446744073709551616)
+	1: LdU128(1)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: Pop
+	4: Ret
+}
+
+from_quotient_ratio_too_small() {
+B0:
+	0: LdU128(1)
+	1: LdU128(18446744073709551617)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: Pop
+	4: Ret
+}
+
+test_from_int() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	%#7: String
+L5:	%#8: String
+L6:	t1#1#1: u128
+L7:	t1#1#10: &u128
+L8:	t1#1#13: u128
+L9:	t1#1#18: &u128
+L10:	t1#1#4: &u128
+L11:	t1#1#7: u128
+L12:	t2#1#1: u128
+L13:	t2#1#10: &u128
+L14:	t2#1#13: u128
+L15:	t2#1#18: &u128
+L16:	t2#1#4: &u128
+L17:	t2#1#7: u128
+B0:
+	0: LdU64(0)
+	1: Call uq64_64::from_int(u64): UQ64_64
+	2: Call uq64_64::to_raw(UQ64_64): u128
+	3: StLoc[6](t1#1#1: u128)
+	4: LdU128(0)
+	5: StLoc[12](t2#1#1: u128)
+	6: ImmBorrowLoc[6](t1#1#1: u128)
+	7: StLoc[10](t1#1#4: &u128)
+	8: ImmBorrowLoc[12](t2#1#1: u128)
+	9: StLoc[16](t2#1#4: &u128)
+	10: CopyLoc[10](t1#1#4: &u128)
+	11: CopyLoc[16](t2#1#4: &u128)
+	12: Eq
+	13: Not
+	14: BrFalse(31)
+B1:
+	15: LdConst[0](vector<u8>: "Ass..)
+	16: Call string::utf8(vector<u8>): String
+	17: StLoc[0](%#1: String)
+	18: ImmBorrowLoc[0](%#1: String)
+	19: Call debug::print<String>(&String)
+	20: MoveLoc[10](t1#1#4: &u128)
+	21: Call debug::print<u128>(&u128)
+	22: LdConst[1](vector<u8>: "!="..)
+	23: Call string::utf8(vector<u8>): String
+	24: StLoc[1](%#2: String)
+	25: ImmBorrowLoc[1](%#2: String)
+	26: Call debug::print<String>(&String)
+	27: MoveLoc[16](t2#1#4: &u128)
+	28: Call debug::print<u128>(&u128)
+	29: LdU64(13906834440631353343)
+	30: Abort
+B2:
+	31: MoveLoc[16](t2#1#4: &u128)
+	32: Pop
+	33: MoveLoc[10](t1#1#4: &u128)
+	34: Pop
+	35: LdU64(1)
+	36: Call uq64_64::from_int(u64): UQ64_64
+	37: Call uq64_64::to_raw(UQ64_64): u128
+	38: StLoc[11](t1#1#7: u128)
+	39: LdU128(18446744073709551616)
+	40: StLoc[17](t2#1#7: u128)
+	41: ImmBorrowLoc[11](t1#1#7: u128)
+	42: StLoc[7](t1#1#10: &u128)
+	43: ImmBorrowLoc[17](t2#1#7: u128)
+	44: StLoc[13](t2#1#10: &u128)
+	45: CopyLoc[7](t1#1#10: &u128)
+	46: CopyLoc[13](t2#1#10: &u128)
+	47: Eq
+	48: Not
+	49: BrFalse(66)
+B3:
+	50: LdConst[0](vector<u8>: "Ass..)
+	51: Call string::utf8(vector<u8>): String
+	52: StLoc[2](%#3: String)
+	53: ImmBorrowLoc[2](%#3: String)
+	54: Call debug::print<String>(&String)
+	55: MoveLoc[7](t1#1#10: &u128)
+	56: Call debug::print<u128>(&u128)
+	57: LdConst[1](vector<u8>: "!="..)
+	58: Call string::utf8(vector<u8>): String
+	59: StLoc[3](%#4: String)
+	60: ImmBorrowLoc[3](%#4: String)
+	61: Call debug::print<String>(&String)
+	62: MoveLoc[13](t2#1#10: &u128)
+	63: Call debug::print<u128>(&u128)
+	64: LdU64(13906834444926320639)
+	65: Abort
+B4:
+	66: MoveLoc[13](t2#1#10: &u128)
+	67: Pop
+	68: MoveLoc[7](t1#1#10: &u128)
+	69: Pop
+	70: LdU64(18446744073709551615)
+	71: Call uq64_64::from_int(u64): UQ64_64
+	72: Call uq64_64::to_raw(UQ64_64): u128
+	73: StLoc[8](t1#1#13: u128)
+	74: LdU128(340282366920938463444927863358058659840)
+	75: StLoc[14](t2#1#13: u128)
+	76: ImmBorrowLoc[8](t1#1#13: u128)
+	77: StLoc[9](t1#1#18: &u128)
+	78: ImmBorrowLoc[14](t2#1#13: u128)
+	79: StLoc[15](t2#1#18: &u128)
+	80: CopyLoc[9](t1#1#18: &u128)
+	81: CopyLoc[15](t2#1#18: &u128)
+	82: Eq
+	83: Not
+	84: BrFalse(101)
+B5:
+	85: LdConst[0](vector<u8>: "Ass..)
+	86: Call string::utf8(vector<u8>): String
+	87: StLoc[4](%#7: String)
+	88: ImmBorrowLoc[4](%#7: String)
+	89: Call debug::print<String>(&String)
+	90: MoveLoc[9](t1#1#18: &u128)
+	91: Call debug::print<u128>(&u128)
+	92: LdConst[1](vector<u8>: "!="..)
+	93: Call string::utf8(vector<u8>): String
+	94: StLoc[5](%#8: String)
+	95: ImmBorrowLoc[5](%#8: String)
+	96: Call debug::print<String>(&String)
+	97: MoveLoc[15](t2#1#18: &u128)
+	98: Call debug::print<u128>(&u128)
+	99: LdU64(13906834449221287935)
+	100: Abort
+B6:
+	101: MoveLoc[15](t2#1#18: &u128)
+	102: Pop
+	103: MoveLoc[9](t1#1#18: &u128)
+	104: Pop
+	105: Ret
+}
+
+test_add() {
+L0:	a#1#0: UQ64_64
+L1:	b#1#0: UQ64_64
+L2:	c#1#0: UQ64_64
+L3:	c#2#0: UQ64_64
+B0:
+	0: LdU128(3)
+	1: LdU128(4)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: StLoc[0](a#1#0: UQ64_64)
+	4: CopyLoc[0](a#1#0: UQ64_64)
+	5: LdU64(0)
+	6: Call uq64_64::from_int(u64): UQ64_64
+	7: Call uq64_64::add(UQ64_64, UQ64_64): UQ64_64
+	8: CopyLoc[0](a#1#0: UQ64_64)
+	9: Eq
+	10: BrFalse(12)
+B1:
+	11: Branch(14)
+B2:
+	12: LdU64(13906834474991091711)
+	13: Abort
+B3:
+	14: CopyLoc[0](a#1#0: UQ64_64)
+	15: LdU64(1)
+	16: Call uq64_64::from_int(u64): UQ64_64
+	17: Call uq64_64::add(UQ64_64, UQ64_64): UQ64_64
+	18: StLoc[2](c#1#0: UQ64_64)
+	19: LdU128(7)
+	20: LdU128(4)
+	21: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	22: MoveLoc[2](c#1#0: UQ64_64)
+	23: Eq
+	24: BrFalse(26)
+B4:
+	25: Branch(28)
+B5:
+	26: LdU64(13906834487875993599)
+	27: Abort
+B6:
+	28: LdU128(1)
+	29: LdU128(4)
+	30: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	31: StLoc[1](b#1#0: UQ64_64)
+	32: MoveLoc[0](a#1#0: UQ64_64)
+	33: MoveLoc[1](b#1#0: UQ64_64)
+	34: Call uq64_64::add(UQ64_64, UQ64_64): UQ64_64
+	35: StLoc[3](c#2#0: UQ64_64)
+	36: LdU64(1)
+	37: Call uq64_64::from_int(u64): UQ64_64
+	38: MoveLoc[3](c#2#0: UQ64_64)
+	39: Eq
+	40: BrFalse(42)
+B7:
+	41: Branch(44)
+B8:
+	42: LdU64(13906834505055862783)
+	43: Abort
+B9:
+	44: Ret
+}
+
+test_add_overflow() {
+L0:	a#1#0: UQ64_64
+L1:	b#1#0: UQ64_64
+B0:
+	0: LdU64(9223372036854775808)
+	1: Call uq64_64::from_int(u64): UQ64_64
+	2: StLoc[0](a#1#0: UQ64_64)
+	3: LdU64(9223372036854775808)
+	4: Call uq64_64::from_int(u64): UQ64_64
+	5: StLoc[1](b#1#0: UQ64_64)
+	6: MoveLoc[0](a#1#0: UQ64_64)
+	7: MoveLoc[1](b#1#0: UQ64_64)
+	8: Call uq64_64::add(UQ64_64, UQ64_64): UQ64_64
+	9: Pop
+	10: Ret
+}
+
+test_sub() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	a#1#0: UQ64_64
+L5:	b#1#0: UQ64_64
+L6:	c#1#0: UQ64_64
+L7:	t1#1#1: UQ64_64
+L8:	t1#1#10: &UQ64_64
+L9:	t1#1#4: &UQ64_64
+L10:	t1#1#7: UQ64_64
+L11:	t2#1#1: UQ64_64
+L12:	t2#1#10: &UQ64_64
+L13:	t2#1#4: &UQ64_64
+L14:	t2#1#7: UQ64_64
+B0:
+	0: LdU64(5)
+	1: Call uq64_64::from_int(u64): UQ64_64
+	2: StLoc[4](a#1#0: UQ64_64)
+	3: CopyLoc[4](a#1#0: UQ64_64)
+	4: LdU64(0)
+	5: Call uq64_64::from_int(u64): UQ64_64
+	6: Call uq64_64::sub(UQ64_64, UQ64_64): UQ64_64
+	7: StLoc[7](t1#1#1: UQ64_64)
+	8: CopyLoc[4](a#1#0: UQ64_64)
+	9: StLoc[11](t2#1#1: UQ64_64)
+	10: ImmBorrowLoc[7](t1#1#1: UQ64_64)
+	11: StLoc[9](t1#1#4: &UQ64_64)
+	12: ImmBorrowLoc[11](t2#1#1: UQ64_64)
+	13: StLoc[13](t2#1#4: &UQ64_64)
+	14: CopyLoc[9](t1#1#4: &UQ64_64)
+	15: CopyLoc[13](t2#1#4: &UQ64_64)
+	16: Eq
+	17: Not
+	18: BrFalse(35)
+B1:
+	19: LdConst[0](vector<u8>: "Ass..)
+	20: Call string::utf8(vector<u8>): String
+	21: StLoc[0](%#1: String)
+	22: ImmBorrowLoc[0](%#1: String)
+	23: Call debug::print<String>(&String)
+	24: MoveLoc[9](t1#1#4: &UQ64_64)
+	25: Call debug::print<UQ64_64>(&UQ64_64)
+	26: LdConst[1](vector<u8>: "!="..)
+	27: Call string::utf8(vector<u8>): String
+	28: StLoc[1](%#2: String)
+	29: ImmBorrowLoc[1](%#2: String)
+	30: Call debug::print<String>(&String)
+	31: MoveLoc[13](t2#1#4: &UQ64_64)
+	32: Call debug::print<UQ64_64>(&UQ64_64)
+	33: LdU64(13906834565185404927)
+	34: Abort
+B2:
+	35: MoveLoc[13](t2#1#4: &UQ64_64)
+	36: Pop
+	37: MoveLoc[9](t1#1#4: &UQ64_64)
+	38: Pop
+	39: LdU64(4)
+	40: Call uq64_64::from_int(u64): UQ64_64
+	41: StLoc[5](b#1#0: UQ64_64)
+	42: MoveLoc[4](a#1#0: UQ64_64)
+	43: MoveLoc[5](b#1#0: UQ64_64)
+	44: Call uq64_64::sub(UQ64_64, UQ64_64): UQ64_64
+	45: StLoc[6](c#1#0: UQ64_64)
+	46: LdU64(1)
+	47: Call uq64_64::from_int(u64): UQ64_64
+	48: StLoc[10](t1#1#7: UQ64_64)
+	49: MoveLoc[6](c#1#0: UQ64_64)
+	50: StLoc[14](t2#1#7: UQ64_64)
+	51: ImmBorrowLoc[10](t1#1#7: UQ64_64)
+	52: StLoc[8](t1#1#10: &UQ64_64)
+	53: ImmBorrowLoc[14](t2#1#7: UQ64_64)
+	54: StLoc[12](t2#1#10: &UQ64_64)
+	55: CopyLoc[8](t1#1#10: &UQ64_64)
+	56: CopyLoc[12](t2#1#10: &UQ64_64)
+	57: Eq
+	58: Not
+	59: BrFalse(76)
+B3:
+	60: LdConst[0](vector<u8>: "Ass..)
+	61: Call string::utf8(vector<u8>): String
+	62: StLoc[2](%#3: String)
+	63: ImmBorrowLoc[2](%#3: String)
+	64: Call debug::print<String>(&String)
+	65: MoveLoc[8](t1#1#10: &UQ64_64)
+	66: Call debug::print<UQ64_64>(&UQ64_64)
+	67: LdConst[1](vector<u8>: "!="..)
+	68: Call string::utf8(vector<u8>): String
+	69: StLoc[3](%#4: String)
+	70: ImmBorrowLoc[3](%#4: String)
+	71: Call debug::print<String>(&String)
+	72: MoveLoc[12](t2#1#10: &UQ64_64)
+	73: Call debug::print<UQ64_64>(&UQ64_64)
+	74: LdU64(13906834582365274111)
+	75: Abort
+B4:
+	76: MoveLoc[12](t2#1#10: &UQ64_64)
+	77: Pop
+	78: MoveLoc[8](t1#1#10: &UQ64_64)
+	79: Pop
+	80: Ret
+}
+
+test_sub_underflow() {
+L0:	a#1#0: UQ64_64
+L1:	b#1#0: UQ64_64
+B0:
+	0: LdU64(3)
+	1: Call uq64_64::from_int(u64): UQ64_64
+	2: StLoc[0](a#1#0: UQ64_64)
+	3: LdU64(5)
+	4: Call uq64_64::from_int(u64): UQ64_64
+	5: StLoc[1](b#1#0: UQ64_64)
+	6: MoveLoc[0](a#1#0: UQ64_64)
+	7: MoveLoc[1](b#1#0: UQ64_64)
+	8: Call uq64_64::sub(UQ64_64, UQ64_64): UQ64_64
+	9: Pop
+	10: Ret
+}
+
+test_mul() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	a#1#0: UQ64_64
+L3:	b#1#0: UQ64_64
+L4:	c#1#0: UQ64_64
+L5:	expected#1#0: UQ64_64
+L6:	t1#1#1: UQ64_64
+L7:	t1#1#4: &UQ64_64
+L8:	t2#1#1: UQ64_64
+L9:	t2#1#4: &UQ64_64
+B0:
+	0: LdU128(3)
+	1: LdU128(4)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: StLoc[2](a#1#0: UQ64_64)
+	4: CopyLoc[2](a#1#0: UQ64_64)
+	5: LdU64(0)
+	6: Call uq64_64::from_int(u64): UQ64_64
+	7: Call uq64_64::mul(UQ64_64, UQ64_64): UQ64_64
+	8: LdU64(0)
+	9: Call uq64_64::from_int(u64): UQ64_64
+	10: Eq
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834642494816255)
+	14: Abort
+B3:
+	15: CopyLoc[2](a#1#0: UQ64_64)
+	16: LdU64(1)
+	17: Call uq64_64::from_int(u64): UQ64_64
+	18: Call uq64_64::mul(UQ64_64, UQ64_64): UQ64_64
+	19: CopyLoc[2](a#1#0: UQ64_64)
+	20: Eq
+	21: BrFalse(23)
+B4:
+	22: Branch(25)
+B5:
+	23: LdU64(13906834646789783551)
+	24: Abort
+B6:
+	25: LdU128(3)
+	26: LdU128(2)
+	27: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	28: StLoc[3](b#1#0: UQ64_64)
+	29: MoveLoc[2](a#1#0: UQ64_64)
+	30: MoveLoc[3](b#1#0: UQ64_64)
+	31: Call uq64_64::mul(UQ64_64, UQ64_64): UQ64_64
+	32: StLoc[4](c#1#0: UQ64_64)
+	33: LdU128(9)
+	34: LdU128(8)
+	35: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	36: StLoc[5](expected#1#0: UQ64_64)
+	37: MoveLoc[4](c#1#0: UQ64_64)
+	38: StLoc[6](t1#1#1: UQ64_64)
+	39: MoveLoc[5](expected#1#0: UQ64_64)
+	40: StLoc[8](t2#1#1: UQ64_64)
+	41: ImmBorrowLoc[6](t1#1#1: UQ64_64)
+	42: StLoc[7](t1#1#4: &UQ64_64)
+	43: ImmBorrowLoc[8](t2#1#1: UQ64_64)
+	44: StLoc[9](t2#1#4: &UQ64_64)
+	45: CopyLoc[7](t1#1#4: &UQ64_64)
+	46: CopyLoc[9](t2#1#4: &UQ64_64)
+	47: Eq
+	48: Not
+	49: BrFalse(66)
+B7:
+	50: LdConst[0](vector<u8>: "Ass..)
+	51: Call string::utf8(vector<u8>): String
+	52: StLoc[0](%#1: String)
+	53: ImmBorrowLoc[0](%#1: String)
+	54: Call debug::print<String>(&String)
+	55: MoveLoc[7](t1#1#4: &UQ64_64)
+	56: Call debug::print<UQ64_64>(&UQ64_64)
+	57: LdConst[1](vector<u8>: "!="..)
+	58: Call string::utf8(vector<u8>): String
+	59: StLoc[1](%#2: String)
+	60: ImmBorrowLoc[1](%#2: String)
+	61: Call debug::print<String>(&String)
+	62: MoveLoc[9](t2#1#4: &UQ64_64)
+	63: Call debug::print<UQ64_64>(&UQ64_64)
+	64: LdU64(13906834668264620031)
+	65: Abort
+B8:
+	66: MoveLoc[9](t2#1#4: &UQ64_64)
+	67: Pop
+	68: MoveLoc[7](t1#1#4: &UQ64_64)
+	69: Pop
+	70: Ret
+}
+
+test_mul_overflow() {
+L0:	a#1#0: UQ64_64
+L1:	b#1#0: UQ64_64
+B0:
+	0: LdU64(4294967296)
+	1: Call uq64_64::from_int(u64): UQ64_64
+	2: StLoc[0](a#1#0: UQ64_64)
+	3: LdU64(4294967296)
+	4: Call uq64_64::from_int(u64): UQ64_64
+	5: StLoc[1](b#1#0: UQ64_64)
+	6: MoveLoc[0](a#1#0: UQ64_64)
+	7: MoveLoc[1](b#1#0: UQ64_64)
+	8: Call uq64_64::mul(UQ64_64, UQ64_64): UQ64_64
+	9: Pop
+	10: Ret
+}
+
+test_div() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	a#1#0: UQ64_64
+L3:	b#1#0: UQ64_64
+L4:	c#1#0: UQ64_64
+L5:	expected#1#0: UQ64_64
+L6:	t1#1#1: UQ64_64
+L7:	t1#1#4: &UQ64_64
+L8:	t2#1#1: UQ64_64
+L9:	t2#1#4: &UQ64_64
+B0:
+	0: LdU128(3)
+	1: LdU128(4)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: StLoc[2](a#1#0: UQ64_64)
+	4: CopyLoc[2](a#1#0: UQ64_64)
+	5: LdU64(1)
+	6: Call uq64_64::from_int(u64): UQ64_64
+	7: Call uq64_64::div(UQ64_64, UQ64_64): UQ64_64
+	8: CopyLoc[2](a#1#0: UQ64_64)
+	9: Eq
+	10: BrFalse(12)
+B1:
+	11: Branch(14)
+B2:
+	12: LdU64(13906834728394162175)
+	13: Abort
+B3:
+	14: LdU64(8)
+	15: Call uq64_64::from_int(u64): UQ64_64
+	16: StLoc[3](b#1#0: UQ64_64)
+	17: MoveLoc[2](a#1#0: UQ64_64)
+	18: MoveLoc[3](b#1#0: UQ64_64)
+	19: Call uq64_64::div(UQ64_64, UQ64_64): UQ64_64
+	20: StLoc[4](c#1#0: UQ64_64)
+	21: LdU128(3)
+	22: LdU128(32)
+	23: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	24: StLoc[5](expected#1#0: UQ64_64)
+	25: MoveLoc[4](c#1#0: UQ64_64)
+	26: StLoc[6](t1#1#1: UQ64_64)
+	27: MoveLoc[5](expected#1#0: UQ64_64)
+	28: StLoc[8](t2#1#1: UQ64_64)
+	29: ImmBorrowLoc[6](t1#1#1: UQ64_64)
+	30: StLoc[7](t1#1#4: &UQ64_64)
+	31: ImmBorrowLoc[8](t2#1#1: UQ64_64)
+	32: StLoc[9](t2#1#4: &UQ64_64)
+	33: CopyLoc[7](t1#1#4: &UQ64_64)
+	34: CopyLoc[9](t2#1#4: &UQ64_64)
+	35: Eq
+	36: Not
+	37: BrFalse(54)
+B4:
+	38: LdConst[0](vector<u8>: "Ass..)
+	39: Call string::utf8(vector<u8>): String
+	40: StLoc[0](%#1: String)
+	41: ImmBorrowLoc[0](%#1: String)
+	42: Call debug::print<String>(&String)
+	43: MoveLoc[7](t1#1#4: &UQ64_64)
+	44: Call debug::print<UQ64_64>(&UQ64_64)
+	45: LdConst[1](vector<u8>: "!="..)
+	46: Call string::utf8(vector<u8>): String
+	47: StLoc[1](%#2: String)
+	48: ImmBorrowLoc[1](%#2: String)
+	49: Call debug::print<String>(&String)
+	50: MoveLoc[9](t2#1#4: &UQ64_64)
+	51: Call debug::print<UQ64_64>(&UQ64_64)
+	52: LdU64(13906834749868998655)
+	53: Abort
+B5:
+	54: MoveLoc[9](t2#1#4: &UQ64_64)
+	55: Pop
+	56: MoveLoc[7](t1#1#4: &UQ64_64)
+	57: Pop
+	58: Ret
+}
+
+test_div_by_zero() {
+L0:	a#1#0: UQ64_64
+L1:	b#1#0: UQ64_64
+B0:
+	0: LdU64(7)
+	1: Call uq64_64::from_int(u64): UQ64_64
+	2: StLoc[0](a#1#0: UQ64_64)
+	3: LdU64(0)
+	4: Call uq64_64::from_int(u64): UQ64_64
+	5: StLoc[1](b#1#0: UQ64_64)
+	6: MoveLoc[0](a#1#0: UQ64_64)
+	7: MoveLoc[1](b#1#0: UQ64_64)
+	8: Call uq64_64::div(UQ64_64, UQ64_64): UQ64_64
+	9: Pop
+	10: Ret
+}
+
+test_div_overflow() {
+L0:	a#1#0: UQ64_64
+L1:	b#1#0: UQ64_64
+B0:
+	0: LdU64(9223372036854775808)
+	1: Call uq64_64::from_int(u64): UQ64_64
+	2: StLoc[0](a#1#0: UQ64_64)
+	3: LdU128(1)
+	4: LdU128(2)
+	5: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	6: StLoc[1](b#1#0: UQ64_64)
+	7: MoveLoc[0](a#1#0: UQ64_64)
+	8: MoveLoc[1](b#1#0: UQ64_64)
+	9: Call uq64_64::div(UQ64_64, UQ64_64): UQ64_64
+	10: Pop
+	11: Ret
+}
+
+exact_int_div() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	f#1#0: UQ64_64
+L3:	t1#1#1: u128
+L4:	t1#1#4: &u128
+L5:	t2#1#1: u128
+L6:	t2#1#4: &u128
+B0:
+	0: LdU128(3)
+	1: LdU128(4)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: StLoc[2](f#1#0: UQ64_64)
+	4: LdU128(9)
+	5: MoveLoc[2](f#1#0: UQ64_64)
+	6: Call uq64_64::int_div(u128, UQ64_64): u128
+	7: StLoc[3](t1#1#1: u128)
+	8: LdU128(12)
+	9: StLoc[5](t2#1#1: u128)
+	10: ImmBorrowLoc[3](t1#1#1: u128)
+	11: StLoc[4](t1#1#4: &u128)
+	12: ImmBorrowLoc[5](t2#1#1: u128)
+	13: StLoc[6](t2#1#4: &u128)
+	14: CopyLoc[4](t1#1#4: &u128)
+	15: CopyLoc[6](t2#1#4: &u128)
+	16: Eq
+	17: Not
+	18: BrFalse(35)
+B1:
+	19: LdConst[0](vector<u8>: "Ass..)
+	20: Call string::utf8(vector<u8>): String
+	21: StLoc[0](%#1: String)
+	22: ImmBorrowLoc[0](%#1: String)
+	23: Call debug::print<String>(&String)
+	24: MoveLoc[4](t1#1#4: &u128)
+	25: Call debug::print<u128>(&u128)
+	26: LdConst[1](vector<u8>: "!="..)
+	27: Call string::utf8(vector<u8>): String
+	28: StLoc[1](%#2: String)
+	29: ImmBorrowLoc[1](%#2: String)
+	30: Call debug::print<String>(&String)
+	31: MoveLoc[6](t2#1#4: &u128)
+	32: Call debug::print<u128>(&u128)
+	33: LdU64(13906834848653246463)
+	34: Abort
+B2:
+	35: MoveLoc[6](t2#1#4: &u128)
+	36: Pop
+	37: MoveLoc[4](t1#1#4: &u128)
+	38: Pop
+	39: Ret
+}
+
+int_div_by_zero() {
+L0:	f#1#0: UQ64_64
+B0:
+	0: LdU128(0)
+	1: Call uq64_64::from_raw(u128): UQ64_64
+	2: StLoc[0](f#1#0: UQ64_64)
+	3: LdU128(1)
+	4: MoveLoc[0](f#1#0: UQ64_64)
+	5: Call uq64_64::int_div(u128, UQ64_64): u128
+	6: Pop
+	7: Ret
+}
+
+int_div_overflow_small_divisor() {
+L0:	f#1#0: UQ64_64
+B0:
+	0: LdU128(1)
+	1: Call uq64_64::from_raw(u128): UQ64_64
+	2: StLoc[0](f#1#0: UQ64_64)
+	3: LdU128(18446744073709551616)
+	4: MoveLoc[0](f#1#0: UQ64_64)
+	5: Call uq64_64::int_div(u128, UQ64_64): u128
+	6: Pop
+	7: Ret
+}
+
+int_div_overflow_large_numerator() {
+L0:	f#1#0: UQ64_64
+B0:
+	0: LdU128(1)
+	1: LdU128(2)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: StLoc[0](f#1#0: UQ64_64)
+	4: LdU128(340282366920938463463374607431768211455)
+	5: MoveLoc[0](f#1#0: UQ64_64)
+	6: Call uq64_64::int_div(u128, UQ64_64): u128
+	7: Pop
+	8: Ret
+}
+
+exact_int_mul() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	f#1#0: UQ64_64
+L3:	t1#1#1: u128
+L4:	t1#1#4: &u128
+L5:	t2#1#1: u128
+L6:	t2#1#4: &u128
+B0:
+	0: LdU128(3)
+	1: LdU128(4)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: StLoc[2](f#1#0: UQ64_64)
+	4: LdU128(12)
+	5: MoveLoc[2](f#1#0: UQ64_64)
+	6: Call uq64_64::int_mul(u128, UQ64_64): u128
+	7: StLoc[3](t1#1#1: u128)
+	8: LdU128(9)
+	9: StLoc[5](t2#1#1: u128)
+	10: ImmBorrowLoc[3](t1#1#1: u128)
+	11: StLoc[4](t1#1#4: &u128)
+	12: ImmBorrowLoc[5](t2#1#1: u128)
+	13: StLoc[6](t2#1#4: &u128)
+	14: CopyLoc[4](t1#1#4: &u128)
+	15: CopyLoc[6](t2#1#4: &u128)
+	16: Eq
+	17: Not
+	18: BrFalse(35)
+B1:
+	19: LdConst[0](vector<u8>: "Ass..)
+	20: Call string::utf8(vector<u8>): String
+	21: StLoc[0](%#1: String)
+	22: ImmBorrowLoc[0](%#1: String)
+	23: Call debug::print<String>(&String)
+	24: MoveLoc[4](t1#1#4: &u128)
+	25: Call debug::print<u128>(&u128)
+	26: LdConst[1](vector<u8>: "!="..)
+	27: Call string::utf8(vector<u8>): String
+	28: StLoc[1](%#2: String)
+	29: ImmBorrowLoc[1](%#2: String)
+	30: Call debug::print<String>(&String)
+	31: MoveLoc[6](t2#1#4: &u128)
+	32: Call debug::print<u128>(&u128)
+	33: LdU64(13906834981797232639)
+	34: Abort
+B2:
+	35: MoveLoc[6](t2#1#4: &u128)
+	36: Pop
+	37: MoveLoc[4](t1#1#4: &u128)
+	38: Pop
+	39: Ret
+}
+
+int_mul_truncates() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	f#1#0: UQ64_64
+L5:	f#2#0: UQ64_64
+L6:	t1#1#1: u128
+L7:	t1#1#10: &u128
+L8:	t1#1#4: &u128
+L9:	t1#1#7: u128
+L10:	t2#1#1: u128
+L11:	t2#1#10: &u128
+L12:	t2#1#4: &u128
+L13:	t2#1#7: u128
+B0:
+	0: LdU128(1)
+	1: LdU128(3)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: StLoc[4](f#1#0: UQ64_64)
+	4: LdU128(9)
+	5: CopyLoc[4](f#1#0: UQ64_64)
+	6: Call uq64_64::int_mul(u128, UQ64_64): u128
+	7: StLoc[6](t1#1#1: u128)
+	8: LdU128(2)
+	9: StLoc[10](t2#1#1: u128)
+	10: ImmBorrowLoc[6](t1#1#1: u128)
+	11: StLoc[8](t1#1#4: &u128)
+	12: ImmBorrowLoc[10](t2#1#1: u128)
+	13: StLoc[12](t2#1#4: &u128)
+	14: CopyLoc[8](t1#1#4: &u128)
+	15: CopyLoc[12](t2#1#4: &u128)
+	16: Eq
+	17: Not
+	18: BrFalse(35)
+B1:
+	19: LdConst[0](vector<u8>: "Ass..)
+	20: Call string::utf8(vector<u8>): String
+	21: StLoc[0](%#1: String)
+	22: ImmBorrowLoc[0](%#1: String)
+	23: Call debug::print<String>(&String)
+	24: MoveLoc[8](t1#1#4: &u128)
+	25: Call debug::print<u128>(&u128)
+	26: LdConst[1](vector<u8>: "!="..)
+	27: Call string::utf8(vector<u8>): String
+	28: StLoc[1](%#2: String)
+	29: ImmBorrowLoc[1](%#2: String)
+	30: Call debug::print<String>(&String)
+	31: MoveLoc[12](t2#1#4: &u128)
+	32: Call debug::print<u128>(&u128)
+	33: LdU64(13906835020451938303)
+	34: Abort
+B2:
+	35: MoveLoc[12](t2#1#4: &u128)
+	36: Pop
+	37: MoveLoc[8](t1#1#4: &u128)
+	38: Pop
+	39: MoveLoc[4](f#1#0: UQ64_64)
+	40: Call uq64_64::to_raw(UQ64_64): u128
+	41: LdU128(1)
+	42: Add
+	43: Call uq64_64::from_raw(u128): UQ64_64
+	44: StLoc[5](f#2#0: UQ64_64)
+	45: LdU128(9)
+	46: MoveLoc[5](f#2#0: UQ64_64)
+	47: Call uq64_64::int_mul(u128, UQ64_64): u128
+	48: StLoc[9](t1#1#7: u128)
+	49: LdU128(3)
+	50: StLoc[13](t2#1#7: u128)
+	51: ImmBorrowLoc[9](t1#1#7: u128)
+	52: StLoc[7](t1#1#10: &u128)
+	53: ImmBorrowLoc[13](t2#1#7: u128)
+	54: StLoc[11](t2#1#10: &u128)
+	55: CopyLoc[7](t1#1#10: &u128)
+	56: CopyLoc[11](t2#1#10: &u128)
+	57: Eq
+	58: Not
+	59: BrFalse(76)
+B3:
+	60: LdConst[0](vector<u8>: "Ass..)
+	61: Call string::utf8(vector<u8>): String
+	62: StLoc[2](%#3: String)
+	63: ImmBorrowLoc[2](%#3: String)
+	64: Call debug::print<String>(&String)
+	65: MoveLoc[7](t1#1#10: &u128)
+	66: Call debug::print<u128>(&u128)
+	67: LdConst[1](vector<u8>: "!="..)
+	68: Call string::utf8(vector<u8>): String
+	69: StLoc[3](%#4: String)
+	70: ImmBorrowLoc[3](%#4: String)
+	71: Call debug::print<String>(&String)
+	72: MoveLoc[11](t2#1#10: &u128)
+	73: Call debug::print<u128>(&u128)
+	74: LdU64(13906835041926774783)
+	75: Abort
+B4:
+	76: MoveLoc[11](t2#1#10: &u128)
+	77: Pop
+	78: MoveLoc[7](t1#1#10: &u128)
+	79: Pop
+	80: Ret
+}
+
+int_mul_overflow_small_multiplier() {
+L0:	f#1#0: UQ64_64
+B0:
+	0: LdU128(3)
+	1: LdU128(2)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: StLoc[0](f#1#0: UQ64_64)
+	4: LdU128(340282366920938463463374607431768211455)
+	5: MoveLoc[0](f#1#0: UQ64_64)
+	6: Call uq64_64::int_mul(u128, UQ64_64): u128
+	7: Pop
+	8: Ret
+}
+
+int_mul_overflow_large_multiplier() {
+L0:	f#1#0: UQ64_64
+B0:
+	0: LdU128(340282366920938463463374607431768211455)
+	1: Call uq64_64::from_raw(u128): UQ64_64
+	2: StLoc[0](f#1#0: UQ64_64)
+	3: LdU128(18446744073709551617)
+	4: MoveLoc[0](f#1#0: UQ64_64)
+	5: Call uq64_64::int_mul(u128, UQ64_64): u128
+	6: Pop
+	7: Ret
+}
+
+test_comparison() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	a#1#0: UQ64_64
+L3:	b#1#0: UQ64_64
+L4:	c#1#0: UQ64_64
+L5:	t1#1#1: UQ64_64
+L6:	t1#1#4: &UQ64_64
+L7:	t2#1#1: UQ64_64
+L8:	t2#1#4: &UQ64_64
+B0:
+	0: LdU128(5)
+	1: LdU128(2)
+	2: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	3: StLoc[2](a#1#0: UQ64_64)
+	4: LdU128(5)
+	5: LdU128(3)
+	6: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	7: StLoc[3](b#1#0: UQ64_64)
+	8: LdU128(5)
+	9: LdU128(2)
+	10: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	11: StLoc[4](c#1#0: UQ64_64)
+	12: CopyLoc[3](b#1#0: UQ64_64)
+	13: CopyLoc[2](a#1#0: UQ64_64)
+	14: Call uq64_64::le(UQ64_64, UQ64_64): bool
+	15: BrFalse(17)
+B1:
+	16: Branch(19)
+B2:
+	17: LdU64(13906835149300957183)
+	18: Abort
+B3:
+	19: CopyLoc[3](b#1#0: UQ64_64)
+	20: CopyLoc[2](a#1#0: UQ64_64)
+	21: Call uq64_64::lt(UQ64_64, UQ64_64): bool
+	22: BrFalse(24)
+B4:
+	23: Branch(26)
+B5:
+	24: LdU64(13906835153595924479)
+	25: Abort
+B6:
+	26: CopyLoc[4](c#1#0: UQ64_64)
+	27: CopyLoc[2](a#1#0: UQ64_64)
+	28: Call uq64_64::le(UQ64_64, UQ64_64): bool
+	29: BrFalse(31)
+B7:
+	30: Branch(33)
+B8:
+	31: LdU64(13906835157890891775)
+	32: Abort
+B9:
+	33: MoveLoc[4](c#1#0: UQ64_64)
+	34: StLoc[5](t1#1#1: UQ64_64)
+	35: CopyLoc[2](a#1#0: UQ64_64)
+	36: StLoc[7](t2#1#1: UQ64_64)
+	37: ImmBorrowLoc[5](t1#1#1: UQ64_64)
+	38: StLoc[6](t1#1#4: &UQ64_64)
+	39: ImmBorrowLoc[7](t2#1#1: UQ64_64)
+	40: StLoc[8](t2#1#4: &UQ64_64)
+	41: CopyLoc[6](t1#1#4: &UQ64_64)
+	42: CopyLoc[8](t2#1#4: &UQ64_64)
+	43: Eq
+	44: Not
+	45: BrFalse(62)
+B10:
+	46: LdConst[0](vector<u8>: "Ass..)
+	47: Call string::utf8(vector<u8>): String
+	48: StLoc[0](%#1: String)
+	49: ImmBorrowLoc[0](%#1: String)
+	50: Call debug::print<String>(&String)
+	51: MoveLoc[6](t1#1#4: &UQ64_64)
+	52: Call debug::print<UQ64_64>(&UQ64_64)
+	53: LdConst[1](vector<u8>: "!="..)
+	54: Call string::utf8(vector<u8>): String
+	55: StLoc[1](%#2: String)
+	56: ImmBorrowLoc[1](%#2: String)
+	57: Call debug::print<String>(&String)
+	58: MoveLoc[8](t2#1#4: &UQ64_64)
+	59: Call debug::print<UQ64_64>(&UQ64_64)
+	60: LdU64(13906835162185859071)
+	61: Abort
+B11:
+	62: MoveLoc[8](t2#1#4: &UQ64_64)
+	63: Pop
+	64: MoveLoc[6](t1#1#4: &UQ64_64)
+	65: Pop
+	66: CopyLoc[2](a#1#0: UQ64_64)
+	67: CopyLoc[3](b#1#0: UQ64_64)
+	68: Call uq64_64::ge(UQ64_64, UQ64_64): bool
+	69: BrFalse(71)
+B12:
+	70: Branch(73)
+B13:
+	71: LdU64(13906835166480826367)
+	72: Abort
+B14:
+	73: CopyLoc[2](a#1#0: UQ64_64)
+	74: MoveLoc[3](b#1#0: UQ64_64)
+	75: Call uq64_64::gt(UQ64_64, UQ64_64): bool
+	76: BrFalse(78)
+B15:
+	77: Branch(80)
+B16:
+	78: LdU64(13906835170775793663)
+	79: Abort
+B17:
+	80: LdU64(0)
+	81: Call uq64_64::from_int(u64): UQ64_64
+	82: MoveLoc[2](a#1#0: UQ64_64)
+	83: Call uq64_64::le(UQ64_64, UQ64_64): bool
+	84: BrFalse(86)
+B18:
+	85: Branch(88)
+B19:
+	86: LdU64(13906835175070760959)
+	87: Abort
+B20:
+	88: Ret
+}
+
+test_raw(raw#0#0: u128) {
+L1:	%#1: String
+L2:	%#2: String
+L3:	t1#1#1: u128
+L4:	t1#1#4: &u128
+L5:	t2#1#1: u128
+L6:	t2#1#4: &u128
+B0:
+	0: CopyLoc[0](raw#0#0: u128)
+	1: Call uq64_64::from_raw(u128): UQ64_64
+	2: Call uq64_64::to_raw(UQ64_64): u128
+	3: StLoc[3](t1#1#1: u128)
+	4: MoveLoc[0](raw#0#0: u128)
+	5: StLoc[5](t2#1#1: u128)
+	6: ImmBorrowLoc[3](t1#1#1: u128)
+	7: StLoc[4](t1#1#4: &u128)
+	8: ImmBorrowLoc[5](t2#1#1: u128)
+	9: StLoc[6](t2#1#4: &u128)
+	10: CopyLoc[4](t1#1#4: &u128)
+	11: CopyLoc[6](t2#1#4: &u128)
+	12: Eq
+	13: Not
+	14: BrFalse(31)
+B1:
+	15: LdConst[0](vector<u8>: "Ass..)
+	16: Call string::utf8(vector<u8>): String
+	17: StLoc[1](%#1: String)
+	18: ImmBorrowLoc[1](%#1: String)
+	19: Call debug::print<String>(&String)
+	20: MoveLoc[4](t1#1#4: &u128)
+	21: Call debug::print<u128>(&u128)
+	22: LdConst[1](vector<u8>: "!="..)
+	23: Call string::utf8(vector<u8>): String
+	24: StLoc[2](%#2: String)
+	25: ImmBorrowLoc[2](%#2: String)
+	26: Call debug::print<String>(&String)
+	27: MoveLoc[6](t2#1#4: &u128)
+	28: Call debug::print<u128>(&u128)
+	29: LdU64(13906835196545597439)
+	30: Abort
+B2:
+	31: MoveLoc[6](t2#1#4: &u128)
+	32: Pop
+	33: MoveLoc[4](t1#1#4: &u128)
+	34: Pop
+	35: Ret
+}
+
+test_int_roundtrip(c#0#0: u64) {
+L1:	%#1: String
+L2:	%#2: String
+L3:	t1#1#1: u64
+L4:	t1#1#4: &u64
+L5:	t2#1#1: u64
+L6:	t2#1#4: &u64
+B0:
+	0: CopyLoc[0](c#0#0: u64)
+	1: Call uq64_64::from_int(u64): UQ64_64
+	2: Call uq64_64::to_int(UQ64_64): u64
+	3: StLoc[3](t1#1#1: u64)
+	4: MoveLoc[0](c#0#0: u64)
+	5: StLoc[5](t2#1#1: u64)
+	6: ImmBorrowLoc[3](t1#1#1: u64)
+	7: StLoc[4](t1#1#4: &u64)
+	8: ImmBorrowLoc[5](t2#1#1: u64)
+	9: StLoc[6](t2#1#4: &u64)
+	10: CopyLoc[4](t1#1#4: &u64)
+	11: CopyLoc[6](t2#1#4: &u64)
+	12: Eq
+	13: Not
+	14: BrFalse(31)
+B1:
+	15: LdConst[0](vector<u8>: "Ass..)
+	16: Call string::utf8(vector<u8>): String
+	17: StLoc[1](%#1: String)
+	18: ImmBorrowLoc[1](%#1: String)
+	19: Call debug::print<String>(&String)
+	20: MoveLoc[4](t1#1#4: &u64)
+	21: Call debug::print<u64>(&u64)
+	22: LdConst[1](vector<u8>: "!="..)
+	23: Call string::utf8(vector<u8>): String
+	24: StLoc[2](%#2: String)
+	25: ImmBorrowLoc[2](%#2: String)
+	26: Call debug::print<String>(&String)
+	27: MoveLoc[6](t2#1#4: &u64)
+	28: Call debug::print<u64>(&u64)
+	29: LdU64(13906835218020433919)
+	30: Abort
+B2:
+	31: MoveLoc[6](t2#1#4: &u64)
+	32: Pop
+	33: MoveLoc[4](t1#1#4: &u64)
+	34: Pop
+	35: Ret
+}
+
+test_mul_rand(n#0#0: u32, d#0#0: u32, c#0#0: u32) {
+L3:	%#1: String
+L4:	%#2: String
+L5:	q#1#0: UQ64_64
+L6:	t1#1#1: u128
+L7:	t1#1#4: &u128
+L8:	t2#1#1: u128
+L9:	t2#1#4: &u128
+B0:
+	0: CopyLoc[1](d#0#0: u32)
+	1: LdU32(0)
+	2: Eq
+	3: BrFalse(5)
+B1:
+	4: Ret
+B2:
+	5: MoveLoc[0](n#0#0: u32)
+	6: CastU128
+	7: MoveLoc[1](d#0#0: u32)
+	8: CastU128
+	9: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	10: StLoc[5](q#1#0: UQ64_64)
+	11: CopyLoc[2](c#0#0: u32)
+	12: CastU128
+	13: CopyLoc[5](q#1#0: UQ64_64)
+	14: Call uq64_64::int_mul(u128, UQ64_64): u128
+	15: StLoc[6](t1#1#1: u128)
+	16: MoveLoc[5](q#1#0: UQ64_64)
+	17: MoveLoc[2](c#0#0: u32)
+	18: CastU64
+	19: Call uq64_64::from_int(u64): UQ64_64
+	20: Call uq64_64::mul(UQ64_64, UQ64_64): UQ64_64
+	21: Call uq64_64::to_int(UQ64_64): u64
+	22: CastU128
+	23: StLoc[8](t2#1#1: u128)
+	24: ImmBorrowLoc[6](t1#1#1: u128)
+	25: StLoc[7](t1#1#4: &u128)
+	26: ImmBorrowLoc[8](t2#1#1: u128)
+	27: StLoc[9](t2#1#4: &u128)
+	28: CopyLoc[7](t1#1#4: &u128)
+	29: CopyLoc[9](t2#1#4: &u128)
+	30: Eq
+	31: Not
+	32: BrFalse(49)
+B3:
+	33: LdConst[0](vector<u8>: "Ass..)
+	34: Call string::utf8(vector<u8>): String
+	35: StLoc[3](%#1: String)
+	36: ImmBorrowLoc[3](%#1: String)
+	37: Call debug::print<String>(&String)
+	38: MoveLoc[7](t1#1#4: &u128)
+	39: Call debug::print<u128>(&u128)
+	40: LdConst[1](vector<u8>: "!="..)
+	41: Call string::utf8(vector<u8>): String
+	42: StLoc[4](%#2: String)
+	43: ImmBorrowLoc[4](%#2: String)
+	44: Call debug::print<String>(&String)
+	45: MoveLoc[9](t2#1#4: &u128)
+	46: Call debug::print<u128>(&u128)
+	47: LdU64(13906835248085204991)
+	48: Abort
+B4:
+	49: MoveLoc[9](t2#1#4: &u128)
+	50: Pop
+	51: MoveLoc[7](t1#1#4: &u128)
+	52: Pop
+	53: Ret
+}
+
+test_div_rand(n#0#0: u32, d#0#0: u32, c#0#0: u32) {
+L3:	%#1: String
+L4:	%#2: String
+L5:	q#1#0: UQ64_64
+L6:	t1#1#1: u128
+L7:	t1#1#4: &u128
+L8:	t2#1#1: u128
+L9:	t2#1#4: &u128
+B0:
+	0: CopyLoc[1](d#0#0: u32)
+	1: LdU32(0)
+	2: Eq
+	3: BrFalse(5)
+B1:
+	4: Ret
+B2:
+	5: MoveLoc[0](n#0#0: u32)
+	6: CastU128
+	7: MoveLoc[1](d#0#0: u32)
+	8: CastU128
+	9: Call uq64_64::from_quotient(u128, u128): UQ64_64
+	10: StLoc[5](q#1#0: UQ64_64)
+	11: CopyLoc[2](c#0#0: u32)
+	12: CastU128
+	13: CopyLoc[5](q#1#0: UQ64_64)
+	14: Call uq64_64::int_div(u128, UQ64_64): u128
+	15: StLoc[6](t1#1#1: u128)
+	16: MoveLoc[2](c#0#0: u32)
+	17: CastU64
+	18: Call uq64_64::from_int(u64): UQ64_64
+	19: MoveLoc[5](q#1#0: UQ64_64)
+	20: Call uq64_64::div(UQ64_64, UQ64_64): UQ64_64
+	21: Call uq64_64::to_int(UQ64_64): u64
+	22: CastU128
+	23: StLoc[8](t2#1#1: u128)
+	24: ImmBorrowLoc[6](t1#1#1: u128)
+	25: StLoc[7](t1#1#4: &u128)
+	26: ImmBorrowLoc[8](t2#1#1: u128)
+	27: StLoc[9](t2#1#4: &u128)
+	28: CopyLoc[7](t1#1#4: &u128)
+	29: CopyLoc[9](t2#1#4: &u128)
+	30: Eq
+	31: Not
+	32: BrFalse(49)
+B3:
+	33: LdConst[0](vector<u8>: "Ass..)
+	34: Call string::utf8(vector<u8>): String
+	35: StLoc[3](%#1: String)
+	36: ImmBorrowLoc[3](%#1: String)
+	37: Call debug::print<String>(&String)
+	38: MoveLoc[7](t1#1#4: &u128)
+	39: Call debug::print<u128>(&u128)
+	40: LdConst[1](vector<u8>: "!="..)
+	41: Call string::utf8(vector<u8>): String
+	42: StLoc[4](%#2: String)
+	43: ImmBorrowLoc[4](%#2: String)
+	44: Call debug::print<String>(&String)
+	45: MoveLoc[9](t2#1#4: &u128)
+	46: Call debug::print<u128>(&u128)
+	47: LdU64(13906835278149976063)
+	48: Abort
+B4:
+	49: MoveLoc[9](t2#1#4: &u128)
+	50: Pop
+	51: MoveLoc[7](t1#1#4: &u128)
+	52: Pop
+	53: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	1 => vector<u8>: "!=" // interpreted as UTF8 string
+]
+}

@@ -1,0 +1,18 @@
+// Move bytecode v6
+module 2.ecvrf {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+native public ecvrf_verify(hash#0#0: &vector<u8>, alpha_string#0#0: &vector<u8>, public_key#0#0: &vector<u8>, proof#0#0: &vector<u8>): bool;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 1
+	1 => u64: 2
+	2 => u64: 3
+]
+}

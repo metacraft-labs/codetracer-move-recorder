@@ -1,0 +1,55 @@
+// Move bytecode v6
+module 2.clock_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::clock;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+creating_a_clock_and_incrementing_it() {
+L0:	clock#1#0: Clock
+L1:	ctx#1#0: TxContext
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[1](ctx#1#0: TxContext)
+	2: MutBorrowLoc[1](ctx#1#0: TxContext)
+	3: Call clock::create_for_testing(&mut TxContext): Clock
+	4: StLoc[0](clock#1#0: Clock)
+	5: MutBorrowLoc[0](clock#1#0: Clock)
+	6: LdU64(42)
+	7: Call clock::increment_for_testing(&mut Clock, u64)
+	8: ImmBorrowLoc[0](clock#1#0: Clock)
+	9: Call clock::timestamp_ms(&Clock): u64
+	10: LdU64(42)
+	11: Eq
+	12: BrFalse(14)
+B1:
+	13: Branch(16)
+B2:
+	14: LdU64(13906834243062857727)
+	15: Abort
+B3:
+	16: MutBorrowLoc[0](clock#1#0: Clock)
+	17: LdU64(50)
+	18: Call clock::set_for_testing(&mut Clock, u64)
+	19: ImmBorrowLoc[0](clock#1#0: Clock)
+	20: Call clock::timestamp_ms(&Clock): u64
+	21: LdU64(50)
+	22: Eq
+	23: BrFalse(25)
+B4:
+	24: Branch(27)
+B5:
+	25: LdU64(13906834255947759615)
+	26: Abort
+B6:
+	27: MoveLoc[0](clock#1#0: Clock)
+	28: Call clock::destroy_for_testing(Clock)
+	29: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

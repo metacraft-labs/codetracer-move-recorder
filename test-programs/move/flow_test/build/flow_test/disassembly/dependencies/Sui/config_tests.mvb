@@ -1,0 +1,3217 @@
+// Move bytecode v6
+module 2.config_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::config;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct WriteCap has drop {
+	dummy_field: bool
+}
+
+struct Wrapped<T> has copy, drop, store {
+	pos0: T
+}
+
+config_create<WriteCap>(cap#0#0: &mut WriteCap, ctx#0#0: &mut TxContext) {
+B0:
+	0: MoveLoc[0](cap#0#0: &mut WriteCap)
+	1: MoveLoc[1](ctx#0#0: &mut TxContext)
+	2: Call config::new<WriteCap>(&mut WriteCap, &mut TxContext): Config<WriteCap>
+	3: Call config::share<WriteCap>(Config<WriteCap>)
+	4: Ret
+}
+
+test_all() {
+L0:	%#1: WriteCap
+L1:	%#10: Option<u8>
+L2:	%#11: Option<u8>
+L3:	%#12: WriteCap
+L4:	%#13: &mut Config<WriteCap>
+L5:	%#14: WriteCap
+L6:	%#15: &mut Config<WriteCap>
+L7:	%#16: u8
+L8:	%#17: &u8
+L9:	%#18: Option<u8>
+L10:	%#19: Option<u8>
+L11:	%#2: Option<u8>
+L12:	%#20: Option<u8>
+L13:	%#21: WriteCap
+L14:	%#22: &mut Config<WriteCap>
+L15:	%#23: WriteCap
+L16:	%#24: &mut Config<WriteCap>
+L17:	%#25: u8
+L18:	%#26: &u8
+L19:	%#27: Option<u8>
+L20:	%#28: WriteCap
+L21:	%#29: &mut Config<WriteCap>
+L22:	%#3: Option<u8>
+L23:	%#30: WriteCap
+L24:	%#31: &mut Config<WriteCap>
+L25:	%#32: u8
+L26:	%#33: &u8
+L27:	%#34: WriteCap
+L28:	%#35: &mut Config<WriteCap>
+L29:	%#36: u8
+L30:	%#37: &u8
+L31:	%#38: Option<u8>
+L32:	%#39: Option<u8>
+L33:	%#4: WriteCap
+L34:	%#5: &mut Config<WriteCap>
+L35:	%#6: WriteCap
+L36:	%#7: &mut Config<WriteCap>
+L37:	%#8: u8
+L38:	%#9: &u8
+L39:	config#1#0: Config<WriteCap>
+L40:	config#2#0: Config<WriteCap>
+L41:	config#3#0: Config<WriteCap>
+L42:	id#1#0: ID
+L43:	n1#1#0: vector<u8>
+L44:	n2#1#0: Wrapped<vector<u8>>
+L45:	ts#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[45](ts#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](WriteCap)
+	5: StLoc[0](%#1: WriteCap)
+	6: MutBorrowLoc[0](%#1: WriteCap)
+	7: MutBorrowLoc[45](ts#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call config_create<WriteCap>(&mut WriteCap, &mut TxContext)
+	10: MutBorrowLoc[45](ts#1#0: Scenario)
+	11: LdConst[0](address: 0x00..)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: Call test_scenario::most_recent_id_shared<Config<WriteCap>>(): Option<ID>
+	15: Call option::destroy_some<ID>(Option<ID>): ID
+	16: StLoc[42](id#1#0: ID)
+	17: LdConst[1](vector<u8>: "hel..)
+	18: StLoc[43](n1#1#0: vector<u8>)
+	19: LdConst[1](vector<u8>: "hel..)
+	20: PackGeneric[0](Wrapped<vector<u8>>)
+	21: StLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	22: ImmBorrowLoc[45](ts#1#0: Scenario)
+	23: CopyLoc[42](id#1#0: ID)
+	24: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	25: StLoc[39](config#1#0: Config<WriteCap>)
+	26: ImmBorrowLoc[39](config#1#0: Config<WriteCap>)
+	27: CopyLoc[43](n1#1#0: vector<u8>)
+	28: Call config::exists_with_type<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): bool
+	29: Not
+	30: BrFalse(32)
+B1:
+	31: Branch(34)
+B2:
+	32: LdU64(13906834307487367167)
+	33: Abort
+B3:
+	34: ImmBorrowLoc[39](config#1#0: Config<WriteCap>)
+	35: CopyLoc[43](n1#1#0: vector<u8>)
+	36: MutBorrowLoc[45](ts#1#0: Scenario)
+	37: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	38: FreezeRef
+	39: Call config::exists_with_type_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>, &TxContext): bool
+	40: Not
+	41: BrFalse(43)
+B4:
+	42: Branch(45)
+B5:
+	43: LdU64(13906834311782334463)
+	44: Abort
+B6:
+	45: ImmBorrowLoc[39](config#1#0: Config<WriteCap>)
+	46: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	47: Call config::exists_with_type<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>): bool
+	48: Not
+	49: BrFalse(51)
+B7:
+	50: Branch(53)
+B8:
+	51: LdU64(13906834316077301759)
+	52: Abort
+B9:
+	53: ImmBorrowLoc[39](config#1#0: Config<WriteCap>)
+	54: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	55: MutBorrowLoc[45](ts#1#0: Scenario)
+	56: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	57: FreezeRef
+	58: Call config::exists_with_type_for_next_epoch<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>, &TxContext): bool
+	59: Not
+	60: BrFalse(62)
+B10:
+	61: Branch(64)
+B11:
+	62: LdU64(13906834320372269055)
+	63: Abort
+B12:
+	64: CopyLoc[42](id#1#0: ID)
+	65: CopyLoc[43](n1#1#0: vector<u8>)
+	66: MutBorrowLoc[45](ts#1#0: Scenario)
+	67: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	68: FreezeRef
+	69: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	70: StLoc[11](%#2: Option<u8>)
+	71: ImmBorrowLoc[11](%#2: Option<u8>)
+	72: Call option::is_none<u8>(&Option<u8>): bool
+	73: BrFalse(75)
+B13:
+	74: Branch(77)
+B14:
+	75: LdU64(13906834324667236351)
+	76: Abort
+B15:
+	77: CopyLoc[42](id#1#0: ID)
+	78: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	79: MutBorrowLoc[45](ts#1#0: Scenario)
+	80: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	81: FreezeRef
+	82: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	83: StLoc[22](%#3: Option<u8>)
+	84: ImmBorrowLoc[22](%#3: Option<u8>)
+	85: Call option::is_none<u8>(&Option<u8>): bool
+	86: BrFalse(88)
+B16:
+	87: Branch(90)
+B17:
+	88: LdU64(13906834328962203647)
+	89: Abort
+B18:
+	90: MutBorrowLoc[39](config#1#0: Config<WriteCap>)
+	91: StLoc[34](%#5: &mut Config<WriteCap>)
+	92: LdFalse
+	93: Pack[0](WriteCap)
+	94: StLoc[33](%#4: WriteCap)
+	95: MoveLoc[34](%#5: &mut Config<WriteCap>)
+	96: MutBorrowLoc[33](%#4: WriteCap)
+	97: CopyLoc[43](n1#1#0: vector<u8>)
+	98: LdU8(112)
+	99: MutBorrowLoc[45](ts#1#0: Scenario)
+	100: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	101: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	102: Pop
+	103: ImmBorrowLoc[39](config#1#0: Config<WriteCap>)
+	104: CopyLoc[43](n1#1#0: vector<u8>)
+	105: Call config::exists_with_type<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): bool
+	106: BrFalse(108)
+B19:
+	107: Branch(110)
+B20:
+	108: LdU64(13906834350437040127)
+	109: Abort
+B21:
+	110: ImmBorrowLoc[39](config#1#0: Config<WriteCap>)
+	111: CopyLoc[43](n1#1#0: vector<u8>)
+	112: MutBorrowLoc[45](ts#1#0: Scenario)
+	113: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	114: FreezeRef
+	115: Call config::exists_with_type_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>, &TxContext): bool
+	116: BrFalse(118)
+B22:
+	117: Branch(120)
+B23:
+	118: LdU64(13906834354732007423)
+	119: Abort
+B24:
+	120: ImmBorrowLoc[39](config#1#0: Config<WriteCap>)
+	121: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	122: Call config::exists_with_type<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>): bool
+	123: Not
+	124: BrFalse(126)
+B25:
+	125: Branch(128)
+B26:
+	126: LdU64(13906834359026974719)
+	127: Abort
+B27:
+	128: ImmBorrowLoc[39](config#1#0: Config<WriteCap>)
+	129: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	130: MutBorrowLoc[45](ts#1#0: Scenario)
+	131: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	132: FreezeRef
+	133: Call config::exists_with_type_for_next_epoch<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>, &TxContext): bool
+	134: Not
+	135: BrFalse(137)
+B28:
+	136: Branch(139)
+B29:
+	137: LdU64(13906834363321942015)
+	138: Abort
+B30:
+	139: MutBorrowLoc[39](config#1#0: Config<WriteCap>)
+	140: StLoc[36](%#7: &mut Config<WriteCap>)
+	141: LdFalse
+	142: Pack[0](WriteCap)
+	143: StLoc[35](%#6: WriteCap)
+	144: MoveLoc[36](%#7: &mut Config<WriteCap>)
+	145: MutBorrowLoc[35](%#6: WriteCap)
+	146: CopyLoc[43](n1#1#0: vector<u8>)
+	147: MutBorrowLoc[45](ts#1#0: Scenario)
+	148: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	149: Call config::borrow_for_next_epoch_mut<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): &mut u8
+	150: FreezeRef
+	151: StLoc[38](%#9: &u8)
+	152: LdU8(112)
+	153: StLoc[37](%#8: u8)
+	154: MoveLoc[38](%#9: &u8)
+	155: ImmBorrowLoc[37](%#8: u8)
+	156: Eq
+	157: BrFalse(159)
+B31:
+	158: Branch(161)
+B32:
+	159: LdU64(13906834367616909311)
+	160: Abort
+B33:
+	161: ImmBorrowLoc[39](config#1#0: Config<WriteCap>)
+	162: CopyLoc[43](n1#1#0: vector<u8>)
+	163: Call config::read_setting_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): Option<u8>
+	164: LdU8(112)
+	165: Call option::some<u8>(u8): Option<u8>
+	166: Eq
+	167: BrFalse(169)
+B34:
+	168: Branch(171)
+B35:
+	169: LdU64(13906834371911876607)
+	170: Abort
+B36:
+	171: CopyLoc[42](id#1#0: ID)
+	172: CopyLoc[43](n1#1#0: vector<u8>)
+	173: MutBorrowLoc[45](ts#1#0: Scenario)
+	174: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	175: FreezeRef
+	176: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	177: StLoc[1](%#10: Option<u8>)
+	178: ImmBorrowLoc[1](%#10: Option<u8>)
+	179: Call option::is_none<u8>(&Option<u8>): bool
+	180: BrFalse(182)
+B37:
+	181: Branch(184)
+B38:
+	182: LdU64(13906834376206843903)
+	183: Abort
+B39:
+	184: CopyLoc[42](id#1#0: ID)
+	185: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	186: MutBorrowLoc[45](ts#1#0: Scenario)
+	187: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	188: FreezeRef
+	189: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	190: StLoc[2](%#11: Option<u8>)
+	191: ImmBorrowLoc[2](%#11: Option<u8>)
+	192: Call option::is_none<u8>(&Option<u8>): bool
+	193: BrFalse(195)
+B40:
+	194: Branch(197)
+B41:
+	195: LdU64(13906834380501811199)
+	196: Abort
+B42:
+	197: MutBorrowLoc[39](config#1#0: Config<WriteCap>)
+	198: StLoc[4](%#13: &mut Config<WriteCap>)
+	199: LdFalse
+	200: Pack[0](WriteCap)
+	201: StLoc[3](%#12: WriteCap)
+	202: LdU8(224)
+	203: MoveLoc[4](%#13: &mut Config<WriteCap>)
+	204: MutBorrowLoc[3](%#12: WriteCap)
+	205: CopyLoc[43](n1#1#0: vector<u8>)
+	206: MutBorrowLoc[45](ts#1#0: Scenario)
+	207: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	208: Call config::borrow_for_next_epoch_mut<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): &mut u8
+	209: WriteRef
+	210: MutBorrowLoc[39](config#1#0: Config<WriteCap>)
+	211: StLoc[6](%#15: &mut Config<WriteCap>)
+	212: LdFalse
+	213: Pack[0](WriteCap)
+	214: StLoc[5](%#14: WriteCap)
+	215: MoveLoc[6](%#15: &mut Config<WriteCap>)
+	216: MutBorrowLoc[5](%#14: WriteCap)
+	217: CopyLoc[43](n1#1#0: vector<u8>)
+	218: MutBorrowLoc[45](ts#1#0: Scenario)
+	219: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	220: Call config::borrow_for_next_epoch_mut<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): &mut u8
+	221: FreezeRef
+	222: StLoc[8](%#17: &u8)
+	223: LdU8(224)
+	224: StLoc[7](%#16: u8)
+	225: MoveLoc[8](%#17: &u8)
+	226: ImmBorrowLoc[7](%#16: u8)
+	227: Eq
+	228: BrFalse(230)
+B43:
+	229: Branch(232)
+B44:
+	230: LdU64(13906834401976647679)
+	231: Abort
+B45:
+	232: ImmBorrowLoc[39](config#1#0: Config<WriteCap>)
+	233: CopyLoc[43](n1#1#0: vector<u8>)
+	234: Call config::read_setting_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): Option<u8>
+	235: LdU8(224)
+	236: Call option::some<u8>(u8): Option<u8>
+	237: Eq
+	238: BrFalse(240)
+B46:
+	239: Branch(242)
+B47:
+	240: LdU64(13906834406271614975)
+	241: Abort
+B48:
+	242: CopyLoc[42](id#1#0: ID)
+	243: CopyLoc[43](n1#1#0: vector<u8>)
+	244: MutBorrowLoc[45](ts#1#0: Scenario)
+	245: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	246: FreezeRef
+	247: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	248: StLoc[9](%#18: Option<u8>)
+	249: ImmBorrowLoc[9](%#18: Option<u8>)
+	250: Call option::is_none<u8>(&Option<u8>): bool
+	251: BrFalse(253)
+B49:
+	252: Branch(255)
+B50:
+	253: LdU64(13906834410566582271)
+	254: Abort
+B51:
+	255: CopyLoc[42](id#1#0: ID)
+	256: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	257: MutBorrowLoc[45](ts#1#0: Scenario)
+	258: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	259: FreezeRef
+	260: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	261: StLoc[10](%#19: Option<u8>)
+	262: ImmBorrowLoc[10](%#19: Option<u8>)
+	263: Call option::is_none<u8>(&Option<u8>): bool
+	264: BrFalse(266)
+B52:
+	265: Branch(268)
+B53:
+	266: LdU64(13906834414861549567)
+	267: Abort
+B54:
+	268: MoveLoc[39](config#1#0: Config<WriteCap>)
+	269: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	270: MutBorrowLoc[45](ts#1#0: Scenario)
+	271: LdConst[0](address: 0x00..)
+	272: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	273: Pop
+	274: ImmBorrowLoc[45](ts#1#0: Scenario)
+	275: CopyLoc[42](id#1#0: ID)
+	276: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	277: StLoc[40](config#2#0: Config<WriteCap>)
+	278: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	279: CopyLoc[43](n1#1#0: vector<u8>)
+	280: Call config::exists_with_type<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): bool
+	281: BrFalse(283)
+B55:
+	282: Branch(285)
+B56:
+	283: LdU64(13906834453516255231)
+	284: Abort
+B57:
+	285: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	286: CopyLoc[43](n1#1#0: vector<u8>)
+	287: MutBorrowLoc[45](ts#1#0: Scenario)
+	288: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	289: FreezeRef
+	290: Call config::exists_with_type_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>, &TxContext): bool
+	291: Not
+	292: BrFalse(294)
+B58:
+	293: Branch(296)
+B59:
+	294: LdU64(13906834457811222527)
+	295: Abort
+B60:
+	296: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	297: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	298: Call config::exists_with_type<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>): bool
+	299: Not
+	300: BrFalse(302)
+B61:
+	301: Branch(304)
+B62:
+	302: LdU64(13906834462106189823)
+	303: Abort
+B63:
+	304: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	305: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	306: MutBorrowLoc[45](ts#1#0: Scenario)
+	307: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	308: FreezeRef
+	309: Call config::exists_with_type_for_next_epoch<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>, &TxContext): bool
+	310: Not
+	311: BrFalse(313)
+B64:
+	312: Branch(315)
+B65:
+	313: LdU64(13906834466401157119)
+	314: Abort
+B66:
+	315: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	316: CopyLoc[43](n1#1#0: vector<u8>)
+	317: Call config::read_setting_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): Option<u8>
+	318: LdU8(224)
+	319: Call option::some<u8>(u8): Option<u8>
+	320: Eq
+	321: BrFalse(323)
+B67:
+	322: Branch(325)
+B68:
+	323: LdU64(13906834470696124415)
+	324: Abort
+B69:
+	325: CopyLoc[42](id#1#0: ID)
+	326: CopyLoc[43](n1#1#0: vector<u8>)
+	327: MutBorrowLoc[45](ts#1#0: Scenario)
+	328: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	329: FreezeRef
+	330: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	331: Call option::destroy_some<u8>(Option<u8>): u8
+	332: LdU8(224)
+	333: Eq
+	334: BrFalse(336)
+B70:
+	335: Branch(338)
+B71:
+	336: LdU64(13906834474991091711)
+	337: Abort
+B72:
+	338: CopyLoc[42](id#1#0: ID)
+	339: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	340: MutBorrowLoc[45](ts#1#0: Scenario)
+	341: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	342: FreezeRef
+	343: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	344: StLoc[12](%#20: Option<u8>)
+	345: ImmBorrowLoc[12](%#20: Option<u8>)
+	346: Call option::is_none<u8>(&Option<u8>): bool
+	347: BrFalse(349)
+B73:
+	348: Branch(351)
+B74:
+	349: LdU64(13906834479286059007)
+	350: Abort
+B75:
+	351: MutBorrowLoc[40](config#2#0: Config<WriteCap>)
+	352: StLoc[14](%#22: &mut Config<WriteCap>)
+	353: LdFalse
+	354: Pack[0](WriteCap)
+	355: StLoc[13](%#21: WriteCap)
+	356: MoveLoc[14](%#22: &mut Config<WriteCap>)
+	357: MutBorrowLoc[13](%#21: WriteCap)
+	358: CopyLoc[43](n1#1#0: vector<u8>)
+	359: LdU8(0)
+	360: MutBorrowLoc[45](ts#1#0: Scenario)
+	361: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	362: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	363: Pop
+	364: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	365: CopyLoc[43](n1#1#0: vector<u8>)
+	366: Call config::exists_with_type<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): bool
+	367: BrFalse(369)
+B76:
+	368: Branch(371)
+B77:
+	369: LdU64(13906834505055862783)
+	370: Abort
+B78:
+	371: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	372: CopyLoc[43](n1#1#0: vector<u8>)
+	373: MutBorrowLoc[45](ts#1#0: Scenario)
+	374: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	375: FreezeRef
+	376: Call config::exists_with_type_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>, &TxContext): bool
+	377: BrFalse(379)
+B79:
+	378: Branch(381)
+B80:
+	379: LdU64(13906834509350830079)
+	380: Abort
+B81:
+	381: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	382: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	383: Call config::exists_with_type<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>): bool
+	384: Not
+	385: BrFalse(387)
+B82:
+	386: Branch(389)
+B83:
+	387: LdU64(13906834513645797375)
+	388: Abort
+B84:
+	389: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	390: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	391: MutBorrowLoc[45](ts#1#0: Scenario)
+	392: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	393: FreezeRef
+	394: Call config::exists_with_type_for_next_epoch<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>, &TxContext): bool
+	395: Not
+	396: BrFalse(398)
+B85:
+	397: Branch(400)
+B86:
+	398: LdU64(13906834517940764671)
+	399: Abort
+B87:
+	400: MutBorrowLoc[40](config#2#0: Config<WriteCap>)
+	401: StLoc[16](%#24: &mut Config<WriteCap>)
+	402: LdFalse
+	403: Pack[0](WriteCap)
+	404: StLoc[15](%#23: WriteCap)
+	405: MoveLoc[16](%#24: &mut Config<WriteCap>)
+	406: MutBorrowLoc[15](%#23: WriteCap)
+	407: CopyLoc[43](n1#1#0: vector<u8>)
+	408: MutBorrowLoc[45](ts#1#0: Scenario)
+	409: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	410: Call config::borrow_for_next_epoch_mut<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): &mut u8
+	411: FreezeRef
+	412: StLoc[18](%#26: &u8)
+	413: LdU8(0)
+	414: StLoc[17](%#25: u8)
+	415: MoveLoc[18](%#26: &u8)
+	416: ImmBorrowLoc[17](%#25: u8)
+	417: Eq
+	418: BrFalse(420)
+B88:
+	419: Branch(422)
+B89:
+	420: LdU64(13906834522235731967)
+	421: Abort
+B90:
+	422: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	423: CopyLoc[43](n1#1#0: vector<u8>)
+	424: Call config::read_setting_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): Option<u8>
+	425: LdU8(0)
+	426: Call option::some<u8>(u8): Option<u8>
+	427: Eq
+	428: BrFalse(430)
+B91:
+	429: Branch(432)
+B92:
+	430: LdU64(13906834526530699263)
+	431: Abort
+B93:
+	432: CopyLoc[42](id#1#0: ID)
+	433: CopyLoc[43](n1#1#0: vector<u8>)
+	434: MutBorrowLoc[45](ts#1#0: Scenario)
+	435: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	436: FreezeRef
+	437: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	438: Call option::destroy_some<u8>(Option<u8>): u8
+	439: LdU8(224)
+	440: Eq
+	441: BrFalse(443)
+B94:
+	442: Branch(445)
+B95:
+	443: LdU64(13906834530825666559)
+	444: Abort
+B96:
+	445: CopyLoc[42](id#1#0: ID)
+	446: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	447: MutBorrowLoc[45](ts#1#0: Scenario)
+	448: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	449: FreezeRef
+	450: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	451: StLoc[19](%#27: Option<u8>)
+	452: ImmBorrowLoc[19](%#27: Option<u8>)
+	453: Call option::is_none<u8>(&Option<u8>): bool
+	454: BrFalse(456)
+B97:
+	455: Branch(458)
+B98:
+	456: LdU64(13906834535120633855)
+	457: Abort
+B99:
+	458: MutBorrowLoc[40](config#2#0: Config<WriteCap>)
+	459: StLoc[21](%#29: &mut Config<WriteCap>)
+	460: LdFalse
+	461: Pack[0](WriteCap)
+	462: StLoc[20](%#28: WriteCap)
+	463: MoveLoc[21](%#29: &mut Config<WriteCap>)
+	464: MutBorrowLoc[20](%#28: WriteCap)
+	465: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	466: LdU8(2)
+	467: MutBorrowLoc[45](ts#1#0: Scenario)
+	468: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	469: Call config::add_for_next_epoch<WriteCap, Wrapped<vector<u8>>, u8>(&mut Config<WriteCap>, &mut WriteCap, Wrapped<vector<u8>>, u8, &mut TxContext): Option<u8>
+	470: Pop
+	471: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	472: CopyLoc[43](n1#1#0: vector<u8>)
+	473: Call config::exists_with_type<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): bool
+	474: BrFalse(476)
+B100:
+	475: Branch(478)
+B101:
+	476: LdU64(13906834565185404927)
+	477: Abort
+B102:
+	478: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	479: CopyLoc[43](n1#1#0: vector<u8>)
+	480: MutBorrowLoc[45](ts#1#0: Scenario)
+	481: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	482: FreezeRef
+	483: Call config::exists_with_type_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>, &TxContext): bool
+	484: BrFalse(486)
+B103:
+	485: Branch(488)
+B104:
+	486: LdU64(13906834569480372223)
+	487: Abort
+B105:
+	488: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	489: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	490: Call config::exists_with_type<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>): bool
+	491: BrFalse(493)
+B106:
+	492: Branch(495)
+B107:
+	493: LdU64(13906834573775339519)
+	494: Abort
+B108:
+	495: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	496: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	497: MutBorrowLoc[45](ts#1#0: Scenario)
+	498: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	499: FreezeRef
+	500: Call config::exists_with_type_for_next_epoch<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>, &TxContext): bool
+	501: BrFalse(503)
+B109:
+	502: Branch(505)
+B110:
+	503: LdU64(13906834578070306815)
+	504: Abort
+B111:
+	505: MutBorrowLoc[40](config#2#0: Config<WriteCap>)
+	506: StLoc[24](%#31: &mut Config<WriteCap>)
+	507: LdFalse
+	508: Pack[0](WriteCap)
+	509: StLoc[23](%#30: WriteCap)
+	510: MoveLoc[24](%#31: &mut Config<WriteCap>)
+	511: MutBorrowLoc[23](%#30: WriteCap)
+	512: CopyLoc[43](n1#1#0: vector<u8>)
+	513: MutBorrowLoc[45](ts#1#0: Scenario)
+	514: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	515: Call config::borrow_for_next_epoch_mut<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): &mut u8
+	516: FreezeRef
+	517: StLoc[26](%#33: &u8)
+	518: LdU8(0)
+	519: StLoc[25](%#32: u8)
+	520: MoveLoc[26](%#33: &u8)
+	521: ImmBorrowLoc[25](%#32: u8)
+	522: Eq
+	523: BrFalse(525)
+B112:
+	524: Branch(527)
+B113:
+	525: LdU64(13906834582365274111)
+	526: Abort
+B114:
+	527: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	528: CopyLoc[43](n1#1#0: vector<u8>)
+	529: Call config::read_setting_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): Option<u8>
+	530: LdU8(0)
+	531: Call option::some<u8>(u8): Option<u8>
+	532: Eq
+	533: BrFalse(535)
+B115:
+	534: Branch(537)
+B116:
+	535: LdU64(13906834586660241407)
+	536: Abort
+B117:
+	537: MutBorrowLoc[40](config#2#0: Config<WriteCap>)
+	538: StLoc[28](%#35: &mut Config<WriteCap>)
+	539: LdFalse
+	540: Pack[0](WriteCap)
+	541: StLoc[27](%#34: WriteCap)
+	542: MoveLoc[28](%#35: &mut Config<WriteCap>)
+	543: MutBorrowLoc[27](%#34: WriteCap)
+	544: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	545: MutBorrowLoc[45](ts#1#0: Scenario)
+	546: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	547: Call config::borrow_for_next_epoch_mut<WriteCap, Wrapped<vector<u8>>, u8>(&mut Config<WriteCap>, &mut WriteCap, Wrapped<vector<u8>>, &mut TxContext): &mut u8
+	548: FreezeRef
+	549: StLoc[30](%#37: &u8)
+	550: LdU8(2)
+	551: StLoc[29](%#36: u8)
+	552: MoveLoc[30](%#37: &u8)
+	553: ImmBorrowLoc[29](%#36: u8)
+	554: Eq
+	555: BrFalse(557)
+B118:
+	556: Branch(559)
+B119:
+	557: LdU64(13906834590955208703)
+	558: Abort
+B120:
+	559: ImmBorrowLoc[40](config#2#0: Config<WriteCap>)
+	560: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	561: Call config::read_setting_for_next_epoch<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>): Option<u8>
+	562: LdU8(2)
+	563: Call option::some<u8>(u8): Option<u8>
+	564: Eq
+	565: BrFalse(567)
+B121:
+	566: Branch(569)
+B122:
+	567: LdU64(13906834595250175999)
+	568: Abort
+B123:
+	569: CopyLoc[42](id#1#0: ID)
+	570: CopyLoc[43](n1#1#0: vector<u8>)
+	571: MutBorrowLoc[45](ts#1#0: Scenario)
+	572: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	573: FreezeRef
+	574: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	575: Call option::destroy_some<u8>(Option<u8>): u8
+	576: LdU8(224)
+	577: Eq
+	578: BrFalse(580)
+B124:
+	579: Branch(582)
+B125:
+	580: LdU64(13906834599545143295)
+	581: Abort
+B126:
+	582: CopyLoc[42](id#1#0: ID)
+	583: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	584: MutBorrowLoc[45](ts#1#0: Scenario)
+	585: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	586: FreezeRef
+	587: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	588: StLoc[31](%#38: Option<u8>)
+	589: ImmBorrowLoc[31](%#38: Option<u8>)
+	590: Call option::is_none<u8>(&Option<u8>): bool
+	591: BrFalse(593)
+B127:
+	592: Branch(595)
+B128:
+	593: LdU64(13906834603840110591)
+	594: Abort
+B129:
+	595: MoveLoc[40](config#2#0: Config<WriteCap>)
+	596: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	597: MutBorrowLoc[45](ts#1#0: Scenario)
+	598: LdConst[0](address: 0x00..)
+	599: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	600: Pop
+	601: CopyLoc[42](id#1#0: ID)
+	602: CopyLoc[43](n1#1#0: vector<u8>)
+	603: MutBorrowLoc[45](ts#1#0: Scenario)
+	604: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	605: FreezeRef
+	606: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	607: Call option::destroy_some<u8>(Option<u8>): u8
+	608: LdU8(224)
+	609: Eq
+	610: BrFalse(612)
+B130:
+	611: Branch(614)
+B131:
+	612: LdU64(13906834633904881663)
+	613: Abort
+B132:
+	614: CopyLoc[42](id#1#0: ID)
+	615: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	616: MutBorrowLoc[45](ts#1#0: Scenario)
+	617: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	618: FreezeRef
+	619: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	620: StLoc[32](%#39: Option<u8>)
+	621: ImmBorrowLoc[32](%#39: Option<u8>)
+	622: Call option::is_none<u8>(&Option<u8>): bool
+	623: BrFalse(625)
+B133:
+	624: Branch(627)
+B134:
+	625: LdU64(13906834638199848959)
+	626: Abort
+B135:
+	627: MutBorrowLoc[45](ts#1#0: Scenario)
+	628: LdConst[0](address: 0x00..)
+	629: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	630: Pop
+	631: CopyLoc[42](id#1#0: ID)
+	632: CopyLoc[43](n1#1#0: vector<u8>)
+	633: MutBorrowLoc[45](ts#1#0: Scenario)
+	634: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	635: FreezeRef
+	636: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	637: Call option::destroy_some<u8>(Option<u8>): u8
+	638: LdU8(0)
+	639: Eq
+	640: BrFalse(642)
+B136:
+	641: Branch(644)
+B137:
+	642: LdU64(13906834659674685439)
+	643: Abort
+B138:
+	644: CopyLoc[42](id#1#0: ID)
+	645: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	646: MutBorrowLoc[45](ts#1#0: Scenario)
+	647: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	648: FreezeRef
+	649: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	650: Call option::destroy_some<u8>(Option<u8>): u8
+	651: LdU8(2)
+	652: Eq
+	653: BrFalse(655)
+B139:
+	654: Branch(657)
+B140:
+	655: LdU64(13906834663969652735)
+	656: Abort
+B141:
+	657: MutBorrowLoc[45](ts#1#0: Scenario)
+	658: LdConst[0](address: 0x00..)
+	659: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	660: Pop
+	661: ImmBorrowLoc[45](ts#1#0: Scenario)
+	662: CopyLoc[42](id#1#0: ID)
+	663: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	664: StLoc[41](config#3#0: Config<WriteCap>)
+	665: ImmBorrowLoc[41](config#3#0: Config<WriteCap>)
+	666: CopyLoc[43](n1#1#0: vector<u8>)
+	667: Call config::exists_with_type<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): bool
+	668: BrFalse(670)
+B142:
+	669: Branch(672)
+B143:
+	670: LdU64(13906834706919325695)
+	671: Abort
+B144:
+	672: ImmBorrowLoc[41](config#3#0: Config<WriteCap>)
+	673: CopyLoc[43](n1#1#0: vector<u8>)
+	674: MutBorrowLoc[45](ts#1#0: Scenario)
+	675: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	676: FreezeRef
+	677: Call config::exists_with_type_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>, &TxContext): bool
+	678: Not
+	679: BrFalse(681)
+B145:
+	680: Branch(683)
+B146:
+	681: LdU64(13906834711214292991)
+	682: Abort
+B147:
+	683: ImmBorrowLoc[41](config#3#0: Config<WriteCap>)
+	684: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	685: Call config::exists_with_type<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>): bool
+	686: BrFalse(688)
+B148:
+	687: Branch(690)
+B149:
+	688: LdU64(13906834715509260287)
+	689: Abort
+B150:
+	690: ImmBorrowLoc[41](config#3#0: Config<WriteCap>)
+	691: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	692: MutBorrowLoc[45](ts#1#0: Scenario)
+	693: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	694: FreezeRef
+	695: Call config::exists_with_type_for_next_epoch<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>, &TxContext): bool
+	696: Not
+	697: BrFalse(699)
+B151:
+	698: Branch(701)
+B152:
+	699: LdU64(13906834719804227583)
+	700: Abort
+B153:
+	701: ImmBorrowLoc[41](config#3#0: Config<WriteCap>)
+	702: CopyLoc[43](n1#1#0: vector<u8>)
+	703: Call config::read_setting_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): Option<u8>
+	704: LdU8(0)
+	705: Call option::some<u8>(u8): Option<u8>
+	706: Eq
+	707: BrFalse(709)
+B154:
+	708: Branch(711)
+B155:
+	709: LdU64(13906834724099194879)
+	710: Abort
+B156:
+	711: ImmBorrowLoc[41](config#3#0: Config<WriteCap>)
+	712: CopyLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	713: Call config::read_setting_for_next_epoch<WriteCap, Wrapped<vector<u8>>, u8>(&Config<WriteCap>, Wrapped<vector<u8>>): Option<u8>
+	714: LdU8(2)
+	715: Call option::some<u8>(u8): Option<u8>
+	716: Eq
+	717: BrFalse(719)
+B157:
+	718: Branch(721)
+B158:
+	719: LdU64(13906834728394162175)
+	720: Abort
+B159:
+	721: CopyLoc[42](id#1#0: ID)
+	722: MoveLoc[43](n1#1#0: vector<u8>)
+	723: MutBorrowLoc[45](ts#1#0: Scenario)
+	724: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	725: FreezeRef
+	726: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	727: Call option::destroy_some<u8>(Option<u8>): u8
+	728: LdU8(0)
+	729: Eq
+	730: BrFalse(732)
+B160:
+	731: Branch(734)
+B161:
+	732: LdU64(13906834732689129471)
+	733: Abort
+B162:
+	734: MoveLoc[42](id#1#0: ID)
+	735: MoveLoc[44](n2#1#0: Wrapped<vector<u8>>)
+	736: MutBorrowLoc[45](ts#1#0: Scenario)
+	737: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	738: FreezeRef
+	739: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	740: Call option::destroy_some<u8>(Option<u8>): u8
+	741: LdU8(2)
+	742: Eq
+	743: BrFalse(745)
+B163:
+	744: Branch(747)
+B164:
+	745: LdU64(13906834736984096767)
+	746: Abort
+B165:
+	747: MoveLoc[41](config#3#0: Config<WriteCap>)
+	748: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	749: MoveLoc[45](ts#1#0: Scenario)
+	750: Call test_scenario::end(Scenario): TransactionEffects
+	751: Pop
+	752: Ret
+}
+
+add_for_next_epoch_aborts_in_same_epoch() {
+L0:	%#1: WriteCap
+L1:	%#2: WriteCap
+L2:	%#3: &mut Config<WriteCap>
+L3:	%#4: WriteCap
+L4:	%#5: &mut Config<WriteCap>
+L5:	config#1#0: Config<WriteCap>
+L6:	ts#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[6](ts#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](WriteCap)
+	5: StLoc[0](%#1: WriteCap)
+	6: MutBorrowLoc[0](%#1: WriteCap)
+	7: MutBorrowLoc[6](ts#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call config_create<WriteCap>(&mut WriteCap, &mut TxContext)
+	10: MutBorrowLoc[6](ts#1#0: Scenario)
+	11: LdConst[0](address: 0x00..)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: ImmBorrowLoc[6](ts#1#0: Scenario)
+	15: Call test_scenario::take_shared<Config<WriteCap>>(&Scenario): Config<WriteCap>
+	16: StLoc[5](config#1#0: Config<WriteCap>)
+	17: MutBorrowLoc[5](config#1#0: Config<WriteCap>)
+	18: StLoc[2](%#3: &mut Config<WriteCap>)
+	19: LdFalse
+	20: Pack[0](WriteCap)
+	21: StLoc[1](%#2: WriteCap)
+	22: MoveLoc[2](%#3: &mut Config<WriteCap>)
+	23: MutBorrowLoc[1](%#2: WriteCap)
+	24: LdFalse
+	25: LdU8(0)
+	26: MutBorrowLoc[6](ts#1#0: Scenario)
+	27: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	28: Call config::add_for_next_epoch<WriteCap, bool, u8>(&mut Config<WriteCap>, &mut WriteCap, bool, u8, &mut TxContext): Option<u8>
+	29: Pop
+	30: MutBorrowLoc[5](config#1#0: Config<WriteCap>)
+	31: StLoc[4](%#5: &mut Config<WriteCap>)
+	32: LdFalse
+	33: Pack[0](WriteCap)
+	34: StLoc[3](%#4: WriteCap)
+	35: MoveLoc[4](%#5: &mut Config<WriteCap>)
+	36: MutBorrowLoc[3](%#4: WriteCap)
+	37: LdFalse
+	38: LdU8(1)
+	39: MutBorrowLoc[6](ts#1#0: Scenario)
+	40: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	41: Call config::add_for_next_epoch<WriteCap, bool, u8>(&mut Config<WriteCap>, &mut WriteCap, bool, u8, &mut TxContext): Option<u8>
+	42: Pop
+	43: LdU64(0)
+	44: Abort
+}
+
+borrow_for_next_epoch_mut_aborts_in_new_epoch() {
+L0:	%#1: WriteCap
+L1:	%#2: WriteCap
+L2:	%#3: &mut Config<WriteCap>
+L3:	%#4: WriteCap
+L4:	%#5: &mut Config<WriteCap>
+L5:	config#1#0: Config<WriteCap>
+L6:	n#1#0: u64
+L7:	ts#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[7](ts#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](WriteCap)
+	5: StLoc[0](%#1: WriteCap)
+	6: MutBorrowLoc[0](%#1: WriteCap)
+	7: MutBorrowLoc[7](ts#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call config_create<WriteCap>(&mut WriteCap, &mut TxContext)
+	10: MutBorrowLoc[7](ts#1#0: Scenario)
+	11: LdConst[0](address: 0x00..)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: ImmBorrowLoc[7](ts#1#0: Scenario)
+	15: Call test_scenario::take_shared<Config<WriteCap>>(&Scenario): Config<WriteCap>
+	16: StLoc[5](config#1#0: Config<WriteCap>)
+	17: LdU64(1)
+	18: StLoc[6](n#1#0: u64)
+	19: MutBorrowLoc[5](config#1#0: Config<WriteCap>)
+	20: StLoc[2](%#3: &mut Config<WriteCap>)
+	21: LdFalse
+	22: Pack[0](WriteCap)
+	23: StLoc[1](%#2: WriteCap)
+	24: MoveLoc[2](%#3: &mut Config<WriteCap>)
+	25: MutBorrowLoc[1](%#2: WriteCap)
+	26: CopyLoc[6](n#1#0: u64)
+	27: LdConst[1](vector<u8>: "hel..)
+	28: MutBorrowLoc[7](ts#1#0: Scenario)
+	29: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	30: Call config::add_for_next_epoch<WriteCap, u64, vector<u8>>(&mut Config<WriteCap>, &mut WriteCap, u64, vector<u8>, &mut TxContext): Option<vector<u8>>
+	31: Pop
+	32: ImmBorrowLoc[5](config#1#0: Config<WriteCap>)
+	33: CopyLoc[6](n#1#0: u64)
+	34: Call config::exists_with_type<WriteCap, u64, vector<u8>>(&Config<WriteCap>, u64): bool
+	35: BrFalse(37)
+B1:
+	36: Branch(39)
+B2:
+	37: LdU64(13906834848653246463)
+	38: Abort
+B3:
+	39: ImmBorrowLoc[5](config#1#0: Config<WriteCap>)
+	40: CopyLoc[6](n#1#0: u64)
+	41: MutBorrowLoc[7](ts#1#0: Scenario)
+	42: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	43: FreezeRef
+	44: Call config::exists_with_type_for_next_epoch<WriteCap, u64, vector<u8>>(&Config<WriteCap>, u64, &TxContext): bool
+	45: BrFalse(47)
+B4:
+	46: Branch(49)
+B5:
+	47: LdU64(13906834852948213759)
+	48: Abort
+B6:
+	49: ImmBorrowLoc[5](config#1#0: Config<WriteCap>)
+	50: CopyLoc[6](n#1#0: u64)
+	51: Call config::read_setting_for_next_epoch<WriteCap, u64, vector<u8>>(&Config<WriteCap>, u64): Option<vector<u8>>
+	52: LdConst[1](vector<u8>: "hel..)
+	53: Call option::some<vector<u8>>(vector<u8>): Option<vector<u8>>
+	54: Eq
+	55: BrFalse(57)
+B7:
+	56: Branch(59)
+B8:
+	57: LdU64(13906834857243181055)
+	58: Abort
+B9:
+	59: MutBorrowLoc[7](ts#1#0: Scenario)
+	60: LdConst[0](address: 0x00..)
+	61: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	62: Pop
+	63: ImmBorrowLoc[5](config#1#0: Config<WriteCap>)
+	64: CopyLoc[6](n#1#0: u64)
+	65: Call config::exists_with_type<WriteCap, u64, vector<u8>>(&Config<WriteCap>, u64): bool
+	66: BrFalse(68)
+B10:
+	67: Branch(70)
+B11:
+	68: LdU64(13906834870128082943)
+	69: Abort
+B12:
+	70: ImmBorrowLoc[5](config#1#0: Config<WriteCap>)
+	71: CopyLoc[6](n#1#0: u64)
+	72: MutBorrowLoc[7](ts#1#0: Scenario)
+	73: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	74: FreezeRef
+	75: Call config::exists_with_type_for_next_epoch<WriteCap, u64, vector<u8>>(&Config<WriteCap>, u64, &TxContext): bool
+	76: Not
+	77: BrFalse(79)
+B13:
+	78: Branch(81)
+B14:
+	79: LdU64(13906834874423050239)
+	80: Abort
+B15:
+	81: ImmBorrowLoc[5](config#1#0: Config<WriteCap>)
+	82: CopyLoc[6](n#1#0: u64)
+	83: Call config::read_setting_for_next_epoch<WriteCap, u64, vector<u8>>(&Config<WriteCap>, u64): Option<vector<u8>>
+	84: LdConst[1](vector<u8>: "hel..)
+	85: Call option::some<vector<u8>>(vector<u8>): Option<vector<u8>>
+	86: Eq
+	87: BrFalse(89)
+B16:
+	88: Branch(91)
+B17:
+	89: LdU64(13906834878718017535)
+	90: Abort
+B18:
+	91: MutBorrowLoc[5](config#1#0: Config<WriteCap>)
+	92: StLoc[4](%#5: &mut Config<WriteCap>)
+	93: LdFalse
+	94: Pack[0](WriteCap)
+	95: StLoc[3](%#4: WriteCap)
+	96: MoveLoc[4](%#5: &mut Config<WriteCap>)
+	97: MutBorrowLoc[3](%#4: WriteCap)
+	98: MoveLoc[6](n#1#0: u64)
+	99: MutBorrowLoc[7](ts#1#0: Scenario)
+	100: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	101: Call config::borrow_for_next_epoch_mut<WriteCap, u64, vector<u8>>(&mut Config<WriteCap>, &mut WriteCap, u64, &mut TxContext): &mut vector<u8>
+	102: Pop
+	103: LdU64(0)
+	104: Abort
+}
+
+read_setting_none() {
+L0:	%#1: WriteCap
+L1:	%#10: Option<u64>
+L2:	%#11: Option<u8>
+L3:	%#12: Option<u8>
+L4:	%#13: Option<bool>
+L5:	%#14: Option<u64>
+L6:	%#15: Option<u8>
+L7:	%#16: WriteCap
+L8:	%#17: &mut Config<WriteCap>
+L9:	%#18: Option<u8>
+L10:	%#19: Option<bool>
+L11:	%#2: Option<u8>
+L12:	%#20: Option<u64>
+L13:	%#21: Option<u8>
+L14:	%#22: Option<u8>
+L15:	%#23: WriteCap
+L16:	%#24: &mut Config<WriteCap>
+L17:	%#25: WriteCap
+L18:	%#26: &mut Config<WriteCap>
+L19:	%#27: WriteCap
+L20:	%#28: &mut Config<WriteCap>
+L21:	%#29: WriteCap
+L22:	%#3: Option<bool>
+L23:	%#30: &mut Config<WriteCap>
+L24:	%#31: WriteCap
+L25:	%#32: &mut Config<WriteCap>
+L26:	%#33: Option<u8>
+L27:	%#34: Option<bool>
+L28:	%#35: Option<u64>
+L29:	%#36: Option<u8>
+L30:	%#37: Option<u8>
+L31:	%#38: WriteCap
+L32:	%#39: &mut Config<WriteCap>
+L33:	%#4: Option<u64>
+L34:	%#40: WriteCap
+L35:	%#41: &mut Config<WriteCap>
+L36:	%#42: WriteCap
+L37:	%#43: &mut Config<WriteCap>
+L38:	%#44: WriteCap
+L39:	%#45: &mut Config<WriteCap>
+L40:	%#46: WriteCap
+L41:	%#47: &mut Config<WriteCap>
+L42:	%#48: WriteCap
+L43:	%#49: &mut Config<WriteCap>
+L44:	%#5: Option<u8>
+L45:	%#50: Option<u8>
+L46:	%#51: Option<bool>
+L47:	%#52: Option<u64>
+L48:	%#53: Option<u8>
+L49:	%#6: WriteCap
+L50:	%#7: &mut Config<WriteCap>
+L51:	%#8: Option<u8>
+L52:	%#9: Option<bool>
+L53:	config#1#0: Config<WriteCap>
+L54:	config#2#0: Config<WriteCap>
+L55:	config#3#0: Config<WriteCap>
+L56:	config#4#0: Config<WriteCap>
+L57:	id#1#0: ID
+L58:	n#1#0: vector<u8>
+L59:	ts#1#0: Scenario
+L60:	w#1#0: Wrapped<vector<u8>>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[59](ts#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](WriteCap)
+	5: StLoc[0](%#1: WriteCap)
+	6: MutBorrowLoc[0](%#1: WriteCap)
+	7: MutBorrowLoc[59](ts#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call config_create<WriteCap>(&mut WriteCap, &mut TxContext)
+	10: MutBorrowLoc[59](ts#1#0: Scenario)
+	11: LdConst[0](address: 0x00..)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: Call test_scenario::most_recent_id_shared<Config<WriteCap>>(): Option<ID>
+	15: Call option::destroy_some<ID>(Option<ID>): ID
+	16: StLoc[57](id#1#0: ID)
+	17: LdConst[1](vector<u8>: "hel..)
+	18: StLoc[58](n#1#0: vector<u8>)
+	19: CopyLoc[58](n#1#0: vector<u8>)
+	20: PackGeneric[0](Wrapped<vector<u8>>)
+	21: StLoc[60](w#1#0: Wrapped<vector<u8>>)
+	22: CopyLoc[57](id#1#0: ID)
+	23: CopyLoc[58](n#1#0: vector<u8>)
+	24: MutBorrowLoc[59](ts#1#0: Scenario)
+	25: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	26: FreezeRef
+	27: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	28: StLoc[11](%#2: Option<u8>)
+	29: ImmBorrowLoc[11](%#2: Option<u8>)
+	30: Call option::is_none<u8>(&Option<u8>): bool
+	31: BrFalse(33)
+B1:
+	32: Branch(35)
+B2:
+	33: LdU64(13906834947437494271)
+	34: Abort
+B3:
+	35: CopyLoc[57](id#1#0: ID)
+	36: CopyLoc[58](n#1#0: vector<u8>)
+	37: MutBorrowLoc[59](ts#1#0: Scenario)
+	38: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	39: FreezeRef
+	40: Call config::read_setting<vector<u8>, bool>(ID, vector<u8>, &TxContext): Option<bool>
+	41: StLoc[22](%#3: Option<bool>)
+	42: ImmBorrowLoc[22](%#3: Option<bool>)
+	43: Call option::is_none<bool>(&Option<bool>): bool
+	44: BrFalse(46)
+B4:
+	45: Branch(48)
+B5:
+	46: LdU64(13906834951732461567)
+	47: Abort
+B6:
+	48: CopyLoc[57](id#1#0: ID)
+	49: CopyLoc[58](n#1#0: vector<u8>)
+	50: MutBorrowLoc[59](ts#1#0: Scenario)
+	51: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	52: FreezeRef
+	53: Call config::read_setting<vector<u8>, u64>(ID, vector<u8>, &TxContext): Option<u64>
+	54: StLoc[33](%#4: Option<u64>)
+	55: ImmBorrowLoc[33](%#4: Option<u64>)
+	56: Call option::is_none<u64>(&Option<u64>): bool
+	57: BrFalse(59)
+B7:
+	58: Branch(61)
+B8:
+	59: LdU64(13906834956027428863)
+	60: Abort
+B9:
+	61: CopyLoc[57](id#1#0: ID)
+	62: CopyLoc[60](w#1#0: Wrapped<vector<u8>>)
+	63: MutBorrowLoc[59](ts#1#0: Scenario)
+	64: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	65: FreezeRef
+	66: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	67: StLoc[44](%#5: Option<u8>)
+	68: ImmBorrowLoc[44](%#5: Option<u8>)
+	69: Call option::is_none<u8>(&Option<u8>): bool
+	70: BrFalse(72)
+B10:
+	71: Branch(74)
+B11:
+	72: LdU64(13906834960322396159)
+	73: Abort
+B12:
+	74: MutBorrowLoc[59](ts#1#0: Scenario)
+	75: LdConst[0](address: 0x00..)
+	76: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	77: Pop
+	78: ImmBorrowLoc[59](ts#1#0: Scenario)
+	79: CopyLoc[57](id#1#0: ID)
+	80: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	81: StLoc[53](config#1#0: Config<WriteCap>)
+	82: MutBorrowLoc[53](config#1#0: Config<WriteCap>)
+	83: StLoc[50](%#7: &mut Config<WriteCap>)
+	84: LdFalse
+	85: Pack[0](WriteCap)
+	86: StLoc[49](%#6: WriteCap)
+	87: MoveLoc[50](%#7: &mut Config<WriteCap>)
+	88: MutBorrowLoc[49](%#6: WriteCap)
+	89: CopyLoc[58](n#1#0: vector<u8>)
+	90: LdU8(0)
+	91: MutBorrowLoc[59](ts#1#0: Scenario)
+	92: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	93: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	94: Pop
+	95: MoveLoc[53](config#1#0: Config<WriteCap>)
+	96: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	97: MutBorrowLoc[59](ts#1#0: Scenario)
+	98: LdConst[0](address: 0x00..)
+	99: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	100: Pop
+	101: CopyLoc[57](id#1#0: ID)
+	102: CopyLoc[58](n#1#0: vector<u8>)
+	103: MutBorrowLoc[59](ts#1#0: Scenario)
+	104: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	105: FreezeRef
+	106: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	107: StLoc[51](%#8: Option<u8>)
+	108: ImmBorrowLoc[51](%#8: Option<u8>)
+	109: Call option::is_none<u8>(&Option<u8>): bool
+	110: BrFalse(112)
+B13:
+	111: Branch(114)
+B14:
+	112: LdU64(13906835016156971007)
+	113: Abort
+B15:
+	114: CopyLoc[57](id#1#0: ID)
+	115: CopyLoc[58](n#1#0: vector<u8>)
+	116: MutBorrowLoc[59](ts#1#0: Scenario)
+	117: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	118: FreezeRef
+	119: Call config::read_setting<vector<u8>, bool>(ID, vector<u8>, &TxContext): Option<bool>
+	120: StLoc[52](%#9: Option<bool>)
+	121: ImmBorrowLoc[52](%#9: Option<bool>)
+	122: Call option::is_none<bool>(&Option<bool>): bool
+	123: BrFalse(125)
+B16:
+	124: Branch(127)
+B17:
+	125: LdU64(13906835020451938303)
+	126: Abort
+B18:
+	127: CopyLoc[57](id#1#0: ID)
+	128: CopyLoc[58](n#1#0: vector<u8>)
+	129: MutBorrowLoc[59](ts#1#0: Scenario)
+	130: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	131: FreezeRef
+	132: Call config::read_setting<vector<u8>, u64>(ID, vector<u8>, &TxContext): Option<u64>
+	133: StLoc[1](%#10: Option<u64>)
+	134: ImmBorrowLoc[1](%#10: Option<u64>)
+	135: Call option::is_none<u64>(&Option<u64>): bool
+	136: BrFalse(138)
+B19:
+	137: Branch(140)
+B20:
+	138: LdU64(13906835024746905599)
+	139: Abort
+B21:
+	140: CopyLoc[57](id#1#0: ID)
+	141: CopyLoc[60](w#1#0: Wrapped<vector<u8>>)
+	142: MutBorrowLoc[59](ts#1#0: Scenario)
+	143: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	144: FreezeRef
+	145: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	146: StLoc[2](%#11: Option<u8>)
+	147: ImmBorrowLoc[2](%#11: Option<u8>)
+	148: Call option::is_none<u8>(&Option<u8>): bool
+	149: BrFalse(151)
+B22:
+	150: Branch(153)
+B23:
+	151: LdU64(13906835029041872895)
+	152: Abort
+B24:
+	153: MutBorrowLoc[59](ts#1#0: Scenario)
+	154: LdConst[0](address: 0x00..)
+	155: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	156: Pop
+	157: CopyLoc[57](id#1#0: ID)
+	158: CopyLoc[58](n#1#0: vector<u8>)
+	159: MutBorrowLoc[59](ts#1#0: Scenario)
+	160: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	161: FreezeRef
+	162: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	163: StLoc[3](%#12: Option<u8>)
+	164: ImmBorrowLoc[3](%#12: Option<u8>)
+	165: Call option::is_some<u8>(&Option<u8>): bool
+	166: BrFalse(168)
+B25:
+	167: Branch(170)
+B26:
+	168: LdU64(13906835063401611263)
+	169: Abort
+B27:
+	170: CopyLoc[57](id#1#0: ID)
+	171: CopyLoc[58](n#1#0: vector<u8>)
+	172: MutBorrowLoc[59](ts#1#0: Scenario)
+	173: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	174: FreezeRef
+	175: Call config::read_setting<vector<u8>, bool>(ID, vector<u8>, &TxContext): Option<bool>
+	176: StLoc[4](%#13: Option<bool>)
+	177: ImmBorrowLoc[4](%#13: Option<bool>)
+	178: Call option::is_none<bool>(&Option<bool>): bool
+	179: BrFalse(181)
+B28:
+	180: Branch(183)
+B29:
+	181: LdU64(13906835071991545855)
+	182: Abort
+B30:
+	183: CopyLoc[57](id#1#0: ID)
+	184: CopyLoc[58](n#1#0: vector<u8>)
+	185: MutBorrowLoc[59](ts#1#0: Scenario)
+	186: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	187: FreezeRef
+	188: Call config::read_setting<vector<u8>, u64>(ID, vector<u8>, &TxContext): Option<u64>
+	189: StLoc[5](%#14: Option<u64>)
+	190: ImmBorrowLoc[5](%#14: Option<u64>)
+	191: Call option::is_none<u64>(&Option<u64>): bool
+	192: BrFalse(194)
+B31:
+	193: Branch(196)
+B32:
+	194: LdU64(13906835076286513151)
+	195: Abort
+B33:
+	196: CopyLoc[57](id#1#0: ID)
+	197: CopyLoc[60](w#1#0: Wrapped<vector<u8>>)
+	198: MutBorrowLoc[59](ts#1#0: Scenario)
+	199: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	200: FreezeRef
+	201: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	202: StLoc[6](%#15: Option<u8>)
+	203: ImmBorrowLoc[6](%#15: Option<u8>)
+	204: Call option::is_none<u8>(&Option<u8>): bool
+	205: BrFalse(207)
+B34:
+	206: Branch(209)
+B35:
+	207: LdU64(13906835080581480447)
+	208: Abort
+B36:
+	209: MutBorrowLoc[59](ts#1#0: Scenario)
+	210: LdConst[0](address: 0x00..)
+	211: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	212: Pop
+	213: ImmBorrowLoc[59](ts#1#0: Scenario)
+	214: CopyLoc[57](id#1#0: ID)
+	215: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	216: StLoc[54](config#2#0: Config<WriteCap>)
+	217: MutBorrowLoc[54](config#2#0: Config<WriteCap>)
+	218: StLoc[8](%#17: &mut Config<WriteCap>)
+	219: LdFalse
+	220: Pack[0](WriteCap)
+	221: StLoc[7](%#16: WriteCap)
+	222: MoveLoc[8](%#17: &mut Config<WriteCap>)
+	223: MutBorrowLoc[7](%#16: WriteCap)
+	224: CopyLoc[58](n#1#0: vector<u8>)
+	225: MutBorrowLoc[59](ts#1#0: Scenario)
+	226: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	227: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	228: Pop
+	229: CopyLoc[57](id#1#0: ID)
+	230: CopyLoc[58](n#1#0: vector<u8>)
+	231: MutBorrowLoc[59](ts#1#0: Scenario)
+	232: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	233: FreezeRef
+	234: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	235: StLoc[9](%#18: Option<u8>)
+	236: ImmBorrowLoc[9](%#18: Option<u8>)
+	237: Call option::is_some<u8>(&Option<u8>): bool
+	238: BrFalse(240)
+B37:
+	239: Branch(242)
+B38:
+	240: LdU64(13906835119236186111)
+	241: Abort
+B39:
+	242: CopyLoc[57](id#1#0: ID)
+	243: CopyLoc[58](n#1#0: vector<u8>)
+	244: MutBorrowLoc[59](ts#1#0: Scenario)
+	245: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	246: FreezeRef
+	247: Call config::read_setting<vector<u8>, bool>(ID, vector<u8>, &TxContext): Option<bool>
+	248: StLoc[10](%#19: Option<bool>)
+	249: ImmBorrowLoc[10](%#19: Option<bool>)
+	250: Call option::is_none<bool>(&Option<bool>): bool
+	251: BrFalse(253)
+B40:
+	252: Branch(255)
+B41:
+	253: LdU64(13906835127826120703)
+	254: Abort
+B42:
+	255: CopyLoc[57](id#1#0: ID)
+	256: CopyLoc[58](n#1#0: vector<u8>)
+	257: MutBorrowLoc[59](ts#1#0: Scenario)
+	258: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	259: FreezeRef
+	260: Call config::read_setting<vector<u8>, u64>(ID, vector<u8>, &TxContext): Option<u64>
+	261: StLoc[12](%#20: Option<u64>)
+	262: ImmBorrowLoc[12](%#20: Option<u64>)
+	263: Call option::is_none<u64>(&Option<u64>): bool
+	264: BrFalse(266)
+B43:
+	265: Branch(268)
+B44:
+	266: LdU64(13906835132121087999)
+	267: Abort
+B45:
+	268: CopyLoc[57](id#1#0: ID)
+	269: CopyLoc[60](w#1#0: Wrapped<vector<u8>>)
+	270: MutBorrowLoc[59](ts#1#0: Scenario)
+	271: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	272: FreezeRef
+	273: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	274: StLoc[13](%#21: Option<u8>)
+	275: ImmBorrowLoc[13](%#21: Option<u8>)
+	276: Call option::is_none<u8>(&Option<u8>): bool
+	277: BrFalse(279)
+B46:
+	278: Branch(281)
+B47:
+	279: LdU64(13906835136416055295)
+	280: Abort
+B48:
+	281: MoveLoc[54](config#2#0: Config<WriteCap>)
+	282: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	283: MutBorrowLoc[59](ts#1#0: Scenario)
+	284: LdConst[0](address: 0x00..)
+	285: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	286: Pop
+	287: ImmBorrowLoc[59](ts#1#0: Scenario)
+	288: CopyLoc[57](id#1#0: ID)
+	289: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	290: StLoc[55](config#3#0: Config<WriteCap>)
+	291: CopyLoc[57](id#1#0: ID)
+	292: CopyLoc[58](n#1#0: vector<u8>)
+	293: MutBorrowLoc[59](ts#1#0: Scenario)
+	294: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	295: FreezeRef
+	296: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	297: StLoc[14](%#22: Option<u8>)
+	298: ImmBorrowLoc[14](%#22: Option<u8>)
+	299: Call option::is_none<u8>(&Option<u8>): bool
+	300: BrFalse(302)
+B49:
+	301: Branch(304)
+B50:
+	302: LdU64(13906835170775793663)
+	303: Abort
+B51:
+	304: MutBorrowLoc[55](config#3#0: Config<WriteCap>)
+	305: StLoc[16](%#24: &mut Config<WriteCap>)
+	306: LdFalse
+	307: Pack[0](WriteCap)
+	308: StLoc[15](%#23: WriteCap)
+	309: MoveLoc[16](%#24: &mut Config<WriteCap>)
+	310: MutBorrowLoc[15](%#23: WriteCap)
+	311: CopyLoc[58](n#1#0: vector<u8>)
+	312: MutBorrowLoc[59](ts#1#0: Scenario)
+	313: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	314: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	315: Pop
+	316: MutBorrowLoc[55](config#3#0: Config<WriteCap>)
+	317: StLoc[18](%#26: &mut Config<WriteCap>)
+	318: LdFalse
+	319: Pack[0](WriteCap)
+	320: StLoc[17](%#25: WriteCap)
+	321: MoveLoc[18](%#26: &mut Config<WriteCap>)
+	322: MutBorrowLoc[17](%#25: WriteCap)
+	323: CopyLoc[58](n#1#0: vector<u8>)
+	324: LdU8(0)
+	325: MutBorrowLoc[59](ts#1#0: Scenario)
+	326: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	327: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	328: Pop
+	329: MutBorrowLoc[55](config#3#0: Config<WriteCap>)
+	330: StLoc[20](%#28: &mut Config<WriteCap>)
+	331: LdFalse
+	332: Pack[0](WriteCap)
+	333: StLoc[19](%#27: WriteCap)
+	334: MoveLoc[20](%#28: &mut Config<WriteCap>)
+	335: MutBorrowLoc[19](%#27: WriteCap)
+	336: CopyLoc[58](n#1#0: vector<u8>)
+	337: MutBorrowLoc[59](ts#1#0: Scenario)
+	338: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	339: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	340: Pop
+	341: MutBorrowLoc[55](config#3#0: Config<WriteCap>)
+	342: StLoc[23](%#30: &mut Config<WriteCap>)
+	343: LdFalse
+	344: Pack[0](WriteCap)
+	345: StLoc[21](%#29: WriteCap)
+	346: MoveLoc[23](%#30: &mut Config<WriteCap>)
+	347: MutBorrowLoc[21](%#29: WriteCap)
+	348: CopyLoc[58](n#1#0: vector<u8>)
+	349: LdU8(0)
+	350: MutBorrowLoc[59](ts#1#0: Scenario)
+	351: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	352: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	353: Pop
+	354: MutBorrowLoc[55](config#3#0: Config<WriteCap>)
+	355: StLoc[25](%#32: &mut Config<WriteCap>)
+	356: LdFalse
+	357: Pack[0](WriteCap)
+	358: StLoc[24](%#31: WriteCap)
+	359: MoveLoc[25](%#32: &mut Config<WriteCap>)
+	360: MutBorrowLoc[24](%#31: WriteCap)
+	361: CopyLoc[58](n#1#0: vector<u8>)
+	362: MutBorrowLoc[59](ts#1#0: Scenario)
+	363: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	364: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	365: Pop
+	366: CopyLoc[57](id#1#0: ID)
+	367: CopyLoc[58](n#1#0: vector<u8>)
+	368: MutBorrowLoc[59](ts#1#0: Scenario)
+	369: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	370: FreezeRef
+	371: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	372: StLoc[26](%#33: Option<u8>)
+	373: ImmBorrowLoc[26](%#33: Option<u8>)
+	374: Call option::is_none<u8>(&Option<u8>): bool
+	375: BrFalse(377)
+B52:
+	376: Branch(379)
+B53:
+	377: LdU64(13906835200840564735)
+	378: Abort
+B54:
+	379: CopyLoc[57](id#1#0: ID)
+	380: CopyLoc[58](n#1#0: vector<u8>)
+	381: MutBorrowLoc[59](ts#1#0: Scenario)
+	382: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	383: FreezeRef
+	384: Call config::read_setting<vector<u8>, bool>(ID, vector<u8>, &TxContext): Option<bool>
+	385: StLoc[27](%#34: Option<bool>)
+	386: ImmBorrowLoc[27](%#34: Option<bool>)
+	387: Call option::is_none<bool>(&Option<bool>): bool
+	388: BrFalse(390)
+B55:
+	389: Branch(392)
+B56:
+	390: LdU64(13906835209430499327)
+	391: Abort
+B57:
+	392: CopyLoc[57](id#1#0: ID)
+	393: CopyLoc[58](n#1#0: vector<u8>)
+	394: MutBorrowLoc[59](ts#1#0: Scenario)
+	395: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	396: FreezeRef
+	397: Call config::read_setting<vector<u8>, u64>(ID, vector<u8>, &TxContext): Option<u64>
+	398: StLoc[28](%#35: Option<u64>)
+	399: ImmBorrowLoc[28](%#35: Option<u64>)
+	400: Call option::is_none<u64>(&Option<u64>): bool
+	401: BrFalse(403)
+B58:
+	402: Branch(405)
+B59:
+	403: LdU64(13906835213725466623)
+	404: Abort
+B60:
+	405: CopyLoc[57](id#1#0: ID)
+	406: CopyLoc[60](w#1#0: Wrapped<vector<u8>>)
+	407: MutBorrowLoc[59](ts#1#0: Scenario)
+	408: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	409: FreezeRef
+	410: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	411: StLoc[29](%#36: Option<u8>)
+	412: ImmBorrowLoc[29](%#36: Option<u8>)
+	413: Call option::is_none<u8>(&Option<u8>): bool
+	414: BrFalse(416)
+B61:
+	415: Branch(418)
+B62:
+	416: LdU64(13906835218020433919)
+	417: Abort
+B63:
+	418: MoveLoc[55](config#3#0: Config<WriteCap>)
+	419: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	420: MutBorrowLoc[59](ts#1#0: Scenario)
+	421: LdConst[0](address: 0x00..)
+	422: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	423: Pop
+	424: ImmBorrowLoc[59](ts#1#0: Scenario)
+	425: CopyLoc[57](id#1#0: ID)
+	426: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	427: StLoc[56](config#4#0: Config<WriteCap>)
+	428: CopyLoc[57](id#1#0: ID)
+	429: CopyLoc[58](n#1#0: vector<u8>)
+	430: MutBorrowLoc[59](ts#1#0: Scenario)
+	431: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	432: FreezeRef
+	433: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	434: StLoc[30](%#37: Option<u8>)
+	435: ImmBorrowLoc[30](%#37: Option<u8>)
+	436: Call option::is_none<u8>(&Option<u8>): bool
+	437: BrFalse(439)
+B64:
+	438: Branch(441)
+B65:
+	439: LdU64(13906835252380172287)
+	440: Abort
+B66:
+	441: MutBorrowLoc[56](config#4#0: Config<WriteCap>)
+	442: StLoc[32](%#39: &mut Config<WriteCap>)
+	443: LdFalse
+	444: Pack[0](WriteCap)
+	445: StLoc[31](%#38: WriteCap)
+	446: MoveLoc[32](%#39: &mut Config<WriteCap>)
+	447: MutBorrowLoc[31](%#38: WriteCap)
+	448: CopyLoc[58](n#1#0: vector<u8>)
+	449: LdU8(0)
+	450: MutBorrowLoc[59](ts#1#0: Scenario)
+	451: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	452: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	453: Pop
+	454: MutBorrowLoc[56](config#4#0: Config<WriteCap>)
+	455: StLoc[35](%#41: &mut Config<WriteCap>)
+	456: LdFalse
+	457: Pack[0](WriteCap)
+	458: StLoc[34](%#40: WriteCap)
+	459: MoveLoc[35](%#41: &mut Config<WriteCap>)
+	460: MutBorrowLoc[34](%#40: WriteCap)
+	461: CopyLoc[58](n#1#0: vector<u8>)
+	462: MutBorrowLoc[59](ts#1#0: Scenario)
+	463: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	464: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	465: Pop
+	466: MutBorrowLoc[56](config#4#0: Config<WriteCap>)
+	467: StLoc[37](%#43: &mut Config<WriteCap>)
+	468: LdFalse
+	469: Pack[0](WriteCap)
+	470: StLoc[36](%#42: WriteCap)
+	471: MoveLoc[37](%#43: &mut Config<WriteCap>)
+	472: MutBorrowLoc[36](%#42: WriteCap)
+	473: CopyLoc[58](n#1#0: vector<u8>)
+	474: LdU8(0)
+	475: MutBorrowLoc[59](ts#1#0: Scenario)
+	476: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	477: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	478: Pop
+	479: MutBorrowLoc[56](config#4#0: Config<WriteCap>)
+	480: StLoc[39](%#45: &mut Config<WriteCap>)
+	481: LdFalse
+	482: Pack[0](WriteCap)
+	483: StLoc[38](%#44: WriteCap)
+	484: MoveLoc[39](%#45: &mut Config<WriteCap>)
+	485: MutBorrowLoc[38](%#44: WriteCap)
+	486: CopyLoc[58](n#1#0: vector<u8>)
+	487: MutBorrowLoc[59](ts#1#0: Scenario)
+	488: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	489: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	490: Pop
+	491: MutBorrowLoc[56](config#4#0: Config<WriteCap>)
+	492: StLoc[41](%#47: &mut Config<WriteCap>)
+	493: LdFalse
+	494: Pack[0](WriteCap)
+	495: StLoc[40](%#46: WriteCap)
+	496: MoveLoc[41](%#47: &mut Config<WriteCap>)
+	497: MutBorrowLoc[40](%#46: WriteCap)
+	498: CopyLoc[58](n#1#0: vector<u8>)
+	499: LdU8(0)
+	500: MutBorrowLoc[59](ts#1#0: Scenario)
+	501: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	502: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	503: Pop
+	504: MutBorrowLoc[56](config#4#0: Config<WriteCap>)
+	505: StLoc[43](%#49: &mut Config<WriteCap>)
+	506: LdFalse
+	507: Pack[0](WriteCap)
+	508: StLoc[42](%#48: WriteCap)
+	509: MoveLoc[43](%#49: &mut Config<WriteCap>)
+	510: MutBorrowLoc[42](%#48: WriteCap)
+	511: CopyLoc[58](n#1#0: vector<u8>)
+	512: MutBorrowLoc[59](ts#1#0: Scenario)
+	513: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	514: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	515: Pop
+	516: CopyLoc[57](id#1#0: ID)
+	517: CopyLoc[58](n#1#0: vector<u8>)
+	518: MutBorrowLoc[59](ts#1#0: Scenario)
+	519: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	520: FreezeRef
+	521: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	522: StLoc[45](%#50: Option<u8>)
+	523: ImmBorrowLoc[45](%#50: Option<u8>)
+	524: Call option::is_none<u8>(&Option<u8>): bool
+	525: BrFalse(527)
+B67:
+	526: Branch(529)
+B68:
+	527: LdU64(13906835286739910655)
+	528: Abort
+B69:
+	529: CopyLoc[57](id#1#0: ID)
+	530: CopyLoc[58](n#1#0: vector<u8>)
+	531: MutBorrowLoc[59](ts#1#0: Scenario)
+	532: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	533: FreezeRef
+	534: Call config::read_setting<vector<u8>, bool>(ID, vector<u8>, &TxContext): Option<bool>
+	535: StLoc[46](%#51: Option<bool>)
+	536: ImmBorrowLoc[46](%#51: Option<bool>)
+	537: Call option::is_none<bool>(&Option<bool>): bool
+	538: BrFalse(540)
+B70:
+	539: Branch(542)
+B71:
+	540: LdU64(13906835295329845247)
+	541: Abort
+B72:
+	542: CopyLoc[57](id#1#0: ID)
+	543: MoveLoc[58](n#1#0: vector<u8>)
+	544: MutBorrowLoc[59](ts#1#0: Scenario)
+	545: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	546: FreezeRef
+	547: Call config::read_setting<vector<u8>, u64>(ID, vector<u8>, &TxContext): Option<u64>
+	548: StLoc[47](%#52: Option<u64>)
+	549: ImmBorrowLoc[47](%#52: Option<u64>)
+	550: Call option::is_none<u64>(&Option<u64>): bool
+	551: BrFalse(553)
+B73:
+	552: Branch(555)
+B74:
+	553: LdU64(13906835299624812543)
+	554: Abort
+B75:
+	555: MoveLoc[57](id#1#0: ID)
+	556: MoveLoc[60](w#1#0: Wrapped<vector<u8>>)
+	557: MutBorrowLoc[59](ts#1#0: Scenario)
+	558: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	559: FreezeRef
+	560: Call config::read_setting<Wrapped<vector<u8>>, u8>(ID, Wrapped<vector<u8>>, &TxContext): Option<u8>
+	561: StLoc[48](%#53: Option<u8>)
+	562: ImmBorrowLoc[48](%#53: Option<u8>)
+	563: Call option::is_none<u8>(&Option<u8>): bool
+	564: BrFalse(566)
+B76:
+	565: Branch(568)
+B77:
+	566: LdU64(13906835303919779839)
+	567: Abort
+B78:
+	568: MoveLoc[56](config#4#0: Config<WriteCap>)
+	569: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	570: MoveLoc[59](ts#1#0: Scenario)
+	571: Call test_scenario::end(Scenario): TransactionEffects
+	572: Pop
+	573: Ret
+}
+
+test_remove_doesnt_fail_on_duplicate() {
+L0:	%#1: WriteCap
+L1:	%#10: &mut Config<WriteCap>
+L2:	%#11: WriteCap
+L3:	%#12: &mut Config<WriteCap>
+L4:	%#13: WriteCap
+L5:	%#14: &mut Config<WriteCap>
+L6:	%#15: WriteCap
+L7:	%#16: &mut Config<WriteCap>
+L8:	%#17: WriteCap
+L9:	%#18: &mut Config<WriteCap>
+L10:	%#19: WriteCap
+L11:	%#2: WriteCap
+L12:	%#20: &mut Config<WriteCap>
+L13:	%#21: Option<u8>
+L14:	%#22: WriteCap
+L15:	%#23: &mut Config<WriteCap>
+L16:	%#24: Option<u8>
+L17:	%#25: WriteCap
+L18:	%#26: &mut Config<WriteCap>
+L19:	%#27: Option<u8>
+L20:	%#28: WriteCap
+L21:	%#29: &mut Config<WriteCap>
+L22:	%#3: &mut Config<WriteCap>
+L23:	%#30: WriteCap
+L24:	%#31: &mut Config<WriteCap>
+L25:	%#32: Option<u8>
+L26:	%#33: WriteCap
+L27:	%#34: &mut Config<WriteCap>
+L28:	%#35: WriteCap
+L29:	%#36: &mut Config<WriteCap>
+L30:	%#37: Option<u8>
+L31:	%#38: WriteCap
+L32:	%#39: &mut Config<WriteCap>
+L33:	%#4: WriteCap
+L34:	%#40: WriteCap
+L35:	%#41: &mut Config<WriteCap>
+L36:	%#42: Option<u8>
+L37:	%#5: &mut Config<WriteCap>
+L38:	%#6: Option<u8>
+L39:	%#7: WriteCap
+L40:	%#8: &mut Config<WriteCap>
+L41:	%#9: WriteCap
+L42:	config#1#0: Config<WriteCap>
+L43:	config#2#0: Config<WriteCap>
+L44:	config#3#0: Config<WriteCap>
+L45:	config#4#0: Config<WriteCap>
+L46:	config#5#0: Config<WriteCap>
+L47:	config#6#0: Config<WriteCap>
+L48:	config#7#0: Config<WriteCap>
+L49:	id#1#0: ID
+L50:	n#1#0: vector<u8>
+L51:	ts#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[51](ts#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](WriteCap)
+	5: StLoc[0](%#1: WriteCap)
+	6: MutBorrowLoc[0](%#1: WriteCap)
+	7: MutBorrowLoc[51](ts#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call config_create<WriteCap>(&mut WriteCap, &mut TxContext)
+	10: MutBorrowLoc[51](ts#1#0: Scenario)
+	11: LdConst[0](address: 0x00..)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: Call test_scenario::most_recent_id_shared<Config<WriteCap>>(): Option<ID>
+	15: Call option::destroy_some<ID>(Option<ID>): ID
+	16: StLoc[49](id#1#0: ID)
+	17: LdConst[1](vector<u8>: "hel..)
+	18: StLoc[50](n#1#0: vector<u8>)
+	19: MutBorrowLoc[51](ts#1#0: Scenario)
+	20: LdConst[0](address: 0x00..)
+	21: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	22: Pop
+	23: ImmBorrowLoc[51](ts#1#0: Scenario)
+	24: CopyLoc[49](id#1#0: ID)
+	25: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	26: StLoc[42](config#1#0: Config<WriteCap>)
+	27: MutBorrowLoc[42](config#1#0: Config<WriteCap>)
+	28: StLoc[22](%#3: &mut Config<WriteCap>)
+	29: LdFalse
+	30: Pack[0](WriteCap)
+	31: StLoc[11](%#2: WriteCap)
+	32: MoveLoc[22](%#3: &mut Config<WriteCap>)
+	33: MutBorrowLoc[11](%#2: WriteCap)
+	34: CopyLoc[50](n#1#0: vector<u8>)
+	35: MutBorrowLoc[51](ts#1#0: Scenario)
+	36: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	37: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	38: Pop
+	39: MutBorrowLoc[42](config#1#0: Config<WriteCap>)
+	40: StLoc[37](%#5: &mut Config<WriteCap>)
+	41: LdFalse
+	42: Pack[0](WriteCap)
+	43: StLoc[33](%#4: WriteCap)
+	44: MoveLoc[37](%#5: &mut Config<WriteCap>)
+	45: MutBorrowLoc[33](%#4: WriteCap)
+	46: CopyLoc[50](n#1#0: vector<u8>)
+	47: MutBorrowLoc[51](ts#1#0: Scenario)
+	48: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	49: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	50: Pop
+	51: CopyLoc[49](id#1#0: ID)
+	52: CopyLoc[50](n#1#0: vector<u8>)
+	53: MutBorrowLoc[51](ts#1#0: Scenario)
+	54: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	55: FreezeRef
+	56: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	57: StLoc[38](%#6: Option<u8>)
+	58: ImmBorrowLoc[38](%#6: Option<u8>)
+	59: Call option::is_none<u8>(&Option<u8>): bool
+	60: BrFalse(62)
+B1:
+	61: Branch(64)
+B2:
+	62: LdU64(13906835385524158463)
+	63: Abort
+B3:
+	64: MoveLoc[42](config#1#0: Config<WriteCap>)
+	65: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	66: MutBorrowLoc[51](ts#1#0: Scenario)
+	67: LdConst[0](address: 0x00..)
+	68: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	69: Pop
+	70: ImmBorrowLoc[51](ts#1#0: Scenario)
+	71: CopyLoc[49](id#1#0: ID)
+	72: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	73: StLoc[43](config#2#0: Config<WriteCap>)
+	74: MutBorrowLoc[43](config#2#0: Config<WriteCap>)
+	75: StLoc[40](%#8: &mut Config<WriteCap>)
+	76: LdFalse
+	77: Pack[0](WriteCap)
+	78: StLoc[39](%#7: WriteCap)
+	79: MoveLoc[40](%#8: &mut Config<WriteCap>)
+	80: MutBorrowLoc[39](%#7: WriteCap)
+	81: CopyLoc[50](n#1#0: vector<u8>)
+	82: MutBorrowLoc[51](ts#1#0: Scenario)
+	83: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	84: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	85: Pop
+	86: MutBorrowLoc[43](config#2#0: Config<WriteCap>)
+	87: StLoc[1](%#10: &mut Config<WriteCap>)
+	88: LdFalse
+	89: Pack[0](WriteCap)
+	90: StLoc[41](%#9: WriteCap)
+	91: MoveLoc[1](%#10: &mut Config<WriteCap>)
+	92: MutBorrowLoc[41](%#9: WriteCap)
+	93: CopyLoc[50](n#1#0: vector<u8>)
+	94: MutBorrowLoc[51](ts#1#0: Scenario)
+	95: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	96: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	97: Pop
+	98: MutBorrowLoc[43](config#2#0: Config<WriteCap>)
+	99: StLoc[3](%#12: &mut Config<WriteCap>)
+	100: LdFalse
+	101: Pack[0](WriteCap)
+	102: StLoc[2](%#11: WriteCap)
+	103: MoveLoc[3](%#12: &mut Config<WriteCap>)
+	104: MutBorrowLoc[2](%#11: WriteCap)
+	105: CopyLoc[50](n#1#0: vector<u8>)
+	106: LdU8(0)
+	107: MutBorrowLoc[51](ts#1#0: Scenario)
+	108: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	109: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	110: Pop
+	111: MutBorrowLoc[43](config#2#0: Config<WriteCap>)
+	112: StLoc[5](%#14: &mut Config<WriteCap>)
+	113: LdFalse
+	114: Pack[0](WriteCap)
+	115: StLoc[4](%#13: WriteCap)
+	116: MoveLoc[5](%#14: &mut Config<WriteCap>)
+	117: MutBorrowLoc[4](%#13: WriteCap)
+	118: CopyLoc[50](n#1#0: vector<u8>)
+	119: MutBorrowLoc[51](ts#1#0: Scenario)
+	120: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	121: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	122: Pop
+	123: MutBorrowLoc[43](config#2#0: Config<WriteCap>)
+	124: StLoc[7](%#16: &mut Config<WriteCap>)
+	125: LdFalse
+	126: Pack[0](WriteCap)
+	127: StLoc[6](%#15: WriteCap)
+	128: MoveLoc[7](%#16: &mut Config<WriteCap>)
+	129: MutBorrowLoc[6](%#15: WriteCap)
+	130: CopyLoc[50](n#1#0: vector<u8>)
+	131: LdU8(0)
+	132: MutBorrowLoc[51](ts#1#0: Scenario)
+	133: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	134: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	135: Pop
+	136: MutBorrowLoc[43](config#2#0: Config<WriteCap>)
+	137: StLoc[9](%#18: &mut Config<WriteCap>)
+	138: LdFalse
+	139: Pack[0](WriteCap)
+	140: StLoc[8](%#17: WriteCap)
+	141: MoveLoc[9](%#18: &mut Config<WriteCap>)
+	142: MutBorrowLoc[8](%#17: WriteCap)
+	143: CopyLoc[50](n#1#0: vector<u8>)
+	144: MutBorrowLoc[51](ts#1#0: Scenario)
+	145: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	146: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	147: Pop
+	148: MutBorrowLoc[43](config#2#0: Config<WriteCap>)
+	149: StLoc[12](%#20: &mut Config<WriteCap>)
+	150: LdFalse
+	151: Pack[0](WriteCap)
+	152: StLoc[10](%#19: WriteCap)
+	153: MoveLoc[12](%#20: &mut Config<WriteCap>)
+	154: MutBorrowLoc[10](%#19: WriteCap)
+	155: CopyLoc[50](n#1#0: vector<u8>)
+	156: MutBorrowLoc[51](ts#1#0: Scenario)
+	157: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	158: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	159: Pop
+	160: CopyLoc[49](id#1#0: ID)
+	161: CopyLoc[50](n#1#0: vector<u8>)
+	162: MutBorrowLoc[51](ts#1#0: Scenario)
+	163: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	164: FreezeRef
+	165: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	166: StLoc[13](%#21: Option<u8>)
+	167: ImmBorrowLoc[13](%#21: Option<u8>)
+	168: Call option::is_none<u8>(&Option<u8>): bool
+	169: BrFalse(171)
+B4:
+	170: Branch(173)
+B5:
+	171: LdU64(13906835445653700607)
+	172: Abort
+B6:
+	173: MoveLoc[43](config#2#0: Config<WriteCap>)
+	174: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	175: MutBorrowLoc[51](ts#1#0: Scenario)
+	176: LdConst[0](address: 0x00..)
+	177: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	178: Pop
+	179: ImmBorrowLoc[51](ts#1#0: Scenario)
+	180: CopyLoc[49](id#1#0: ID)
+	181: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	182: StLoc[44](config#3#0: Config<WriteCap>)
+	183: MutBorrowLoc[44](config#3#0: Config<WriteCap>)
+	184: StLoc[15](%#23: &mut Config<WriteCap>)
+	185: LdFalse
+	186: Pack[0](WriteCap)
+	187: StLoc[14](%#22: WriteCap)
+	188: MoveLoc[15](%#23: &mut Config<WriteCap>)
+	189: MutBorrowLoc[14](%#22: WriteCap)
+	190: CopyLoc[50](n#1#0: vector<u8>)
+	191: LdU8(0)
+	192: MutBorrowLoc[51](ts#1#0: Scenario)
+	193: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	194: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	195: Pop
+	196: CopyLoc[49](id#1#0: ID)
+	197: CopyLoc[50](n#1#0: vector<u8>)
+	198: MutBorrowLoc[51](ts#1#0: Scenario)
+	199: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	200: FreezeRef
+	201: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	202: StLoc[16](%#24: Option<u8>)
+	203: ImmBorrowLoc[16](%#24: Option<u8>)
+	204: Call option::is_none<u8>(&Option<u8>): bool
+	205: BrFalse(207)
+B7:
+	206: Branch(209)
+B8:
+	207: LdU64(13906835480013438975)
+	208: Abort
+B9:
+	209: MoveLoc[44](config#3#0: Config<WriteCap>)
+	210: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	211: MutBorrowLoc[51](ts#1#0: Scenario)
+	212: LdConst[0](address: 0x00..)
+	213: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	214: Pop
+	215: ImmBorrowLoc[51](ts#1#0: Scenario)
+	216: CopyLoc[49](id#1#0: ID)
+	217: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	218: StLoc[45](config#4#0: Config<WriteCap>)
+	219: MutBorrowLoc[45](config#4#0: Config<WriteCap>)
+	220: StLoc[18](%#26: &mut Config<WriteCap>)
+	221: LdFalse
+	222: Pack[0](WriteCap)
+	223: StLoc[17](%#25: WriteCap)
+	224: MoveLoc[18](%#26: &mut Config<WriteCap>)
+	225: MutBorrowLoc[17](%#25: WriteCap)
+	226: CopyLoc[50](n#1#0: vector<u8>)
+	227: LdU8(0)
+	228: MutBorrowLoc[51](ts#1#0: Scenario)
+	229: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	230: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	231: Pop
+	232: CopyLoc[49](id#1#0: ID)
+	233: CopyLoc[50](n#1#0: vector<u8>)
+	234: MutBorrowLoc[51](ts#1#0: Scenario)
+	235: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	236: FreezeRef
+	237: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	238: StLoc[19](%#27: Option<u8>)
+	239: ImmBorrowLoc[19](%#27: Option<u8>)
+	240: Call option::is_some<u8>(&Option<u8>): bool
+	241: BrFalse(243)
+B10:
+	242: Branch(245)
+B11:
+	243: LdU64(13906835514373177343)
+	244: Abort
+B12:
+	245: MoveLoc[45](config#4#0: Config<WriteCap>)
+	246: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	247: MutBorrowLoc[51](ts#1#0: Scenario)
+	248: LdConst[0](address: 0x00..)
+	249: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	250: Pop
+	251: ImmBorrowLoc[51](ts#1#0: Scenario)
+	252: CopyLoc[49](id#1#0: ID)
+	253: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	254: StLoc[46](config#5#0: Config<WriteCap>)
+	255: MutBorrowLoc[46](config#5#0: Config<WriteCap>)
+	256: StLoc[21](%#29: &mut Config<WriteCap>)
+	257: LdFalse
+	258: Pack[0](WriteCap)
+	259: StLoc[20](%#28: WriteCap)
+	260: MoveLoc[21](%#29: &mut Config<WriteCap>)
+	261: MutBorrowLoc[20](%#28: WriteCap)
+	262: CopyLoc[50](n#1#0: vector<u8>)
+	263: MutBorrowLoc[51](ts#1#0: Scenario)
+	264: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	265: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	266: Pop
+	267: MutBorrowLoc[46](config#5#0: Config<WriteCap>)
+	268: StLoc[24](%#31: &mut Config<WriteCap>)
+	269: LdFalse
+	270: Pack[0](WriteCap)
+	271: StLoc[23](%#30: WriteCap)
+	272: MoveLoc[24](%#31: &mut Config<WriteCap>)
+	273: MutBorrowLoc[23](%#30: WriteCap)
+	274: CopyLoc[50](n#1#0: vector<u8>)
+	275: MutBorrowLoc[51](ts#1#0: Scenario)
+	276: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	277: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	278: Pop
+	279: CopyLoc[49](id#1#0: ID)
+	280: CopyLoc[50](n#1#0: vector<u8>)
+	281: MutBorrowLoc[51](ts#1#0: Scenario)
+	282: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	283: FreezeRef
+	284: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	285: StLoc[25](%#32: Option<u8>)
+	286: ImmBorrowLoc[25](%#32: Option<u8>)
+	287: Call option::is_some<u8>(&Option<u8>): bool
+	288: BrFalse(290)
+B13:
+	289: Branch(292)
+B14:
+	290: LdU64(13906835553027883007)
+	291: Abort
+B15:
+	292: MoveLoc[46](config#5#0: Config<WriteCap>)
+	293: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	294: MutBorrowLoc[51](ts#1#0: Scenario)
+	295: LdConst[0](address: 0x00..)
+	296: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	297: Pop
+	298: ImmBorrowLoc[51](ts#1#0: Scenario)
+	299: CopyLoc[49](id#1#0: ID)
+	300: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	301: StLoc[47](config#6#0: Config<WriteCap>)
+	302: MutBorrowLoc[47](config#6#0: Config<WriteCap>)
+	303: StLoc[27](%#34: &mut Config<WriteCap>)
+	304: LdFalse
+	305: Pack[0](WriteCap)
+	306: StLoc[26](%#33: WriteCap)
+	307: MoveLoc[27](%#34: &mut Config<WriteCap>)
+	308: MutBorrowLoc[26](%#33: WriteCap)
+	309: CopyLoc[50](n#1#0: vector<u8>)
+	310: MutBorrowLoc[51](ts#1#0: Scenario)
+	311: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	312: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	313: Pop
+	314: MutBorrowLoc[47](config#6#0: Config<WriteCap>)
+	315: StLoc[29](%#36: &mut Config<WriteCap>)
+	316: LdFalse
+	317: Pack[0](WriteCap)
+	318: StLoc[28](%#35: WriteCap)
+	319: MoveLoc[29](%#36: &mut Config<WriteCap>)
+	320: MutBorrowLoc[28](%#35: WriteCap)
+	321: CopyLoc[50](n#1#0: vector<u8>)
+	322: MutBorrowLoc[51](ts#1#0: Scenario)
+	323: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	324: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	325: Pop
+	326: CopyLoc[49](id#1#0: ID)
+	327: CopyLoc[50](n#1#0: vector<u8>)
+	328: MutBorrowLoc[51](ts#1#0: Scenario)
+	329: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	330: FreezeRef
+	331: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	332: StLoc[30](%#37: Option<u8>)
+	333: ImmBorrowLoc[30](%#37: Option<u8>)
+	334: Call option::is_none<u8>(&Option<u8>): bool
+	335: BrFalse(337)
+B16:
+	336: Branch(339)
+B17:
+	337: LdU64(13906835591682588671)
+	338: Abort
+B18:
+	339: MoveLoc[47](config#6#0: Config<WriteCap>)
+	340: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	341: MutBorrowLoc[51](ts#1#0: Scenario)
+	342: LdConst[0](address: 0x00..)
+	343: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	344: Pop
+	345: ImmBorrowLoc[51](ts#1#0: Scenario)
+	346: CopyLoc[49](id#1#0: ID)
+	347: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	348: StLoc[48](config#7#0: Config<WriteCap>)
+	349: MutBorrowLoc[48](config#7#0: Config<WriteCap>)
+	350: StLoc[32](%#39: &mut Config<WriteCap>)
+	351: LdFalse
+	352: Pack[0](WriteCap)
+	353: StLoc[31](%#38: WriteCap)
+	354: MoveLoc[32](%#39: &mut Config<WriteCap>)
+	355: MutBorrowLoc[31](%#38: WriteCap)
+	356: CopyLoc[50](n#1#0: vector<u8>)
+	357: MutBorrowLoc[51](ts#1#0: Scenario)
+	358: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	359: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	360: Pop
+	361: MutBorrowLoc[48](config#7#0: Config<WriteCap>)
+	362: StLoc[35](%#41: &mut Config<WriteCap>)
+	363: LdFalse
+	364: Pack[0](WriteCap)
+	365: StLoc[34](%#40: WriteCap)
+	366: MoveLoc[35](%#41: &mut Config<WriteCap>)
+	367: MutBorrowLoc[34](%#40: WriteCap)
+	368: CopyLoc[50](n#1#0: vector<u8>)
+	369: MutBorrowLoc[51](ts#1#0: Scenario)
+	370: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	371: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	372: Pop
+	373: MoveLoc[49](id#1#0: ID)
+	374: MoveLoc[50](n#1#0: vector<u8>)
+	375: MutBorrowLoc[51](ts#1#0: Scenario)
+	376: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	377: FreezeRef
+	378: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	379: StLoc[36](%#42: Option<u8>)
+	380: ImmBorrowLoc[36](%#42: Option<u8>)
+	381: Call option::is_none<u8>(&Option<u8>): bool
+	382: BrFalse(384)
+B19:
+	383: Branch(386)
+B20:
+	384: LdU64(13906835630337294335)
+	385: Abort
+B21:
+	386: MoveLoc[48](config#7#0: Config<WriteCap>)
+	387: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	388: MoveLoc[51](ts#1#0: Scenario)
+	389: Call test_scenario::end(Scenario): TransactionEffects
+	390: Pop
+	391: Ret
+}
+
+test_remove_fail_on_type_mismatch() {
+L0:	%#1: WriteCap
+L1:	%#2: WriteCap
+L2:	%#3: &mut Config<WriteCap>
+L3:	%#4: WriteCap
+L4:	%#5: &mut Config<WriteCap>
+L5:	config#1#0: Config<WriteCap>
+L6:	id#1#0: ID
+L7:	n#1#0: vector<u8>
+L8:	ts#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[8](ts#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](WriteCap)
+	5: StLoc[0](%#1: WriteCap)
+	6: MutBorrowLoc[0](%#1: WriteCap)
+	7: MutBorrowLoc[8](ts#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call config_create<WriteCap>(&mut WriteCap, &mut TxContext)
+	10: MutBorrowLoc[8](ts#1#0: Scenario)
+	11: LdConst[0](address: 0x00..)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: Call test_scenario::most_recent_id_shared<Config<WriteCap>>(): Option<ID>
+	15: Call option::destroy_some<ID>(Option<ID>): ID
+	16: StLoc[6](id#1#0: ID)
+	17: LdConst[1](vector<u8>: "hel..)
+	18: StLoc[7](n#1#0: vector<u8>)
+	19: MutBorrowLoc[8](ts#1#0: Scenario)
+	20: LdConst[0](address: 0x00..)
+	21: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	22: Pop
+	23: ImmBorrowLoc[8](ts#1#0: Scenario)
+	24: MoveLoc[6](id#1#0: ID)
+	25: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	26: StLoc[5](config#1#0: Config<WriteCap>)
+	27: MutBorrowLoc[5](config#1#0: Config<WriteCap>)
+	28: StLoc[2](%#3: &mut Config<WriteCap>)
+	29: LdFalse
+	30: Pack[0](WriteCap)
+	31: StLoc[1](%#2: WriteCap)
+	32: MoveLoc[2](%#3: &mut Config<WriteCap>)
+	33: MutBorrowLoc[1](%#2: WriteCap)
+	34: CopyLoc[7](n#1#0: vector<u8>)
+	35: LdU8(0)
+	36: MutBorrowLoc[8](ts#1#0: Scenario)
+	37: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	38: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	39: Pop
+	40: MutBorrowLoc[5](config#1#0: Config<WriteCap>)
+	41: StLoc[4](%#5: &mut Config<WriteCap>)
+	42: LdFalse
+	43: Pack[0](WriteCap)
+	44: StLoc[3](%#4: WriteCap)
+	45: MoveLoc[4](%#5: &mut Config<WriteCap>)
+	46: MutBorrowLoc[3](%#4: WriteCap)
+	47: MoveLoc[7](n#1#0: vector<u8>)
+	48: MutBorrowLoc[8](ts#1#0: Scenario)
+	49: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	50: Call config::remove_for_next_epoch<WriteCap, vector<u8>, bool>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<bool>
+	51: Pop
+	52: LdU64(0)
+	53: Abort
+}
+
+test_add_fail_on_type_mismatch() {
+L0:	%#1: WriteCap
+L1:	%#2: WriteCap
+L2:	%#3: &mut Config<WriteCap>
+L3:	%#4: WriteCap
+L4:	%#5: &mut Config<WriteCap>
+L5:	config#1#0: Config<WriteCap>
+L6:	config#2#0: Config<WriteCap>
+L7:	id#1#0: ID
+L8:	n#1#0: vector<u8>
+L9:	ts#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[9](ts#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](WriteCap)
+	5: StLoc[0](%#1: WriteCap)
+	6: MutBorrowLoc[0](%#1: WriteCap)
+	7: MutBorrowLoc[9](ts#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call config_create<WriteCap>(&mut WriteCap, &mut TxContext)
+	10: MutBorrowLoc[9](ts#1#0: Scenario)
+	11: LdConst[0](address: 0x00..)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: Call test_scenario::most_recent_id_shared<Config<WriteCap>>(): Option<ID>
+	15: Call option::destroy_some<ID>(Option<ID>): ID
+	16: StLoc[7](id#1#0: ID)
+	17: LdConst[1](vector<u8>: "hel..)
+	18: StLoc[8](n#1#0: vector<u8>)
+	19: MutBorrowLoc[9](ts#1#0: Scenario)
+	20: LdConst[0](address: 0x00..)
+	21: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	22: Pop
+	23: ImmBorrowLoc[9](ts#1#0: Scenario)
+	24: CopyLoc[7](id#1#0: ID)
+	25: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	26: StLoc[5](config#1#0: Config<WriteCap>)
+	27: MutBorrowLoc[5](config#1#0: Config<WriteCap>)
+	28: StLoc[2](%#3: &mut Config<WriteCap>)
+	29: LdFalse
+	30: Pack[0](WriteCap)
+	31: StLoc[1](%#2: WriteCap)
+	32: MoveLoc[2](%#3: &mut Config<WriteCap>)
+	33: MutBorrowLoc[1](%#2: WriteCap)
+	34: CopyLoc[8](n#1#0: vector<u8>)
+	35: LdU8(0)
+	36: MutBorrowLoc[9](ts#1#0: Scenario)
+	37: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	38: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	39: Pop
+	40: MutBorrowLoc[9](ts#1#0: Scenario)
+	41: LdConst[0](address: 0x00..)
+	42: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	43: Pop
+	44: MoveLoc[5](config#1#0: Config<WriteCap>)
+	45: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	46: MutBorrowLoc[9](ts#1#0: Scenario)
+	47: LdConst[0](address: 0x00..)
+	48: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	49: Pop
+	50: ImmBorrowLoc[9](ts#1#0: Scenario)
+	51: MoveLoc[7](id#1#0: ID)
+	52: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	53: StLoc[6](config#2#0: Config<WriteCap>)
+	54: MutBorrowLoc[6](config#2#0: Config<WriteCap>)
+	55: StLoc[4](%#5: &mut Config<WriteCap>)
+	56: LdFalse
+	57: Pack[0](WriteCap)
+	58: StLoc[3](%#4: WriteCap)
+	59: MoveLoc[4](%#5: &mut Config<WriteCap>)
+	60: MutBorrowLoc[3](%#4: WriteCap)
+	61: MoveLoc[8](n#1#0: vector<u8>)
+	62: MutBorrowLoc[9](ts#1#0: Scenario)
+	63: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	64: Call config::remove_for_next_epoch<WriteCap, vector<u8>, bool>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<bool>
+	65: Pop
+	66: LdU64(0)
+	67: Abort
+}
+
+test_removed_value() {
+L0:	%#1: WriteCap
+L1:	%#10: WriteCap
+L2:	%#11: &mut Config<WriteCap>
+L3:	%#12: String
+L4:	%#13: String
+L5:	%#14: WriteCap
+L6:	%#15: &mut Config<WriteCap>
+L7:	%#16: String
+L8:	%#17: String
+L9:	%#18: WriteCap
+L10:	%#19: &mut Config<WriteCap>
+L11:	%#2: WriteCap
+L12:	%#20: String
+L13:	%#21: String
+L14:	%#22: WriteCap
+L15:	%#23: &mut Config<WriteCap>
+L16:	%#24: String
+L17:	%#25: String
+L18:	%#26: WriteCap
+L19:	%#27: &mut Config<WriteCap>
+L20:	%#28: String
+L21:	%#29: String
+L22:	%#3: &mut Config<WriteCap>
+L23:	%#30: WriteCap
+L24:	%#31: &mut Config<WriteCap>
+L25:	%#32: String
+L26:	%#33: String
+L27:	%#4: String
+L28:	%#5: String
+L29:	%#6: WriteCap
+L30:	%#7: &mut Config<WriteCap>
+L31:	%#8: String
+L32:	%#9: String
+L33:	config#1#0: Config<WriteCap>
+L34:	config#2#0: Config<WriteCap>
+L35:	config#3#0: Config<WriteCap>
+L36:	config#4#0: Config<WriteCap>
+L37:	config#5#0: Config<WriteCap>
+L38:	id#1#0: ID
+L39:	n#1#0: vector<u8>
+L40:	t1#1#1: Option<u8>
+L41:	t1#1#10: &Option<u8>
+L42:	t1#1#13: Option<u8>
+L43:	t1#1#16: &Option<u8>
+L44:	t1#1#19: Option<u8>
+L45:	t1#1#22: &Option<u8>
+L46:	t1#1#25: Option<u8>
+L47:	t1#1#28: &Option<u8>
+L48:	t1#1#31: Option<u8>
+L49:	t1#1#34: &Option<u8>
+L50:	t1#1#37: Option<u8>
+L51:	t1#1#4: &Option<u8>
+L52:	t1#1#40: &Option<u8>
+L53:	t1#1#43: Option<u8>
+L54:	t1#1#46: &Option<u8>
+L55:	t1#1#7: Option<u8>
+L56:	t2#1#1: Option<u8>
+L57:	t2#1#10: &Option<u8>
+L58:	t2#1#13: Option<u8>
+L59:	t2#1#16: &Option<u8>
+L60:	t2#1#19: Option<u8>
+L61:	t2#1#22: &Option<u8>
+L62:	t2#1#25: Option<u8>
+L63:	t2#1#28: &Option<u8>
+L64:	t2#1#31: Option<u8>
+L65:	t2#1#34: &Option<u8>
+L66:	t2#1#37: Option<u8>
+L67:	t2#1#4: &Option<u8>
+L68:	t2#1#40: &Option<u8>
+L69:	t2#1#43: Option<u8>
+L70:	t2#1#46: &Option<u8>
+L71:	t2#1#7: Option<u8>
+L72:	ts#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[72](ts#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](WriteCap)
+	5: StLoc[0](%#1: WriteCap)
+	6: MutBorrowLoc[0](%#1: WriteCap)
+	7: MutBorrowLoc[72](ts#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call config_create<WriteCap>(&mut WriteCap, &mut TxContext)
+	10: MutBorrowLoc[72](ts#1#0: Scenario)
+	11: LdConst[0](address: 0x00..)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: Call test_scenario::most_recent_id_shared<Config<WriteCap>>(): Option<ID>
+	15: Call option::destroy_some<ID>(Option<ID>): ID
+	16: StLoc[38](id#1#0: ID)
+	17: LdConst[1](vector<u8>: "hel..)
+	18: StLoc[39](n#1#0: vector<u8>)
+	19: MutBorrowLoc[72](ts#1#0: Scenario)
+	20: LdConst[0](address: 0x00..)
+	21: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	22: Pop
+	23: ImmBorrowLoc[72](ts#1#0: Scenario)
+	24: CopyLoc[38](id#1#0: ID)
+	25: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	26: StLoc[33](config#1#0: Config<WriteCap>)
+	27: MutBorrowLoc[33](config#1#0: Config<WriteCap>)
+	28: StLoc[22](%#3: &mut Config<WriteCap>)
+	29: LdFalse
+	30: Pack[0](WriteCap)
+	31: StLoc[11](%#2: WriteCap)
+	32: MoveLoc[22](%#3: &mut Config<WriteCap>)
+	33: MutBorrowLoc[11](%#2: WriteCap)
+	34: CopyLoc[39](n#1#0: vector<u8>)
+	35: LdU8(0)
+	36: MutBorrowLoc[72](ts#1#0: Scenario)
+	37: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	38: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	39: StLoc[40](t1#1#1: Option<u8>)
+	40: Call option::none<u8>(): Option<u8>
+	41: StLoc[56](t2#1#1: Option<u8>)
+	42: ImmBorrowLoc[40](t1#1#1: Option<u8>)
+	43: StLoc[51](t1#1#4: &Option<u8>)
+	44: ImmBorrowLoc[56](t2#1#1: Option<u8>)
+	45: StLoc[67](t2#1#4: &Option<u8>)
+	46: CopyLoc[51](t1#1#4: &Option<u8>)
+	47: CopyLoc[67](t2#1#4: &Option<u8>)
+	48: Eq
+	49: Not
+	50: BrFalse(67)
+B1:
+	51: LdConst[2](vector<u8>: "Ass..)
+	52: Call string::utf8(vector<u8>): String
+	53: StLoc[27](%#4: String)
+	54: ImmBorrowLoc[27](%#4: String)
+	55: Call debug::print<String>(&String)
+	56: MoveLoc[51](t1#1#4: &Option<u8>)
+	57: Call debug::print<Option<u8>>(&Option<u8>)
+	58: LdConst[3](vector<u8>: "!="..)
+	59: Call string::utf8(vector<u8>): String
+	60: StLoc[28](%#5: String)
+	61: ImmBorrowLoc[28](%#5: String)
+	62: Call debug::print<String>(&String)
+	63: MoveLoc[67](t2#1#4: &Option<u8>)
+	64: Call debug::print<Option<u8>>(&Option<u8>)
+	65: LdU64(13906835866560495615)
+	66: Abort
+B2:
+	67: MoveLoc[67](t2#1#4: &Option<u8>)
+	68: Pop
+	69: MoveLoc[51](t1#1#4: &Option<u8>)
+	70: Pop
+	71: MoveLoc[33](config#1#0: Config<WriteCap>)
+	72: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	73: MutBorrowLoc[72](ts#1#0: Scenario)
+	74: LdConst[0](address: 0x00..)
+	75: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	76: Pop
+	77: ImmBorrowLoc[72](ts#1#0: Scenario)
+	78: CopyLoc[38](id#1#0: ID)
+	79: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	80: StLoc[34](config#2#0: Config<WriteCap>)
+	81: MutBorrowLoc[34](config#2#0: Config<WriteCap>)
+	82: StLoc[30](%#7: &mut Config<WriteCap>)
+	83: LdFalse
+	84: Pack[0](WriteCap)
+	85: StLoc[29](%#6: WriteCap)
+	86: MoveLoc[30](%#7: &mut Config<WriteCap>)
+	87: MutBorrowLoc[29](%#6: WriteCap)
+	88: CopyLoc[39](n#1#0: vector<u8>)
+	89: LdU8(1)
+	90: MutBorrowLoc[72](ts#1#0: Scenario)
+	91: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	92: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	93: StLoc[55](t1#1#7: Option<u8>)
+	94: Call option::none<u8>(): Option<u8>
+	95: StLoc[71](t2#1#7: Option<u8>)
+	96: ImmBorrowLoc[55](t1#1#7: Option<u8>)
+	97: StLoc[41](t1#1#10: &Option<u8>)
+	98: ImmBorrowLoc[71](t2#1#7: Option<u8>)
+	99: StLoc[57](t2#1#10: &Option<u8>)
+	100: CopyLoc[41](t1#1#10: &Option<u8>)
+	101: CopyLoc[57](t2#1#10: &Option<u8>)
+	102: Eq
+	103: Not
+	104: BrFalse(121)
+B3:
+	105: LdConst[2](vector<u8>: "Ass..)
+	106: Call string::utf8(vector<u8>): String
+	107: StLoc[31](%#8: String)
+	108: ImmBorrowLoc[31](%#8: String)
+	109: Call debug::print<String>(&String)
+	110: MoveLoc[41](t1#1#10: &Option<u8>)
+	111: Call debug::print<Option<u8>>(&Option<u8>)
+	112: LdConst[3](vector<u8>: "!="..)
+	113: Call string::utf8(vector<u8>): String
+	114: StLoc[32](%#9: String)
+	115: ImmBorrowLoc[32](%#9: String)
+	116: Call debug::print<String>(&String)
+	117: MoveLoc[57](t2#1#10: &Option<u8>)
+	118: Call debug::print<Option<u8>>(&Option<u8>)
+	119: LdU64(13906835900920233983)
+	120: Abort
+B4:
+	121: MoveLoc[57](t2#1#10: &Option<u8>)
+	122: Pop
+	123: MoveLoc[41](t1#1#10: &Option<u8>)
+	124: Pop
+	125: MoveLoc[34](config#2#0: Config<WriteCap>)
+	126: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	127: MutBorrowLoc[72](ts#1#0: Scenario)
+	128: LdConst[0](address: 0x00..)
+	129: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	130: Pop
+	131: ImmBorrowLoc[72](ts#1#0: Scenario)
+	132: CopyLoc[38](id#1#0: ID)
+	133: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	134: StLoc[35](config#3#0: Config<WriteCap>)
+	135: MutBorrowLoc[35](config#3#0: Config<WriteCap>)
+	136: StLoc[2](%#11: &mut Config<WriteCap>)
+	137: LdFalse
+	138: Pack[0](WriteCap)
+	139: StLoc[1](%#10: WriteCap)
+	140: MoveLoc[2](%#11: &mut Config<WriteCap>)
+	141: MutBorrowLoc[1](%#10: WriteCap)
+	142: CopyLoc[39](n#1#0: vector<u8>)
+	143: LdU8(2)
+	144: MutBorrowLoc[72](ts#1#0: Scenario)
+	145: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	146: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	147: StLoc[42](t1#1#13: Option<u8>)
+	148: LdU8(0)
+	149: Call option::some<u8>(u8): Option<u8>
+	150: StLoc[58](t2#1#13: Option<u8>)
+	151: ImmBorrowLoc[42](t1#1#13: Option<u8>)
+	152: StLoc[43](t1#1#16: &Option<u8>)
+	153: ImmBorrowLoc[58](t2#1#13: Option<u8>)
+	154: StLoc[59](t2#1#16: &Option<u8>)
+	155: CopyLoc[43](t1#1#16: &Option<u8>)
+	156: CopyLoc[59](t2#1#16: &Option<u8>)
+	157: Eq
+	158: Not
+	159: BrFalse(176)
+B5:
+	160: LdConst[2](vector<u8>: "Ass..)
+	161: Call string::utf8(vector<u8>): String
+	162: StLoc[3](%#12: String)
+	163: ImmBorrowLoc[3](%#12: String)
+	164: Call debug::print<String>(&String)
+	165: MoveLoc[43](t1#1#16: &Option<u8>)
+	166: Call debug::print<Option<u8>>(&Option<u8>)
+	167: LdConst[3](vector<u8>: "!="..)
+	168: Call string::utf8(vector<u8>): String
+	169: StLoc[4](%#13: String)
+	170: ImmBorrowLoc[4](%#13: String)
+	171: Call debug::print<String>(&String)
+	172: MoveLoc[59](t2#1#16: &Option<u8>)
+	173: Call debug::print<Option<u8>>(&Option<u8>)
+	174: LdU64(13906835935279972351)
+	175: Abort
+B6:
+	176: MoveLoc[59](t2#1#16: &Option<u8>)
+	177: Pop
+	178: MoveLoc[43](t1#1#16: &Option<u8>)
+	179: Pop
+	180: MoveLoc[35](config#3#0: Config<WriteCap>)
+	181: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	182: MutBorrowLoc[72](ts#1#0: Scenario)
+	183: LdConst[0](address: 0x00..)
+	184: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	185: Pop
+	186: ImmBorrowLoc[72](ts#1#0: Scenario)
+	187: CopyLoc[38](id#1#0: ID)
+	188: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	189: StLoc[36](config#4#0: Config<WriteCap>)
+	190: MutBorrowLoc[36](config#4#0: Config<WriteCap>)
+	191: StLoc[6](%#15: &mut Config<WriteCap>)
+	192: LdFalse
+	193: Pack[0](WriteCap)
+	194: StLoc[5](%#14: WriteCap)
+	195: MoveLoc[6](%#15: &mut Config<WriteCap>)
+	196: MutBorrowLoc[5](%#14: WriteCap)
+	197: CopyLoc[39](n#1#0: vector<u8>)
+	198: MutBorrowLoc[72](ts#1#0: Scenario)
+	199: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	200: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	201: StLoc[44](t1#1#19: Option<u8>)
+	202: Call option::none<u8>(): Option<u8>
+	203: StLoc[60](t2#1#19: Option<u8>)
+	204: ImmBorrowLoc[44](t1#1#19: Option<u8>)
+	205: StLoc[45](t1#1#22: &Option<u8>)
+	206: ImmBorrowLoc[60](t2#1#19: Option<u8>)
+	207: StLoc[61](t2#1#22: &Option<u8>)
+	208: CopyLoc[45](t1#1#22: &Option<u8>)
+	209: CopyLoc[61](t2#1#22: &Option<u8>)
+	210: Eq
+	211: Not
+	212: BrFalse(229)
+B7:
+	213: LdConst[2](vector<u8>: "Ass..)
+	214: Call string::utf8(vector<u8>): String
+	215: StLoc[7](%#16: String)
+	216: ImmBorrowLoc[7](%#16: String)
+	217: Call debug::print<String>(&String)
+	218: MoveLoc[45](t1#1#22: &Option<u8>)
+	219: Call debug::print<Option<u8>>(&Option<u8>)
+	220: LdConst[3](vector<u8>: "!="..)
+	221: Call string::utf8(vector<u8>): String
+	222: StLoc[8](%#17: String)
+	223: ImmBorrowLoc[8](%#17: String)
+	224: Call debug::print<String>(&String)
+	225: MoveLoc[61](t2#1#22: &Option<u8>)
+	226: Call debug::print<Option<u8>>(&Option<u8>)
+	227: LdU64(13906835969639710719)
+	228: Abort
+B8:
+	229: MoveLoc[61](t2#1#22: &Option<u8>)
+	230: Pop
+	231: MoveLoc[45](t1#1#22: &Option<u8>)
+	232: Pop
+	233: MutBorrowLoc[36](config#4#0: Config<WriteCap>)
+	234: StLoc[10](%#19: &mut Config<WriteCap>)
+	235: LdFalse
+	236: Pack[0](WriteCap)
+	237: StLoc[9](%#18: WriteCap)
+	238: MoveLoc[10](%#19: &mut Config<WriteCap>)
+	239: MutBorrowLoc[9](%#18: WriteCap)
+	240: CopyLoc[39](n#1#0: vector<u8>)
+	241: LdU8(3)
+	242: MutBorrowLoc[72](ts#1#0: Scenario)
+	243: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	244: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	245: StLoc[46](t1#1#25: Option<u8>)
+	246: Call option::none<u8>(): Option<u8>
+	247: StLoc[62](t2#1#25: Option<u8>)
+	248: ImmBorrowLoc[46](t1#1#25: Option<u8>)
+	249: StLoc[47](t1#1#28: &Option<u8>)
+	250: ImmBorrowLoc[62](t2#1#25: Option<u8>)
+	251: StLoc[63](t2#1#28: &Option<u8>)
+	252: CopyLoc[47](t1#1#28: &Option<u8>)
+	253: CopyLoc[63](t2#1#28: &Option<u8>)
+	254: Eq
+	255: Not
+	256: BrFalse(273)
+B9:
+	257: LdConst[2](vector<u8>: "Ass..)
+	258: Call string::utf8(vector<u8>): String
+	259: StLoc[12](%#20: String)
+	260: ImmBorrowLoc[12](%#20: String)
+	261: Call debug::print<String>(&String)
+	262: MoveLoc[47](t1#1#28: &Option<u8>)
+	263: Call debug::print<Option<u8>>(&Option<u8>)
+	264: LdConst[3](vector<u8>: "!="..)
+	265: Call string::utf8(vector<u8>): String
+	266: StLoc[13](%#21: String)
+	267: ImmBorrowLoc[13](%#21: String)
+	268: Call debug::print<String>(&String)
+	269: MoveLoc[63](t2#1#28: &Option<u8>)
+	270: Call debug::print<Option<u8>>(&Option<u8>)
+	271: LdU64(13906835978229645311)
+	272: Abort
+B10:
+	273: MoveLoc[63](t2#1#28: &Option<u8>)
+	274: Pop
+	275: MoveLoc[47](t1#1#28: &Option<u8>)
+	276: Pop
+	277: MoveLoc[36](config#4#0: Config<WriteCap>)
+	278: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	279: MutBorrowLoc[72](ts#1#0: Scenario)
+	280: LdConst[0](address: 0x00..)
+	281: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	282: Pop
+	283: ImmBorrowLoc[72](ts#1#0: Scenario)
+	284: MoveLoc[38](id#1#0: ID)
+	285: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	286: StLoc[37](config#5#0: Config<WriteCap>)
+	287: MutBorrowLoc[37](config#5#0: Config<WriteCap>)
+	288: StLoc[15](%#23: &mut Config<WriteCap>)
+	289: LdFalse
+	290: Pack[0](WriteCap)
+	291: StLoc[14](%#22: WriteCap)
+	292: MoveLoc[15](%#23: &mut Config<WriteCap>)
+	293: MutBorrowLoc[14](%#22: WriteCap)
+	294: CopyLoc[39](n#1#0: vector<u8>)
+	295: LdU8(4)
+	296: MutBorrowLoc[72](ts#1#0: Scenario)
+	297: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	298: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	299: StLoc[48](t1#1#31: Option<u8>)
+	300: LdU8(2)
+	301: Call option::some<u8>(u8): Option<u8>
+	302: StLoc[64](t2#1#31: Option<u8>)
+	303: ImmBorrowLoc[48](t1#1#31: Option<u8>)
+	304: StLoc[49](t1#1#34: &Option<u8>)
+	305: ImmBorrowLoc[64](t2#1#31: Option<u8>)
+	306: StLoc[65](t2#1#34: &Option<u8>)
+	307: CopyLoc[49](t1#1#34: &Option<u8>)
+	308: CopyLoc[65](t2#1#34: &Option<u8>)
+	309: Eq
+	310: Not
+	311: BrFalse(328)
+B11:
+	312: LdConst[2](vector<u8>: "Ass..)
+	313: Call string::utf8(vector<u8>): String
+	314: StLoc[16](%#24: String)
+	315: ImmBorrowLoc[16](%#24: String)
+	316: Call debug::print<String>(&String)
+	317: MoveLoc[49](t1#1#34: &Option<u8>)
+	318: Call debug::print<Option<u8>>(&Option<u8>)
+	319: LdConst[3](vector<u8>: "!="..)
+	320: Call string::utf8(vector<u8>): String
+	321: StLoc[17](%#25: String)
+	322: ImmBorrowLoc[17](%#25: String)
+	323: Call debug::print<String>(&String)
+	324: MoveLoc[65](t2#1#34: &Option<u8>)
+	325: Call debug::print<Option<u8>>(&Option<u8>)
+	326: LdU64(13906836012589383679)
+	327: Abort
+B12:
+	328: MoveLoc[65](t2#1#34: &Option<u8>)
+	329: Pop
+	330: MoveLoc[49](t1#1#34: &Option<u8>)
+	331: Pop
+	332: MutBorrowLoc[37](config#5#0: Config<WriteCap>)
+	333: StLoc[19](%#27: &mut Config<WriteCap>)
+	334: LdFalse
+	335: Pack[0](WriteCap)
+	336: StLoc[18](%#26: WriteCap)
+	337: MoveLoc[19](%#27: &mut Config<WriteCap>)
+	338: MutBorrowLoc[18](%#26: WriteCap)
+	339: CopyLoc[39](n#1#0: vector<u8>)
+	340: MutBorrowLoc[72](ts#1#0: Scenario)
+	341: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	342: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	343: StLoc[50](t1#1#37: Option<u8>)
+	344: LdU8(4)
+	345: Call option::some<u8>(u8): Option<u8>
+	346: StLoc[66](t2#1#37: Option<u8>)
+	347: ImmBorrowLoc[50](t1#1#37: Option<u8>)
+	348: StLoc[52](t1#1#40: &Option<u8>)
+	349: ImmBorrowLoc[66](t2#1#37: Option<u8>)
+	350: StLoc[68](t2#1#40: &Option<u8>)
+	351: CopyLoc[52](t1#1#40: &Option<u8>)
+	352: CopyLoc[68](t2#1#40: &Option<u8>)
+	353: Eq
+	354: Not
+	355: BrFalse(372)
+B13:
+	356: LdConst[2](vector<u8>: "Ass..)
+	357: Call string::utf8(vector<u8>): String
+	358: StLoc[20](%#28: String)
+	359: ImmBorrowLoc[20](%#28: String)
+	360: Call debug::print<String>(&String)
+	361: MoveLoc[52](t1#1#40: &Option<u8>)
+	362: Call debug::print<Option<u8>>(&Option<u8>)
+	363: LdConst[3](vector<u8>: "!="..)
+	364: Call string::utf8(vector<u8>): String
+	365: StLoc[21](%#29: String)
+	366: ImmBorrowLoc[21](%#29: String)
+	367: Call debug::print<String>(&String)
+	368: MoveLoc[68](t2#1#40: &Option<u8>)
+	369: Call debug::print<Option<u8>>(&Option<u8>)
+	370: LdU64(13906836021179318271)
+	371: Abort
+B14:
+	372: MoveLoc[68](t2#1#40: &Option<u8>)
+	373: Pop
+	374: MoveLoc[52](t1#1#40: &Option<u8>)
+	375: Pop
+	376: MutBorrowLoc[37](config#5#0: Config<WriteCap>)
+	377: StLoc[24](%#31: &mut Config<WriteCap>)
+	378: LdFalse
+	379: Pack[0](WriteCap)
+	380: StLoc[23](%#30: WriteCap)
+	381: MoveLoc[24](%#31: &mut Config<WriteCap>)
+	382: MutBorrowLoc[23](%#30: WriteCap)
+	383: MoveLoc[39](n#1#0: vector<u8>)
+	384: MutBorrowLoc[72](ts#1#0: Scenario)
+	385: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	386: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	387: StLoc[53](t1#1#43: Option<u8>)
+	388: Call option::none<u8>(): Option<u8>
+	389: StLoc[69](t2#1#43: Option<u8>)
+	390: ImmBorrowLoc[53](t1#1#43: Option<u8>)
+	391: StLoc[54](t1#1#46: &Option<u8>)
+	392: ImmBorrowLoc[69](t2#1#43: Option<u8>)
+	393: StLoc[70](t2#1#46: &Option<u8>)
+	394: CopyLoc[54](t1#1#46: &Option<u8>)
+	395: CopyLoc[70](t2#1#46: &Option<u8>)
+	396: Eq
+	397: Not
+	398: BrFalse(415)
+B15:
+	399: LdConst[2](vector<u8>: "Ass..)
+	400: Call string::utf8(vector<u8>): String
+	401: StLoc[25](%#32: String)
+	402: ImmBorrowLoc[25](%#32: String)
+	403: Call debug::print<String>(&String)
+	404: MoveLoc[54](t1#1#46: &Option<u8>)
+	405: Call debug::print<Option<u8>>(&Option<u8>)
+	406: LdConst[3](vector<u8>: "!="..)
+	407: Call string::utf8(vector<u8>): String
+	408: StLoc[26](%#33: String)
+	409: ImmBorrowLoc[26](%#33: String)
+	410: Call debug::print<String>(&String)
+	411: MoveLoc[70](t2#1#46: &Option<u8>)
+	412: Call debug::print<Option<u8>>(&Option<u8>)
+	413: LdU64(13906836029769252863)
+	414: Abort
+B16:
+	415: MoveLoc[70](t2#1#46: &Option<u8>)
+	416: Pop
+	417: MoveLoc[54](t1#1#46: &Option<u8>)
+	418: Pop
+	419: MoveLoc[37](config#5#0: Config<WriteCap>)
+	420: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	421: MoveLoc[72](ts#1#0: Scenario)
+	422: Call test_scenario::end(Scenario): TransactionEffects
+	423: Pop
+	424: Ret
+}
+
+add_remove_cache() {
+L0:	%#1: WriteCap
+L1:	%#2: WriteCap
+L2:	%#3: &mut Config<WriteCap>
+L3:	%#4: WriteCap
+L4:	%#5: &mut Config<WriteCap>
+L5:	%#6: String
+L6:	%#7: String
+L7:	%#8: Option<u8>
+L8:	%#9: Option<u8>
+L9:	config#1#0: Config<WriteCap>
+L10:	config#2#0: Config<WriteCap>
+L11:	config#3#0: Config<WriteCap>
+L12:	id#1#0: ID
+L13:	n#1#0: vector<u8>
+L14:	t1#1#1: Option<u8>
+L15:	t1#1#4: &Option<u8>
+L16:	t2#1#1: Option<u8>
+L17:	t2#1#4: &Option<u8>
+L18:	ts#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[18](ts#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](WriteCap)
+	5: StLoc[0](%#1: WriteCap)
+	6: MutBorrowLoc[0](%#1: WriteCap)
+	7: MutBorrowLoc[18](ts#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call config_create<WriteCap>(&mut WriteCap, &mut TxContext)
+	10: MutBorrowLoc[18](ts#1#0: Scenario)
+	11: LdConst[0](address: 0x00..)
+	12: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	13: Pop
+	14: Call test_scenario::most_recent_id_shared<Config<WriteCap>>(): Option<ID>
+	15: Call option::destroy_some<ID>(Option<ID>): ID
+	16: StLoc[12](id#1#0: ID)
+	17: LdConst[1](vector<u8>: "hel..)
+	18: StLoc[13](n#1#0: vector<u8>)
+	19: MutBorrowLoc[18](ts#1#0: Scenario)
+	20: LdConst[0](address: 0x00..)
+	21: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	22: Pop
+	23: ImmBorrowLoc[18](ts#1#0: Scenario)
+	24: CopyLoc[12](id#1#0: ID)
+	25: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	26: StLoc[9](config#1#0: Config<WriteCap>)
+	27: MutBorrowLoc[9](config#1#0: Config<WriteCap>)
+	28: StLoc[2](%#3: &mut Config<WriteCap>)
+	29: LdFalse
+	30: Pack[0](WriteCap)
+	31: StLoc[1](%#2: WriteCap)
+	32: MoveLoc[2](%#3: &mut Config<WriteCap>)
+	33: MutBorrowLoc[1](%#2: WriteCap)
+	34: CopyLoc[13](n#1#0: vector<u8>)
+	35: LdU8(0)
+	36: MutBorrowLoc[18](ts#1#0: Scenario)
+	37: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	38: Call config::add_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, u8, &mut TxContext): Option<u8>
+	39: Pop
+	40: MoveLoc[9](config#1#0: Config<WriteCap>)
+	41: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	42: MutBorrowLoc[18](ts#1#0: Scenario)
+	43: LdConst[0](address: 0x00..)
+	44: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	45: Pop
+	46: ImmBorrowLoc[18](ts#1#0: Scenario)
+	47: CopyLoc[12](id#1#0: ID)
+	48: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	49: StLoc[10](config#2#0: Config<WriteCap>)
+	50: MutBorrowLoc[10](config#2#0: Config<WriteCap>)
+	51: StLoc[4](%#5: &mut Config<WriteCap>)
+	52: LdFalse
+	53: Pack[0](WriteCap)
+	54: StLoc[3](%#4: WriteCap)
+	55: MoveLoc[4](%#5: &mut Config<WriteCap>)
+	56: MutBorrowLoc[3](%#4: WriteCap)
+	57: CopyLoc[13](n#1#0: vector<u8>)
+	58: MutBorrowLoc[18](ts#1#0: Scenario)
+	59: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	60: Call config::remove_for_next_epoch<WriteCap, vector<u8>, u8>(&mut Config<WriteCap>, &mut WriteCap, vector<u8>, &mut TxContext): Option<u8>
+	61: StLoc[14](t1#1#1: Option<u8>)
+	62: LdU8(0)
+	63: Call option::some<u8>(u8): Option<u8>
+	64: StLoc[16](t2#1#1: Option<u8>)
+	65: ImmBorrowLoc[14](t1#1#1: Option<u8>)
+	66: StLoc[15](t1#1#4: &Option<u8>)
+	67: ImmBorrowLoc[16](t2#1#1: Option<u8>)
+	68: StLoc[17](t2#1#4: &Option<u8>)
+	69: CopyLoc[15](t1#1#4: &Option<u8>)
+	70: CopyLoc[17](t2#1#4: &Option<u8>)
+	71: Eq
+	72: Not
+	73: BrFalse(90)
+B1:
+	74: LdConst[2](vector<u8>: "Ass..)
+	75: Call string::utf8(vector<u8>): String
+	76: StLoc[5](%#6: String)
+	77: ImmBorrowLoc[5](%#6: String)
+	78: Call debug::print<String>(&String)
+	79: MoveLoc[15](t1#1#4: &Option<u8>)
+	80: Call debug::print<Option<u8>>(&Option<u8>)
+	81: LdConst[3](vector<u8>: "!="..)
+	82: Call string::utf8(vector<u8>): String
+	83: StLoc[6](%#7: String)
+	84: ImmBorrowLoc[6](%#7: String)
+	85: Call debug::print<String>(&String)
+	86: MoveLoc[17](t2#1#4: &Option<u8>)
+	87: Call debug::print<Option<u8>>(&Option<u8>)
+	88: LdU64(13906836150028337151)
+	89: Abort
+B2:
+	90: MoveLoc[17](t2#1#4: &Option<u8>)
+	91: Pop
+	92: MoveLoc[15](t1#1#4: &Option<u8>)
+	93: Pop
+	94: MoveLoc[10](config#2#0: Config<WriteCap>)
+	95: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	96: MutBorrowLoc[18](ts#1#0: Scenario)
+	97: LdConst[0](address: 0x00..)
+	98: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	99: Pop
+	100: ImmBorrowLoc[18](ts#1#0: Scenario)
+	101: CopyLoc[12](id#1#0: ID)
+	102: Call test_scenario::take_shared_by_id<Config<WriteCap>>(&Scenario, ID): Config<WriteCap>
+	103: StLoc[11](config#3#0: Config<WriteCap>)
+	104: ImmBorrowLoc[11](config#3#0: Config<WriteCap>)
+	105: CopyLoc[13](n#1#0: vector<u8>)
+	106: Call config::read_setting_for_next_epoch<WriteCap, vector<u8>, u8>(&Config<WriteCap>, vector<u8>): Option<u8>
+	107: StLoc[7](%#8: Option<u8>)
+	108: ImmBorrowLoc[7](%#8: Option<u8>)
+	109: Call option::is_none<u8>(&Option<u8>): bool
+	110: BrFalse(112)
+B3:
+	111: Branch(114)
+B4:
+	112: LdU64(13906836180093108223)
+	113: Abort
+B5:
+	114: MoveLoc[12](id#1#0: ID)
+	115: MoveLoc[13](n#1#0: vector<u8>)
+	116: MutBorrowLoc[18](ts#1#0: Scenario)
+	117: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	118: FreezeRef
+	119: Call config::read_setting<vector<u8>, u8>(ID, vector<u8>, &TxContext): Option<u8>
+	120: StLoc[8](%#9: Option<u8>)
+	121: ImmBorrowLoc[8](%#9: Option<u8>)
+	122: Call option::is_none<u8>(&Option<u8>): bool
+	123: BrFalse(125)
+B6:
+	124: Branch(127)
+B7:
+	125: LdU64(13906836184388075519)
+	126: Abort
+B8:
+	127: MoveLoc[11](config#3#0: Config<WriteCap>)
+	128: Call test_scenario::return_shared<Config<WriteCap>>(Config<WriteCap>)
+	129: MoveLoc[18](ts#1#0: Scenario)
+	130: Call test_scenario::end(Scenario): TransactionEffects
+	131: Pop
+	132: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x000000000000000000000000000000000000000000000000000000000000002a
+	1 => vector<u8>: "hello" // interpreted as UTF8 string
+	2 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	3 => vector<u8>: "!=" // interpreted as UTF8 string
+]
+}

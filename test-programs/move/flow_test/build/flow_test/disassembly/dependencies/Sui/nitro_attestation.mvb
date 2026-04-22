@@ -1,0 +1,109 @@
+// Move bytecode v6
+module 2.nitro_attestation {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::clock;
+
+struct PCREntry has drop {
+	index: u8,
+	value: vector<u8>
+}
+
+struct NitroAttestationDocument has drop {
+	module_id: vector<u8>,
+	timestamp: u64,
+	digest: vector<u8>,
+	pcrs: vector<PCREntry>,
+	public_key: Option<vector<u8>>,
+	user_data: Option<vector<u8>>,
+	nonce: Option<vector<u8>>
+}
+
+entry public load_nitro_attestation(attestation#0#0: vector<u8>, clock#0#0: &Clock): NitroAttestationDocument {
+B0:
+	0: ImmBorrowLoc[0](attestation#0#0: vector<u8>)
+	1: MoveLoc[1](clock#0#0: &Clock)
+	2: Call clock::timestamp_ms(&Clock): u64
+	3: Call load_nitro_attestation_internal(&vector<u8>, u64): NitroAttestationDocument
+	4: Ret
+}
+
+public module_id(attestation#0#0: &NitroAttestationDocument): &vector<u8> {
+B0:
+	0: MoveLoc[0](attestation#0#0: &NitroAttestationDocument)
+	1: ImmBorrowField[0](NitroAttestationDocument.module_id: vector<u8>)
+	2: Ret
+}
+
+public timestamp(attestation#0#0: &NitroAttestationDocument): &u64 {
+B0:
+	0: MoveLoc[0](attestation#0#0: &NitroAttestationDocument)
+	1: ImmBorrowField[1](NitroAttestationDocument.timestamp: u64)
+	2: Ret
+}
+
+public digest(attestation#0#0: &NitroAttestationDocument): &vector<u8> {
+B0:
+	0: MoveLoc[0](attestation#0#0: &NitroAttestationDocument)
+	1: ImmBorrowField[2](NitroAttestationDocument.digest: vector<u8>)
+	2: Ret
+}
+
+public pcrs(attestation#0#0: &NitroAttestationDocument): &vector<PCREntry> {
+B0:
+	0: MoveLoc[0](attestation#0#0: &NitroAttestationDocument)
+	1: ImmBorrowField[3](NitroAttestationDocument.pcrs: vector<PCREntry>)
+	2: Ret
+}
+
+public public_key(attestation#0#0: &NitroAttestationDocument): &Option<vector<u8>> {
+B0:
+	0: MoveLoc[0](attestation#0#0: &NitroAttestationDocument)
+	1: ImmBorrowField[4](NitroAttestationDocument.public_key: Option<vector<u8>>)
+	2: Ret
+}
+
+public user_data(attestation#0#0: &NitroAttestationDocument): &Option<vector<u8>> {
+B0:
+	0: MoveLoc[0](attestation#0#0: &NitroAttestationDocument)
+	1: ImmBorrowField[5](NitroAttestationDocument.user_data: Option<vector<u8>>)
+	2: Ret
+}
+
+public nonce(attestation#0#0: &NitroAttestationDocument): &Option<vector<u8>> {
+B0:
+	0: MoveLoc[0](attestation#0#0: &NitroAttestationDocument)
+	1: ImmBorrowField[6](NitroAttestationDocument.nonce: Option<vector<u8>>)
+	2: Ret
+}
+
+public index(entry#0#0: &PCREntry): u8 {
+B0:
+	0: MoveLoc[0](entry#0#0: &PCREntry)
+	1: ImmBorrowField[7](PCREntry.index: u8)
+	2: ReadRef
+	3: Ret
+}
+
+public value(entry#0#0: &PCREntry): &vector<u8> {
+B0:
+	0: MoveLoc[0](entry#0#0: &PCREntry)
+	1: ImmBorrowField[8](PCREntry.value: vector<u8>)
+	2: Ret
+}
+
+native load_nitro_attestation_internal(attestation#0#0: &vector<u8>, current_timestamp#0#0: u64): NitroAttestationDocument;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => u64: 3
+]
+}

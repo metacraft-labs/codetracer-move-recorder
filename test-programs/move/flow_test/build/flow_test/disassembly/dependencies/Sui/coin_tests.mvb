@@ -1,0 +1,2122 @@
+// Move bytecode v6
+module 2.coin_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::ascii;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::balance;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::deny_list;
+use 0000000000000000000000000000000000000000000000000000000000000002::pay;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::url;
+
+struct COIN_TESTS has drop {
+	dummy_field: bool
+}
+
+assert_status(deny_list#0#0: &DenyList, addr#0#0: address, contains_current_epoch#0#0: bool, contains_next_epoch#0#0: bool, ctx#0#0: &TxContext) {
+B0:
+	0: CopyLoc[0](deny_list#0#0: &DenyList)
+	1: CopyLoc[1](addr#0#0: address)
+	2: MoveLoc[4](ctx#0#0: &TxContext)
+	3: Call coin::deny_list_v2_contains_current_epoch<COIN_TESTS>(&DenyList, address, &TxContext): bool
+	4: MoveLoc[2](contains_current_epoch#0#0: bool)
+	5: Eq
+	6: BrFalse(8)
+B1:
+	7: Branch(12)
+B2:
+	8: MoveLoc[0](deny_list#0#0: &DenyList)
+	9: Pop
+	10: LdU64(13906834298897432575)
+	11: Abort
+B3:
+	12: MoveLoc[0](deny_list#0#0: &DenyList)
+	13: MoveLoc[1](addr#0#0: address)
+	14: Call coin::deny_list_v2_contains_next_epoch<COIN_TESTS>(&DenyList, address): bool
+	15: MoveLoc[3](contains_next_epoch#0#0: bool)
+	16: Eq
+	17: BrFalse(19)
+B4:
+	18: Branch(21)
+B5:
+	19: LdU64(13906834303192399871)
+	20: Abort
+B6:
+	21: Ret
+}
+
+assert_global(deny_list#0#0: &DenyList, paused_current_epoch#0#0: bool, paused_next_epoch#0#0: bool, ctx#0#0: &TxContext) {
+B0:
+	0: CopyLoc[0](deny_list#0#0: &DenyList)
+	1: MoveLoc[3](ctx#0#0: &TxContext)
+	2: Call coin::deny_list_v2_is_global_pause_enabled_current_epoch<COIN_TESTS>(&DenyList, &TxContext): bool
+	3: MoveLoc[1](paused_current_epoch#0#0: bool)
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](deny_list#0#0: &DenyList)
+	8: Pop
+	9: LdU64(13906834359026974719)
+	10: Abort
+B3:
+	11: MoveLoc[0](deny_list#0#0: &DenyList)
+	12: Call coin::deny_list_v2_is_global_pause_enabled_next_epoch<COIN_TESTS>(&DenyList): bool
+	13: MoveLoc[2](paused_next_epoch#0#0: bool)
+	14: Eq
+	15: BrFalse(17)
+B4:
+	16: Branch(19)
+B5:
+	17: LdU64(13906834376206843903)
+	18: Abort
+B6:
+	19: Ret
+}
+
+coin_tests_metadata() {
+L0:	%#1: String
+L1:	%#10: String
+L2:	%#2: String
+L3:	%#3: String
+L4:	%#4: Option<Url>
+L5:	%#5: String
+L6:	%#6: String
+L7:	%#7: String
+L8:	%#8: String
+L9:	%#9: Option<Url>
+L10:	ctx#1#0: &mut TxContext
+L11:	decimals#1#0: u8
+L12:	description_bytes#1#0: &vector<u8>
+L13:	description_bytes#2#0: &vector<u8>
+L14:	icon_url#1#0: &vector<u8>
+L15:	icon_url#2#0: &vector<u8>
+L16:	metadata#1#0: CoinMetadata<COIN_TESTS>
+L17:	name_bytes#1#0: &vector<u8>
+L18:	name_bytes#2#0: &vector<u8>
+L19:	scenario#1#0: Scenario
+L20:	symbol_bytes#1#0: &vector<u8>
+L21:	symbol_bytes#2#0: &vector<u8>
+L22:	treasury#1#0: TreasuryCap<COIN_TESTS>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[19](scenario#1#0: Scenario)
+	3: MutBorrowLoc[19](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: StLoc[10](ctx#1#0: &mut TxContext)
+	6: LdFalse
+	7: Pack[0](COIN_TESTS)
+	8: LdU8(6)
+	9: LdConst[1](vector<u8>: "COI..)
+	10: LdConst[2](vector<u8>: "coi..)
+	11: LdConst[3](vector<u8>: "des..)
+	12: LdConst[4](vector<u8>: "ico..)
+	13: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	14: Call option::some<Url>(Url): Option<Url>
+	15: CopyLoc[10](ctx#1#0: &mut TxContext)
+	16: Call coin::create_currency<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, &mut TxContext): TreasuryCap<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	17: StLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	18: StLoc[22](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	19: ImmBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	20: Call coin::get_decimals<COIN_TESTS>(&CoinMetadata<COIN_TESTS>): u8
+	21: StLoc[11](decimals#1#0: u8)
+	22: ImmBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	23: Call coin::get_symbol<COIN_TESTS>(&CoinMetadata<COIN_TESTS>): String
+	24: StLoc[0](%#1: String)
+	25: ImmBorrowLoc[0](%#1: String)
+	26: Call ascii::as_bytes(&String): &vector<u8>
+	27: StLoc[20](symbol_bytes#1#0: &vector<u8>)
+	28: ImmBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	29: Call coin::get_name<COIN_TESTS>(&CoinMetadata<COIN_TESTS>): String
+	30: StLoc[2](%#2: String)
+	31: ImmBorrowLoc[2](%#2: String)
+	32: Call string::as_bytes(&String): &vector<u8>
+	33: StLoc[17](name_bytes#1#0: &vector<u8>)
+	34: ImmBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	35: Call coin::get_description<COIN_TESTS>(&CoinMetadata<COIN_TESTS>): String
+	36: StLoc[3](%#3: String)
+	37: ImmBorrowLoc[3](%#3: String)
+	38: Call string::as_bytes(&String): &vector<u8>
+	39: StLoc[12](description_bytes#1#0: &vector<u8>)
+	40: ImmBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	41: Call coin::get_icon_url<COIN_TESTS>(&CoinMetadata<COIN_TESTS>): Option<Url>
+	42: StLoc[4](%#4: Option<Url>)
+	43: ImmBorrowLoc[4](%#4: Option<Url>)
+	44: Call option::borrow<Url>(&Option<Url>): &Url
+	45: Call url::inner_url(&Url): String
+	46: StLoc[5](%#5: String)
+	47: ImmBorrowLoc[5](%#5: String)
+	48: Call ascii::as_bytes(&String): &vector<u8>
+	49: StLoc[14](icon_url#1#0: &vector<u8>)
+	50: MoveLoc[11](decimals#1#0: u8)
+	51: LdU8(6)
+	52: Eq
+	53: BrFalse(55)
+B1:
+	54: Branch(67)
+B2:
+	55: MoveLoc[20](symbol_bytes#1#0: &vector<u8>)
+	56: Pop
+	57: MoveLoc[17](name_bytes#1#0: &vector<u8>)
+	58: Pop
+	59: MoveLoc[14](icon_url#1#0: &vector<u8>)
+	60: Pop
+	61: MoveLoc[12](description_bytes#1#0: &vector<u8>)
+	62: Pop
+	63: MoveLoc[10](ctx#1#0: &mut TxContext)
+	64: Pop
+	65: LdU64(13906834479286059007)
+	66: Abort
+B3:
+	67: MoveLoc[20](symbol_bytes#1#0: &vector<u8>)
+	68: ReadRef
+	69: LdConst[1](vector<u8>: "COI..)
+	70: Eq
+	71: BrFalse(73)
+B4:
+	72: Branch(83)
+B5:
+	73: MoveLoc[17](name_bytes#1#0: &vector<u8>)
+	74: Pop
+	75: MoveLoc[14](icon_url#1#0: &vector<u8>)
+	76: Pop
+	77: MoveLoc[12](description_bytes#1#0: &vector<u8>)
+	78: Pop
+	79: MoveLoc[10](ctx#1#0: &mut TxContext)
+	80: Pop
+	81: LdU64(13906834483581026303)
+	82: Abort
+B6:
+	83: MoveLoc[17](name_bytes#1#0: &vector<u8>)
+	84: ReadRef
+	85: LdConst[2](vector<u8>: "coi..)
+	86: Eq
+	87: BrFalse(89)
+B7:
+	88: Branch(97)
+B8:
+	89: MoveLoc[14](icon_url#1#0: &vector<u8>)
+	90: Pop
+	91: MoveLoc[12](description_bytes#1#0: &vector<u8>)
+	92: Pop
+	93: MoveLoc[10](ctx#1#0: &mut TxContext)
+	94: Pop
+	95: LdU64(13906834487875993599)
+	96: Abort
+B9:
+	97: MoveLoc[12](description_bytes#1#0: &vector<u8>)
+	98: ReadRef
+	99: LdConst[3](vector<u8>: "des..)
+	100: Eq
+	101: BrFalse(103)
+B10:
+	102: Branch(109)
+B11:
+	103: MoveLoc[14](icon_url#1#0: &vector<u8>)
+	104: Pop
+	105: MoveLoc[10](ctx#1#0: &mut TxContext)
+	106: Pop
+	107: LdU64(13906834492170960895)
+	108: Abort
+B12:
+	109: MoveLoc[14](icon_url#1#0: &vector<u8>)
+	110: ReadRef
+	111: LdConst[4](vector<u8>: "ico..)
+	112: Eq
+	113: BrFalse(115)
+B13:
+	114: Branch(119)
+B14:
+	115: MoveLoc[10](ctx#1#0: &mut TxContext)
+	116: Pop
+	117: LdU64(13906834496465928191)
+	118: Abort
+B15:
+	119: ImmBorrowLoc[22](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	120: MutBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	121: LdConst[5](vector<u8>: "NEW..)
+	122: Call ascii::string(vector<u8>): String
+	123: Call coin::update_symbol<COIN_TESTS>(&TreasuryCap<COIN_TESTS>, &mut CoinMetadata<COIN_TESTS>, String)
+	124: ImmBorrowLoc[22](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	125: MutBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	126: LdConst[6](vector<u8>: "new..)
+	127: Call string::utf8(vector<u8>): String
+	128: Call coin::update_name<COIN_TESTS>(&TreasuryCap<COIN_TESTS>, &mut CoinMetadata<COIN_TESTS>, String)
+	129: ImmBorrowLoc[22](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	130: MutBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	131: LdConst[7](vector<u8>: "new..)
+	132: Call string::utf8(vector<u8>): String
+	133: Call coin::update_description<COIN_TESTS>(&TreasuryCap<COIN_TESTS>, &mut CoinMetadata<COIN_TESTS>, String)
+	134: ImmBorrowLoc[22](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	135: MutBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	136: LdConst[8](vector<u8>: "new..)
+	137: Call ascii::string(vector<u8>): String
+	138: Call coin::update_icon_url<COIN_TESTS>(&TreasuryCap<COIN_TESTS>, &mut CoinMetadata<COIN_TESTS>, String)
+	139: ImmBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	140: Call coin::get_symbol<COIN_TESTS>(&CoinMetadata<COIN_TESTS>): String
+	141: StLoc[6](%#6: String)
+	142: ImmBorrowLoc[6](%#6: String)
+	143: Call ascii::as_bytes(&String): &vector<u8>
+	144: StLoc[21](symbol_bytes#2#0: &vector<u8>)
+	145: ImmBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	146: Call coin::get_name<COIN_TESTS>(&CoinMetadata<COIN_TESTS>): String
+	147: StLoc[7](%#7: String)
+	148: ImmBorrowLoc[7](%#7: String)
+	149: Call string::as_bytes(&String): &vector<u8>
+	150: StLoc[18](name_bytes#2#0: &vector<u8>)
+	151: ImmBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	152: Call coin::get_description<COIN_TESTS>(&CoinMetadata<COIN_TESTS>): String
+	153: StLoc[8](%#8: String)
+	154: ImmBorrowLoc[8](%#8: String)
+	155: Call string::as_bytes(&String): &vector<u8>
+	156: StLoc[13](description_bytes#2#0: &vector<u8>)
+	157: ImmBorrowLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	158: Call coin::get_icon_url<COIN_TESTS>(&CoinMetadata<COIN_TESTS>): Option<Url>
+	159: StLoc[9](%#9: Option<Url>)
+	160: ImmBorrowLoc[9](%#9: Option<Url>)
+	161: Call option::borrow<Url>(&Option<Url>): &Url
+	162: Call url::inner_url(&Url): String
+	163: StLoc[1](%#10: String)
+	164: ImmBorrowLoc[1](%#10: String)
+	165: Call ascii::as_bytes(&String): &vector<u8>
+	166: StLoc[15](icon_url#2#0: &vector<u8>)
+	167: MoveLoc[21](symbol_bytes#2#0: &vector<u8>)
+	168: ReadRef
+	169: LdConst[5](vector<u8>: "NEW..)
+	170: Eq
+	171: BrFalse(173)
+B16:
+	172: Branch(183)
+B17:
+	173: MoveLoc[18](name_bytes#2#0: &vector<u8>)
+	174: Pop
+	175: MoveLoc[15](icon_url#2#0: &vector<u8>)
+	176: Pop
+	177: MoveLoc[13](description_bytes#2#0: &vector<u8>)
+	178: Pop
+	179: MoveLoc[10](ctx#1#0: &mut TxContext)
+	180: Pop
+	181: LdU64(13906834552300503039)
+	182: Abort
+B18:
+	183: MoveLoc[18](name_bytes#2#0: &vector<u8>)
+	184: ReadRef
+	185: LdConst[6](vector<u8>: "new..)
+	186: Eq
+	187: BrFalse(189)
+B19:
+	188: Branch(197)
+B20:
+	189: MoveLoc[15](icon_url#2#0: &vector<u8>)
+	190: Pop
+	191: MoveLoc[13](description_bytes#2#0: &vector<u8>)
+	192: Pop
+	193: MoveLoc[10](ctx#1#0: &mut TxContext)
+	194: Pop
+	195: LdU64(13906834556595470335)
+	196: Abort
+B21:
+	197: MoveLoc[13](description_bytes#2#0: &vector<u8>)
+	198: ReadRef
+	199: LdConst[7](vector<u8>: "new..)
+	200: Eq
+	201: BrFalse(203)
+B22:
+	202: Branch(209)
+B23:
+	203: MoveLoc[15](icon_url#2#0: &vector<u8>)
+	204: Pop
+	205: MoveLoc[10](ctx#1#0: &mut TxContext)
+	206: Pop
+	207: LdU64(13906834560890437631)
+	208: Abort
+B24:
+	209: MoveLoc[15](icon_url#2#0: &vector<u8>)
+	210: ReadRef
+	211: LdConst[8](vector<u8>: "new..)
+	212: Eq
+	213: BrFalse(215)
+B25:
+	214: Branch(219)
+B26:
+	215: MoveLoc[10](ctx#1#0: &mut TxContext)
+	216: Pop
+	217: LdU64(13906834565185404927)
+	218: Abort
+B27:
+	219: MoveLoc[16](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	220: Call transfer::public_freeze_object<CoinMetadata<COIN_TESTS>>(CoinMetadata<COIN_TESTS>)
+	221: MoveLoc[22](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	222: MoveLoc[10](ctx#1#0: &mut TxContext)
+	223: FreezeRef
+	224: Call tx_context::sender(&TxContext): address
+	225: Call transfer::public_transfer<TreasuryCap<COIN_TESTS>>(TreasuryCap<COIN_TESTS>, address)
+	226: MoveLoc[19](scenario#1#0: Scenario)
+	227: Call test_scenario::end(Scenario): TransactionEffects
+	228: Pop
+	229: Ret
+}
+
+coin_tests_mint() {
+L0:	coin#1#0: Coin<COIN_TESTS>
+L1:	coin#2#0: Coin<COIN_TESTS>
+L2:	metadata#1#0: CoinMetadata<COIN_TESTS>
+L3:	scenario#1#0: Scenario
+L4:	treasury#1#0: TreasuryCap<COIN_TESTS>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[3](scenario#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](COIN_TESTS)
+	5: LdU8(6)
+	6: LdConst[1](vector<u8>: "COI..)
+	7: LdConst[2](vector<u8>: "coi..)
+	8: LdConst[3](vector<u8>: "des..)
+	9: LdConst[4](vector<u8>: "ico..)
+	10: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	11: Call option::some<Url>(Url): Option<Url>
+	12: MutBorrowLoc[3](scenario#1#0: Scenario)
+	13: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	14: Call coin::create_currency<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, &mut TxContext): TreasuryCap<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	15: StLoc[2](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	16: StLoc[4](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	17: MutBorrowLoc[4](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	18: LdU64(1000)
+	19: Call coin::mint_balance<COIN_TESTS>(&mut TreasuryCap<COIN_TESTS>, u64): Balance<COIN_TESTS>
+	20: MutBorrowLoc[3](scenario#1#0: Scenario)
+	21: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	22: Call coin::from_balance<COIN_TESTS>(Balance<COIN_TESTS>, &mut TxContext): Coin<COIN_TESTS>
+	23: StLoc[0](coin#1#0: Coin<COIN_TESTS>)
+	24: ImmBorrowLoc[0](coin#1#0: Coin<COIN_TESTS>)
+	25: Call coin::value<COIN_TESTS>(&Coin<COIN_TESTS>): u64
+	26: LdU64(1000)
+	27: Eq
+	28: BrFalse(30)
+B1:
+	29: Branch(32)
+B2:
+	30: LdU64(13906834668264620031)
+	31: Abort
+B3:
+	32: MoveLoc[0](coin#1#0: Coin<COIN_TESTS>)
+	33: MutBorrowLoc[3](scenario#1#0: Scenario)
+	34: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	35: FreezeRef
+	36: Call pay::keep<COIN_TESTS>(Coin<COIN_TESTS>, &TxContext)
+	37: MutBorrowLoc[4](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	38: LdU64(42)
+	39: LdConst[0](address: 0x00..)
+	40: MutBorrowLoc[3](scenario#1#0: Scenario)
+	41: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	42: Call coin::mint_and_transfer<COIN_TESTS>(&mut TreasuryCap<COIN_TESTS>, u64, address, &mut TxContext)
+	43: MutBorrowLoc[3](scenario#1#0: Scenario)
+	44: LdConst[0](address: 0x00..)
+	45: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	46: Pop
+	47: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	48: LdConst[0](address: 0x00..)
+	49: Call test_scenario::take_from_address<Coin<COIN_TESTS>>(&Scenario, address): Coin<COIN_TESTS>
+	50: StLoc[1](coin#2#0: Coin<COIN_TESTS>)
+	51: ImmBorrowLoc[1](coin#2#0: Coin<COIN_TESTS>)
+	52: Call coin::value<COIN_TESTS>(&Coin<COIN_TESTS>): u64
+	53: LdU64(42)
+	54: Eq
+	55: BrFalse(57)
+B4:
+	56: Branch(59)
+B5:
+	57: LdU64(13906834698329391103)
+	58: Abort
+B6:
+	59: MoveLoc[1](coin#2#0: Coin<COIN_TESTS>)
+	60: MutBorrowLoc[3](scenario#1#0: Scenario)
+	61: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	62: FreezeRef
+	63: Call pay::keep<COIN_TESTS>(Coin<COIN_TESTS>, &TxContext)
+	64: MoveLoc[2](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	65: Call transfer::public_freeze_object<CoinMetadata<COIN_TESTS>>(CoinMetadata<COIN_TESTS>)
+	66: MoveLoc[4](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	67: MutBorrowLoc[3](scenario#1#0: Scenario)
+	68: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	69: FreezeRef
+	70: Call tx_context::sender(&TxContext): address
+	71: Call transfer::public_transfer<TreasuryCap<COIN_TESTS>>(TreasuryCap<COIN_TESTS>, address)
+	72: MoveLoc[3](scenario#1#0: Scenario)
+	73: Call test_scenario::end(Scenario): TransactionEffects
+	74: Pop
+	75: Ret
+}
+
+deny_list_v1() {
+L0:	deny_cap#1#0: DenyCap<COIN_TESTS>
+L1:	deny_list#1#0: DenyList
+L2:	deny_list#2#0: DenyList
+L3:	deny_list#3#0: DenyList
+L4:	metadata#1#0: CoinMetadata<COIN_TESTS>
+L5:	scenario#1#0: Scenario
+L6:	treasury#1#0: TreasuryCap<COIN_TESTS>
+B0:
+	0: LdConst[9](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[5](scenario#1#0: Scenario)
+	3: MutBorrowLoc[5](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[5](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: LdFalse
+	11: Pack[0](COIN_TESTS)
+	12: LdU8(6)
+	13: LdConst[1](vector<u8>: "COI..)
+	14: LdConst[2](vector<u8>: "coi..)
+	15: LdConst[3](vector<u8>: "des..)
+	16: LdConst[4](vector<u8>: "ico..)
+	17: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	18: Call option::some<Url>(Url): Option<Url>
+	19: MutBorrowLoc[5](scenario#1#0: Scenario)
+	20: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	21: Call coin::create_regulated_currency<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, &mut TxContext): TreasuryCap<COIN_TESTS> * DenyCap<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	22: StLoc[4](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	23: StLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	24: StLoc[6](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	25: MoveLoc[4](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	26: Call transfer::public_freeze_object<CoinMetadata<COIN_TESTS>>(CoinMetadata<COIN_TESTS>)
+	27: MoveLoc[6](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	28: Call transfer::public_freeze_object<TreasuryCap<COIN_TESTS>>(TreasuryCap<COIN_TESTS>)
+	29: MutBorrowLoc[5](scenario#1#0: Scenario)
+	30: LdConst[0](address: 0x00..)
+	31: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	32: Pop
+	33: ImmBorrowLoc[5](scenario#1#0: Scenario)
+	34: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	35: StLoc[1](deny_list#1#0: DenyList)
+	36: ImmBorrowLoc[1](deny_list#1#0: DenyList)
+	37: LdConst[10](address: 0x00..)
+	38: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	39: Not
+	40: BrFalse(42)
+B1:
+	41: Branch(44)
+B2:
+	42: LdU64(13906834827178409983)
+	43: Abort
+B3:
+	44: MutBorrowLoc[1](deny_list#1#0: DenyList)
+	45: MutBorrowLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	46: LdConst[10](address: 0x00..)
+	47: MutBorrowLoc[5](scenario#1#0: Scenario)
+	48: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	49: Call coin::deny_list_add<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	50: ImmBorrowLoc[1](deny_list#1#0: DenyList)
+	51: LdConst[10](address: 0x00..)
+	52: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	53: BrFalse(55)
+B4:
+	54: Branch(57)
+B5:
+	55: LdU64(13906834835768344575)
+	56: Abort
+B6:
+	57: MutBorrowLoc[1](deny_list#1#0: DenyList)
+	58: MutBorrowLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	59: LdConst[10](address: 0x00..)
+	60: MutBorrowLoc[5](scenario#1#0: Scenario)
+	61: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	62: Call coin::deny_list_remove<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	63: ImmBorrowLoc[1](deny_list#1#0: DenyList)
+	64: LdConst[10](address: 0x00..)
+	65: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	66: Not
+	67: BrFalse(69)
+B7:
+	68: Branch(71)
+B8:
+	69: LdU64(13906834844358279167)
+	70: Abort
+B9:
+	71: MoveLoc[1](deny_list#1#0: DenyList)
+	72: Call test_scenario::return_shared<DenyList>(DenyList)
+	73: MutBorrowLoc[5](scenario#1#0: Scenario)
+	74: LdConst[0](address: 0x00..)
+	75: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	76: Pop
+	77: ImmBorrowLoc[5](scenario#1#0: Scenario)
+	78: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	79: StLoc[2](deny_list#2#0: DenyList)
+	80: ImmBorrowLoc[2](deny_list#2#0: DenyList)
+	81: LdConst[10](address: 0x00..)
+	82: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	83: Not
+	84: BrFalse(86)
+B10:
+	85: Branch(88)
+B11:
+	86: LdU64(13906834874423050239)
+	87: Abort
+B12:
+	88: ImmBorrowLoc[2](deny_list#2#0: DenyList)
+	89: LdConst[11](address: 0x00..)
+	90: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	91: Not
+	92: BrFalse(94)
+B13:
+	93: Branch(96)
+B14:
+	94: LdU64(13906834878718017535)
+	95: Abort
+B15:
+	96: MutBorrowLoc[2](deny_list#2#0: DenyList)
+	97: MutBorrowLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	98: LdConst[11](address: 0x00..)
+	99: MutBorrowLoc[5](scenario#1#0: Scenario)
+	100: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	101: Call coin::deny_list_add<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	102: ImmBorrowLoc[2](deny_list#2#0: DenyList)
+	103: LdConst[11](address: 0x00..)
+	104: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	105: BrFalse(107)
+B16:
+	106: Branch(109)
+B17:
+	107: LdU64(13906834887307952127)
+	108: Abort
+B18:
+	109: MoveLoc[2](deny_list#2#0: DenyList)
+	110: Call test_scenario::return_shared<DenyList>(DenyList)
+	111: MutBorrowLoc[5](scenario#1#0: Scenario)
+	112: LdConst[0](address: 0x00..)
+	113: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	114: Pop
+	115: ImmBorrowLoc[5](scenario#1#0: Scenario)
+	116: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	117: StLoc[3](deny_list#3#0: DenyList)
+	118: ImmBorrowLoc[3](deny_list#3#0: DenyList)
+	119: LdConst[11](address: 0x00..)
+	120: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	121: BrFalse(123)
+B19:
+	122: Branch(125)
+B20:
+	123: LdU64(13906834908782788607)
+	124: Abort
+B21:
+	125: MutBorrowLoc[3](deny_list#3#0: DenyList)
+	126: MutBorrowLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	127: LdConst[11](address: 0x00..)
+	128: MutBorrowLoc[5](scenario#1#0: Scenario)
+	129: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	130: Call coin::deny_list_remove<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	131: ImmBorrowLoc[3](deny_list#3#0: DenyList)
+	132: LdConst[11](address: 0x00..)
+	133: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	134: Not
+	135: BrFalse(137)
+B22:
+	136: Branch(139)
+B23:
+	137: LdU64(13906834917372723199)
+	138: Abort
+B24:
+	139: MoveLoc[3](deny_list#3#0: DenyList)
+	140: Call test_scenario::return_shared<DenyList>(DenyList)
+	141: MoveLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	142: Call transfer::public_freeze_object<DenyCap<COIN_TESTS>>(DenyCap<COIN_TESTS>)
+	143: MoveLoc[5](scenario#1#0: Scenario)
+	144: Call test_scenario::end(Scenario): TransactionEffects
+	145: Pop
+	146: Ret
+}
+
+deny_list_v1_double_add() {
+L0:	deny_cap#1#0: DenyCap<COIN_TESTS>
+L1:	deny_list#1#0: DenyList
+L2:	metadata#1#0: CoinMetadata<COIN_TESTS>
+L3:	scenario#1#0: Scenario
+L4:	treasury#1#0: TreasuryCap<COIN_TESTS>
+B0:
+	0: LdConst[9](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[3](scenario#1#0: Scenario)
+	3: MutBorrowLoc[3](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[3](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: LdFalse
+	11: Pack[0](COIN_TESTS)
+	12: LdU8(6)
+	13: LdConst[1](vector<u8>: "COI..)
+	14: LdConst[2](vector<u8>: "coi..)
+	15: LdConst[3](vector<u8>: "des..)
+	16: LdConst[4](vector<u8>: "ico..)
+	17: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	18: Call option::some<Url>(Url): Option<Url>
+	19: MutBorrowLoc[3](scenario#1#0: Scenario)
+	20: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	21: Call coin::create_regulated_currency<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, &mut TxContext): TreasuryCap<COIN_TESTS> * DenyCap<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	22: StLoc[2](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	23: StLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	24: StLoc[4](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	25: MoveLoc[2](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	26: Call transfer::public_freeze_object<CoinMetadata<COIN_TESTS>>(CoinMetadata<COIN_TESTS>)
+	27: MoveLoc[4](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	28: Call transfer::public_freeze_object<TreasuryCap<COIN_TESTS>>(TreasuryCap<COIN_TESTS>)
+	29: MutBorrowLoc[3](scenario#1#0: Scenario)
+	30: LdConst[0](address: 0x00..)
+	31: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	32: Pop
+	33: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	34: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	35: StLoc[1](deny_list#1#0: DenyList)
+	36: ImmBorrowLoc[1](deny_list#1#0: DenyList)
+	37: LdConst[10](address: 0x00..)
+	38: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	39: Not
+	40: BrFalse(42)
+B1:
+	41: Branch(44)
+B2:
+	42: LdU64(13906835041926774783)
+	43: Abort
+B3:
+	44: MutBorrowLoc[1](deny_list#1#0: DenyList)
+	45: MutBorrowLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	46: LdConst[10](address: 0x00..)
+	47: MutBorrowLoc[3](scenario#1#0: Scenario)
+	48: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	49: Call coin::deny_list_add<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	50: MutBorrowLoc[1](deny_list#1#0: DenyList)
+	51: MutBorrowLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	52: LdConst[10](address: 0x00..)
+	53: MutBorrowLoc[3](scenario#1#0: Scenario)
+	54: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	55: Call coin::deny_list_add<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	56: ImmBorrowLoc[1](deny_list#1#0: DenyList)
+	57: LdConst[10](address: 0x00..)
+	58: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	59: BrFalse(61)
+B4:
+	60: Branch(63)
+B5:
+	61: LdU64(13906835054811676671)
+	62: Abort
+B6:
+	63: MutBorrowLoc[1](deny_list#1#0: DenyList)
+	64: MutBorrowLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	65: LdConst[10](address: 0x00..)
+	66: MutBorrowLoc[3](scenario#1#0: Scenario)
+	67: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	68: Call coin::deny_list_remove<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	69: ImmBorrowLoc[1](deny_list#1#0: DenyList)
+	70: LdConst[10](address: 0x00..)
+	71: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	72: Not
+	73: BrFalse(75)
+B7:
+	74: Branch(77)
+B8:
+	75: LdU64(13906835063401611263)
+	76: Abort
+B9:
+	77: MoveLoc[1](deny_list#1#0: DenyList)
+	78: Call test_scenario::return_shared<DenyList>(DenyList)
+	79: MoveLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	80: Call transfer::public_freeze_object<DenyCap<COIN_TESTS>>(DenyCap<COIN_TESTS>)
+	81: MoveLoc[3](scenario#1#0: Scenario)
+	82: Call test_scenario::end(Scenario): TransactionEffects
+	83: Pop
+	84: Ret
+}
+
+deny_list_v2() {
+L0:	ctx#1#0: &mut TxContext
+L1:	ctx#2#0: &mut TxContext
+L2:	ctx#3#0: &mut TxContext
+L3:	ctx#4#0: &mut TxContext
+L4:	deny_cap#1#0: DenyCapV2<COIN_TESTS>
+L5:	deny_list#1#0: DenyList
+L6:	deny_list#2#0: DenyList
+L7:	deny_list#3#0: DenyList
+L8:	deny_list#4#0: DenyList
+L9:	metadata#1#0: CoinMetadata<COIN_TESTS>
+L10:	scenario#1#0: Scenario
+L11:	treasury#1#0: TreasuryCap<COIN_TESTS>
+B0:
+	0: LdConst[9](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[10](scenario#1#0: Scenario)
+	3: MutBorrowLoc[10](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[10](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: LdFalse
+	11: Pack[0](COIN_TESTS)
+	12: LdU8(6)
+	13: LdConst[1](vector<u8>: "COI..)
+	14: LdConst[2](vector<u8>: "coi..)
+	15: LdConst[3](vector<u8>: "des..)
+	16: LdConst[4](vector<u8>: "ico..)
+	17: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	18: Call option::some<Url>(Url): Option<Url>
+	19: LdTrue
+	20: MutBorrowLoc[10](scenario#1#0: Scenario)
+	21: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	22: Call coin::create_regulated_currency_v2<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, bool, &mut TxContext): TreasuryCap<COIN_TESTS> * DenyCapV2<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	23: StLoc[9](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	24: StLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	25: StLoc[11](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	26: MoveLoc[9](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	27: Call transfer::public_freeze_object<CoinMetadata<COIN_TESTS>>(CoinMetadata<COIN_TESTS>)
+	28: MoveLoc[11](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	29: Call transfer::public_freeze_object<TreasuryCap<COIN_TESTS>>(TreasuryCap<COIN_TESTS>)
+	30: MutBorrowLoc[10](scenario#1#0: Scenario)
+	31: LdConst[0](address: 0x00..)
+	32: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	33: Pop
+	34: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	35: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	36: StLoc[5](deny_list#1#0: DenyList)
+	37: MutBorrowLoc[10](scenario#1#0: Scenario)
+	38: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	39: StLoc[0](ctx#1#0: &mut TxContext)
+	40: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	41: LdConst[10](address: 0x00..)
+	42: LdFalse
+	43: LdFalse
+	44: CopyLoc[0](ctx#1#0: &mut TxContext)
+	45: FreezeRef
+	46: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	47: MutBorrowLoc[5](deny_list#1#0: DenyList)
+	48: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	49: LdConst[10](address: 0x00..)
+	50: CopyLoc[0](ctx#1#0: &mut TxContext)
+	51: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	52: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	53: LdConst[10](address: 0x00..)
+	54: LdFalse
+	55: LdTrue
+	56: CopyLoc[0](ctx#1#0: &mut TxContext)
+	57: FreezeRef
+	58: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	59: MutBorrowLoc[5](deny_list#1#0: DenyList)
+	60: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	61: LdConst[10](address: 0x00..)
+	62: CopyLoc[0](ctx#1#0: &mut TxContext)
+	63: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	64: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	65: LdConst[10](address: 0x00..)
+	66: LdFalse
+	67: LdFalse
+	68: CopyLoc[0](ctx#1#0: &mut TxContext)
+	69: FreezeRef
+	70: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	71: MutBorrowLoc[5](deny_list#1#0: DenyList)
+	72: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	73: LdConst[12](address: 0x00..)
+	74: CopyLoc[0](ctx#1#0: &mut TxContext)
+	75: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	76: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	77: LdConst[12](address: 0x00..)
+	78: LdFalse
+	79: LdTrue
+	80: MoveLoc[0](ctx#1#0: &mut TxContext)
+	81: FreezeRef
+	82: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	83: MoveLoc[5](deny_list#1#0: DenyList)
+	84: Call test_scenario::return_shared<DenyList>(DenyList)
+	85: MutBorrowLoc[10](scenario#1#0: Scenario)
+	86: LdConst[0](address: 0x00..)
+	87: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	88: Pop
+	89: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	90: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	91: StLoc[6](deny_list#2#0: DenyList)
+	92: MutBorrowLoc[10](scenario#1#0: Scenario)
+	93: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	94: StLoc[1](ctx#2#0: &mut TxContext)
+	95: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	96: LdConst[10](address: 0x00..)
+	97: LdFalse
+	98: LdFalse
+	99: CopyLoc[1](ctx#2#0: &mut TxContext)
+	100: FreezeRef
+	101: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	102: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	103: LdConst[12](address: 0x00..)
+	104: LdTrue
+	105: LdTrue
+	106: CopyLoc[1](ctx#2#0: &mut TxContext)
+	107: FreezeRef
+	108: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	109: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	110: LdConst[11](address: 0x00..)
+	111: LdFalse
+	112: LdFalse
+	113: CopyLoc[1](ctx#2#0: &mut TxContext)
+	114: FreezeRef
+	115: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	116: MutBorrowLoc[6](deny_list#2#0: DenyList)
+	117: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	118: LdConst[11](address: 0x00..)
+	119: CopyLoc[1](ctx#2#0: &mut TxContext)
+	120: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	121: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	122: LdConst[11](address: 0x00..)
+	123: LdFalse
+	124: LdTrue
+	125: CopyLoc[1](ctx#2#0: &mut TxContext)
+	126: FreezeRef
+	127: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	128: MutBorrowLoc[6](deny_list#2#0: DenyList)
+	129: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	130: LdConst[12](address: 0x00..)
+	131: CopyLoc[1](ctx#2#0: &mut TxContext)
+	132: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	133: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	134: LdConst[12](address: 0x00..)
+	135: LdTrue
+	136: LdFalse
+	137: MoveLoc[1](ctx#2#0: &mut TxContext)
+	138: FreezeRef
+	139: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	140: MoveLoc[6](deny_list#2#0: DenyList)
+	141: Call test_scenario::return_shared<DenyList>(DenyList)
+	142: MutBorrowLoc[10](scenario#1#0: Scenario)
+	143: LdConst[0](address: 0x00..)
+	144: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	145: Pop
+	146: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	147: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	148: StLoc[7](deny_list#3#0: DenyList)
+	149: MutBorrowLoc[10](scenario#1#0: Scenario)
+	150: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	151: StLoc[2](ctx#3#0: &mut TxContext)
+	152: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	153: LdConst[12](address: 0x00..)
+	154: LdTrue
+	155: LdFalse
+	156: CopyLoc[2](ctx#3#0: &mut TxContext)
+	157: FreezeRef
+	158: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	159: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	160: LdConst[11](address: 0x00..)
+	161: LdFalse
+	162: LdTrue
+	163: CopyLoc[2](ctx#3#0: &mut TxContext)
+	164: FreezeRef
+	165: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	166: MutBorrowLoc[7](deny_list#3#0: DenyList)
+	167: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	168: LdConst[11](address: 0x00..)
+	169: CopyLoc[2](ctx#3#0: &mut TxContext)
+	170: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	171: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	172: LdConst[11](address: 0x00..)
+	173: LdFalse
+	174: LdFalse
+	175: MoveLoc[2](ctx#3#0: &mut TxContext)
+	176: FreezeRef
+	177: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	178: MoveLoc[7](deny_list#3#0: DenyList)
+	179: Call test_scenario::return_shared<DenyList>(DenyList)
+	180: MutBorrowLoc[10](scenario#1#0: Scenario)
+	181: LdConst[0](address: 0x00..)
+	182: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	183: Pop
+	184: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	185: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	186: StLoc[8](deny_list#4#0: DenyList)
+	187: MutBorrowLoc[10](scenario#1#0: Scenario)
+	188: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	189: StLoc[3](ctx#4#0: &mut TxContext)
+	190: ImmBorrowLoc[8](deny_list#4#0: DenyList)
+	191: LdConst[12](address: 0x00..)
+	192: LdFalse
+	193: LdFalse
+	194: MoveLoc[3](ctx#4#0: &mut TxContext)
+	195: FreezeRef
+	196: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	197: MoveLoc[8](deny_list#4#0: DenyList)
+	198: Call test_scenario::return_shared<DenyList>(DenyList)
+	199: MoveLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	200: Call transfer::public_freeze_object<DenyCapV2<COIN_TESTS>>(DenyCapV2<COIN_TESTS>)
+	201: MoveLoc[10](scenario#1#0: Scenario)
+	202: Call test_scenario::end(Scenario): TransactionEffects
+	203: Pop
+	204: Ret
+}
+
+deny_list_v2_global_pause() {
+L0:	ctx#1#0: &mut TxContext
+L1:	ctx#2#0: &mut TxContext
+L2:	ctx#3#0: &mut TxContext
+L3:	deny_cap#1#0: DenyCapV2<COIN_TESTS>
+L4:	deny_list#1#0: DenyList
+L5:	deny_list#2#0: DenyList
+L6:	deny_list#3#0: DenyList
+L7:	metadata#1#0: CoinMetadata<COIN_TESTS>
+L8:	scenario#1#0: Scenario
+L9:	treasury#1#0: TreasuryCap<COIN_TESTS>
+B0:
+	0: LdConst[9](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[8](scenario#1#0: Scenario)
+	3: MutBorrowLoc[8](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[8](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: LdFalse
+	11: Pack[0](COIN_TESTS)
+	12: LdU8(6)
+	13: LdConst[1](vector<u8>: "COI..)
+	14: LdConst[2](vector<u8>: "coi..)
+	15: LdConst[3](vector<u8>: "des..)
+	16: LdConst[4](vector<u8>: "ico..)
+	17: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	18: Call option::some<Url>(Url): Option<Url>
+	19: LdTrue
+	20: MutBorrowLoc[8](scenario#1#0: Scenario)
+	21: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	22: Call coin::create_regulated_currency_v2<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, bool, &mut TxContext): TreasuryCap<COIN_TESTS> * DenyCapV2<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	23: StLoc[7](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	24: StLoc[3](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	25: StLoc[9](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	26: MoveLoc[7](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	27: Call transfer::public_freeze_object<CoinMetadata<COIN_TESTS>>(CoinMetadata<COIN_TESTS>)
+	28: MoveLoc[9](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	29: Call transfer::public_freeze_object<TreasuryCap<COIN_TESTS>>(TreasuryCap<COIN_TESTS>)
+	30: MutBorrowLoc[8](scenario#1#0: Scenario)
+	31: LdConst[0](address: 0x00..)
+	32: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	33: Pop
+	34: ImmBorrowLoc[8](scenario#1#0: Scenario)
+	35: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	36: StLoc[4](deny_list#1#0: DenyList)
+	37: MutBorrowLoc[8](scenario#1#0: Scenario)
+	38: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	39: StLoc[0](ctx#1#0: &mut TxContext)
+	40: ImmBorrowLoc[4](deny_list#1#0: DenyList)
+	41: LdConst[10](address: 0x00..)
+	42: LdFalse
+	43: LdFalse
+	44: CopyLoc[0](ctx#1#0: &mut TxContext)
+	45: FreezeRef
+	46: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	47: ImmBorrowLoc[4](deny_list#1#0: DenyList)
+	48: LdFalse
+	49: LdFalse
+	50: CopyLoc[0](ctx#1#0: &mut TxContext)
+	51: FreezeRef
+	52: Call assert_global(&DenyList, bool, bool, &TxContext)
+	53: MutBorrowLoc[4](deny_list#1#0: DenyList)
+	54: MutBorrowLoc[3](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	55: CopyLoc[0](ctx#1#0: &mut TxContext)
+	56: Call coin::deny_list_v2_enable_global_pause<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, &mut TxContext)
+	57: ImmBorrowLoc[4](deny_list#1#0: DenyList)
+	58: LdConst[10](address: 0x00..)
+	59: LdFalse
+	60: LdFalse
+	61: CopyLoc[0](ctx#1#0: &mut TxContext)
+	62: FreezeRef
+	63: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	64: ImmBorrowLoc[4](deny_list#1#0: DenyList)
+	65: LdFalse
+	66: LdTrue
+	67: CopyLoc[0](ctx#1#0: &mut TxContext)
+	68: FreezeRef
+	69: Call assert_global(&DenyList, bool, bool, &TxContext)
+	70: MutBorrowLoc[4](deny_list#1#0: DenyList)
+	71: MutBorrowLoc[3](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	72: CopyLoc[0](ctx#1#0: &mut TxContext)
+	73: Call coin::deny_list_v2_enable_global_pause<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, &mut TxContext)
+	74: ImmBorrowLoc[4](deny_list#1#0: DenyList)
+	75: LdFalse
+	76: LdTrue
+	77: MoveLoc[0](ctx#1#0: &mut TxContext)
+	78: FreezeRef
+	79: Call assert_global(&DenyList, bool, bool, &TxContext)
+	80: MoveLoc[4](deny_list#1#0: DenyList)
+	81: Call test_scenario::return_shared<DenyList>(DenyList)
+	82: MutBorrowLoc[8](scenario#1#0: Scenario)
+	83: LdConst[0](address: 0x00..)
+	84: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	85: Pop
+	86: ImmBorrowLoc[8](scenario#1#0: Scenario)
+	87: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	88: StLoc[5](deny_list#2#0: DenyList)
+	89: MutBorrowLoc[8](scenario#1#0: Scenario)
+	90: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	91: StLoc[1](ctx#2#0: &mut TxContext)
+	92: ImmBorrowLoc[5](deny_list#2#0: DenyList)
+	93: LdConst[10](address: 0x00..)
+	94: LdFalse
+	95: LdFalse
+	96: CopyLoc[1](ctx#2#0: &mut TxContext)
+	97: FreezeRef
+	98: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	99: ImmBorrowLoc[5](deny_list#2#0: DenyList)
+	100: LdTrue
+	101: LdTrue
+	102: CopyLoc[1](ctx#2#0: &mut TxContext)
+	103: FreezeRef
+	104: Call assert_global(&DenyList, bool, bool, &TxContext)
+	105: MutBorrowLoc[5](deny_list#2#0: DenyList)
+	106: MutBorrowLoc[3](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	107: LdConst[10](address: 0x00..)
+	108: CopyLoc[1](ctx#2#0: &mut TxContext)
+	109: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	110: ImmBorrowLoc[5](deny_list#2#0: DenyList)
+	111: LdConst[10](address: 0x00..)
+	112: LdFalse
+	113: LdTrue
+	114: CopyLoc[1](ctx#2#0: &mut TxContext)
+	115: FreezeRef
+	116: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	117: ImmBorrowLoc[5](deny_list#2#0: DenyList)
+	118: LdTrue
+	119: LdTrue
+	120: CopyLoc[1](ctx#2#0: &mut TxContext)
+	121: FreezeRef
+	122: Call assert_global(&DenyList, bool, bool, &TxContext)
+	123: MutBorrowLoc[5](deny_list#2#0: DenyList)
+	124: MutBorrowLoc[3](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	125: LdConst[10](address: 0x00..)
+	126: CopyLoc[1](ctx#2#0: &mut TxContext)
+	127: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	128: ImmBorrowLoc[5](deny_list#2#0: DenyList)
+	129: LdConst[10](address: 0x00..)
+	130: LdFalse
+	131: LdFalse
+	132: CopyLoc[1](ctx#2#0: &mut TxContext)
+	133: FreezeRef
+	134: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	135: ImmBorrowLoc[5](deny_list#2#0: DenyList)
+	136: LdTrue
+	137: LdTrue
+	138: MoveLoc[1](ctx#2#0: &mut TxContext)
+	139: FreezeRef
+	140: Call assert_global(&DenyList, bool, bool, &TxContext)
+	141: MoveLoc[5](deny_list#2#0: DenyList)
+	142: Call test_scenario::return_shared<DenyList>(DenyList)
+	143: MutBorrowLoc[8](scenario#1#0: Scenario)
+	144: LdConst[0](address: 0x00..)
+	145: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	146: Pop
+	147: ImmBorrowLoc[8](scenario#1#0: Scenario)
+	148: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	149: StLoc[6](deny_list#3#0: DenyList)
+	150: MutBorrowLoc[8](scenario#1#0: Scenario)
+	151: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	152: StLoc[2](ctx#3#0: &mut TxContext)
+	153: ImmBorrowLoc[6](deny_list#3#0: DenyList)
+	154: LdConst[10](address: 0x00..)
+	155: LdFalse
+	156: LdFalse
+	157: CopyLoc[2](ctx#3#0: &mut TxContext)
+	158: FreezeRef
+	159: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	160: ImmBorrowLoc[6](deny_list#3#0: DenyList)
+	161: LdTrue
+	162: LdTrue
+	163: CopyLoc[2](ctx#3#0: &mut TxContext)
+	164: FreezeRef
+	165: Call assert_global(&DenyList, bool, bool, &TxContext)
+	166: MutBorrowLoc[6](deny_list#3#0: DenyList)
+	167: MutBorrowLoc[3](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	168: LdConst[10](address: 0x00..)
+	169: CopyLoc[2](ctx#3#0: &mut TxContext)
+	170: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	171: ImmBorrowLoc[6](deny_list#3#0: DenyList)
+	172: LdConst[10](address: 0x00..)
+	173: LdFalse
+	174: LdTrue
+	175: CopyLoc[2](ctx#3#0: &mut TxContext)
+	176: FreezeRef
+	177: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	178: ImmBorrowLoc[6](deny_list#3#0: DenyList)
+	179: LdTrue
+	180: LdTrue
+	181: CopyLoc[2](ctx#3#0: &mut TxContext)
+	182: FreezeRef
+	183: Call assert_global(&DenyList, bool, bool, &TxContext)
+	184: MutBorrowLoc[6](deny_list#3#0: DenyList)
+	185: MutBorrowLoc[3](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	186: CopyLoc[2](ctx#3#0: &mut TxContext)
+	187: Call coin::deny_list_v2_disable_global_pause<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, &mut TxContext)
+	188: ImmBorrowLoc[6](deny_list#3#0: DenyList)
+	189: LdConst[10](address: 0x00..)
+	190: LdFalse
+	191: LdTrue
+	192: CopyLoc[2](ctx#3#0: &mut TxContext)
+	193: FreezeRef
+	194: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	195: ImmBorrowLoc[6](deny_list#3#0: DenyList)
+	196: LdTrue
+	197: LdFalse
+	198: CopyLoc[2](ctx#3#0: &mut TxContext)
+	199: FreezeRef
+	200: Call assert_global(&DenyList, bool, bool, &TxContext)
+	201: MutBorrowLoc[6](deny_list#3#0: DenyList)
+	202: MutBorrowLoc[3](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	203: CopyLoc[2](ctx#3#0: &mut TxContext)
+	204: Call coin::deny_list_v2_disable_global_pause<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, &mut TxContext)
+	205: ImmBorrowLoc[6](deny_list#3#0: DenyList)
+	206: LdTrue
+	207: LdFalse
+	208: MoveLoc[2](ctx#3#0: &mut TxContext)
+	209: FreezeRef
+	210: Call assert_global(&DenyList, bool, bool, &TxContext)
+	211: MoveLoc[6](deny_list#3#0: DenyList)
+	212: Call test_scenario::return_shared<DenyList>(DenyList)
+	213: MoveLoc[3](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	214: Call transfer::public_freeze_object<DenyCapV2<COIN_TESTS>>(DenyCapV2<COIN_TESTS>)
+	215: MoveLoc[8](scenario#1#0: Scenario)
+	216: Call test_scenario::end(Scenario): TransactionEffects
+	217: Pop
+	218: Ret
+}
+
+deny_list_v2_double_add() {
+L0:	ctx#1#0: &mut TxContext
+L1:	deny_cap#1#0: DenyCapV2<COIN_TESTS>
+L2:	deny_list#1#0: DenyList
+L3:	metadata#1#0: CoinMetadata<COIN_TESTS>
+L4:	scenario#1#0: Scenario
+L5:	treasury#1#0: TreasuryCap<COIN_TESTS>
+B0:
+	0: LdConst[9](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[4](scenario#1#0: Scenario)
+	3: MutBorrowLoc[4](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[4](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: LdFalse
+	11: Pack[0](COIN_TESTS)
+	12: LdU8(6)
+	13: LdConst[1](vector<u8>: "COI..)
+	14: LdConst[2](vector<u8>: "coi..)
+	15: LdConst[3](vector<u8>: "des..)
+	16: LdConst[4](vector<u8>: "ico..)
+	17: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	18: Call option::some<Url>(Url): Option<Url>
+	19: LdTrue
+	20: MutBorrowLoc[4](scenario#1#0: Scenario)
+	21: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	22: Call coin::create_regulated_currency_v2<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, bool, &mut TxContext): TreasuryCap<COIN_TESTS> * DenyCapV2<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	23: StLoc[3](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	24: StLoc[1](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	25: StLoc[5](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	26: MoveLoc[3](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	27: Call transfer::public_freeze_object<CoinMetadata<COIN_TESTS>>(CoinMetadata<COIN_TESTS>)
+	28: MoveLoc[5](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	29: Call transfer::public_freeze_object<TreasuryCap<COIN_TESTS>>(TreasuryCap<COIN_TESTS>)
+	30: MutBorrowLoc[4](scenario#1#0: Scenario)
+	31: LdConst[0](address: 0x00..)
+	32: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	33: Pop
+	34: ImmBorrowLoc[4](scenario#1#0: Scenario)
+	35: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	36: StLoc[2](deny_list#1#0: DenyList)
+	37: MutBorrowLoc[4](scenario#1#0: Scenario)
+	38: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	39: StLoc[0](ctx#1#0: &mut TxContext)
+	40: ImmBorrowLoc[2](deny_list#1#0: DenyList)
+	41: LdConst[10](address: 0x00..)
+	42: LdFalse
+	43: LdFalse
+	44: CopyLoc[0](ctx#1#0: &mut TxContext)
+	45: FreezeRef
+	46: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	47: MutBorrowLoc[2](deny_list#1#0: DenyList)
+	48: MutBorrowLoc[1](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	49: LdConst[10](address: 0x00..)
+	50: CopyLoc[0](ctx#1#0: &mut TxContext)
+	51: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	52: MutBorrowLoc[2](deny_list#1#0: DenyList)
+	53: MutBorrowLoc[1](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	54: LdConst[10](address: 0x00..)
+	55: CopyLoc[0](ctx#1#0: &mut TxContext)
+	56: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	57: ImmBorrowLoc[2](deny_list#1#0: DenyList)
+	58: LdConst[10](address: 0x00..)
+	59: LdFalse
+	60: LdTrue
+	61: CopyLoc[0](ctx#1#0: &mut TxContext)
+	62: FreezeRef
+	63: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	64: MutBorrowLoc[2](deny_list#1#0: DenyList)
+	65: MutBorrowLoc[1](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	66: LdConst[10](address: 0x00..)
+	67: CopyLoc[0](ctx#1#0: &mut TxContext)
+	68: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	69: ImmBorrowLoc[2](deny_list#1#0: DenyList)
+	70: LdConst[10](address: 0x00..)
+	71: LdFalse
+	72: LdFalse
+	73: MoveLoc[0](ctx#1#0: &mut TxContext)
+	74: FreezeRef
+	75: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	76: MoveLoc[2](deny_list#1#0: DenyList)
+	77: Call test_scenario::return_shared<DenyList>(DenyList)
+	78: MoveLoc[1](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	79: Call transfer::public_freeze_object<DenyCapV2<COIN_TESTS>>(DenyCapV2<COIN_TESTS>)
+	80: MoveLoc[4](scenario#1#0: Scenario)
+	81: Call test_scenario::end(Scenario): TransactionEffects
+	82: Pop
+	83: Ret
+}
+
+deny_list_v2_global_pause_not_allowed_enable() {
+L0:	_metadata#1#0: CoinMetadata<COIN_TESTS>
+L1:	_treasury#1#0: TreasuryCap<COIN_TESTS>
+L2:	deny_cap#1#0: DenyCapV2<COIN_TESTS>
+L3:	deny_list#1#0: DenyList
+L4:	scenario#1#0: Scenario
+B0:
+	0: LdConst[9](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[4](scenario#1#0: Scenario)
+	3: MutBorrowLoc[4](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[4](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: LdFalse
+	11: Pack[0](COIN_TESTS)
+	12: LdU8(6)
+	13: LdConst[1](vector<u8>: "COI..)
+	14: LdConst[2](vector<u8>: "coi..)
+	15: LdConst[3](vector<u8>: "des..)
+	16: LdConst[4](vector<u8>: "ico..)
+	17: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	18: Call option::some<Url>(Url): Option<Url>
+	19: LdFalse
+	20: MutBorrowLoc[4](scenario#1#0: Scenario)
+	21: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	22: Call coin::create_regulated_currency_v2<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, bool, &mut TxContext): TreasuryCap<COIN_TESTS> * DenyCapV2<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	23: StLoc[0](_metadata#1#0: CoinMetadata<COIN_TESTS>)
+	24: StLoc[2](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	25: StLoc[1](_treasury#1#0: TreasuryCap<COIN_TESTS>)
+	26: ImmBorrowLoc[4](scenario#1#0: Scenario)
+	27: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	28: StLoc[3](deny_list#1#0: DenyList)
+	29: MutBorrowLoc[3](deny_list#1#0: DenyList)
+	30: MutBorrowLoc[2](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	31: MutBorrowLoc[4](scenario#1#0: Scenario)
+	32: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	33: Call coin::deny_list_v2_enable_global_pause<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, &mut TxContext)
+	34: LdU64(0)
+	35: Abort
+}
+
+deny_list_v2_global_pause_not_allowed_disable() {
+L0:	_metadata#1#0: CoinMetadata<COIN_TESTS>
+L1:	_treasury#1#0: TreasuryCap<COIN_TESTS>
+L2:	deny_cap#1#0: DenyCapV2<COIN_TESTS>
+L3:	deny_list#1#0: DenyList
+L4:	scenario#1#0: Scenario
+B0:
+	0: LdConst[9](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[4](scenario#1#0: Scenario)
+	3: MutBorrowLoc[4](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[4](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: LdFalse
+	11: Pack[0](COIN_TESTS)
+	12: LdU8(6)
+	13: LdConst[1](vector<u8>: "COI..)
+	14: LdConst[2](vector<u8>: "coi..)
+	15: LdConst[3](vector<u8>: "des..)
+	16: LdConst[4](vector<u8>: "ico..)
+	17: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	18: Call option::some<Url>(Url): Option<Url>
+	19: LdFalse
+	20: MutBorrowLoc[4](scenario#1#0: Scenario)
+	21: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	22: Call coin::create_regulated_currency_v2<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, bool, &mut TxContext): TreasuryCap<COIN_TESTS> * DenyCapV2<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	23: StLoc[0](_metadata#1#0: CoinMetadata<COIN_TESTS>)
+	24: StLoc[2](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	25: StLoc[1](_treasury#1#0: TreasuryCap<COIN_TESTS>)
+	26: ImmBorrowLoc[4](scenario#1#0: Scenario)
+	27: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	28: StLoc[3](deny_list#1#0: DenyList)
+	29: MutBorrowLoc[3](deny_list#1#0: DenyList)
+	30: MutBorrowLoc[2](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	31: MutBorrowLoc[4](scenario#1#0: Scenario)
+	32: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	33: Call coin::deny_list_v2_disable_global_pause<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, &mut TxContext)
+	34: LdU64(0)
+	35: Abort
+}
+
+migrate_regulated_currency_to_v2() {
+L0:	ctx#1#0: &mut TxContext
+L1:	ctx#2#0: &mut TxContext
+L2:	ctx#3#0: &mut TxContext
+L3:	deny_cap#1#0: DenyCap<COIN_TESTS>
+L4:	deny_cap_v2#1#0: DenyCapV2<COIN_TESTS>
+L5:	deny_list#1#0: DenyList
+L6:	deny_list#2#0: DenyList
+L7:	deny_list#3#0: DenyList
+L8:	metadata#1#0: CoinMetadata<COIN_TESTS>
+L9:	scenario#1#0: Scenario
+L10:	treasury#1#0: TreasuryCap<COIN_TESTS>
+B0:
+	0: LdConst[9](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[9](scenario#1#0: Scenario)
+	3: MutBorrowLoc[9](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[9](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: LdFalse
+	11: Pack[0](COIN_TESTS)
+	12: LdU8(6)
+	13: LdConst[1](vector<u8>: "COI..)
+	14: LdConst[2](vector<u8>: "coi..)
+	15: LdConst[3](vector<u8>: "des..)
+	16: LdConst[4](vector<u8>: "ico..)
+	17: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	18: Call option::some<Url>(Url): Option<Url>
+	19: MutBorrowLoc[9](scenario#1#0: Scenario)
+	20: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	21: Call coin::create_regulated_currency<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, &mut TxContext): TreasuryCap<COIN_TESTS> * DenyCap<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	22: StLoc[8](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	23: StLoc[3](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	24: StLoc[10](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	25: MoveLoc[8](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	26: Call transfer::public_freeze_object<CoinMetadata<COIN_TESTS>>(CoinMetadata<COIN_TESTS>)
+	27: MoveLoc[10](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	28: Call transfer::public_freeze_object<TreasuryCap<COIN_TESTS>>(TreasuryCap<COIN_TESTS>)
+	29: MutBorrowLoc[9](scenario#1#0: Scenario)
+	30: LdConst[0](address: 0x00..)
+	31: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	32: Pop
+	33: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	34: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	35: StLoc[5](deny_list#1#0: DenyList)
+	36: MutBorrowLoc[9](scenario#1#0: Scenario)
+	37: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	38: StLoc[0](ctx#1#0: &mut TxContext)
+	39: MutBorrowLoc[5](deny_list#1#0: DenyList)
+	40: MutBorrowLoc[3](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	41: LdConst[10](address: 0x00..)
+	42: CopyLoc[0](ctx#1#0: &mut TxContext)
+	43: Call coin::deny_list_add<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	44: MutBorrowLoc[5](deny_list#1#0: DenyList)
+	45: MutBorrowLoc[3](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	46: LdConst[11](address: 0x00..)
+	47: CopyLoc[0](ctx#1#0: &mut TxContext)
+	48: Call coin::deny_list_add<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	49: MutBorrowLoc[5](deny_list#1#0: DenyList)
+	50: MutBorrowLoc[3](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	51: LdConst[13](address: 0x00..)
+	52: CopyLoc[0](ctx#1#0: &mut TxContext)
+	53: Call coin::deny_list_add<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	54: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	55: LdConst[10](address: 0x00..)
+	56: LdFalse
+	57: LdFalse
+	58: CopyLoc[0](ctx#1#0: &mut TxContext)
+	59: FreezeRef
+	60: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	61: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	62: LdConst[11](address: 0x00..)
+	63: LdFalse
+	64: LdFalse
+	65: CopyLoc[0](ctx#1#0: &mut TxContext)
+	66: FreezeRef
+	67: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	68: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	69: LdConst[13](address: 0x00..)
+	70: LdFalse
+	71: LdFalse
+	72: MoveLoc[0](ctx#1#0: &mut TxContext)
+	73: FreezeRef
+	74: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	75: MoveLoc[5](deny_list#1#0: DenyList)
+	76: Call test_scenario::return_shared<DenyList>(DenyList)
+	77: MutBorrowLoc[9](scenario#1#0: Scenario)
+	78: LdConst[0](address: 0x00..)
+	79: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	80: Pop
+	81: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	82: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	83: StLoc[6](deny_list#2#0: DenyList)
+	84: MutBorrowLoc[9](scenario#1#0: Scenario)
+	85: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	86: StLoc[1](ctx#2#0: &mut TxContext)
+	87: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	88: LdConst[10](address: 0x00..)
+	89: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	90: BrFalse(92)
+B1:
+	91: Branch(96)
+B2:
+	92: MoveLoc[1](ctx#2#0: &mut TxContext)
+	93: Pop
+	94: LdU64(13906836235927683071)
+	95: Abort
+B3:
+	96: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	97: LdConst[11](address: 0x00..)
+	98: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	99: BrFalse(101)
+B4:
+	100: Branch(105)
+B5:
+	101: MoveLoc[1](ctx#2#0: &mut TxContext)
+	102: Pop
+	103: LdU64(13906836240222650367)
+	104: Abort
+B6:
+	105: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	106: LdConst[13](address: 0x00..)
+	107: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	108: BrFalse(110)
+B7:
+	109: Branch(114)
+B8:
+	110: MoveLoc[1](ctx#2#0: &mut TxContext)
+	111: Pop
+	112: LdU64(13906836244517617663)
+	113: Abort
+B9:
+	114: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	115: LdConst[10](address: 0x00..)
+	116: LdFalse
+	117: LdFalse
+	118: CopyLoc[1](ctx#2#0: &mut TxContext)
+	119: FreezeRef
+	120: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	121: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	122: LdConst[11](address: 0x00..)
+	123: LdFalse
+	124: LdFalse
+	125: CopyLoc[1](ctx#2#0: &mut TxContext)
+	126: FreezeRef
+	127: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	128: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	129: LdConst[13](address: 0x00..)
+	130: LdFalse
+	131: LdFalse
+	132: CopyLoc[1](ctx#2#0: &mut TxContext)
+	133: FreezeRef
+	134: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	135: MutBorrowLoc[6](deny_list#2#0: DenyList)
+	136: MoveLoc[3](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	137: LdTrue
+	138: CopyLoc[1](ctx#2#0: &mut TxContext)
+	139: Call coin::migrate_regulated_currency_to_v2<COIN_TESTS>(&mut DenyList, DenyCap<COIN_TESTS>, bool, &mut TxContext): DenyCapV2<COIN_TESTS>
+	140: StLoc[4](deny_cap_v2#1#0: DenyCapV2<COIN_TESTS>)
+	141: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	142: LdConst[10](address: 0x00..)
+	143: LdFalse
+	144: LdTrue
+	145: CopyLoc[1](ctx#2#0: &mut TxContext)
+	146: FreezeRef
+	147: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	148: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	149: LdConst[11](address: 0x00..)
+	150: LdFalse
+	151: LdTrue
+	152: CopyLoc[1](ctx#2#0: &mut TxContext)
+	153: FreezeRef
+	154: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	155: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	156: LdConst[13](address: 0x00..)
+	157: LdFalse
+	158: LdTrue
+	159: MoveLoc[1](ctx#2#0: &mut TxContext)
+	160: FreezeRef
+	161: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	162: MoveLoc[6](deny_list#2#0: DenyList)
+	163: Call test_scenario::return_shared<DenyList>(DenyList)
+	164: MutBorrowLoc[9](scenario#1#0: Scenario)
+	165: LdConst[0](address: 0x00..)
+	166: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	167: Pop
+	168: ImmBorrowLoc[9](scenario#1#0: Scenario)
+	169: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	170: StLoc[7](deny_list#3#0: DenyList)
+	171: MutBorrowLoc[9](scenario#1#0: Scenario)
+	172: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	173: StLoc[2](ctx#3#0: &mut TxContext)
+	174: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	175: LdConst[10](address: 0x00..)
+	176: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	177: Not
+	178: BrFalse(180)
+B10:
+	179: Branch(184)
+B11:
+	180: MoveLoc[2](ctx#3#0: &mut TxContext)
+	181: Pop
+	182: LdU64(13906836304647159807)
+	183: Abort
+B12:
+	184: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	185: LdConst[11](address: 0x00..)
+	186: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	187: Not
+	188: BrFalse(190)
+B13:
+	189: Branch(194)
+B14:
+	190: MoveLoc[2](ctx#3#0: &mut TxContext)
+	191: Pop
+	192: LdU64(13906836308942127103)
+	193: Abort
+B15:
+	194: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	195: LdConst[13](address: 0x00..)
+	196: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	197: Not
+	198: BrFalse(200)
+B16:
+	199: Branch(204)
+B17:
+	200: MoveLoc[2](ctx#3#0: &mut TxContext)
+	201: Pop
+	202: LdU64(13906836313237094399)
+	203: Abort
+B18:
+	204: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	205: LdConst[10](address: 0x00..)
+	206: LdTrue
+	207: LdTrue
+	208: CopyLoc[2](ctx#3#0: &mut TxContext)
+	209: FreezeRef
+	210: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	211: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	212: LdConst[11](address: 0x00..)
+	213: LdTrue
+	214: LdTrue
+	215: CopyLoc[2](ctx#3#0: &mut TxContext)
+	216: FreezeRef
+	217: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	218: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	219: LdConst[13](address: 0x00..)
+	220: LdTrue
+	221: LdTrue
+	222: MoveLoc[2](ctx#3#0: &mut TxContext)
+	223: FreezeRef
+	224: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	225: MoveLoc[7](deny_list#3#0: DenyList)
+	226: Call test_scenario::return_shared<DenyList>(DenyList)
+	227: MoveLoc[4](deny_cap_v2#1#0: DenyCapV2<COIN_TESTS>)
+	228: Call transfer::public_freeze_object<DenyCapV2<COIN_TESTS>>(DenyCapV2<COIN_TESTS>)
+	229: MoveLoc[9](scenario#1#0: Scenario)
+	230: Call test_scenario::end(Scenario): TransactionEffects
+	231: Pop
+	232: Ret
+}
+
+migrate_regulated_currency_to_v2_disallow_global_pause() {
+L0:	deny_cap#1#0: DenyCap<COIN_TESTS>
+L1:	deny_cap_v2#1#0: DenyCapV2<COIN_TESTS>
+L2:	deny_list#1#0: DenyList
+L3:	deny_list#2#0: DenyList
+L4:	deny_list#3#0: DenyList
+L5:	deny_list#4#0: DenyList
+L6:	metadata#1#0: CoinMetadata<COIN_TESTS>
+L7:	scenario#1#0: Scenario
+L8:	treasury#1#0: TreasuryCap<COIN_TESTS>
+B0:
+	0: LdConst[9](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[7](scenario#1#0: Scenario)
+	3: MutBorrowLoc[7](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[7](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: LdFalse
+	11: Pack[0](COIN_TESTS)
+	12: LdU8(6)
+	13: LdConst[1](vector<u8>: "COI..)
+	14: LdConst[2](vector<u8>: "coi..)
+	15: LdConst[3](vector<u8>: "des..)
+	16: LdConst[4](vector<u8>: "ico..)
+	17: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	18: Call option::some<Url>(Url): Option<Url>
+	19: MutBorrowLoc[7](scenario#1#0: Scenario)
+	20: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	21: Call coin::create_regulated_currency<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, &mut TxContext): TreasuryCap<COIN_TESTS> * DenyCap<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	22: StLoc[6](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	23: StLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	24: StLoc[8](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	25: MoveLoc[6](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	26: Call transfer::public_freeze_object<CoinMetadata<COIN_TESTS>>(CoinMetadata<COIN_TESTS>)
+	27: MoveLoc[8](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	28: Call transfer::public_freeze_object<TreasuryCap<COIN_TESTS>>(TreasuryCap<COIN_TESTS>)
+	29: MutBorrowLoc[7](scenario#1#0: Scenario)
+	30: LdConst[0](address: 0x00..)
+	31: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	32: Pop
+	33: ImmBorrowLoc[7](scenario#1#0: Scenario)
+	34: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	35: StLoc[2](deny_list#1#0: DenyList)
+	36: MutBorrowLoc[2](deny_list#1#0: DenyList)
+	37: MutBorrowLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	38: LdConst[10](address: 0x00..)
+	39: MutBorrowLoc[7](scenario#1#0: Scenario)
+	40: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	41: Call coin::deny_list_add<COIN_TESTS>(&mut DenyList, &mut DenyCap<COIN_TESTS>, address, &mut TxContext)
+	42: MoveLoc[2](deny_list#1#0: DenyList)
+	43: Call test_scenario::return_shared<DenyList>(DenyList)
+	44: MutBorrowLoc[7](scenario#1#0: Scenario)
+	45: LdConst[0](address: 0x00..)
+	46: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	47: Pop
+	48: ImmBorrowLoc[7](scenario#1#0: Scenario)
+	49: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	50: StLoc[3](deny_list#2#0: DenyList)
+	51: ImmBorrowLoc[3](deny_list#2#0: DenyList)
+	52: LdConst[10](address: 0x00..)
+	53: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	54: BrFalse(56)
+B1:
+	55: Branch(58)
+B2:
+	56: LdU64(13906836480740818943)
+	57: Abort
+B3:
+	58: ImmBorrowLoc[3](deny_list#2#0: DenyList)
+	59: LdConst[10](address: 0x00..)
+	60: LdFalse
+	61: LdFalse
+	62: MutBorrowLoc[7](scenario#1#0: Scenario)
+	63: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	64: FreezeRef
+	65: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	66: MutBorrowLoc[3](deny_list#2#0: DenyList)
+	67: MoveLoc[0](deny_cap#1#0: DenyCap<COIN_TESTS>)
+	68: LdFalse
+	69: MutBorrowLoc[7](scenario#1#0: Scenario)
+	70: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	71: Call coin::migrate_regulated_currency_to_v2<COIN_TESTS>(&mut DenyList, DenyCap<COIN_TESTS>, bool, &mut TxContext): DenyCapV2<COIN_TESTS>
+	72: StLoc[1](deny_cap_v2#1#0: DenyCapV2<COIN_TESTS>)
+	73: ImmBorrowLoc[3](deny_list#2#0: DenyList)
+	74: LdConst[10](address: 0x00..)
+	75: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	76: Not
+	77: BrFalse(79)
+B4:
+	78: Branch(81)
+B5:
+	79: LdU64(13906836497920688127)
+	80: Abort
+B6:
+	81: ImmBorrowLoc[3](deny_list#2#0: DenyList)
+	82: LdConst[10](address: 0x00..)
+	83: LdFalse
+	84: LdTrue
+	85: MutBorrowLoc[7](scenario#1#0: Scenario)
+	86: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	87: FreezeRef
+	88: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	89: MoveLoc[3](deny_list#2#0: DenyList)
+	90: Call test_scenario::return_shared<DenyList>(DenyList)
+	91: MutBorrowLoc[7](scenario#1#0: Scenario)
+	92: LdConst[0](address: 0x00..)
+	93: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	94: Pop
+	95: ImmBorrowLoc[7](scenario#1#0: Scenario)
+	96: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	97: StLoc[4](deny_list#3#0: DenyList)
+	98: ImmBorrowLoc[4](deny_list#3#0: DenyList)
+	99: LdConst[10](address: 0x00..)
+	100: Call coin::deny_list_contains<COIN_TESTS>(&DenyList, address): bool
+	101: Not
+	102: BrFalse(104)
+B7:
+	103: Branch(106)
+B8:
+	104: LdU64(13906836527985459199)
+	105: Abort
+B9:
+	106: ImmBorrowLoc[4](deny_list#3#0: DenyList)
+	107: LdConst[10](address: 0x00..)
+	108: LdTrue
+	109: LdTrue
+	110: MutBorrowLoc[7](scenario#1#0: Scenario)
+	111: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	112: FreezeRef
+	113: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	114: MoveLoc[4](deny_list#3#0: DenyList)
+	115: Call test_scenario::return_shared<DenyList>(DenyList)
+	116: MutBorrowLoc[7](scenario#1#0: Scenario)
+	117: LdConst[0](address: 0x00..)
+	118: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	119: Pop
+	120: ImmBorrowLoc[7](scenario#1#0: Scenario)
+	121: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	122: StLoc[5](deny_list#4#0: DenyList)
+	123: MutBorrowLoc[5](deny_list#4#0: DenyList)
+	124: MutBorrowLoc[1](deny_cap_v2#1#0: DenyCapV2<COIN_TESTS>)
+	125: MutBorrowLoc[7](scenario#1#0: Scenario)
+	126: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	127: Call coin::deny_list_v2_enable_global_pause<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, &mut TxContext)
+	128: LdU64(0)
+	129: Abort
+}
+
+deny_list_v2_add_remove() {
+L0:	ctx#1#0: &mut TxContext
+L1:	ctx#2#0: &mut TxContext
+L2:	ctx#3#0: &mut TxContext
+L3:	ctx#4#0: &mut TxContext
+L4:	deny_cap#1#0: DenyCapV2<COIN_TESTS>
+L5:	deny_list#1#0: DenyList
+L6:	deny_list#2#0: DenyList
+L7:	deny_list#3#0: DenyList
+L8:	deny_list#4#0: DenyList
+L9:	metadata#1#0: CoinMetadata<COIN_TESTS>
+L10:	scenario#1#0: Scenario
+L11:	treasury#1#0: TreasuryCap<COIN_TESTS>
+B0:
+	0: LdConst[9](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[10](scenario#1#0: Scenario)
+	3: MutBorrowLoc[10](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call deny_list::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[10](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: LdFalse
+	11: Pack[0](COIN_TESTS)
+	12: LdU8(6)
+	13: LdConst[1](vector<u8>: "COI..)
+	14: LdConst[2](vector<u8>: "coi..)
+	15: LdConst[3](vector<u8>: "des..)
+	16: LdConst[4](vector<u8>: "ico..)
+	17: Call url::new_unsafe_from_bytes(vector<u8>): Url
+	18: Call option::some<Url>(Url): Option<Url>
+	19: LdTrue
+	20: MutBorrowLoc[10](scenario#1#0: Scenario)
+	21: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	22: Call coin::create_regulated_currency_v2<COIN_TESTS>(COIN_TESTS, u8, vector<u8>, vector<u8>, vector<u8>, Option<Url>, bool, &mut TxContext): TreasuryCap<COIN_TESTS> * DenyCapV2<COIN_TESTS> * CoinMetadata<COIN_TESTS>
+	23: StLoc[9](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	24: StLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	25: StLoc[11](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	26: MoveLoc[9](metadata#1#0: CoinMetadata<COIN_TESTS>)
+	27: Call transfer::public_freeze_object<CoinMetadata<COIN_TESTS>>(CoinMetadata<COIN_TESTS>)
+	28: MoveLoc[11](treasury#1#0: TreasuryCap<COIN_TESTS>)
+	29: Call transfer::public_freeze_object<TreasuryCap<COIN_TESTS>>(TreasuryCap<COIN_TESTS>)
+	30: MutBorrowLoc[10](scenario#1#0: Scenario)
+	31: LdConst[0](address: 0x00..)
+	32: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	33: Pop
+	34: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	35: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	36: StLoc[5](deny_list#1#0: DenyList)
+	37: MutBorrowLoc[10](scenario#1#0: Scenario)
+	38: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	39: StLoc[0](ctx#1#0: &mut TxContext)
+	40: MutBorrowLoc[5](deny_list#1#0: DenyList)
+	41: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	42: LdConst[13](address: 0x00..)
+	43: CopyLoc[0](ctx#1#0: &mut TxContext)
+	44: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	45: MutBorrowLoc[5](deny_list#1#0: DenyList)
+	46: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	47: LdConst[14](address: 0x00..)
+	48: CopyLoc[0](ctx#1#0: &mut TxContext)
+	49: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	50: MutBorrowLoc[5](deny_list#1#0: DenyList)
+	51: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	52: LdConst[15](address: 0x00..)
+	53: CopyLoc[0](ctx#1#0: &mut TxContext)
+	54: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	55: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	56: LdConst[10](address: 0x00..)
+	57: LdFalse
+	58: LdFalse
+	59: CopyLoc[0](ctx#1#0: &mut TxContext)
+	60: FreezeRef
+	61: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	62: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	63: LdConst[11](address: 0x00..)
+	64: LdFalse
+	65: LdFalse
+	66: CopyLoc[0](ctx#1#0: &mut TxContext)
+	67: FreezeRef
+	68: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	69: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	70: LdConst[13](address: 0x00..)
+	71: LdFalse
+	72: LdTrue
+	73: CopyLoc[0](ctx#1#0: &mut TxContext)
+	74: FreezeRef
+	75: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	76: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	77: LdConst[14](address: 0x00..)
+	78: LdFalse
+	79: LdTrue
+	80: CopyLoc[0](ctx#1#0: &mut TxContext)
+	81: FreezeRef
+	82: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	83: ImmBorrowLoc[5](deny_list#1#0: DenyList)
+	84: LdConst[15](address: 0x00..)
+	85: LdFalse
+	86: LdTrue
+	87: MoveLoc[0](ctx#1#0: &mut TxContext)
+	88: FreezeRef
+	89: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	90: MoveLoc[5](deny_list#1#0: DenyList)
+	91: Call test_scenario::return_shared<DenyList>(DenyList)
+	92: MutBorrowLoc[10](scenario#1#0: Scenario)
+	93: LdConst[0](address: 0x00..)
+	94: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	95: Pop
+	96: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	97: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	98: StLoc[6](deny_list#2#0: DenyList)
+	99: MutBorrowLoc[10](scenario#1#0: Scenario)
+	100: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	101: StLoc[1](ctx#2#0: &mut TxContext)
+	102: MutBorrowLoc[6](deny_list#2#0: DenyList)
+	103: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	104: LdConst[11](address: 0x00..)
+	105: CopyLoc[1](ctx#2#0: &mut TxContext)
+	106: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	107: MutBorrowLoc[6](deny_list#2#0: DenyList)
+	108: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	109: LdConst[13](address: 0x00..)
+	110: CopyLoc[1](ctx#2#0: &mut TxContext)
+	111: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	112: MutBorrowLoc[6](deny_list#2#0: DenyList)
+	113: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	114: LdConst[14](address: 0x00..)
+	115: CopyLoc[1](ctx#2#0: &mut TxContext)
+	116: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	117: MutBorrowLoc[6](deny_list#2#0: DenyList)
+	118: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	119: LdConst[15](address: 0x00..)
+	120: CopyLoc[1](ctx#2#0: &mut TxContext)
+	121: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	122: MutBorrowLoc[6](deny_list#2#0: DenyList)
+	123: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	124: LdConst[15](address: 0x00..)
+	125: CopyLoc[1](ctx#2#0: &mut TxContext)
+	126: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	127: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	128: LdConst[10](address: 0x00..)
+	129: LdFalse
+	130: LdFalse
+	131: CopyLoc[1](ctx#2#0: &mut TxContext)
+	132: FreezeRef
+	133: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	134: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	135: LdConst[11](address: 0x00..)
+	136: LdFalse
+	137: LdTrue
+	138: CopyLoc[1](ctx#2#0: &mut TxContext)
+	139: FreezeRef
+	140: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	141: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	142: LdConst[13](address: 0x00..)
+	143: LdTrue
+	144: LdFalse
+	145: CopyLoc[1](ctx#2#0: &mut TxContext)
+	146: FreezeRef
+	147: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	148: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	149: LdConst[14](address: 0x00..)
+	150: LdTrue
+	151: LdFalse
+	152: CopyLoc[1](ctx#2#0: &mut TxContext)
+	153: FreezeRef
+	154: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	155: ImmBorrowLoc[6](deny_list#2#0: DenyList)
+	156: LdConst[15](address: 0x00..)
+	157: LdTrue
+	158: LdFalse
+	159: MoveLoc[1](ctx#2#0: &mut TxContext)
+	160: FreezeRef
+	161: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	162: MoveLoc[6](deny_list#2#0: DenyList)
+	163: Call test_scenario::return_shared<DenyList>(DenyList)
+	164: MutBorrowLoc[10](scenario#1#0: Scenario)
+	165: LdConst[0](address: 0x00..)
+	166: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	167: Pop
+	168: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	169: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	170: StLoc[7](deny_list#3#0: DenyList)
+	171: MutBorrowLoc[10](scenario#1#0: Scenario)
+	172: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	173: StLoc[2](ctx#3#0: &mut TxContext)
+	174: MutBorrowLoc[7](deny_list#3#0: DenyList)
+	175: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	176: LdConst[10](address: 0x00..)
+	177: CopyLoc[2](ctx#3#0: &mut TxContext)
+	178: Call coin::deny_list_v2_add<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	179: MutBorrowLoc[7](deny_list#3#0: DenyList)
+	180: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	181: LdConst[10](address: 0x00..)
+	182: CopyLoc[2](ctx#3#0: &mut TxContext)
+	183: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	184: MutBorrowLoc[7](deny_list#3#0: DenyList)
+	185: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	186: LdConst[11](address: 0x00..)
+	187: CopyLoc[2](ctx#3#0: &mut TxContext)
+	188: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	189: MutBorrowLoc[7](deny_list#3#0: DenyList)
+	190: MutBorrowLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	191: LdConst[13](address: 0x00..)
+	192: CopyLoc[2](ctx#3#0: &mut TxContext)
+	193: Call coin::deny_list_v2_remove<COIN_TESTS>(&mut DenyList, &mut DenyCapV2<COIN_TESTS>, address, &mut TxContext)
+	194: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	195: LdConst[10](address: 0x00..)
+	196: LdFalse
+	197: LdFalse
+	198: CopyLoc[2](ctx#3#0: &mut TxContext)
+	199: FreezeRef
+	200: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	201: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	202: LdConst[11](address: 0x00..)
+	203: LdTrue
+	204: LdFalse
+	205: CopyLoc[2](ctx#3#0: &mut TxContext)
+	206: FreezeRef
+	207: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	208: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	209: LdConst[13](address: 0x00..)
+	210: LdFalse
+	211: LdFalse
+	212: CopyLoc[2](ctx#3#0: &mut TxContext)
+	213: FreezeRef
+	214: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	215: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	216: LdConst[14](address: 0x00..)
+	217: LdFalse
+	218: LdFalse
+	219: CopyLoc[2](ctx#3#0: &mut TxContext)
+	220: FreezeRef
+	221: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	222: ImmBorrowLoc[7](deny_list#3#0: DenyList)
+	223: LdConst[15](address: 0x00..)
+	224: LdFalse
+	225: LdFalse
+	226: MoveLoc[2](ctx#3#0: &mut TxContext)
+	227: FreezeRef
+	228: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	229: MoveLoc[7](deny_list#3#0: DenyList)
+	230: Call test_scenario::return_shared<DenyList>(DenyList)
+	231: MutBorrowLoc[10](scenario#1#0: Scenario)
+	232: LdConst[0](address: 0x00..)
+	233: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	234: Pop
+	235: ImmBorrowLoc[10](scenario#1#0: Scenario)
+	236: Call test_scenario::take_shared<DenyList>(&Scenario): DenyList
+	237: StLoc[8](deny_list#4#0: DenyList)
+	238: MutBorrowLoc[10](scenario#1#0: Scenario)
+	239: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	240: StLoc[3](ctx#4#0: &mut TxContext)
+	241: ImmBorrowLoc[8](deny_list#4#0: DenyList)
+	242: LdConst[10](address: 0x00..)
+	243: LdFalse
+	244: LdFalse
+	245: CopyLoc[3](ctx#4#0: &mut TxContext)
+	246: FreezeRef
+	247: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	248: ImmBorrowLoc[8](deny_list#4#0: DenyList)
+	249: LdConst[11](address: 0x00..)
+	250: LdFalse
+	251: LdFalse
+	252: CopyLoc[3](ctx#4#0: &mut TxContext)
+	253: FreezeRef
+	254: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	255: ImmBorrowLoc[8](deny_list#4#0: DenyList)
+	256: LdConst[13](address: 0x00..)
+	257: LdFalse
+	258: LdFalse
+	259: CopyLoc[3](ctx#4#0: &mut TxContext)
+	260: FreezeRef
+	261: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	262: ImmBorrowLoc[8](deny_list#4#0: DenyList)
+	263: LdConst[14](address: 0x00..)
+	264: LdFalse
+	265: LdFalse
+	266: CopyLoc[3](ctx#4#0: &mut TxContext)
+	267: FreezeRef
+	268: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	269: ImmBorrowLoc[8](deny_list#4#0: DenyList)
+	270: LdConst[15](address: 0x00..)
+	271: LdFalse
+	272: LdFalse
+	273: MoveLoc[3](ctx#4#0: &mut TxContext)
+	274: FreezeRef
+	275: Call assert_status(&DenyList, address, bool, bool, &TxContext)
+	276: MoveLoc[8](deny_list#4#0: DenyList)
+	277: Call test_scenario::return_shared<DenyList>(DenyList)
+	278: MoveLoc[4](deny_cap#1#0: DenyCapV2<COIN_TESTS>)
+	279: Call transfer::public_freeze_object<DenyCapV2<COIN_TESTS>>(DenyCapV2<COIN_TESTS>)
+	280: MoveLoc[10](scenario#1#0: Scenario)
+	281: Call test_scenario::end(Scenario): TransactionEffects
+	282: Pop
+	283: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x00000000000000000000000000000000000000000000000000000000000a11ce
+	1 => vector<u8>: "COIN_TESTS" // interpreted as UTF8 string
+	2 => vector<u8>: "coin_name" // interpreted as UTF8 string
+	3 => vector<u8>: "description" // interpreted as UTF8 string
+	4 => vector<u8>: "icon_url" // interpreted as UTF8 string
+	5 => vector<u8>: "NEW_COIN_TESTS" // interpreted as UTF8 string
+	6 => vector<u8>: "new_coin_name" // interpreted as UTF8 string
+	7 => vector<u8>: "new_description" // interpreted as UTF8 string
+	8 => vector<u8>: "new_icon_url" // interpreted as UTF8 string
+	9 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	10 => address: 0x0000000000000000000000000000000000000000000000000000000000000064
+	11 => address: 0x00000000000000000000000000000000000000000000000000000000000000c8
+	12 => address: 0x0000000000000000000000000000000000000000000000000000000000000066
+	13 => address: 0x000000000000000000000000000000000000000000000000000000000000012c
+	14 => address: 0x0000000000000000000000000000000000000000000000000000000000000190
+	15 => address: 0x00000000000000000000000000000000000000000000000000000000000001f4
+]
+}

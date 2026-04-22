@@ -1,0 +1,299 @@
+// Move bytecode v6
+module 2.token_config_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::token;
+use 0000000000000000000000000000000000000000000000000000000000000002::token_test_utils;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Rule1 has drop {
+	dummy_field: bool
+}
+
+struct Config1 has drop, store {
+	value: u64
+}
+
+test_create_and_use_rule_config() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TokenPolicyCap<TEST>
+L2:	config#2#0: Config1
+L3:	config_mut#1#0: &mut Config1
+L4:	ctx#1#0: &mut TxContext
+L5:	policy#1#0: TokenPolicy<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[4](ctx#1#0: &mut TxContext)
+	5: CopyLoc[4](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[5](policy#1#0: TokenPolicy<TEST>)
+	9: LdFalse
+	10: Pack[0](Rule1)
+	11: MutBorrowLoc[5](policy#1#0: TokenPolicy<TEST>)
+	12: ImmBorrowLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	13: LdU64(0)
+	14: Pack[1](Config1)
+	15: CopyLoc[4](ctx#1#0: &mut TxContext)
+	16: Call token::add_rule_config<TEST, Rule1, Config1>(Rule1, &mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, Config1, &mut TxContext)
+	17: LdFalse
+	18: Pack[0](Rule1)
+	19: MutBorrowLoc[5](policy#1#0: TokenPolicy<TEST>)
+	20: ImmBorrowLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	21: Call token::rule_config_mut<TEST, Rule1, Config1>(Rule1, &mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>): &mut Config1
+	22: StLoc[3](config_mut#1#0: &mut Config1)
+	23: LdU64(1000)
+	24: MoveLoc[3](config_mut#1#0: &mut Config1)
+	25: MutBorrowField[0](Config1.value: u64)
+	26: WriteRef
+	27: LdFalse
+	28: Pack[0](Rule1)
+	29: ImmBorrowLoc[5](policy#1#0: TokenPolicy<TEST>)
+	30: Call token::rule_config<TEST, Rule1, Config1>(Rule1, &TokenPolicy<TEST>): &Config1
+	31: ImmBorrowField[0](Config1.value: u64)
+	32: ReadRef
+	33: LdU64(1000)
+	34: Eq
+	35: BrFalse(37)
+B1:
+	36: Branch(41)
+B2:
+	37: MoveLoc[4](ctx#1#0: &mut TxContext)
+	38: Pop
+	39: LdU64(13906834320372269055)
+	40: Abort
+B3:
+	41: ImmBorrowLoc[5](policy#1#0: TokenPolicy<TEST>)
+	42: Call token::has_rule_config<TEST, Rule1>(&TokenPolicy<TEST>): bool
+	43: BrFalse(45)
+B4:
+	44: Branch(49)
+B5:
+	45: MoveLoc[4](ctx#1#0: &mut TxContext)
+	46: Pop
+	47: LdU64(13906834324667236351)
+	48: Abort
+B6:
+	49: ImmBorrowLoc[5](policy#1#0: TokenPolicy<TEST>)
+	50: Call token::has_rule_config_with_type<TEST, Rule1, Config1>(&TokenPolicy<TEST>): bool
+	51: BrFalse(53)
+B7:
+	52: Branch(57)
+B8:
+	53: MoveLoc[4](ctx#1#0: &mut TxContext)
+	54: Pop
+	55: LdU64(13906834328962203647)
+	56: Abort
+B9:
+	57: MutBorrowLoc[5](policy#1#0: TokenPolicy<TEST>)
+	58: ImmBorrowLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	59: MoveLoc[4](ctx#1#0: &mut TxContext)
+	60: Call token::remove_rule_config<TEST, Rule1, Config1>(&mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, &mut TxContext): Config1
+	61: StLoc[2](config#2#0: Config1)
+	62: ImmBorrowLoc[2](config#2#0: Config1)
+	63: ImmBorrowField[0](Config1.value: u64)
+	64: ReadRef
+	65: LdU64(1000)
+	66: Eq
+	67: BrFalse(69)
+B10:
+	68: Branch(71)
+B11:
+	69: LdU64(13906834341847105535)
+	70: Abort
+B12:
+	71: MoveLoc[5](policy#1#0: TokenPolicy<TEST>)
+	72: MoveLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	73: Call token_test_utils::return_policy(TokenPolicy<TEST>, TokenPolicyCap<TEST>)
+	74: Ret
+}
+
+test_add_config_not_authorized_fail() {
+L0:	%#1: TxContext
+L1:	_cap#1#0: TokenPolicyCap<TEST>
+L2:	_policy#1#0: TokenPolicy<TEST>
+L3:	cap#1#0: TokenPolicyCap<TEST>
+L4:	ctx#1#0: &mut TxContext
+L5:	policy#1#0: TokenPolicy<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[4](ctx#1#0: &mut TxContext)
+	5: CopyLoc[4](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[1](_cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[5](policy#1#0: TokenPolicy<TEST>)
+	9: CopyLoc[4](ctx#1#0: &mut TxContext)
+	10: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	11: StLoc[3](cap#1#0: TokenPolicyCap<TEST>)
+	12: StLoc[2](_policy#1#0: TokenPolicy<TEST>)
+	13: LdFalse
+	14: Pack[0](Rule1)
+	15: MutBorrowLoc[5](policy#1#0: TokenPolicy<TEST>)
+	16: ImmBorrowLoc[3](cap#1#0: TokenPolicyCap<TEST>)
+	17: LdU64(0)
+	18: Pack[1](Config1)
+	19: MoveLoc[4](ctx#1#0: &mut TxContext)
+	20: Call token::add_rule_config<TEST, Rule1, Config1>(Rule1, &mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, Config1, &mut TxContext)
+	21: LdU64(1337)
+	22: Abort
+}
+
+test_remove_config_not_authorized_fail() {
+L0:	%#1: TxContext
+L1:	_policy#1#0: TokenPolicy<TEST>
+L2:	cap#1#0: TokenPolicyCap<TEST>
+L3:	ctx#1#0: &mut TxContext
+L4:	policy#1#0: TokenPolicy<TEST>
+L5:	wrong_cap#1#0: TokenPolicyCap<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[3](ctx#1#0: &mut TxContext)
+	5: CopyLoc[3](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[4](policy#1#0: TokenPolicy<TEST>)
+	9: CopyLoc[3](ctx#1#0: &mut TxContext)
+	10: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	11: StLoc[5](wrong_cap#1#0: TokenPolicyCap<TEST>)
+	12: StLoc[1](_policy#1#0: TokenPolicy<TEST>)
+	13: LdFalse
+	14: Pack[0](Rule1)
+	15: MutBorrowLoc[4](policy#1#0: TokenPolicy<TEST>)
+	16: ImmBorrowLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	17: LdU64(0)
+	18: Pack[1](Config1)
+	19: CopyLoc[3](ctx#1#0: &mut TxContext)
+	20: Call token::add_rule_config<TEST, Rule1, Config1>(Rule1, &mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, Config1, &mut TxContext)
+	21: MutBorrowLoc[4](policy#1#0: TokenPolicy<TEST>)
+	22: ImmBorrowLoc[5](wrong_cap#1#0: TokenPolicyCap<TEST>)
+	23: MoveLoc[3](ctx#1#0: &mut TxContext)
+	24: Call token::remove_rule_config<TEST, Rule1, Config1>(&mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, &mut TxContext): Config1
+	25: Pop
+	26: LdU64(1337)
+	27: Abort
+}
+
+test_mutate_config_not_authorized_fail() {
+L0:	%#1: TxContext
+L1:	_policy#1#0: TokenPolicy<TEST>
+L2:	cap#1#0: TokenPolicyCap<TEST>
+L3:	ctx#1#0: &mut TxContext
+L4:	policy#1#0: TokenPolicy<TEST>
+L5:	wrong_cap#1#0: TokenPolicyCap<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[3](ctx#1#0: &mut TxContext)
+	5: CopyLoc[3](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[4](policy#1#0: TokenPolicy<TEST>)
+	9: CopyLoc[3](ctx#1#0: &mut TxContext)
+	10: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	11: StLoc[5](wrong_cap#1#0: TokenPolicyCap<TEST>)
+	12: StLoc[1](_policy#1#0: TokenPolicy<TEST>)
+	13: LdFalse
+	14: Pack[0](Rule1)
+	15: MutBorrowLoc[4](policy#1#0: TokenPolicy<TEST>)
+	16: ImmBorrowLoc[2](cap#1#0: TokenPolicyCap<TEST>)
+	17: LdU64(0)
+	18: Pack[1](Config1)
+	19: MoveLoc[3](ctx#1#0: &mut TxContext)
+	20: Call token::add_rule_config<TEST, Rule1, Config1>(Rule1, &mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, Config1, &mut TxContext)
+	21: LdFalse
+	22: Pack[0](Rule1)
+	23: MutBorrowLoc[4](policy#1#0: TokenPolicy<TEST>)
+	24: ImmBorrowLoc[5](wrong_cap#1#0: TokenPolicyCap<TEST>)
+	25: Call token::rule_config_mut<TEST, Rule1, Config1>(Rule1, &mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>): &mut Config1
+	26: Pop
+	27: LdU64(1337)
+	28: Abort
+}
+
+test_rule_config_missing_config_fail() {
+L0:	%#1: TxContext
+L1:	_cap#1#0: TokenPolicyCap<TEST>
+L2:	policy#1#0: TokenPolicy<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	5: StLoc[1](_cap#1#0: TokenPolicyCap<TEST>)
+	6: StLoc[2](policy#1#0: TokenPolicy<TEST>)
+	7: LdFalse
+	8: Pack[0](Rule1)
+	9: ImmBorrowLoc[2](policy#1#0: TokenPolicy<TEST>)
+	10: Call token::rule_config<TEST, Rule1, Config1>(Rule1, &TokenPolicy<TEST>): &Config1
+	11: Pop
+	12: LdU64(1337)
+	13: Abort
+}
+
+test_rule_config_mut_missing_config_fail() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TokenPolicyCap<TEST>
+L2:	policy#1#0: TokenPolicy<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	5: StLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	6: StLoc[2](policy#1#0: TokenPolicy<TEST>)
+	7: LdFalse
+	8: Pack[0](Rule1)
+	9: MutBorrowLoc[2](policy#1#0: TokenPolicy<TEST>)
+	10: ImmBorrowLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	11: Call token::rule_config_mut<TEST, Rule1, Config1>(Rule1, &mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>): &mut Config1
+	12: Pop
+	13: LdU64(1337)
+	14: Abort
+}
+
+test_remove_rule_config_missing_config_fail() {
+L0:	%#1: TxContext
+L1:	cap#1#0: TokenPolicyCap<TEST>
+L2:	ctx#1#0: &mut TxContext
+L3:	policy#1#0: TokenPolicy<TEST>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call token_test_utils::ctx(address): TxContext
+	2: StLoc[0](%#1: TxContext)
+	3: MutBorrowLoc[0](%#1: TxContext)
+	4: StLoc[2](ctx#1#0: &mut TxContext)
+	5: CopyLoc[2](ctx#1#0: &mut TxContext)
+	6: Call token_test_utils::get_policy(&mut TxContext): TokenPolicy<TEST> * TokenPolicyCap<TEST>
+	7: StLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	8: StLoc[3](policy#1#0: TokenPolicy<TEST>)
+	9: MutBorrowLoc[3](policy#1#0: TokenPolicy<TEST>)
+	10: ImmBorrowLoc[1](cap#1#0: TokenPolicyCap<TEST>)
+	11: MoveLoc[2](ctx#1#0: &mut TxContext)
+	12: Call token::remove_rule_config<TEST, Rule1, Config1>(&mut TokenPolicy<TEST>, &TokenPolicyCap<TEST>, &mut TxContext): Config1
+	13: Pop
+	14: LdU64(1337)
+	15: Abort
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

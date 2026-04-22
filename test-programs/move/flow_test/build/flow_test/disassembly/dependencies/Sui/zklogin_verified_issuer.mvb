@@ -1,0 +1,92 @@
+// Move bytecode v6
+module 2.zklogin_verified_issuer {
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct VerifiedIssuer has key {
+	id: UID,
+	owner: address,
+	issuer: String
+}
+
+public owner(verified_issuer#0#0: &VerifiedIssuer): address {
+B0:
+	0: MoveLoc[0](verified_issuer#0#0: &VerifiedIssuer)
+	1: ImmBorrowField[0](VerifiedIssuer.owner: address)
+	2: ReadRef
+	3: Ret
+}
+
+public issuer(verified_issuer#0#0: &VerifiedIssuer): &String {
+B0:
+	0: MoveLoc[0](verified_issuer#0#0: &VerifiedIssuer)
+	1: ImmBorrowField[1](VerifiedIssuer.issuer: String)
+	2: Ret
+}
+
+public delete(verified_issuer#0#0: VerifiedIssuer) {
+B0:
+	0: MoveLoc[0](verified_issuer#0#0: VerifiedIssuer)
+	1: Unpack[0](VerifiedIssuer)
+	2: Pop
+	3: Pop
+	4: Call object::delete(UID)
+	5: Ret
+}
+
+public verify_zklogin_issuer(address_seed#0#0: u256, issuer#0#0: String, ctx#0#0: &mut TxContext) {
+L3:	sender#1#0: address
+B0:
+	0: CopyLoc[2](ctx#0#0: &mut TxContext)
+	1: FreezeRef
+	2: Call tx_context::sender(&TxContext): address
+	3: StLoc[3](sender#1#0: address)
+	4: CopyLoc[3](sender#1#0: address)
+	5: MoveLoc[0](address_seed#0#0: u256)
+	6: ImmBorrowLoc[1](issuer#0#0: String)
+	7: Call check_zklogin_issuer(address, u256, &String): bool
+	8: BrFalse(10)
+B1:
+	9: Branch(14)
+B2:
+	10: MoveLoc[2](ctx#0#0: &mut TxContext)
+	11: Pop
+	12: LdConst[1](u64: 1)
+	13: Abort
+B3:
+	14: MoveLoc[2](ctx#0#0: &mut TxContext)
+	15: Call object::new(&mut TxContext): UID
+	16: CopyLoc[3](sender#1#0: address)
+	17: MoveLoc[1](issuer#0#0: String)
+	18: Pack[0](VerifiedIssuer)
+	19: MoveLoc[3](sender#1#0: address)
+	20: Call transfer::transfer<VerifiedIssuer>(VerifiedIssuer, address)
+	21: Ret
+}
+
+public check_zklogin_issuer(address#0#0: address, address_seed#0#0: u256, issuer#0#0: &String): bool {
+B0:
+	0: MoveLoc[0](address#0#0: address)
+	1: MoveLoc[1](address_seed#0#0: u256)
+	2: MoveLoc[2](issuer#0#0: &String)
+	3: Call string::as_bytes(&String): &vector<u8>
+	4: Call check_zklogin_issuer_internal(address, u256, &vector<u8>): bool
+	5: Ret
+}
+
+native check_zklogin_issuer_internal(address#0#0: address, address_seed#0#0: u256, issuer#0#0: &vector<u8>): bool;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+]
+}

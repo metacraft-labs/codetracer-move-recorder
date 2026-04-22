@@ -1,0 +1,13 @@
+// Move bytecode v6
+module 2.types {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+native public is_one_time_witness<T: drop>(_#0#0: &T): bool;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

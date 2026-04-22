@@ -1,0 +1,41 @@
+// Move bytecode v6
+module 2.url_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::ascii;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::url;
+
+test_basic_url() {
+L0:	url#1#0: Url
+L1:	url_str#1#0: String
+B0:
+	0: LdConst[1](vector<u8>: "ABC..)
+	1: Call ascii::string(vector<u8>): String
+	2: StLoc[1](url_str#1#0: String)
+	3: CopyLoc[1](url_str#1#0: String)
+	4: Call url::new_unsafe(String): Url
+	5: StLoc[0](url#1#0: Url)
+	6: ImmBorrowLoc[0](url#1#0: Url)
+	7: Call url::inner_url(&Url): String
+	8: MoveLoc[1](url_str#1#0: String)
+	9: Eq
+	10: BrFalse(12)
+B1:
+	11: Branch(14)
+B2:
+	12: LdConst[0](u64: 1)
+	13: Abort
+B3:
+	14: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 1
+	1 => vector<u8>: "ABCEFG" // interpreted as UTF8 string
+]
+}

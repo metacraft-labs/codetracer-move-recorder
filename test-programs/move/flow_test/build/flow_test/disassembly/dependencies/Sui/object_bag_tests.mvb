@@ -1,0 +1,774 @@
+// Move bytecode v6
+module 2.object_bag_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::object_bag;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Counter has store, key {
+	id: UID,
+	count: u64
+}
+
+struct Fake has store, key {
+	id: UID
+}
+
+simple_all_functions() {
+L0:	%#1: Option<ID>
+L1:	%#2: Option<ID>
+L2:	bag#1#0: ObjectBag
+L3:	counter1#1#0: Counter
+L4:	counter2#1#0: Counter
+L5:	id1#1#0: ID
+L6:	id2#1#0: ID
+L7:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[7](scenario#1#0: Scenario)
+	3: MutBorrowLoc[7](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_bag::new(&mut TxContext): ObjectBag
+	6: StLoc[2](bag#1#0: ObjectBag)
+	7: MutBorrowLoc[7](scenario#1#0: Scenario)
+	8: Call new(&mut Scenario): Counter
+	9: StLoc[3](counter1#1#0: Counter)
+	10: ImmBorrowLoc[3](counter1#1#0: Counter)
+	11: Call object::id<Counter>(&Counter): ID
+	12: StLoc[5](id1#1#0: ID)
+	13: MutBorrowLoc[7](scenario#1#0: Scenario)
+	14: Call new(&mut Scenario): Counter
+	15: StLoc[4](counter2#1#0: Counter)
+	16: ImmBorrowLoc[4](counter2#1#0: Counter)
+	17: Call object::id<Counter>(&Counter): ID
+	18: StLoc[6](id2#1#0: ID)
+	19: MutBorrowLoc[2](bag#1#0: ObjectBag)
+	20: LdConst[1](vector<u8>: "hel..)
+	21: MoveLoc[3](counter1#1#0: Counter)
+	22: Call object_bag::add<vector<u8>, Counter>(&mut ObjectBag, vector<u8>, Counter)
+	23: MutBorrowLoc[2](bag#1#0: ObjectBag)
+	24: LdU64(1)
+	25: MoveLoc[4](counter2#1#0: Counter)
+	26: Call object_bag::add<u64, Counter>(&mut ObjectBag, u64, Counter)
+	27: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	28: LdConst[1](vector<u8>: "hel..)
+	29: Call object_bag::contains<vector<u8>>(&ObjectBag, vector<u8>): bool
+	30: BrFalse(32)
+B1:
+	31: Branch(34)
+B2:
+	32: LdU64(13906834316077301759)
+	33: Abort
+B3:
+	34: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	35: LdU64(1)
+	36: Call object_bag::contains<u64>(&ObjectBag, u64): bool
+	37: BrFalse(39)
+B4:
+	38: Branch(41)
+B5:
+	39: LdU64(13906834320372269055)
+	40: Abort
+B6:
+	41: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	42: LdConst[1](vector<u8>: "hel..)
+	43: Call object_bag::contains_with_type<vector<u8>, Counter>(&ObjectBag, vector<u8>): bool
+	44: BrFalse(46)
+B7:
+	45: Branch(48)
+B8:
+	46: LdU64(13906834324667236351)
+	47: Abort
+B9:
+	48: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	49: LdU64(1)
+	50: Call object_bag::contains_with_type<u64, Counter>(&ObjectBag, u64): bool
+	51: BrFalse(53)
+B10:
+	52: Branch(55)
+B11:
+	53: LdU64(13906834328962203647)
+	54: Abort
+B12:
+	55: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	56: LdConst[1](vector<u8>: "hel..)
+	57: Call object_bag::value_id<vector<u8>>(&ObjectBag, vector<u8>): Option<ID>
+	58: StLoc[0](%#1: Option<ID>)
+	59: ImmBorrowLoc[0](%#1: Option<ID>)
+	60: Call option::borrow<ID>(&Option<ID>): &ID
+	61: ImmBorrowLoc[5](id1#1#0: ID)
+	62: Eq
+	63: BrFalse(65)
+B13:
+	64: Branch(67)
+B14:
+	65: LdU64(13906834337552138239)
+	66: Abort
+B15:
+	67: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	68: LdU64(1)
+	69: Call object_bag::value_id<u64>(&ObjectBag, u64): Option<ID>
+	70: StLoc[1](%#2: Option<ID>)
+	71: ImmBorrowLoc[1](%#2: Option<ID>)
+	72: Call option::borrow<ID>(&Option<ID>): &ID
+	73: ImmBorrowLoc[6](id2#1#0: ID)
+	74: Eq
+	75: BrFalse(77)
+B16:
+	76: Branch(79)
+B17:
+	77: LdU64(13906834341847105535)
+	78: Abort
+B18:
+	79: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	80: LdConst[1](vector<u8>: "hel..)
+	81: Call object_bag::borrow<vector<u8>, Counter>(&ObjectBag, vector<u8>): &Counter
+	82: Call count(&Counter): u64
+	83: LdU64(0)
+	84: Eq
+	85: BrFalse(87)
+B19:
+	86: Branch(89)
+B20:
+	87: LdU64(13906834350437040127)
+	88: Abort
+B21:
+	89: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	90: LdU64(1)
+	91: Call object_bag::borrow<u64, Counter>(&ObjectBag, u64): &Counter
+	92: Call count(&Counter): u64
+	93: LdU64(0)
+	94: Eq
+	95: BrFalse(97)
+B22:
+	96: Branch(99)
+B23:
+	97: LdU64(13906834354732007423)
+	98: Abort
+B24:
+	99: MutBorrowLoc[2](bag#1#0: ObjectBag)
+	100: LdConst[1](vector<u8>: "hel..)
+	101: Call object_bag::borrow_mut<vector<u8>, Counter>(&mut ObjectBag, vector<u8>): &mut Counter
+	102: Call bump(&mut Counter): &mut Counter
+	103: Pop
+	104: MutBorrowLoc[2](bag#1#0: ObjectBag)
+	105: LdU64(1)
+	106: Call object_bag::borrow_mut<u64, Counter>(&mut ObjectBag, u64): &mut Counter
+	107: Call bump(&mut Counter): &mut Counter
+	108: Call bump(&mut Counter): &mut Counter
+	109: Pop
+	110: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	111: LdConst[1](vector<u8>: "hel..)
+	112: Call object_bag::borrow<vector<u8>, Counter>(&ObjectBag, vector<u8>): &Counter
+	113: Call count(&Counter): u64
+	114: LdU64(1)
+	115: Eq
+	116: BrFalse(118)
+B25:
+	117: Branch(120)
+B26:
+	118: LdU64(13906834376206843903)
+	119: Abort
+B27:
+	120: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	121: LdU64(1)
+	122: Call object_bag::borrow<u64, Counter>(&ObjectBag, u64): &Counter
+	123: Call count(&Counter): u64
+	124: LdU64(2)
+	125: Eq
+	126: BrFalse(128)
+B28:
+	127: Branch(130)
+B29:
+	128: LdU64(13906834380501811199)
+	129: Abort
+B30:
+	130: MutBorrowLoc[2](bag#1#0: ObjectBag)
+	131: LdConst[1](vector<u8>: "hel..)
+	132: Call object_bag::remove<vector<u8>, Counter>(&mut ObjectBag, vector<u8>): Counter
+	133: Call destroy(Counter): u64
+	134: LdU64(1)
+	135: Eq
+	136: BrFalse(138)
+B31:
+	137: Branch(140)
+B32:
+	138: LdU64(13906834389091745791)
+	139: Abort
+B33:
+	140: MutBorrowLoc[2](bag#1#0: ObjectBag)
+	141: LdU64(1)
+	142: Call object_bag::remove<u64, Counter>(&mut ObjectBag, u64): Counter
+	143: Call destroy(Counter): u64
+	144: LdU64(2)
+	145: Eq
+	146: BrFalse(148)
+B34:
+	147: Branch(150)
+B35:
+	148: LdU64(13906834393386713087)
+	149: Abort
+B36:
+	150: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	151: LdConst[1](vector<u8>: "hel..)
+	152: Call object_bag::contains<vector<u8>>(&ObjectBag, vector<u8>): bool
+	153: Not
+	154: BrFalse(156)
+B37:
+	155: Branch(158)
+B38:
+	156: LdU64(13906834401976647679)
+	157: Abort
+B39:
+	158: ImmBorrowLoc[2](bag#1#0: ObjectBag)
+	159: LdU64(1)
+	160: Call object_bag::contains<u64>(&ObjectBag, u64): bool
+	161: Not
+	162: BrFalse(164)
+B40:
+	163: Branch(166)
+B41:
+	164: LdU64(13906834406271614975)
+	165: Abort
+B42:
+	166: MoveLoc[7](scenario#1#0: Scenario)
+	167: Call test_scenario::end(Scenario): TransactionEffects
+	168: Pop
+	169: MoveLoc[2](bag#1#0: ObjectBag)
+	170: Call object_bag::destroy_empty(ObjectBag)
+	171: Ret
+}
+
+add_duplicate() {
+L0:	bag#1#0: ObjectBag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_bag::new(&mut TxContext): ObjectBag
+	6: StLoc[0](bag#1#0: ObjectBag)
+	7: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	8: LdConst[1](vector<u8>: "hel..)
+	9: MutBorrowLoc[1](scenario#1#0: Scenario)
+	10: Call new(&mut Scenario): Counter
+	11: Call object_bag::add<vector<u8>, Counter>(&mut ObjectBag, vector<u8>, Counter)
+	12: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	13: LdConst[1](vector<u8>: "hel..)
+	14: MutBorrowLoc[1](scenario#1#0: Scenario)
+	15: Call new(&mut Scenario): Counter
+	16: Call object_bag::add<vector<u8>, Counter>(&mut ObjectBag, vector<u8>, Counter)
+	17: LdU64(42)
+	18: Abort
+}
+
+borrow_missing() {
+L0:	bag#1#0: ObjectBag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_bag::new(&mut TxContext): ObjectBag
+	6: StLoc[0](bag#1#0: ObjectBag)
+	7: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	8: LdU64(0)
+	9: Call object_bag::borrow<u64, Counter>(&ObjectBag, u64): &Counter
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+borrow_mut_missing() {
+L0:	bag#1#0: ObjectBag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_bag::new(&mut TxContext): ObjectBag
+	6: StLoc[0](bag#1#0: ObjectBag)
+	7: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	8: LdU64(0)
+	9: Call object_bag::borrow_mut<u64, Counter>(&mut ObjectBag, u64): &mut Counter
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+remove_missing() {
+L0:	bag#1#0: ObjectBag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_bag::new(&mut TxContext): ObjectBag
+	6: StLoc[0](bag#1#0: ObjectBag)
+	7: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	8: LdU64(0)
+	9: Call object_bag::remove<u64, Counter>(&mut ObjectBag, u64): Counter
+	10: Call destroy(Counter): u64
+	11: Pop
+	12: LdU64(42)
+	13: Abort
+}
+
+destroy_non_empty() {
+L0:	bag#1#0: ObjectBag
+L1:	counter#1#0: Counter
+L2:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[2](scenario#1#0: Scenario)
+	3: MutBorrowLoc[2](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_bag::new(&mut TxContext): ObjectBag
+	6: StLoc[0](bag#1#0: ObjectBag)
+	7: MutBorrowLoc[2](scenario#1#0: Scenario)
+	8: Call new(&mut Scenario): Counter
+	9: StLoc[1](counter#1#0: Counter)
+	10: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	11: LdU64(0)
+	12: MoveLoc[1](counter#1#0: Counter)
+	13: Call object_bag::add<u64, Counter>(&mut ObjectBag, u64, Counter)
+	14: MoveLoc[0](bag#1#0: ObjectBag)
+	15: Call object_bag::destroy_empty(ObjectBag)
+	16: MoveLoc[2](scenario#1#0: Scenario)
+	17: Call test_scenario::end(Scenario): TransactionEffects
+	18: Pop
+	19: Ret
+}
+
+sanity_check_contains() {
+L0:	bag#1#0: ObjectBag
+L1:	counter#1#0: Counter
+L2:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[2](scenario#1#0: Scenario)
+	3: MutBorrowLoc[2](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_bag::new(&mut TxContext): ObjectBag
+	6: StLoc[0](bag#1#0: ObjectBag)
+	7: MutBorrowLoc[2](scenario#1#0: Scenario)
+	8: Call new(&mut Scenario): Counter
+	9: StLoc[1](counter#1#0: Counter)
+	10: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	11: LdU64(0)
+	12: Call object_bag::contains<u64>(&ObjectBag, u64): bool
+	13: Not
+	14: BrFalse(16)
+B1:
+	15: Branch(18)
+B2:
+	16: LdU64(13906834681149521919)
+	17: Abort
+B3:
+	18: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	19: LdU64(0)
+	20: MoveLoc[1](counter#1#0: Counter)
+	21: Call object_bag::add<u64, Counter>(&mut ObjectBag, u64, Counter)
+	22: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	23: LdU64(0)
+	24: Call object_bag::contains<u64>(&ObjectBag, u64): bool
+	25: BrFalse(27)
+B4:
+	26: Branch(29)
+B5:
+	27: LdU64(13906834689739456511)
+	28: Abort
+B6:
+	29: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	30: LdU64(1)
+	31: Call object_bag::contains<u64>(&ObjectBag, u64): bool
+	32: Not
+	33: BrFalse(35)
+B7:
+	34: Branch(37)
+B8:
+	35: LdU64(13906834694034423807)
+	36: Abort
+B9:
+	37: MoveLoc[2](scenario#1#0: Scenario)
+	38: Call test_scenario::end(Scenario): TransactionEffects
+	39: Pop
+	40: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	41: LdU64(0)
+	42: Call object_bag::remove<u64, Counter>(&mut ObjectBag, u64): Counter
+	43: Call destroy(Counter): u64
+	44: Pop
+	45: MoveLoc[0](bag#1#0: ObjectBag)
+	46: Call object_bag::destroy_empty(ObjectBag)
+	47: Ret
+}
+
+sanity_check_contains_with_type() {
+L0:	bag#1#0: ObjectBag
+L1:	counter#1#0: Counter
+L2:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[2](scenario#1#0: Scenario)
+	3: MutBorrowLoc[2](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_bag::new(&mut TxContext): ObjectBag
+	6: StLoc[0](bag#1#0: ObjectBag)
+	7: MutBorrowLoc[2](scenario#1#0: Scenario)
+	8: Call new(&mut Scenario): Counter
+	9: StLoc[1](counter#1#0: Counter)
+	10: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	11: LdU64(0)
+	12: Call object_bag::contains_with_type<u64, Counter>(&ObjectBag, u64): bool
+	13: Not
+	14: BrFalse(16)
+B1:
+	15: Branch(18)
+B2:
+	16: LdU64(13906834745574031359)
+	17: Abort
+B3:
+	18: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	19: LdU64(0)
+	20: Call object_bag::contains_with_type<u64, Fake>(&ObjectBag, u64): bool
+	21: Not
+	22: BrFalse(24)
+B4:
+	23: Branch(26)
+B5:
+	24: LdU64(13906834749868998655)
+	25: Abort
+B6:
+	26: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	27: LdU64(0)
+	28: MoveLoc[1](counter#1#0: Counter)
+	29: Call object_bag::add<u64, Counter>(&mut ObjectBag, u64, Counter)
+	30: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	31: LdU64(0)
+	32: Call object_bag::contains_with_type<u64, Counter>(&ObjectBag, u64): bool
+	33: BrFalse(35)
+B7:
+	34: Branch(37)
+B8:
+	35: LdU64(13906834758458933247)
+	36: Abort
+B9:
+	37: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	38: LdU8(0)
+	39: Call object_bag::contains_with_type<u8, Counter>(&ObjectBag, u8): bool
+	40: Not
+	41: BrFalse(43)
+B10:
+	42: Branch(45)
+B11:
+	43: LdU64(13906834762753900543)
+	44: Abort
+B12:
+	45: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	46: LdU8(0)
+	47: Call object_bag::contains_with_type<u8, Fake>(&ObjectBag, u8): bool
+	48: Not
+	49: BrFalse(51)
+B13:
+	50: Branch(53)
+B14:
+	51: LdU64(13906834767048867839)
+	52: Abort
+B15:
+	53: MoveLoc[2](scenario#1#0: Scenario)
+	54: Call test_scenario::end(Scenario): TransactionEffects
+	55: Pop
+	56: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	57: LdU64(0)
+	58: Call object_bag::remove<u64, Counter>(&mut ObjectBag, u64): Counter
+	59: Call destroy(Counter): u64
+	60: Pop
+	61: MoveLoc[0](bag#1#0: ObjectBag)
+	62: Call object_bag::destroy_empty(ObjectBag)
+	63: Ret
+}
+
+sanity_check_size() {
+L0:	bag#1#0: ObjectBag
+L1:	counter1#1#0: Counter
+L2:	counter2#1#0: Counter
+L3:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[3](scenario#1#0: Scenario)
+	3: MutBorrowLoc[3](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_bag::new(&mut TxContext): ObjectBag
+	6: StLoc[0](bag#1#0: ObjectBag)
+	7: MutBorrowLoc[3](scenario#1#0: Scenario)
+	8: Call new(&mut Scenario): Counter
+	9: StLoc[1](counter1#1#0: Counter)
+	10: MutBorrowLoc[3](scenario#1#0: Scenario)
+	11: Call new(&mut Scenario): Counter
+	12: StLoc[2](counter2#1#0: Counter)
+	13: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	14: Call object_bag::is_empty(&ObjectBag): bool
+	15: BrFalse(17)
+B1:
+	16: Branch(19)
+B2:
+	17: LdU64(13906834822883442687)
+	18: Abort
+B3:
+	19: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	20: Call object_bag::length(&ObjectBag): u64
+	21: LdU64(0)
+	22: Eq
+	23: BrFalse(25)
+B4:
+	24: Branch(27)
+B5:
+	25: LdU64(13906834827178409983)
+	26: Abort
+B6:
+	27: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	28: LdU64(0)
+	29: MoveLoc[1](counter1#1#0: Counter)
+	30: Call object_bag::add<u64, Counter>(&mut ObjectBag, u64, Counter)
+	31: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	32: Call object_bag::is_empty(&ObjectBag): bool
+	33: Not
+	34: BrFalse(36)
+B7:
+	35: Branch(38)
+B8:
+	36: LdU64(13906834835768344575)
+	37: Abort
+B9:
+	38: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	39: Call object_bag::length(&ObjectBag): u64
+	40: LdU64(1)
+	41: Eq
+	42: BrFalse(44)
+B10:
+	43: Branch(46)
+B11:
+	44: LdU64(13906834840063311871)
+	45: Abort
+B12:
+	46: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	47: LdU64(1)
+	48: MoveLoc[2](counter2#1#0: Counter)
+	49: Call object_bag::add<u64, Counter>(&mut ObjectBag, u64, Counter)
+	50: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	51: Call object_bag::is_empty(&ObjectBag): bool
+	52: Not
+	53: BrFalse(55)
+B13:
+	54: Branch(57)
+B14:
+	55: LdU64(13906834848653246463)
+	56: Abort
+B15:
+	57: ImmBorrowLoc[0](bag#1#0: ObjectBag)
+	58: Call object_bag::length(&ObjectBag): u64
+	59: LdU64(2)
+	60: Eq
+	61: BrFalse(63)
+B16:
+	62: Branch(65)
+B17:
+	63: LdU64(13906834852948213759)
+	64: Abort
+B18:
+	65: MoveLoc[3](scenario#1#0: Scenario)
+	66: Call test_scenario::end(Scenario): TransactionEffects
+	67: Pop
+	68: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	69: LdU64(0)
+	70: Call object_bag::remove<u64, Counter>(&mut ObjectBag, u64): Counter
+	71: Call destroy(Counter): u64
+	72: Pop
+	73: MutBorrowLoc[0](bag#1#0: ObjectBag)
+	74: LdU64(1)
+	75: Call object_bag::remove<u64, Counter>(&mut ObjectBag, u64): Counter
+	76: Call destroy(Counter): u64
+	77: Pop
+	78: MoveLoc[0](bag#1#0: ObjectBag)
+	79: Call object_bag::destroy_empty(ObjectBag)
+	80: Ret
+}
+
+transfer_object() {
+L0:	bag1#1#0: ObjectBag
+L1:	bag2#1#0: ObjectBag
+L2:	c#1#0: Counter
+L3:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[3](scenario#1#0: Scenario)
+	3: MutBorrowLoc[3](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call object_bag::new(&mut TxContext): ObjectBag
+	6: StLoc[0](bag1#1#0: ObjectBag)
+	7: MutBorrowLoc[3](scenario#1#0: Scenario)
+	8: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	9: Call object_bag::new(&mut TxContext): ObjectBag
+	10: StLoc[1](bag2#1#0: ObjectBag)
+	11: MutBorrowLoc[0](bag1#1#0: ObjectBag)
+	12: LdU64(0)
+	13: MutBorrowLoc[3](scenario#1#0: Scenario)
+	14: Call new(&mut Scenario): Counter
+	15: Call object_bag::add<u64, Counter>(&mut ObjectBag, u64, Counter)
+	16: ImmBorrowLoc[0](bag1#1#0: ObjectBag)
+	17: LdU64(0)
+	18: Call object_bag::contains<u64>(&ObjectBag, u64): bool
+	19: BrFalse(21)
+B1:
+	20: Branch(23)
+B2:
+	21: LdU64(13906834917372723199)
+	22: Abort
+B3:
+	23: ImmBorrowLoc[1](bag2#1#0: ObjectBag)
+	24: LdU64(0)
+	25: Call object_bag::contains<u64>(&ObjectBag, u64): bool
+	26: Not
+	27: BrFalse(29)
+B4:
+	28: Branch(31)
+B5:
+	29: LdU64(13906834921667690495)
+	30: Abort
+B6:
+	31: MutBorrowLoc[0](bag1#1#0: ObjectBag)
+	32: LdU64(0)
+	33: Call object_bag::borrow_mut<u64, Counter>(&mut ObjectBag, u64): &mut Counter
+	34: Call bump(&mut Counter): &mut Counter
+	35: Pop
+	36: MutBorrowLoc[0](bag1#1#0: ObjectBag)
+	37: LdU64(0)
+	38: Call object_bag::remove<u64, Counter>(&mut ObjectBag, u64): Counter
+	39: StLoc[2](c#1#0: Counter)
+	40: MutBorrowLoc[1](bag2#1#0: ObjectBag)
+	41: LdU64(0)
+	42: MoveLoc[2](c#1#0: Counter)
+	43: Call object_bag::add<u64, Counter>(&mut ObjectBag, u64, Counter)
+	44: ImmBorrowLoc[0](bag1#1#0: ObjectBag)
+	45: LdU64(0)
+	46: Call object_bag::contains<u64>(&ObjectBag, u64): bool
+	47: Not
+	48: BrFalse(50)
+B7:
+	49: Branch(52)
+B8:
+	50: LdU64(13906834938847559679)
+	51: Abort
+B9:
+	52: ImmBorrowLoc[1](bag2#1#0: ObjectBag)
+	53: LdU64(0)
+	54: Call object_bag::contains<u64>(&ObjectBag, u64): bool
+	55: BrFalse(57)
+B10:
+	56: Branch(59)
+B11:
+	57: LdU64(13906834943142526975)
+	58: Abort
+B12:
+	59: MutBorrowLoc[1](bag2#1#0: ObjectBag)
+	60: LdU64(0)
+	61: Call object_bag::borrow_mut<u64, Counter>(&mut ObjectBag, u64): &mut Counter
+	62: Call bump(&mut Counter): &mut Counter
+	63: Pop
+	64: ImmBorrowLoc[1](bag2#1#0: ObjectBag)
+	65: LdU64(0)
+	66: Call object_bag::borrow<u64, Counter>(&ObjectBag, u64): &Counter
+	67: Call count(&Counter): u64
+	68: LdU64(2)
+	69: Eq
+	70: BrFalse(72)
+B13:
+	71: Branch(74)
+B14:
+	72: LdU64(13906834951732461567)
+	73: Abort
+B15:
+	74: MoveLoc[3](scenario#1#0: Scenario)
+	75: Call test_scenario::end(Scenario): TransactionEffects
+	76: Pop
+	77: MutBorrowLoc[1](bag2#1#0: ObjectBag)
+	78: LdU64(0)
+	79: Call object_bag::remove<u64, Counter>(&mut ObjectBag, u64): Counter
+	80: Call destroy(Counter): u64
+	81: Pop
+	82: MoveLoc[0](bag1#1#0: ObjectBag)
+	83: Call object_bag::destroy_empty(ObjectBag)
+	84: MoveLoc[1](bag2#1#0: ObjectBag)
+	85: Call object_bag::destroy_empty(ObjectBag)
+	86: Ret
+}
+
+new(scenario#0#0: &mut Scenario): Counter {
+B0:
+	0: MoveLoc[0](scenario#0#0: &mut Scenario)
+	1: Call test_scenario::new_object(&mut Scenario): UID
+	2: LdU64(0)
+	3: Pack[0](Counter)
+	4: Ret
+}
+
+count(counter#0#0: &Counter): u64 {
+B0:
+	0: MoveLoc[0](counter#0#0: &Counter)
+	1: ImmBorrowField[0](Counter.count: u64)
+	2: ReadRef
+	3: Ret
+}
+
+bump(counter#0#0: &mut Counter): &mut Counter {
+B0:
+	0: CopyLoc[0](counter#0#0: &mut Counter)
+	1: ImmBorrowField[0](Counter.count: u64)
+	2: ReadRef
+	3: LdU64(1)
+	4: Add
+	5: CopyLoc[0](counter#0#0: &mut Counter)
+	6: MutBorrowField[0](Counter.count: u64)
+	7: WriteRef
+	8: MoveLoc[0](counter#0#0: &mut Counter)
+	9: Ret
+}
+
+destroy(counter#0#0: Counter): u64 {
+L1:	count#1#0: u64
+B0:
+	0: MoveLoc[0](counter#0#0: Counter)
+	1: Unpack[0](Counter)
+	2: StLoc[1](count#1#0: u64)
+	3: Call object::delete(UID)
+	4: MoveLoc[1](count#1#0: u64)
+	5: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	1 => vector<u8>: "hello" // interpreted as UTF8 string
+]
+}

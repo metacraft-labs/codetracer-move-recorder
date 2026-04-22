@@ -1,0 +1,505 @@
+// Move bytecode v6
+module 2.dynamic_field_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+
+simple_all_functions() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: MutBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: LdU64(0)
+	9: Call dynamic_field::add<u64, u64>(&mut UID, u64, u64)
+	10: MutBorrowLoc[0](id#1#0: UID)
+	11: LdConst[1](vector<u8>: "" /..)
+	12: LdU64(1)
+	13: Call dynamic_field::add<vector<u8>, u64>(&mut UID, vector<u8>, u64)
+	14: MutBorrowLoc[0](id#1#0: UID)
+	15: LdFalse
+	16: LdU64(2)
+	17: Call dynamic_field::add<bool, u64>(&mut UID, bool, u64)
+	18: ImmBorrowLoc[0](id#1#0: UID)
+	19: LdU64(0)
+	20: Call dynamic_field::exists_with_type<u64, u64>(&UID, u64): bool
+	21: BrFalse(23)
+B1:
+	22: Branch(25)
+B2:
+	23: LdU64(13906834264537694207)
+	24: Abort
+B3:
+	25: ImmBorrowLoc[0](id#1#0: UID)
+	26: LdConst[1](vector<u8>: "" /..)
+	27: Call dynamic_field::exists_with_type<vector<u8>, u64>(&UID, vector<u8>): bool
+	28: BrFalse(30)
+B4:
+	29: Branch(32)
+B5:
+	30: LdU64(13906834268832661503)
+	31: Abort
+B6:
+	32: ImmBorrowLoc[0](id#1#0: UID)
+	33: LdFalse
+	34: Call dynamic_field::exists_with_type<bool, u64>(&UID, bool): bool
+	35: BrFalse(37)
+B7:
+	36: Branch(39)
+B8:
+	37: LdU64(13906834273127628799)
+	38: Abort
+B9:
+	39: ImmBorrowLoc[0](id#1#0: UID)
+	40: LdU64(0)
+	41: Call dynamic_field::borrow<u64, u64>(&UID, u64): &u64
+	42: ReadRef
+	43: LdU64(0)
+	44: Eq
+	45: BrFalse(47)
+B10:
+	46: Branch(49)
+B11:
+	47: LdU64(13906834281717563391)
+	48: Abort
+B12:
+	49: ImmBorrowLoc[0](id#1#0: UID)
+	50: LdConst[1](vector<u8>: "" /..)
+	51: Call dynamic_field::borrow<vector<u8>, u64>(&UID, vector<u8>): &u64
+	52: ReadRef
+	53: LdU64(1)
+	54: Eq
+	55: BrFalse(57)
+B13:
+	56: Branch(59)
+B14:
+	57: LdU64(13906834286012530687)
+	58: Abort
+B15:
+	59: ImmBorrowLoc[0](id#1#0: UID)
+	60: LdFalse
+	61: Call dynamic_field::borrow<bool, u64>(&UID, bool): &u64
+	62: ReadRef
+	63: LdU64(2)
+	64: Eq
+	65: BrFalse(67)
+B16:
+	66: Branch(69)
+B17:
+	67: LdU64(13906834290307497983)
+	68: Abort
+B18:
+	69: LdU64(3)
+	70: ImmBorrowLoc[0](id#1#0: UID)
+	71: LdU64(0)
+	72: Call dynamic_field::borrow<u64, u64>(&UID, u64): &u64
+	73: ReadRef
+	74: Add
+	75: MutBorrowLoc[0](id#1#0: UID)
+	76: LdU64(0)
+	77: Call dynamic_field::borrow_mut<u64, u64>(&mut UID, u64): &mut u64
+	78: WriteRef
+	79: LdU64(4)
+	80: ImmBorrowLoc[0](id#1#0: UID)
+	81: LdConst[1](vector<u8>: "" /..)
+	82: Call dynamic_field::borrow<vector<u8>, u64>(&UID, vector<u8>): &u64
+	83: ReadRef
+	84: Add
+	85: MutBorrowLoc[0](id#1#0: UID)
+	86: LdConst[1](vector<u8>: "" /..)
+	87: Call dynamic_field::borrow_mut<vector<u8>, u64>(&mut UID, vector<u8>): &mut u64
+	88: WriteRef
+	89: LdU64(5)
+	90: ImmBorrowLoc[0](id#1#0: UID)
+	91: LdFalse
+	92: Call dynamic_field::borrow<bool, u64>(&UID, bool): &u64
+	93: ReadRef
+	94: Add
+	95: MutBorrowLoc[0](id#1#0: UID)
+	96: LdFalse
+	97: Call dynamic_field::borrow_mut<bool, u64>(&mut UID, bool): &mut u64
+	98: WriteRef
+	99: ImmBorrowLoc[0](id#1#0: UID)
+	100: LdU64(0)
+	101: Call dynamic_field::borrow<u64, u64>(&UID, u64): &u64
+	102: ReadRef
+	103: LdU64(3)
+	104: Eq
+	105: BrFalse(107)
+B19:
+	106: Branch(109)
+B20:
+	107: LdU64(13906834316077301759)
+	108: Abort
+B21:
+	109: ImmBorrowLoc[0](id#1#0: UID)
+	110: LdConst[1](vector<u8>: "" /..)
+	111: Call dynamic_field::borrow<vector<u8>, u64>(&UID, vector<u8>): &u64
+	112: ReadRef
+	113: LdU64(5)
+	114: Eq
+	115: BrFalse(117)
+B22:
+	116: Branch(119)
+B23:
+	117: LdU64(13906834320372269055)
+	118: Abort
+B24:
+	119: ImmBorrowLoc[0](id#1#0: UID)
+	120: LdFalse
+	121: Call dynamic_field::borrow<bool, u64>(&UID, bool): &u64
+	122: ReadRef
+	123: LdU64(7)
+	124: Eq
+	125: BrFalse(127)
+B25:
+	126: Branch(129)
+B26:
+	127: LdU64(13906834324667236351)
+	128: Abort
+B27:
+	129: MutBorrowLoc[0](id#1#0: UID)
+	130: LdU64(0)
+	131: Call dynamic_field::remove<u64, u64>(&mut UID, u64): u64
+	132: LdU64(3)
+	133: Eq
+	134: BrFalse(136)
+B28:
+	135: Branch(138)
+B29:
+	136: LdU64(13906834333257170943)
+	137: Abort
+B30:
+	138: MutBorrowLoc[0](id#1#0: UID)
+	139: LdConst[1](vector<u8>: "" /..)
+	140: Call dynamic_field::remove<vector<u8>, u64>(&mut UID, vector<u8>): u64
+	141: LdU64(5)
+	142: Eq
+	143: BrFalse(145)
+B31:
+	144: Branch(147)
+B32:
+	145: LdU64(13906834337552138239)
+	146: Abort
+B33:
+	147: MutBorrowLoc[0](id#1#0: UID)
+	148: LdFalse
+	149: Call dynamic_field::remove<bool, u64>(&mut UID, bool): u64
+	150: LdU64(7)
+	151: Eq
+	152: BrFalse(154)
+B34:
+	153: Branch(156)
+B35:
+	154: LdU64(13906834341847105535)
+	155: Abort
+B36:
+	156: ImmBorrowLoc[0](id#1#0: UID)
+	157: LdU64(0)
+	158: Call dynamic_field::exists_with_type<u64, u64>(&UID, u64): bool
+	159: Not
+	160: BrFalse(162)
+B37:
+	161: Branch(164)
+B38:
+	162: LdU64(13906834350437040127)
+	163: Abort
+B39:
+	164: ImmBorrowLoc[0](id#1#0: UID)
+	165: LdConst[1](vector<u8>: "" /..)
+	166: Call dynamic_field::exists_with_type<vector<u8>, u64>(&UID, vector<u8>): bool
+	167: Not
+	168: BrFalse(170)
+B40:
+	169: Branch(172)
+B41:
+	170: LdU64(13906834354732007423)
+	171: Abort
+B42:
+	172: ImmBorrowLoc[0](id#1#0: UID)
+	173: LdFalse
+	174: Call dynamic_field::exists_with_type<bool, u64>(&UID, bool): bool
+	175: Not
+	176: BrFalse(178)
+B43:
+	177: Branch(180)
+B44:
+	178: LdU64(13906834359026974719)
+	179: Abort
+B45:
+	180: MoveLoc[1](scenario#1#0: Scenario)
+	181: Call test_scenario::end(Scenario): TransactionEffects
+	182: Pop
+	183: MoveLoc[0](id#1#0: UID)
+	184: Call object::delete(UID)
+	185: Ret
+}
+
+add_duplicate() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: MutBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: LdU64(0)
+	9: Call dynamic_field::add<u64, u64>(&mut UID, u64, u64)
+	10: MutBorrowLoc[0](id#1#0: UID)
+	11: LdU64(0)
+	12: LdU64(1)
+	13: Call dynamic_field::add<u64, u64>(&mut UID, u64, u64)
+	14: LdU64(42)
+	15: Abort
+}
+
+add_duplicate_mismatched_type() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: MutBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: LdU64(0)
+	9: Call dynamic_field::add<u64, u64>(&mut UID, u64, u64)
+	10: MutBorrowLoc[0](id#1#0: UID)
+	11: LdU64(0)
+	12: LdU8(1)
+	13: Call dynamic_field::add<u64, u8>(&mut UID, u64, u8)
+	14: LdU64(42)
+	15: Abort
+}
+
+borrow_missing() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: ImmBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: Call dynamic_field::borrow<u64, u64>(&UID, u64): &u64
+	9: Pop
+	10: LdU64(42)
+	11: Abort
+}
+
+borrow_wrong_type() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: MutBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: LdU64(0)
+	9: Call dynamic_field::add<u64, u64>(&mut UID, u64, u64)
+	10: ImmBorrowLoc[0](id#1#0: UID)
+	11: LdU64(0)
+	12: Call dynamic_field::borrow<u64, u8>(&UID, u64): &u8
+	13: Pop
+	14: LdU64(42)
+	15: Abort
+}
+
+borrow_mut_missing() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: MutBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: Call dynamic_field::borrow_mut<u64, u64>(&mut UID, u64): &mut u64
+	9: Pop
+	10: LdU64(42)
+	11: Abort
+}
+
+borrow_mut_wrong_type() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: MutBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: LdU64(0)
+	9: Call dynamic_field::add<u64, u64>(&mut UID, u64, u64)
+	10: MutBorrowLoc[0](id#1#0: UID)
+	11: LdU64(0)
+	12: Call dynamic_field::borrow_mut<u64, u8>(&mut UID, u64): &mut u8
+	13: Pop
+	14: LdU64(42)
+	15: Abort
+}
+
+remove_missing() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: MutBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: Call dynamic_field::remove<u64, u64>(&mut UID, u64): u64
+	9: Pop
+	10: LdU64(42)
+	11: Abort
+}
+
+remove_wrong_type() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: MutBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: LdU64(0)
+	9: Call dynamic_field::add<u64, u64>(&mut UID, u64, u64)
+	10: MutBorrowLoc[0](id#1#0: UID)
+	11: LdU64(0)
+	12: Call dynamic_field::remove<u64, u8>(&mut UID, u64): u8
+	13: Pop
+	14: LdU64(42)
+	15: Abort
+}
+
+sanity_check_exists() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: ImmBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: Call dynamic_field::exists_with_type<u64, u64>(&UID, u64): bool
+	9: Not
+	10: BrFalse(12)
+B1:
+	11: Branch(14)
+B2:
+	12: LdU64(13906834767048867839)
+	13: Abort
+B3:
+	14: MutBorrowLoc[0](id#1#0: UID)
+	15: LdU64(0)
+	16: LdU64(0)
+	17: Call dynamic_field::add<u64, u64>(&mut UID, u64, u64)
+	18: ImmBorrowLoc[0](id#1#0: UID)
+	19: LdU64(0)
+	20: Call dynamic_field::exists_with_type<u64, u64>(&UID, u64): bool
+	21: BrFalse(23)
+B4:
+	22: Branch(25)
+B5:
+	23: LdU64(13906834775638802431)
+	24: Abort
+B6:
+	25: ImmBorrowLoc[0](id#1#0: UID)
+	26: LdU64(0)
+	27: Call dynamic_field::exists_with_type<u64, u8>(&UID, u64): bool
+	28: Not
+	29: BrFalse(31)
+B7:
+	30: Branch(33)
+B8:
+	31: LdU64(13906834779933769727)
+	32: Abort
+B9:
+	33: MoveLoc[1](scenario#1#0: Scenario)
+	34: Call test_scenario::end(Scenario): TransactionEffects
+	35: Pop
+	36: MoveLoc[0](id#1#0: UID)
+	37: Call object::delete(UID)
+	38: Ret
+}
+
+delete_uid_with_fields() {
+L0:	id#1#0: UID
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::new_object(&mut Scenario): UID
+	5: StLoc[0](id#1#0: UID)
+	6: MutBorrowLoc[0](id#1#0: UID)
+	7: LdU64(0)
+	8: LdU64(0)
+	9: Call dynamic_field::add<u64, u64>(&mut UID, u64, u64)
+	10: ImmBorrowLoc[0](id#1#0: UID)
+	11: LdU64(0)
+	12: Call dynamic_field::exists_with_type<u64, u64>(&UID, u64): bool
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834831473377279)
+	16: Abort
+B3:
+	17: MoveLoc[1](scenario#1#0: Scenario)
+	18: Call test_scenario::end(Scenario): TransactionEffects
+	19: Pop
+	20: MoveLoc[0](id#1#0: UID)
+	21: Call object::delete(UID)
+	22: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	1 => vector<u8>: "" // interpreted as UTF8 string
+]
+}

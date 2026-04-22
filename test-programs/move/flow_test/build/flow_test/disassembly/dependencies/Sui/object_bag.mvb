@@ -1,0 +1,156 @@
+// Move bytecode v6
+module 2.object_bag {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_object_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct ObjectBag has store, key {
+	id: UID,
+	size: u64
+}
+
+public new(ctx#0#0: &mut TxContext): ObjectBag {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: LdU64(0)
+	3: Pack[0](ObjectBag)
+	4: Ret
+}
+
+public add<K: copy + drop + store, V: store + key>(bag#0#0: &mut ObjectBag, k#0#0: K, v#0#0: V) {
+B0:
+	0: CopyLoc[0](bag#0#0: &mut ObjectBag)
+	1: MutBorrowField[0](ObjectBag.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: MoveLoc[2](v#0#0: V)
+	4: Call dynamic_object_field::add<K, V>(&mut UID, K, V)
+	5: CopyLoc[0](bag#0#0: &mut ObjectBag)
+	6: ImmBorrowField[1](ObjectBag.size: u64)
+	7: ReadRef
+	8: LdU64(1)
+	9: Add
+	10: MoveLoc[0](bag#0#0: &mut ObjectBag)
+	11: MutBorrowField[1](ObjectBag.size: u64)
+	12: WriteRef
+	13: Ret
+}
+
+public borrow<K: copy + drop + store, V: store + key>(bag#0#0: &ObjectBag, k#0#0: K): &V {
+B0:
+	0: MoveLoc[0](bag#0#0: &ObjectBag)
+	1: ImmBorrowField[0](ObjectBag.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_object_field::borrow<K, V>(&UID, K): &V
+	4: Ret
+}
+
+public borrow_mut<K: copy + drop + store, V: store + key>(bag#0#0: &mut ObjectBag, k#0#0: K): &mut V {
+B0:
+	0: MoveLoc[0](bag#0#0: &mut ObjectBag)
+	1: MutBorrowField[0](ObjectBag.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_object_field::borrow_mut<K, V>(&mut UID, K): &mut V
+	4: Ret
+}
+
+public remove<K: copy + drop + store, V: store + key>(bag#0#0: &mut ObjectBag, k#0#0: K): V {
+L2:	v#1#0: V
+B0:
+	0: CopyLoc[0](bag#0#0: &mut ObjectBag)
+	1: MutBorrowField[0](ObjectBag.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_object_field::remove<K, V>(&mut UID, K): V
+	4: StLoc[2](v#1#0: V)
+	5: CopyLoc[0](bag#0#0: &mut ObjectBag)
+	6: ImmBorrowField[1](ObjectBag.size: u64)
+	7: ReadRef
+	8: LdU64(1)
+	9: Sub
+	10: MoveLoc[0](bag#0#0: &mut ObjectBag)
+	11: MutBorrowField[1](ObjectBag.size: u64)
+	12: WriteRef
+	13: MoveLoc[2](v#1#0: V)
+	14: Ret
+}
+
+public contains<K: copy + drop + store>(bag#0#0: &ObjectBag, k#0#0: K): bool {
+B0:
+	0: MoveLoc[0](bag#0#0: &ObjectBag)
+	1: ImmBorrowField[0](ObjectBag.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_object_field::exists_<K>(&UID, K): bool
+	4: Ret
+}
+
+public contains_with_type<K: copy + drop + store, V: store + key>(bag#0#0: &ObjectBag, k#0#0: K): bool {
+B0:
+	0: MoveLoc[0](bag#0#0: &ObjectBag)
+	1: ImmBorrowField[0](ObjectBag.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_object_field::exists_with_type<K, V>(&UID, K): bool
+	4: Ret
+}
+
+public length(bag#0#0: &ObjectBag): u64 {
+B0:
+	0: MoveLoc[0](bag#0#0: &ObjectBag)
+	1: ImmBorrowField[1](ObjectBag.size: u64)
+	2: ReadRef
+	3: Ret
+}
+
+public is_empty(bag#0#0: &ObjectBag): bool {
+B0:
+	0: MoveLoc[0](bag#0#0: &ObjectBag)
+	1: ImmBorrowField[1](ObjectBag.size: u64)
+	2: ReadRef
+	3: LdU64(0)
+	4: Eq
+	5: Ret
+}
+
+public destroy_empty(bag#0#0: ObjectBag) {
+L1:	id#1#0: UID
+L2:	size#1#0: u64
+B0:
+	0: MoveLoc[0](bag#0#0: ObjectBag)
+	1: Unpack[0](ObjectBag)
+	2: StLoc[2](size#1#0: u64)
+	3: StLoc[1](id#1#0: UID)
+	4: MoveLoc[2](size#1#0: u64)
+	5: LdU64(0)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(11)
+B2:
+	9: LdConst[0](u64: 0)
+	10: Abort
+B3:
+	11: MoveLoc[1](id#1#0: UID)
+	12: Call object::delete(UID)
+	13: Ret
+}
+
+public value_id<K: copy + drop + store>(bag#0#0: &ObjectBag, k#0#0: K): Option<ID> {
+B0:
+	0: MoveLoc[0](bag#0#0: &ObjectBag)
+	1: ImmBorrowField[0](ObjectBag.id: UID)
+	2: MoveLoc[1](k#0#0: K)
+	3: Call dynamic_object_field::id<K>(&UID, K): Option<ID>
+	4: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+]
+}

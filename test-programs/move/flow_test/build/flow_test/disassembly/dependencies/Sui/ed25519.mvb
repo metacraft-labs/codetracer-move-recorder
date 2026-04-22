@@ -1,0 +1,13 @@
+// Move bytecode v6
+module 2.ed25519 {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+native public ed25519_verify(signature#0#0: &vector<u8>, public_key#0#0: &vector<u8>, msg#0#0: &vector<u8>): bool;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

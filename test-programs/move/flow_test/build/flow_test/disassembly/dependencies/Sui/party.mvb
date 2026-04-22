@@ -1,0 +1,201 @@
+// Move bytecode v6
+module 2.party {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+use 0000000000000000000000000000000000000000000000000000000000000002::vec_map;
+
+struct Party has copy, drop {
+	default: Permissions,
+	members: VecMap<address, Permissions>
+}
+
+struct Permissions has copy, drop {
+	pos0: u64
+}
+
+public single_owner(owner#0#0: address): Party {
+L1:	mp#1#0: Party
+B0:
+	0: Call empty(): Party
+	1: StLoc[1](mp#1#0: Party)
+	2: MutBorrowLoc[1](mp#1#0: Party)
+	3: MoveLoc[0](owner#0#0: address)
+	4: LdConst[5](u64: 15)
+	5: Pack[1](Permissions)
+	6: Call set_permissions(&mut Party, address, Permissions)
+	7: MoveLoc[1](mp#1#0: Party)
+	8: Ret
+}
+
+empty(): Party {
+B0:
+	0: LdConst[4](u64: 0)
+	1: Pack[1](Permissions)
+	2: Call vec_map::empty<address, Permissions>(): VecMap<address, Permissions>
+	3: Pack[0](Party)
+	4: Ret
+}
+
+set_permissions(p#0#0: &mut Party, address#0#0: address, permissions#0#0: Permissions) {
+B0:
+	0: CopyLoc[0](p#0#0: &mut Party)
+	1: ImmBorrowField[0](Party.members: VecMap<address, Permissions>)
+	2: ImmBorrowLoc[1](address#0#0: address)
+	3: Call vec_map::contains<address, Permissions>(&VecMap<address, Permissions>, &address): bool
+	4: BrFalse(11)
+B1:
+	5: CopyLoc[0](p#0#0: &mut Party)
+	6: MutBorrowField[0](Party.members: VecMap<address, Permissions>)
+	7: ImmBorrowLoc[1](address#0#0: address)
+	8: Call vec_map::remove<address, Permissions>(&mut VecMap<address, Permissions>, &address): address * Permissions
+	9: Pop
+	10: Pop
+B2:
+	11: MoveLoc[0](p#0#0: &mut Party)
+	12: MutBorrowField[0](Party.members: VecMap<address, Permissions>)
+	13: MoveLoc[1](address#0#0: address)
+	14: MoveLoc[2](permissions#0#0: Permissions)
+	15: Call vec_map::insert<address, Permissions>(&mut VecMap<address, Permissions>, address, Permissions)
+	16: Ret
+}
+
+public(friend) is_single_owner(p#0#0: &Party): bool {
+L1:	%#1: bool
+L2:	m#1#0: &Permissions
+B0:
+	0: CopyLoc[0](p#0#0: &Party)
+	1: ImmBorrowField[1](Party.default: Permissions)
+	2: ImmBorrowField[2](Permissions.pos0: u64)
+	3: ReadRef
+	4: LdConst[4](u64: 0)
+	5: Eq
+	6: BrFalse(31)
+B1:
+	7: CopyLoc[0](p#0#0: &Party)
+	8: ImmBorrowField[0](Party.members: VecMap<address, Permissions>)
+	9: Call vec_map::length<address, Permissions>(&VecMap<address, Permissions>): u64
+	10: LdU64(1)
+	11: Eq
+	12: BrFalse(26)
+B2:
+	13: MoveLoc[0](p#0#0: &Party)
+	14: ImmBorrowField[0](Party.members: VecMap<address, Permissions>)
+	15: LdU64(0)
+	16: Call vec_map::get_entry_by_idx<address, Permissions>(&VecMap<address, Permissions>, u64): &address * &Permissions
+	17: StLoc[2](m#1#0: &Permissions)
+	18: Pop
+	19: MoveLoc[2](m#1#0: &Permissions)
+	20: ImmBorrowField[2](Permissions.pos0: u64)
+	21: ReadRef
+	22: LdConst[5](u64: 15)
+	23: Eq
+	24: StLoc[1](%#1: bool)
+	25: Branch(35)
+B3:
+	26: MoveLoc[0](p#0#0: &Party)
+	27: Pop
+	28: LdFalse
+	29: StLoc[1](%#1: bool)
+	30: Branch(35)
+B4:
+	31: MoveLoc[0](p#0#0: &Party)
+	32: Pop
+	33: LdFalse
+	34: StLoc[1](%#1: bool)
+B5:
+	35: MoveLoc[1](%#1: bool)
+	36: Ret
+}
+
+public(friend) into_native(p#0#0: Party): u64 * vector<address> * vector<u64> {
+L1:	$stop#0#6: u64
+L2:	%#2: u64
+L3:	%#3: &mut vector<u64>
+L4:	addresses#1#0: vector<address>
+L5:	default#1#0: Permissions
+L6:	e#1#13: Permissions
+L7:	i#1#9: u64
+L8:	members#1#0: VecMap<address, Permissions>
+L9:	permissions#1#0: vector<Permissions>
+L10:	permissions#2#0: vector<u64>
+L11:	r#1#1: vector<u64>
+L12:	stop#1#9: u64
+L13:	v#1#1: vector<Permissions>
+L14:	v#1#3: vector<Permissions>
+B0:
+	0: MoveLoc[0](p#0#0: Party)
+	1: Unpack[0](Party)
+	2: StLoc[8](members#1#0: VecMap<address, Permissions>)
+	3: StLoc[5](default#1#0: Permissions)
+	4: MoveLoc[8](members#1#0: VecMap<address, Permissions>)
+	5: Call vec_map::into_keys_values<address, Permissions>(VecMap<address, Permissions>): vector<address> * vector<Permissions>
+	6: StLoc[9](permissions#1#0: vector<Permissions>)
+	7: StLoc[4](addresses#1#0: vector<address>)
+	8: MoveLoc[9](permissions#1#0: vector<Permissions>)
+	9: StLoc[13](v#1#1: vector<Permissions>)
+	10: LdConst[6](vector<u64>: 00)
+	11: StLoc[11](r#1#1: vector<u64>)
+	12: MoveLoc[13](v#1#1: vector<Permissions>)
+	13: StLoc[14](v#1#3: vector<Permissions>)
+	14: MutBorrowLoc[14](v#1#3: vector<Permissions>)
+	15: Call vector::reverse<Permissions>(&mut vector<Permissions>)
+	16: ImmBorrowLoc[14](v#1#3: vector<Permissions>)
+	17: VecLen(20)
+	18: StLoc[1]($stop#0#6: u64)
+	19: LdU64(0)
+	20: StLoc[7](i#1#9: u64)
+	21: MoveLoc[1]($stop#0#6: u64)
+	22: StLoc[12](stop#1#9: u64)
+B1:
+	23: CopyLoc[7](i#1#9: u64)
+	24: CopyLoc[12](stop#1#9: u64)
+	25: Lt
+	26: BrFalse(45)
+B2:
+	27: CopyLoc[7](i#1#9: u64)
+	28: Pop
+	29: MutBorrowLoc[14](v#1#3: vector<Permissions>)
+	30: VecPopBack(20)
+	31: StLoc[6](e#1#13: Permissions)
+	32: MutBorrowLoc[11](r#1#1: vector<u64>)
+	33: StLoc[3](%#3: &mut vector<u64>)
+	34: MoveLoc[6](e#1#13: Permissions)
+	35: Unpack[1](Permissions)
+	36: StLoc[2](%#2: u64)
+	37: MoveLoc[3](%#3: &mut vector<u64>)
+	38: MoveLoc[2](%#2: u64)
+	39: VecPushBack(15)
+	40: MoveLoc[7](i#1#9: u64)
+	41: LdU64(1)
+	42: Add
+	43: StLoc[7](i#1#9: u64)
+	44: Branch(23)
+B3:
+	45: MoveLoc[14](v#1#3: vector<Permissions>)
+	46: VecUnpack(20, 0)
+	47: MoveLoc[11](r#1#1: vector<u64>)
+	48: StLoc[10](permissions#2#0: vector<u64>)
+	49: ImmBorrowLoc[5](default#1#0: Permissions)
+	50: ImmBorrowField[2](Permissions.pos0: u64)
+	51: ReadRef
+	52: MoveLoc[4](addresses#1#0: vector<address>)
+	53: MoveLoc[10](permissions#2#0: vector<u64>)
+	54: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u8: 1
+	1 => u8: 2
+	2 => u8: 4
+	3 => u8: 8
+	4 => u64: 0
+	5 => u64: 15
+	6 => vector<u64>: 00
+]
+}

@@ -1,0 +1,81 @@
+// Move bytecode v6
+module 2.hash_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::hash;
+
+test_keccak256_hash() {
+L0:	empty_msg#1#0: vector<u8>
+L1:	long_msg#1#0: vector<u8>
+L2:	msg#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "hel..)
+	1: StLoc[2](msg#1#0: vector<u8>)
+	2: ImmBorrowLoc[2](msg#1#0: vector<u8>)
+	3: Call hash::keccak256(&vector<u8>): vector<u8>
+	4: LdConst[1](vector<u8>: 2057..)
+	5: Eq
+	6: BrFalse(8)
+B1:
+	7: Branch(10)
+B2:
+	8: LdU64(13906834238767890431)
+	9: Abort
+B3:
+	10: LdConst[2](vector<u8>: "" /..)
+	11: StLoc[0](empty_msg#1#0: vector<u8>)
+	12: ImmBorrowLoc[0](empty_msg#1#0: vector<u8>)
+	13: Call hash::keccak256(&vector<u8>): vector<u8>
+	14: Pop
+	15: LdConst[3](vector<u8>: "57c..)
+	16: StLoc[1](long_msg#1#0: vector<u8>)
+	17: ImmBorrowLoc[1](long_msg#1#0: vector<u8>)
+	18: Call hash::keccak256(&vector<u8>): vector<u8>
+	19: Pop
+	20: Ret
+}
+
+test_blake2b256_hash() {
+L0:	empty_msg#1#0: vector<u8>
+L1:	long_msg#1#0: vector<u8>
+L2:	msg#1#0: vector<u8>
+B0:
+	0: LdConst[0](vector<u8>: "hel..)
+	1: StLoc[2](msg#1#0: vector<u8>)
+	2: ImmBorrowLoc[2](msg#1#0: vector<u8>)
+	3: Call hash::blake2b256(&vector<u8>): vector<u8>
+	4: LdConst[4](vector<u8>: 204f..)
+	5: Eq
+	6: BrFalse(8)
+B1:
+	7: Branch(10)
+B2:
+	8: LdU64(13906834298897432575)
+	9: Abort
+B3:
+	10: LdConst[2](vector<u8>: "" /..)
+	11: StLoc[0](empty_msg#1#0: vector<u8>)
+	12: ImmBorrowLoc[0](empty_msg#1#0: vector<u8>)
+	13: Call hash::blake2b256(&vector<u8>): vector<u8>
+	14: Pop
+	15: LdConst[3](vector<u8>: "57c..)
+	16: StLoc[1](long_msg#1#0: vector<u8>)
+	17: ImmBorrowLoc[1](long_msg#1#0: vector<u8>)
+	18: Call hash::blake2b256(&vector<u8>): vector<u8>
+	19: Pop
+	20: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "hello world!" // interpreted as UTF8 string
+	1 => vector<u8>: 2057caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd6
+	2 => vector<u8>: "" // interpreted as UTF8 string
+	3 => vector<u8>: "57caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd657caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd657caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd657caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd657caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd657caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd657caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd657caa176af1ac0433c5df30e8dabcd2ec1af1e92a26eced5f719b88458777cd6" // interpreted as UTF8 string
+	4 => vector<u8>: 204fccfb4d98d069558aa93e9565f997d81c33b080364efd586e77a433ddffc5e2
+]
+}

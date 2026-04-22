@@ -1,0 +1,115 @@
+// Move bytecode v6
+module 2.royalty_policy {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::sui;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer_policy;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Rule has drop {
+	dummy_field: bool
+}
+
+struct Config has drop, store {
+	amount_bp: u16
+}
+
+public set<T: store + key>(policy#0#0: &mut TransferPolicy<T>, cap#0#0: &TransferPolicyCap<T>, amount_bp#0#0: u16) {
+B0:
+	0: CopyLoc[2](amount_bp#0#0: u16)
+	1: LdConst[2](u16: 10000)
+	2: Lt
+	3: BrFalse(5)
+B1:
+	4: Branch(11)
+B2:
+	5: MoveLoc[0](policy#0#0: &mut TransferPolicy<T>)
+	6: Pop
+	7: MoveLoc[1](cap#0#0: &TransferPolicyCap<T>)
+	8: Pop
+	9: LdConst[0](u64: 0)
+	10: Abort
+B3:
+	11: LdFalse
+	12: Pack[0](Rule)
+	13: MoveLoc[0](policy#0#0: &mut TransferPolicy<T>)
+	14: MoveLoc[1](cap#0#0: &TransferPolicyCap<T>)
+	15: MoveLoc[2](amount_bp#0#0: u16)
+	16: Pack[1](Config)
+	17: Call transfer_policy::add_rule<T, Rule, Config>(Rule, &mut TransferPolicy<T>, &TransferPolicyCap<T>, Config)
+	18: Ret
+}
+
+public pay<T: store + key>(policy#0#0: &mut TransferPolicy<T>, request#0#0: &mut TransferRequest<T>, payment#0#0: &mut Coin<SUI>, ctx#0#0: &mut TxContext) {
+L4:	amount#1#0: u64
+L5:	config#1#0: &Config
+L6:	fee#1#0: Coin<SUI>
+B0:
+	0: LdFalse
+	1: Pack[0](Rule)
+	2: CopyLoc[0](policy#0#0: &mut TransferPolicy<T>)
+	3: FreezeRef
+	4: Call transfer_policy::get_rule<T, Rule, Config>(Rule, &TransferPolicy<T>): &Config
+	5: StLoc[5](config#1#0: &Config)
+	6: CopyLoc[1](request#0#0: &mut TransferRequest<T>)
+	7: FreezeRef
+	8: Call transfer_policy::paid<T>(&TransferRequest<T>): u64
+	9: CastU128
+	10: MoveLoc[5](config#1#0: &Config)
+	11: ImmBorrowField[0](Config.amount_bp: u16)
+	12: ReadRef
+	13: CastU128
+	14: Mul
+	15: LdU128(10000)
+	16: Div
+	17: CastU64
+	18: StLoc[4](amount#1#0: u64)
+	19: CopyLoc[2](payment#0#0: &mut Coin<SUI>)
+	20: FreezeRef
+	21: Call coin::value<SUI>(&Coin<SUI>): u64
+	22: CopyLoc[4](amount#1#0: u64)
+	23: Ge
+	24: BrFalse(26)
+B1:
+	25: Branch(36)
+B2:
+	26: MoveLoc[1](request#0#0: &mut TransferRequest<T>)
+	27: Pop
+	28: MoveLoc[0](policy#0#0: &mut TransferPolicy<T>)
+	29: Pop
+	30: MoveLoc[2](payment#0#0: &mut Coin<SUI>)
+	31: Pop
+	32: MoveLoc[3](ctx#0#0: &mut TxContext)
+	33: Pop
+	34: LdConst[1](u64: 1)
+	35: Abort
+B3:
+	36: MoveLoc[2](payment#0#0: &mut Coin<SUI>)
+	37: MoveLoc[4](amount#1#0: u64)
+	38: MoveLoc[3](ctx#0#0: &mut TxContext)
+	39: Call coin::split<SUI>(&mut Coin<SUI>, u64, &mut TxContext): Coin<SUI>
+	40: StLoc[6](fee#1#0: Coin<SUI>)
+	41: LdFalse
+	42: Pack[0](Rule)
+	43: MoveLoc[0](policy#0#0: &mut TransferPolicy<T>)
+	44: MoveLoc[6](fee#1#0: Coin<SUI>)
+	45: Call transfer_policy::add_to_balance<T, Rule>(Rule, &mut TransferPolicy<T>, Coin<SUI>)
+	46: LdFalse
+	47: Pack[0](Rule)
+	48: MoveLoc[1](request#0#0: &mut TransferRequest<T>)
+	49: Call transfer_policy::add_receipt<T, Rule>(Rule, &mut TransferRequest<T>)
+	50: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u16: 10000
+]
+}

@@ -1,0 +1,1354 @@
+// Move bytecode v6
+module 2.linked_table_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+use 0000000000000000000000000000000000000000000000000000000000000002::linked_table;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+simple_all_functions() {
+L0:	%#1: vector<vector<u8>>
+L1:	%#10: &LinkedTable<vector<u8>, u64>
+L2:	%#11: vector<vector<u8>>
+L3:	%#12: &LinkedTable<vector<u8>, u64>
+L4:	%#13: vector<vector<u8>>
+L5:	%#14: &LinkedTable<vector<u8>, u64>
+L6:	%#15: vector<vector<u8>>
+L7:	%#16: &LinkedTable<vector<u8>, u64>
+L8:	%#17: vector<vector<u8>>
+L9:	%#18: &LinkedTable<vector<u8>, u64>
+L10:	%#2: &LinkedTable<vector<u8>, u64>
+L11:	%#3: vector<vector<u8>>
+L12:	%#4: &LinkedTable<vector<u8>, u64>
+L13:	%#5: vector<vector<u8>>
+L14:	%#6: &LinkedTable<vector<u8>, u64>
+L15:	%#7: vector<vector<u8>>
+L16:	%#8: &LinkedTable<vector<u8>, u64>
+L17:	%#9: vector<vector<u8>>
+L18:	back_v#1#0: u64
+L19:	front_v#1#0: u64
+L20:	scenario#1#0: Scenario
+L21:	table#1#0: LinkedTable<vector<u8>, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[20](scenario#1#0: Scenario)
+	3: MutBorrowLoc[20](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<vector<u8>, u64>(&mut TxContext): LinkedTable<vector<u8>, u64>
+	6: StLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	7: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	8: StLoc[10](%#2: &LinkedTable<vector<u8>, u64>)
+	9: LdConst[1](vector<vector<u8>>: 00)
+	10: StLoc[0](%#1: vector<vector<u8>>)
+	11: MoveLoc[10](%#2: &LinkedTable<vector<u8>, u64>)
+	12: ImmBorrowLoc[0](%#1: vector<vector<u8>>)
+	13: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	14: MutBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	15: LdConst[2](vector<u8>: "hel..)
+	16: LdU64(0)
+	17: Call linked_table::push_back<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	18: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	19: StLoc[12](%#4: &LinkedTable<vector<u8>, u64>)
+	20: LdConst[3](vector<vector<u8>>: 0105..)
+	21: StLoc[11](%#3: vector<vector<u8>>)
+	22: MoveLoc[12](%#4: &LinkedTable<vector<u8>, u64>)
+	23: ImmBorrowLoc[11](%#3: vector<vector<u8>>)
+	24: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	25: MutBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	26: LdConst[4](vector<u8>: "goo..)
+	27: LdU64(1)
+	28: Call linked_table::push_back<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	29: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	30: LdConst[2](vector<u8>: "hel..)
+	31: Call linked_table::contains<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): bool
+	32: BrFalse(34)
+B1:
+	33: Branch(36)
+B2:
+	34: LdU64(13906834268832661503)
+	35: Abort
+B3:
+	36: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	37: LdConst[4](vector<u8>: "goo..)
+	38: Call linked_table::contains<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): bool
+	39: BrFalse(41)
+B4:
+	40: Branch(43)
+B5:
+	41: LdU64(13906834273127628799)
+	42: Abort
+B6:
+	43: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	44: Call linked_table::is_empty<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>): bool
+	45: Not
+	46: BrFalse(48)
+B7:
+	47: Branch(50)
+B8:
+	48: LdU64(13906834277422596095)
+	49: Abort
+B9:
+	50: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	51: LdConst[2](vector<u8>: "hel..)
+	52: Call linked_table::borrow<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): &u64
+	53: ReadRef
+	54: LdU64(0)
+	55: Eq
+	56: BrFalse(58)
+B10:
+	57: Branch(60)
+B11:
+	58: LdU64(13906834286012530687)
+	59: Abort
+B12:
+	60: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	61: LdConst[4](vector<u8>: "goo..)
+	62: Call linked_table::borrow<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): &u64
+	63: ReadRef
+	64: LdU64(1)
+	65: Eq
+	66: BrFalse(68)
+B13:
+	67: Branch(70)
+B14:
+	68: LdU64(13906834290307497983)
+	69: Abort
+B15:
+	70: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	71: LdConst[2](vector<u8>: "hel..)
+	72: Call linked_table::borrow<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): &u64
+	73: ReadRef
+	74: LdU64(2)
+	75: Mul
+	76: MutBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	77: LdConst[2](vector<u8>: "hel..)
+	78: Call linked_table::borrow_mut<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>): &mut u64
+	79: WriteRef
+	80: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	81: LdConst[4](vector<u8>: "goo..)
+	82: Call linked_table::borrow<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): &u64
+	83: ReadRef
+	84: LdU64(2)
+	85: Mul
+	86: MutBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	87: LdConst[4](vector<u8>: "goo..)
+	88: Call linked_table::borrow_mut<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>): &mut u64
+	89: WriteRef
+	90: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	91: LdConst[2](vector<u8>: "hel..)
+	92: Call linked_table::borrow<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): &u64
+	93: ReadRef
+	94: LdU64(0)
+	95: Eq
+	96: BrFalse(98)
+B16:
+	97: Branch(100)
+B17:
+	98: LdU64(13906834311782334463)
+	99: Abort
+B18:
+	100: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	101: LdConst[4](vector<u8>: "goo..)
+	102: Call linked_table::borrow<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): &u64
+	103: ReadRef
+	104: LdU64(2)
+	105: Eq
+	106: BrFalse(108)
+B19:
+	107: Branch(110)
+B20:
+	108: LdU64(13906834316077301759)
+	109: Abort
+B21:
+	110: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	111: StLoc[14](%#6: &LinkedTable<vector<u8>, u64>)
+	112: LdConst[5](vector<vector<u8>>: 0205..)
+	113: StLoc[13](%#5: vector<vector<u8>>)
+	114: MoveLoc[14](%#6: &LinkedTable<vector<u8>, u64>)
+	115: ImmBorrowLoc[13](%#5: vector<vector<u8>>)
+	116: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	117: MutBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	118: LdConst[6](vector<u8>: "!!!..)
+	119: LdU64(2)
+	120: Call linked_table::push_front<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	121: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	122: StLoc[16](%#8: &LinkedTable<vector<u8>, u64>)
+	123: LdConst[7](vector<vector<u8>>: 0303..)
+	124: StLoc[15](%#7: vector<vector<u8>>)
+	125: MoveLoc[16](%#8: &LinkedTable<vector<u8>, u64>)
+	126: ImmBorrowLoc[15](%#7: vector<vector<u8>>)
+	127: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	128: MutBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	129: LdConst[8](vector<u8>: "?" ..)
+	130: LdU64(3)
+	131: Call linked_table::push_back<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	132: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	133: StLoc[1](%#10: &LinkedTable<vector<u8>, u64>)
+	134: LdConst[9](vector<vector<u8>>: 0403..)
+	135: StLoc[17](%#9: vector<vector<u8>>)
+	136: MoveLoc[1](%#10: &LinkedTable<vector<u8>, u64>)
+	137: ImmBorrowLoc[17](%#9: vector<vector<u8>>)
+	138: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	139: MutBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	140: Call linked_table::pop_front<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>): vector<u8> * u64
+	141: StLoc[19](front_v#1#0: u64)
+	142: LdConst[6](vector<u8>: "!!!..)
+	143: Eq
+	144: BrFalse(146)
+B22:
+	145: Branch(148)
+B23:
+	146: LdU64(13906834363321942015)
+	147: Abort
+B24:
+	148: MoveLoc[19](front_v#1#0: u64)
+	149: LdU64(2)
+	150: Eq
+	151: BrFalse(153)
+B25:
+	152: Branch(155)
+B26:
+	153: LdU64(13906834367616909311)
+	154: Abort
+B27:
+	155: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	156: StLoc[3](%#12: &LinkedTable<vector<u8>, u64>)
+	157: LdConst[10](vector<vector<u8>>: 0305..)
+	158: StLoc[2](%#11: vector<vector<u8>>)
+	159: MoveLoc[3](%#12: &LinkedTable<vector<u8>, u64>)
+	160: ImmBorrowLoc[2](%#11: vector<vector<u8>>)
+	161: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	162: MutBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	163: LdConst[4](vector<u8>: "goo..)
+	164: Call linked_table::remove<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>): u64
+	165: LdU64(2)
+	166: Eq
+	167: BrFalse(169)
+B28:
+	168: Branch(171)
+B29:
+	169: LdU64(13906834380501811199)
+	170: Abort
+B30:
+	171: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	172: StLoc[5](%#14: &LinkedTable<vector<u8>, u64>)
+	173: LdConst[11](vector<vector<u8>>: 0205..)
+	174: StLoc[4](%#13: vector<vector<u8>>)
+	175: MoveLoc[5](%#14: &LinkedTable<vector<u8>, u64>)
+	176: ImmBorrowLoc[4](%#13: vector<vector<u8>>)
+	177: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	178: MutBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	179: Call linked_table::pop_back<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>): vector<u8> * u64
+	180: StLoc[18](back_v#1#0: u64)
+	181: LdConst[8](vector<u8>: "?" ..)
+	182: Eq
+	183: BrFalse(185)
+B31:
+	184: Branch(187)
+B32:
+	185: LdU64(13906834397681680383)
+	186: Abort
+B33:
+	187: MoveLoc[18](back_v#1#0: u64)
+	188: LdU64(3)
+	189: Eq
+	190: BrFalse(192)
+B34:
+	191: Branch(194)
+B35:
+	192: LdU64(13906834401976647679)
+	193: Abort
+B36:
+	194: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	195: StLoc[7](%#16: &LinkedTable<vector<u8>, u64>)
+	196: LdConst[3](vector<vector<u8>>: 0105..)
+	197: StLoc[6](%#15: vector<vector<u8>>)
+	198: MoveLoc[7](%#16: &LinkedTable<vector<u8>, u64>)
+	199: ImmBorrowLoc[6](%#15: vector<vector<u8>>)
+	200: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	201: MutBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	202: LdConst[2](vector<u8>: "hel..)
+	203: Call linked_table::remove<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>): u64
+	204: LdU64(0)
+	205: Eq
+	206: BrFalse(208)
+B37:
+	207: Branch(210)
+B38:
+	208: LdU64(13906834414861549567)
+	209: Abort
+B39:
+	210: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	211: StLoc[9](%#18: &LinkedTable<vector<u8>, u64>)
+	212: LdConst[1](vector<vector<u8>>: 00)
+	213: StLoc[8](%#17: vector<vector<u8>>)
+	214: MoveLoc[9](%#18: &LinkedTable<vector<u8>, u64>)
+	215: ImmBorrowLoc[8](%#17: vector<vector<u8>>)
+	216: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	217: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	218: LdConst[6](vector<u8>: "!!!..)
+	219: Call linked_table::contains<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): bool
+	220: Not
+	221: BrFalse(223)
+B40:
+	222: Branch(225)
+B41:
+	223: LdU64(13906834427746451455)
+	224: Abort
+B42:
+	225: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	226: LdConst[4](vector<u8>: "goo..)
+	227: Call linked_table::contains<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): bool
+	228: Not
+	229: BrFalse(231)
+B43:
+	230: Branch(233)
+B44:
+	231: LdU64(13906834432041418751)
+	232: Abort
+B45:
+	233: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	234: LdConst[2](vector<u8>: "hel..)
+	235: Call linked_table::contains<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): bool
+	236: Not
+	237: BrFalse(239)
+B46:
+	238: Branch(241)
+B47:
+	239: LdU64(13906834436336386047)
+	240: Abort
+B48:
+	241: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	242: LdConst[8](vector<u8>: "?" ..)
+	243: Call linked_table::contains<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): bool
+	244: Not
+	245: BrFalse(247)
+B49:
+	246: Branch(249)
+B50:
+	247: LdU64(13906834440631353343)
+	248: Abort
+B51:
+	249: ImmBorrowLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	250: Call linked_table::is_empty<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>): bool
+	251: BrFalse(253)
+B52:
+	252: Branch(255)
+B53:
+	253: LdU64(13906834444926320639)
+	254: Abort
+B54:
+	255: MoveLoc[20](scenario#1#0: Scenario)
+	256: Call test_scenario::end(Scenario): TransactionEffects
+	257: Pop
+	258: MoveLoc[21](table#1#0: LinkedTable<vector<u8>, u64>)
+	259: Call linked_table::destroy_empty<vector<u8>, u64>(LinkedTable<vector<u8>, u64>)
+	260: Ret
+}
+
+front_back_empty() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<u64, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<u64, u64>(&mut TxContext): LinkedTable<u64, u64>
+	6: StLoc[1](table#1#0: LinkedTable<u64, u64>)
+	7: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	8: Call linked_table::front<u64, u64>(&LinkedTable<u64, u64>): &Option<u64>
+	9: Call option::is_none<u64>(&Option<u64>): bool
+	10: BrFalse(12)
+B1:
+	11: Branch(14)
+B2:
+	12: LdU64(13906834487875993599)
+	13: Abort
+B3:
+	14: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	15: Call linked_table::back<u64, u64>(&LinkedTable<u64, u64>): &Option<u64>
+	16: Call option::is_none<u64>(&Option<u64>): bool
+	17: BrFalse(19)
+B4:
+	18: Branch(21)
+B5:
+	19: LdU64(13906834492170960895)
+	20: Abort
+B6:
+	21: MoveLoc[0](scenario#1#0: Scenario)
+	22: Call test_scenario::end(Scenario): TransactionEffects
+	23: Pop
+	24: MoveLoc[1](table#1#0: LinkedTable<u64, u64>)
+	25: Call linked_table::drop<u64, u64>(LinkedTable<u64, u64>)
+	26: Ret
+}
+
+push_front_singleton() {
+L0:	%#1: vector<vector<u8>>
+L1:	%#2: &LinkedTable<vector<u8>, u64>
+L2:	%#3: vector<vector<u8>>
+L3:	%#4: &LinkedTable<vector<u8>, u64>
+L4:	scenario#1#0: Scenario
+L5:	table#1#0: LinkedTable<vector<u8>, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[4](scenario#1#0: Scenario)
+	3: MutBorrowLoc[4](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<vector<u8>, u64>(&mut TxContext): LinkedTable<vector<u8>, u64>
+	6: StLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	7: ImmBorrowLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	8: StLoc[1](%#2: &LinkedTable<vector<u8>, u64>)
+	9: LdConst[1](vector<vector<u8>>: 00)
+	10: StLoc[0](%#1: vector<vector<u8>>)
+	11: MoveLoc[1](%#2: &LinkedTable<vector<u8>, u64>)
+	12: ImmBorrowLoc[0](%#1: vector<vector<u8>>)
+	13: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	14: MutBorrowLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	15: LdConst[2](vector<u8>: "hel..)
+	16: LdU64(0)
+	17: Call linked_table::push_front<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	18: ImmBorrowLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	19: LdConst[2](vector<u8>: "hel..)
+	20: Call linked_table::contains<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): bool
+	21: BrFalse(23)
+B1:
+	22: Branch(25)
+B2:
+	23: LdU64(13906834543710568447)
+	24: Abort
+B3:
+	25: ImmBorrowLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	26: StLoc[3](%#4: &LinkedTable<vector<u8>, u64>)
+	27: LdConst[3](vector<vector<u8>>: 0105..)
+	28: StLoc[2](%#3: vector<vector<u8>>)
+	29: MoveLoc[3](%#4: &LinkedTable<vector<u8>, u64>)
+	30: ImmBorrowLoc[2](%#3: vector<vector<u8>>)
+	31: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	32: MoveLoc[4](scenario#1#0: Scenario)
+	33: Call test_scenario::end(Scenario): TransactionEffects
+	34: Pop
+	35: MoveLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	36: Call linked_table::drop<vector<u8>, u64>(LinkedTable<vector<u8>, u64>)
+	37: Ret
+}
+
+push_back_singleton() {
+L0:	%#1: vector<vector<u8>>
+L1:	%#2: &LinkedTable<vector<u8>, u64>
+L2:	%#3: vector<vector<u8>>
+L3:	%#4: &LinkedTable<vector<u8>, u64>
+L4:	scenario#1#0: Scenario
+L5:	table#1#0: LinkedTable<vector<u8>, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[4](scenario#1#0: Scenario)
+	3: MutBorrowLoc[4](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<vector<u8>, u64>(&mut TxContext): LinkedTable<vector<u8>, u64>
+	6: StLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	7: ImmBorrowLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	8: StLoc[1](%#2: &LinkedTable<vector<u8>, u64>)
+	9: LdConst[1](vector<vector<u8>>: 00)
+	10: StLoc[0](%#1: vector<vector<u8>>)
+	11: MoveLoc[1](%#2: &LinkedTable<vector<u8>, u64>)
+	12: ImmBorrowLoc[0](%#1: vector<vector<u8>>)
+	13: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	14: MutBorrowLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	15: LdConst[2](vector<u8>: "hel..)
+	16: LdU64(0)
+	17: Call linked_table::push_back<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	18: ImmBorrowLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	19: LdConst[2](vector<u8>: "hel..)
+	20: Call linked_table::contains<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, vector<u8>): bool
+	21: BrFalse(23)
+B1:
+	22: Branch(25)
+B2:
+	23: LdU64(13906834599545143295)
+	24: Abort
+B3:
+	25: ImmBorrowLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	26: StLoc[3](%#4: &LinkedTable<vector<u8>, u64>)
+	27: LdConst[3](vector<vector<u8>>: 0105..)
+	28: StLoc[2](%#3: vector<vector<u8>>)
+	29: MoveLoc[3](%#4: &LinkedTable<vector<u8>, u64>)
+	30: ImmBorrowLoc[2](%#3: vector<vector<u8>>)
+	31: Call check_ordering<vector<u8>, u64>(&LinkedTable<vector<u8>, u64>, &vector<vector<u8>>)
+	32: MoveLoc[4](scenario#1#0: Scenario)
+	33: Call test_scenario::end(Scenario): TransactionEffects
+	34: Pop
+	35: MoveLoc[5](table#1#0: LinkedTable<vector<u8>, u64>)
+	36: Call linked_table::drop<vector<u8>, u64>(LinkedTable<vector<u8>, u64>)
+	37: Ret
+}
+
+push_front_duplicate() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<vector<u8>, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<vector<u8>, u64>(&mut TxContext): LinkedTable<vector<u8>, u64>
+	6: StLoc[1](table#1#0: LinkedTable<vector<u8>, u64>)
+	7: MutBorrowLoc[1](table#1#0: LinkedTable<vector<u8>, u64>)
+	8: LdConst[2](vector<u8>: "hel..)
+	9: LdU64(0)
+	10: Call linked_table::push_front<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	11: MutBorrowLoc[1](table#1#0: LinkedTable<vector<u8>, u64>)
+	12: LdConst[2](vector<u8>: "hel..)
+	13: LdU64(0)
+	14: Call linked_table::push_front<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	15: LdU64(42)
+	16: Abort
+}
+
+push_back_duplicate() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<vector<u8>, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<vector<u8>, u64>(&mut TxContext): LinkedTable<vector<u8>, u64>
+	6: StLoc[1](table#1#0: LinkedTable<vector<u8>, u64>)
+	7: MutBorrowLoc[1](table#1#0: LinkedTable<vector<u8>, u64>)
+	8: LdConst[2](vector<u8>: "hel..)
+	9: LdU64(0)
+	10: Call linked_table::push_back<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	11: MutBorrowLoc[1](table#1#0: LinkedTable<vector<u8>, u64>)
+	12: LdConst[2](vector<u8>: "hel..)
+	13: LdU64(0)
+	14: Call linked_table::push_back<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	15: LdU64(42)
+	16: Abort
+}
+
+push_mixed_duplicate() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<vector<u8>, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<vector<u8>, u64>(&mut TxContext): LinkedTable<vector<u8>, u64>
+	6: StLoc[1](table#1#0: LinkedTable<vector<u8>, u64>)
+	7: MutBorrowLoc[1](table#1#0: LinkedTable<vector<u8>, u64>)
+	8: LdConst[2](vector<u8>: "hel..)
+	9: LdU64(0)
+	10: Call linked_table::push_back<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	11: MutBorrowLoc[1](table#1#0: LinkedTable<vector<u8>, u64>)
+	12: LdConst[2](vector<u8>: "hel..)
+	13: LdU64(0)
+	14: Call linked_table::push_front<vector<u8>, u64>(&mut LinkedTable<vector<u8>, u64>, vector<u8>, u64)
+	15: LdU64(42)
+	16: Abort
+}
+
+borrow_missing() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<u64, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<u64, u64>(&mut TxContext): LinkedTable<u64, u64>
+	6: StLoc[1](table#1#0: LinkedTable<u64, u64>)
+	7: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	8: LdU64(0)
+	9: Call linked_table::borrow<u64, u64>(&LinkedTable<u64, u64>, u64): &u64
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+borrow_mut_missing() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<u64, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<u64, u64>(&mut TxContext): LinkedTable<u64, u64>
+	6: StLoc[1](table#1#0: LinkedTable<u64, u64>)
+	7: MutBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	8: LdU64(0)
+	9: Call linked_table::borrow_mut<u64, u64>(&mut LinkedTable<u64, u64>, u64): &mut u64
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+remove_missing() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<u64, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<u64, u64>(&mut TxContext): LinkedTable<u64, u64>
+	6: StLoc[1](table#1#0: LinkedTable<u64, u64>)
+	7: MutBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	8: LdU64(0)
+	9: Call linked_table::remove<u64, u64>(&mut LinkedTable<u64, u64>, u64): u64
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+pop_front_empty() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<u64, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<u64, u64>(&mut TxContext): LinkedTable<u64, u64>
+	6: StLoc[1](table#1#0: LinkedTable<u64, u64>)
+	7: MutBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	8: Call linked_table::pop_front<u64, u64>(&mut LinkedTable<u64, u64>): u64 * u64
+	9: Pop
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+pop_back_empty() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<u64, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<u64, u64>(&mut TxContext): LinkedTable<u64, u64>
+	6: StLoc[1](table#1#0: LinkedTable<u64, u64>)
+	7: MutBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	8: Call linked_table::pop_back<u64, u64>(&mut LinkedTable<u64, u64>): u64 * u64
+	9: Pop
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+destroy_non_empty() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<u64, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<u64, u64>(&mut TxContext): LinkedTable<u64, u64>
+	6: StLoc[1](table#1#0: LinkedTable<u64, u64>)
+	7: MutBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	8: LdU64(0)
+	9: LdU64(0)
+	10: Call linked_table::push_back<u64, u64>(&mut LinkedTable<u64, u64>, u64, u64)
+	11: MoveLoc[1](table#1#0: LinkedTable<u64, u64>)
+	12: Call linked_table::destroy_empty<u64, u64>(LinkedTable<u64, u64>)
+	13: MoveLoc[0](scenario#1#0: Scenario)
+	14: Call test_scenario::end(Scenario): TransactionEffects
+	15: Pop
+	16: Ret
+}
+
+sanity_check_contains() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<u64, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<u64, u64>(&mut TxContext): LinkedTable<u64, u64>
+	6: StLoc[1](table#1#0: LinkedTable<u64, u64>)
+	7: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	8: LdU64(0)
+	9: Call linked_table::contains<u64, u64>(&LinkedTable<u64, u64>, u64): bool
+	10: Not
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906835050516709375)
+	14: Abort
+B3:
+	15: MutBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	16: LdU64(0)
+	17: LdU64(0)
+	18: Call linked_table::push_back<u64, u64>(&mut LinkedTable<u64, u64>, u64, u64)
+	19: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	20: LdU64(0)
+	21: Call linked_table::contains<u64, u64>(&LinkedTable<u64, u64>, u64): bool
+	22: BrFalse(24)
+B4:
+	23: Branch(26)
+B5:
+	24: LdU64(13906835059106643967)
+	25: Abort
+B6:
+	26: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	27: LdU64(1)
+	28: Call linked_table::contains<u64, u64>(&LinkedTable<u64, u64>, u64): bool
+	29: Not
+	30: BrFalse(32)
+B7:
+	31: Branch(34)
+B8:
+	32: LdU64(13906835063401611263)
+	33: Abort
+B9:
+	34: MoveLoc[0](scenario#1#0: Scenario)
+	35: Call test_scenario::end(Scenario): TransactionEffects
+	36: Pop
+	37: MoveLoc[1](table#1#0: LinkedTable<u64, u64>)
+	38: Call linked_table::drop<u64, u64>(LinkedTable<u64, u64>)
+	39: Ret
+}
+
+sanity_check_drop() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<u64, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<u64, u64>(&mut TxContext): LinkedTable<u64, u64>
+	6: StLoc[1](table#1#0: LinkedTable<u64, u64>)
+	7: MutBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	8: LdU64(0)
+	9: LdU64(0)
+	10: Call linked_table::push_back<u64, u64>(&mut LinkedTable<u64, u64>, u64, u64)
+	11: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	12: Call linked_table::length<u64, u64>(&LinkedTable<u64, u64>): u64
+	13: LdU64(1)
+	14: Eq
+	15: BrFalse(17)
+B1:
+	16: Branch(19)
+B2:
+	17: LdU64(13906835110646251519)
+	18: Abort
+B3:
+	19: MoveLoc[0](scenario#1#0: Scenario)
+	20: Call test_scenario::end(Scenario): TransactionEffects
+	21: Pop
+	22: MoveLoc[1](table#1#0: LinkedTable<u64, u64>)
+	23: Call linked_table::drop<u64, u64>(LinkedTable<u64, u64>)
+	24: Ret
+}
+
+sanity_check_size() {
+L0:	scenario#1#0: Scenario
+L1:	table#1#0: LinkedTable<u64, u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: MutBorrowLoc[0](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call linked_table::new<u64, u64>(&mut TxContext): LinkedTable<u64, u64>
+	6: StLoc[1](table#1#0: LinkedTable<u64, u64>)
+	7: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	8: Call linked_table::is_empty<u64, u64>(&LinkedTable<u64, u64>): bool
+	9: BrFalse(11)
+B1:
+	10: Branch(13)
+B2:
+	11: LdU64(13906835153595924479)
+	12: Abort
+B3:
+	13: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	14: Call linked_table::length<u64, u64>(&LinkedTable<u64, u64>): u64
+	15: LdU64(0)
+	16: Eq
+	17: BrFalse(19)
+B4:
+	18: Branch(21)
+B5:
+	19: LdU64(13906835157890891775)
+	20: Abort
+B6:
+	21: MutBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	22: LdU64(0)
+	23: LdU64(0)
+	24: Call linked_table::push_back<u64, u64>(&mut LinkedTable<u64, u64>, u64, u64)
+	25: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	26: Call linked_table::is_empty<u64, u64>(&LinkedTable<u64, u64>): bool
+	27: Not
+	28: BrFalse(30)
+B7:
+	29: Branch(32)
+B8:
+	30: LdU64(13906835166480826367)
+	31: Abort
+B9:
+	32: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	33: Call linked_table::length<u64, u64>(&LinkedTable<u64, u64>): u64
+	34: LdU64(1)
+	35: Eq
+	36: BrFalse(38)
+B10:
+	37: Branch(40)
+B11:
+	38: LdU64(13906835170775793663)
+	39: Abort
+B12:
+	40: MutBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	41: LdU64(1)
+	42: LdU64(0)
+	43: Call linked_table::push_back<u64, u64>(&mut LinkedTable<u64, u64>, u64, u64)
+	44: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	45: Call linked_table::is_empty<u64, u64>(&LinkedTable<u64, u64>): bool
+	46: Not
+	47: BrFalse(49)
+B13:
+	48: Branch(51)
+B14:
+	49: LdU64(13906835179365728255)
+	50: Abort
+B15:
+	51: ImmBorrowLoc[1](table#1#0: LinkedTable<u64, u64>)
+	52: Call linked_table::length<u64, u64>(&LinkedTable<u64, u64>): u64
+	53: LdU64(2)
+	54: Eq
+	55: BrFalse(57)
+B16:
+	56: Branch(59)
+B17:
+	57: LdU64(13906835183660695551)
+	58: Abort
+B18:
+	59: MoveLoc[0](scenario#1#0: Scenario)
+	60: Call test_scenario::end(Scenario): TransactionEffects
+	61: Pop
+	62: MoveLoc[1](table#1#0: LinkedTable<u64, u64>)
+	63: Call linked_table::drop<u64, u64>(LinkedTable<u64, u64>)
+	64: Ret
+}
+
+test_all_orderings() {
+L0:	all_bools#1#0: vector<vector<bool>>
+L1:	ctx#1#0: &mut TxContext
+L2:	i#1#0: u64
+L3:	j#1#0: u64
+L4:	keys#1#0: vector<vector<u8>>
+L5:	n#1#0: u64
+L6:	pops#1#0: &vector<bool>
+L7:	pushes#1#0: &vector<bool>
+L8:	scenario#1#0: Scenario
+L9:	values#1#0: vector<u64>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[8](scenario#1#0: Scenario)
+	3: MutBorrowLoc[8](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: StLoc[1](ctx#1#0: &mut TxContext)
+	6: LdConst[12](vector<vector<u8>>: 0301..)
+	7: StLoc[4](keys#1#0: vector<vector<u8>>)
+	8: LdConst[13](vector<u64>: 0303..)
+	9: StLoc[9](values#1#0: vector<u64>)
+	10: LdConst[14](vector<vector<bool>>: 0603..)
+	11: StLoc[0](all_bools#1#0: vector<vector<bool>>)
+	12: LdU64(0)
+	13: StLoc[2](i#1#0: u64)
+	14: LdU64(0)
+	15: StLoc[3](j#1#0: u64)
+	16: ImmBorrowLoc[0](all_bools#1#0: vector<vector<bool>>)
+	17: VecLen(28)
+	18: StLoc[5](n#1#0: u64)
+B1:
+	19: CopyLoc[2](i#1#0: u64)
+	20: CopyLoc[5](n#1#0: u64)
+	21: Lt
+	22: BrFalse(55)
+B2:
+	23: Branch(24)
+B3:
+	24: ImmBorrowLoc[0](all_bools#1#0: vector<vector<bool>>)
+	25: CopyLoc[2](i#1#0: u64)
+	26: VecImmBorrow(28)
+	27: StLoc[7](pushes#1#0: &vector<bool>)
+B4:
+	28: CopyLoc[3](j#1#0: u64)
+	29: CopyLoc[5](n#1#0: u64)
+	30: Lt
+	31: BrFalse(48)
+B5:
+	32: Branch(33)
+B6:
+	33: ImmBorrowLoc[0](all_bools#1#0: vector<vector<bool>>)
+	34: CopyLoc[3](j#1#0: u64)
+	35: VecImmBorrow(28)
+	36: StLoc[6](pops#1#0: &vector<bool>)
+	37: ImmBorrowLoc[4](keys#1#0: vector<vector<u8>>)
+	38: ImmBorrowLoc[9](values#1#0: vector<u64>)
+	39: CopyLoc[7](pushes#1#0: &vector<bool>)
+	40: MoveLoc[6](pops#1#0: &vector<bool>)
+	41: CopyLoc[1](ctx#1#0: &mut TxContext)
+	42: Call build_up_and_tear_down<vector<u8>, u64>(&vector<vector<u8>>, &vector<u64>, &vector<bool>, &vector<bool>, &mut TxContext)
+	43: MoveLoc[3](j#1#0: u64)
+	44: LdU64(1)
+	45: Add
+	46: StLoc[3](j#1#0: u64)
+	47: Branch(28)
+B7:
+	48: MoveLoc[7](pushes#1#0: &vector<bool>)
+	49: Pop
+	50: MoveLoc[2](i#1#0: u64)
+	51: LdU64(1)
+	52: Add
+	53: StLoc[2](i#1#0: u64)
+	54: Branch(19)
+B8:
+	55: MoveLoc[1](ctx#1#0: &mut TxContext)
+	56: Pop
+	57: MoveLoc[8](scenario#1#0: Scenario)
+	58: Call test_scenario::end(Scenario): TransactionEffects
+	59: Pop
+	60: Ret
+}
+
+build_up_and_tear_down<K: copy + drop + store, V: copy + drop + store>(keys#0#0: &vector<K>, values#0#0: &vector<V>, pushes#0#0: &vector<bool>, pops#0#0: &vector<bool>, ctx#0#0: &mut TxContext) {
+L5:	%#1: K
+L6:	%#2: K
+L7:	i#1#0: u64
+L8:	i#2#0: u64
+L9:	k#1#0: K
+L10:	n#1#0: u64
+L11:	order#1#0: vector<K>
+L12:	table#1#0: LinkedTable<K, V>
+L13:	v#1#0: V
+B0:
+	0: MoveLoc[4](ctx#0#0: &mut TxContext)
+	1: Call linked_table::new<K, V>(&mut TxContext): LinkedTable<K, V>
+	2: StLoc[12](table#1#0: LinkedTable<K, V>)
+	3: CopyLoc[0](keys#0#0: &vector<K>)
+	4: VecLen(30)
+	5: StLoc[10](n#1#0: u64)
+	6: CopyLoc[1](values#0#0: &vector<V>)
+	7: VecLen(19)
+	8: CopyLoc[10](n#1#0: u64)
+	9: Eq
+	10: BrFalse(12)
+B1:
+	11: Branch(22)
+B2:
+	12: MoveLoc[1](values#0#0: &vector<V>)
+	13: Pop
+	14: MoveLoc[2](pushes#0#0: &vector<bool>)
+	15: Pop
+	16: MoveLoc[3](pops#0#0: &vector<bool>)
+	17: Pop
+	18: MoveLoc[0](keys#0#0: &vector<K>)
+	19: Pop
+	20: LdU64(13906835398409060351)
+	21: Abort
+B3:
+	22: CopyLoc[2](pushes#0#0: &vector<bool>)
+	23: VecLen(12)
+	24: CopyLoc[10](n#1#0: u64)
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(38)
+B5:
+	28: MoveLoc[1](values#0#0: &vector<V>)
+	29: Pop
+	30: MoveLoc[2](pushes#0#0: &vector<bool>)
+	31: Pop
+	32: MoveLoc[3](pops#0#0: &vector<bool>)
+	33: Pop
+	34: MoveLoc[0](keys#0#0: &vector<K>)
+	35: Pop
+	36: LdU64(13906835402704027647)
+	37: Abort
+B6:
+	38: CopyLoc[3](pops#0#0: &vector<bool>)
+	39: VecLen(12)
+	40: CopyLoc[10](n#1#0: u64)
+	41: Eq
+	42: BrFalse(44)
+B7:
+	43: Branch(54)
+B8:
+	44: MoveLoc[1](values#0#0: &vector<V>)
+	45: Pop
+	46: MoveLoc[2](pushes#0#0: &vector<bool>)
+	47: Pop
+	48: MoveLoc[3](pops#0#0: &vector<bool>)
+	49: Pop
+	50: MoveLoc[0](keys#0#0: &vector<K>)
+	51: Pop
+	52: LdU64(13906835406998994943)
+	53: Abort
+B9:
+	54: LdU64(0)
+	55: StLoc[7](i#1#0: u64)
+	56: VecPack(30, 0)
+	57: StLoc[11](order#1#0: vector<K>)
+B10:
+	58: CopyLoc[7](i#1#0: u64)
+	59: CopyLoc[10](n#1#0: u64)
+	60: Lt
+	61: BrFalse(99)
+B11:
+	62: CopyLoc[0](keys#0#0: &vector<K>)
+	63: CopyLoc[7](i#1#0: u64)
+	64: VecImmBorrow(30)
+	65: ReadRef
+	66: StLoc[9](k#1#0: K)
+	67: CopyLoc[1](values#0#0: &vector<V>)
+	68: CopyLoc[7](i#1#0: u64)
+	69: VecImmBorrow(19)
+	70: ReadRef
+	71: StLoc[13](v#1#0: V)
+	72: CopyLoc[2](pushes#0#0: &vector<bool>)
+	73: CopyLoc[7](i#1#0: u64)
+	74: VecImmBorrow(12)
+	75: ReadRef
+	76: BrFalse(86)
+B12:
+	77: MutBorrowLoc[12](table#1#0: LinkedTable<K, V>)
+	78: CopyLoc[9](k#1#0: K)
+	79: MoveLoc[13](v#1#0: V)
+	80: Call linked_table::push_front<K, V>(&mut LinkedTable<K, V>, K, V)
+	81: MutBorrowLoc[11](order#1#0: vector<K>)
+	82: MoveLoc[9](k#1#0: K)
+	83: LdU64(0)
+	84: Call vector::insert<K>(&mut vector<K>, K, u64)
+	85: Branch(94)
+B13:
+	86: MutBorrowLoc[12](table#1#0: LinkedTable<K, V>)
+	87: CopyLoc[9](k#1#0: K)
+	88: MoveLoc[13](v#1#0: V)
+	89: Call linked_table::push_front<K, V>(&mut LinkedTable<K, V>, K, V)
+	90: MutBorrowLoc[11](order#1#0: vector<K>)
+	91: MoveLoc[9](k#1#0: K)
+	92: VecPushBack(30)
+	93: Branch(94)
+B14:
+	94: MoveLoc[7](i#1#0: u64)
+	95: LdU64(1)
+	96: Add
+	97: StLoc[7](i#1#0: u64)
+	98: Branch(58)
+B15:
+	99: MoveLoc[1](values#0#0: &vector<V>)
+	100: Pop
+	101: MoveLoc[2](pushes#0#0: &vector<bool>)
+	102: Pop
+	103: MoveLoc[0](keys#0#0: &vector<K>)
+	104: Pop
+	105: ImmBorrowLoc[12](table#1#0: LinkedTable<K, V>)
+	106: ImmBorrowLoc[11](order#1#0: vector<K>)
+	107: Call check_ordering<K, V>(&LinkedTable<K, V>, &vector<K>)
+	108: LdU64(0)
+	109: StLoc[8](i#2#0: u64)
+B16:
+	110: CopyLoc[8](i#2#0: u64)
+	111: CopyLoc[10](n#1#0: u64)
+	112: Lt
+	113: BrFalse(153)
+B17:
+	114: CopyLoc[3](pops#0#0: &vector<bool>)
+	115: CopyLoc[8](i#2#0: u64)
+	116: VecImmBorrow(12)
+	117: ReadRef
+	118: BrFalse(128)
+B18:
+	119: MutBorrowLoc[12](table#1#0: LinkedTable<K, V>)
+	120: Call linked_table::pop_front<K, V>(&mut LinkedTable<K, V>): K * V
+	121: Pop
+	122: MutBorrowLoc[11](order#1#0: vector<K>)
+	123: LdU64(0)
+	124: Call vector::remove<K>(&mut vector<K>, u64): K
+	125: StLoc[6](%#2: K)
+	126: StLoc[5](%#1: K)
+	127: Branch(136)
+B19:
+	128: MutBorrowLoc[12](table#1#0: LinkedTable<K, V>)
+	129: Call linked_table::pop_back<K, V>(&mut LinkedTable<K, V>): K * V
+	130: Pop
+	131: MutBorrowLoc[11](order#1#0: vector<K>)
+	132: VecPopBack(30)
+	133: StLoc[6](%#2: K)
+	134: StLoc[5](%#1: K)
+	135: Branch(136)
+B20:
+	136: MoveLoc[5](%#1: K)
+	137: MoveLoc[6](%#2: K)
+	138: Eq
+	139: BrFalse(141)
+B21:
+	140: Branch(145)
+B22:
+	141: MoveLoc[3](pops#0#0: &vector<bool>)
+	142: Pop
+	143: LdU64(13906835522963111935)
+	144: Abort
+B23:
+	145: ImmBorrowLoc[12](table#1#0: LinkedTable<K, V>)
+	146: ImmBorrowLoc[11](order#1#0: vector<K>)
+	147: Call check_ordering<K, V>(&LinkedTable<K, V>, &vector<K>)
+	148: MoveLoc[8](i#2#0: u64)
+	149: LdU64(1)
+	150: Add
+	151: StLoc[8](i#2#0: u64)
+	152: Branch(110)
+B24:
+	153: MoveLoc[3](pops#0#0: &vector<bool>)
+	154: Pop
+	155: MoveLoc[12](table#1#0: LinkedTable<K, V>)
+	156: Call linked_table::destroy_empty<K, V>(LinkedTable<K, V>)
+	157: Ret
+}
+
+check_ordering<K: copy + drop + store, V: store>(table#0#0: &LinkedTable<K, V>, keys#0#0: &vector<K>) {
+L2:	cur#1#0: K
+L3:	i#1#0: u64
+L4:	n#1#0: u64
+B0:
+	0: CopyLoc[0](table#0#0: &LinkedTable<K, V>)
+	1: Call linked_table::length<K, V>(&LinkedTable<K, V>): u64
+	2: StLoc[4](n#1#0: u64)
+	3: CopyLoc[4](n#1#0: u64)
+	4: CopyLoc[1](keys#0#0: &vector<K>)
+	5: VecLen(30)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(15)
+B2:
+	9: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	10: Pop
+	11: MoveLoc[1](keys#0#0: &vector<K>)
+	12: Pop
+	13: LdU64(13906835561617817599)
+	14: Abort
+B3:
+	15: CopyLoc[4](n#1#0: u64)
+	16: LdU64(0)
+	17: Eq
+	18: BrFalse(38)
+B4:
+	19: MoveLoc[1](keys#0#0: &vector<K>)
+	20: Pop
+	21: CopyLoc[0](table#0#0: &LinkedTable<K, V>)
+	22: Call linked_table::front<K, V>(&LinkedTable<K, V>): &Option<K>
+	23: Call option::is_none<K>(&Option<K>): bool
+	24: BrFalse(26)
+B5:
+	25: Branch(30)
+B6:
+	26: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	27: Pop
+	28: LdU64(13906835570207752191)
+	29: Abort
+B7:
+	30: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	31: Call linked_table::back<K, V>(&LinkedTable<K, V>): &Option<K>
+	32: Call option::is_none<K>(&Option<K>): bool
+	33: BrFalse(35)
+B8:
+	34: Branch(37)
+B9:
+	35: LdU64(13906835574502719487)
+	36: Abort
+B10:
+	37: Ret
+B11:
+	38: LdU64(0)
+	39: StLoc[3](i#1#0: u64)
+B12:
+	40: CopyLoc[3](i#1#0: u64)
+	41: CopyLoc[4](n#1#0: u64)
+	42: Lt
+	43: BrFalse(150)
+B13:
+	44: CopyLoc[1](keys#0#0: &vector<K>)
+	45: CopyLoc[3](i#1#0: u64)
+	46: VecImmBorrow(30)
+	47: ReadRef
+	48: StLoc[2](cur#1#0: K)
+	49: CopyLoc[3](i#1#0: u64)
+	50: LdU64(0)
+	51: Eq
+	52: BrFalse(78)
+B14:
+	53: CopyLoc[0](table#0#0: &LinkedTable<K, V>)
+	54: Call linked_table::front<K, V>(&LinkedTable<K, V>): &Option<K>
+	55: Call option::borrow<K>(&Option<K>): &K
+	56: ImmBorrowLoc[2](cur#1#0: K)
+	57: Eq
+	58: BrFalse(60)
+B15:
+	59: Branch(66)
+B16:
+	60: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	61: Pop
+	62: MoveLoc[1](keys#0#0: &vector<K>)
+	63: Pop
+	64: LdU64(13906835608862457855)
+	65: Abort
+B17:
+	66: CopyLoc[0](table#0#0: &LinkedTable<K, V>)
+	67: CopyLoc[2](cur#1#0: K)
+	68: Call linked_table::prev<K, V>(&LinkedTable<K, V>, K): &Option<K>
+	69: Call option::is_none<K>(&Option<K>): bool
+	70: BrFalse(72)
+B18:
+	71: Branch(96)
+B19:
+	72: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	73: Pop
+	74: MoveLoc[1](keys#0#0: &vector<K>)
+	75: Pop
+	76: LdU64(13906835613157425151)
+	77: Abort
+B20:
+	78: CopyLoc[0](table#0#0: &LinkedTable<K, V>)
+	79: CopyLoc[2](cur#1#0: K)
+	80: Call linked_table::prev<K, V>(&LinkedTable<K, V>, K): &Option<K>
+	81: Call option::borrow<K>(&Option<K>): &K
+	82: CopyLoc[1](keys#0#0: &vector<K>)
+	83: CopyLoc[3](i#1#0: u64)
+	84: LdU64(1)
+	85: Sub
+	86: VecImmBorrow(30)
+	87: Eq
+	88: BrFalse(90)
+B21:
+	89: Branch(96)
+B22:
+	90: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	91: Pop
+	92: MoveLoc[1](keys#0#0: &vector<K>)
+	93: Pop
+	94: LdU64(13906835621747359743)
+	95: Abort
+B23:
+	96: CopyLoc[3](i#1#0: u64)
+	97: LdU64(1)
+	98: Add
+	99: CopyLoc[4](n#1#0: u64)
+	100: Eq
+	101: BrFalse(127)
+B24:
+	102: CopyLoc[0](table#0#0: &LinkedTable<K, V>)
+	103: Call linked_table::back<K, V>(&LinkedTable<K, V>): &Option<K>
+	104: Call option::borrow<K>(&Option<K>): &K
+	105: ImmBorrowLoc[2](cur#1#0: K)
+	106: Eq
+	107: BrFalse(109)
+B25:
+	108: Branch(115)
+B26:
+	109: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	110: Pop
+	111: MoveLoc[1](keys#0#0: &vector<K>)
+	112: Pop
+	113: LdU64(13906835634632261631)
+	114: Abort
+B27:
+	115: CopyLoc[0](table#0#0: &LinkedTable<K, V>)
+	116: MoveLoc[2](cur#1#0: K)
+	117: Call linked_table::next<K, V>(&LinkedTable<K, V>, K): &Option<K>
+	118: Call option::is_none<K>(&Option<K>): bool
+	119: BrFalse(121)
+B28:
+	120: Branch(145)
+B29:
+	121: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	122: Pop
+	123: MoveLoc[1](keys#0#0: &vector<K>)
+	124: Pop
+	125: LdU64(13906835638927228927)
+	126: Abort
+B30:
+	127: CopyLoc[0](table#0#0: &LinkedTable<K, V>)
+	128: MoveLoc[2](cur#1#0: K)
+	129: Call linked_table::next<K, V>(&LinkedTable<K, V>, K): &Option<K>
+	130: Call option::borrow<K>(&Option<K>): &K
+	131: CopyLoc[1](keys#0#0: &vector<K>)
+	132: CopyLoc[3](i#1#0: u64)
+	133: LdU64(1)
+	134: Add
+	135: VecImmBorrow(30)
+	136: Eq
+	137: BrFalse(139)
+B31:
+	138: Branch(145)
+B32:
+	139: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	140: Pop
+	141: MoveLoc[1](keys#0#0: &vector<K>)
+	142: Pop
+	143: LdU64(13906835647517163519)
+	144: Abort
+B33:
+	145: MoveLoc[3](i#1#0: u64)
+	146: LdU64(1)
+	147: Add
+	148: StLoc[3](i#1#0: u64)
+	149: Branch(40)
+B34:
+	150: MoveLoc[0](table#0#0: &LinkedTable<K, V>)
+	151: Pop
+	152: MoveLoc[1](keys#0#0: &vector<K>)
+	153: Pop
+	154: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	1 => vector<vector<u8>>: 00
+	2 => vector<u8>: "hello" // interpreted as UTF8 string
+	3 => vector<vector<u8>>: 010568656c6c6f
+	4 => vector<u8>: "goodbye" // interpreted as UTF8 string
+	5 => vector<vector<u8>>: 020568656c6c6f07676f6f64627965
+	6 => vector<u8>: "!!!" // interpreted as UTF8 string
+	7 => vector<vector<u8>>: 03032121210568656c6c6f07676f6f64627965
+	8 => vector<u8>: "?" // interpreted as UTF8 string
+	9 => vector<vector<u8>>: 04032121210568656c6c6f07676f6f64627965013f
+	10 => vector<vector<u8>>: 030568656c6c6f07676f6f64627965013f
+	11 => vector<vector<u8>>: 020568656c6c6f013f
+	12 => vector<vector<u8>>: 03016101620163
+	13 => vector<u64>: 03030000000000000002000000000000000100000000000000
+	14 => vector<vector<bool>>: 06030101010301000103010100030100000300000103000000
+]
+}

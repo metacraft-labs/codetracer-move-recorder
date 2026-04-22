@@ -1,0 +1,1123 @@
+// Move bytecode v6
+module 2.authenticator_state {
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::u64;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct AuthenticatorState has key {
+	id: UID,
+	version: u64
+}
+
+struct AuthenticatorStateInner has store {
+	version: u64,
+	active_jwks: vector<ActiveJwk>
+}
+
+struct JWK has copy, drop, store {
+	kty: String,
+	e: String,
+	n: String,
+	alg: String
+}
+
+struct JwkId has copy, drop, store {
+	iss: String,
+	kid: String
+}
+
+struct ActiveJwk has copy, drop, store {
+	jwk_id: JwkId,
+	jwk: JWK,
+	epoch: u64
+}
+
+public create_active_jwk(iss#0#0: String, kid#0#0: String, kty#0#0: String, epoch#0#0: u64): ActiveJwk {
+B0:
+	0: MoveLoc[0](iss#0#0: String)
+	1: MoveLoc[1](kid#0#0: String)
+	2: Pack[3](JwkId)
+	3: MoveLoc[2](kty#0#0: String)
+	4: LdConst[3](vector<u8>: "AQA..)
+	5: Call string::utf8(vector<u8>): String
+	6: LdConst[4](vector<u8>: "tes..)
+	7: Call string::utf8(vector<u8>): String
+	8: LdConst[5](vector<u8>: "RS2..)
+	9: Call string::utf8(vector<u8>): String
+	10: Pack[2](JWK)
+	11: MoveLoc[3](epoch#0#0: u64)
+	12: Pack[4](ActiveJwk)
+	13: Ret
+}
+
+active_jwk_equal(a#0#0: &ActiveJwk, b#0#0: &ActiveJwk): bool {
+L2:	%#1: bool
+B0:
+	0: CopyLoc[0](a#0#0: &ActiveJwk)
+	1: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	2: CopyLoc[1](b#0#0: &ActiveJwk)
+	3: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	4: Call jwk_equal(&JWK, &JWK): bool
+	5: BrFalse(13)
+B1:
+	6: MoveLoc[0](a#0#0: &ActiveJwk)
+	7: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	8: MoveLoc[1](b#0#0: &ActiveJwk)
+	9: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	10: Call jwk_id_equal(&JwkId, &JwkId): bool
+	11: StLoc[2](%#1: bool)
+	12: Branch(19)
+B2:
+	13: MoveLoc[1](b#0#0: &ActiveJwk)
+	14: Pop
+	15: MoveLoc[0](a#0#0: &ActiveJwk)
+	16: Pop
+	17: LdFalse
+	18: StLoc[2](%#1: bool)
+B3:
+	19: MoveLoc[2](%#1: bool)
+	20: Ret
+}
+
+jwk_equal(a#0#0: &JWK, b#0#0: &JWK): bool {
+L2:	%#1: bool
+B0:
+	0: CopyLoc[0](a#0#0: &JWK)
+	1: ImmBorrowField[2](JWK.kty: String)
+	2: CopyLoc[1](b#0#0: &JWK)
+	3: ImmBorrowField[2](JWK.kty: String)
+	4: Eq
+	5: BrFalse(39)
+B1:
+	6: CopyLoc[0](a#0#0: &JWK)
+	7: ImmBorrowField[3](JWK.e: String)
+	8: CopyLoc[1](b#0#0: &JWK)
+	9: ImmBorrowField[3](JWK.e: String)
+	10: Eq
+	11: BrFalse(32)
+B2:
+	12: CopyLoc[0](a#0#0: &JWK)
+	13: ImmBorrowField[4](JWK.n: String)
+	14: CopyLoc[1](b#0#0: &JWK)
+	15: ImmBorrowField[4](JWK.n: String)
+	16: Eq
+	17: BrFalse(25)
+B3:
+	18: MoveLoc[0](a#0#0: &JWK)
+	19: ImmBorrowField[5](JWK.alg: String)
+	20: MoveLoc[1](b#0#0: &JWK)
+	21: ImmBorrowField[5](JWK.alg: String)
+	22: Eq
+	23: StLoc[2](%#1: bool)
+	24: Branch(45)
+B4:
+	25: MoveLoc[1](b#0#0: &JWK)
+	26: Pop
+	27: MoveLoc[0](a#0#0: &JWK)
+	28: Pop
+	29: LdFalse
+	30: StLoc[2](%#1: bool)
+	31: Branch(45)
+B5:
+	32: MoveLoc[1](b#0#0: &JWK)
+	33: Pop
+	34: MoveLoc[0](a#0#0: &JWK)
+	35: Pop
+	36: LdFalse
+	37: StLoc[2](%#1: bool)
+	38: Branch(45)
+B6:
+	39: MoveLoc[1](b#0#0: &JWK)
+	40: Pop
+	41: MoveLoc[0](a#0#0: &JWK)
+	42: Pop
+	43: LdFalse
+	44: StLoc[2](%#1: bool)
+B7:
+	45: MoveLoc[2](%#1: bool)
+	46: Ret
+}
+
+jwk_id_equal(a#0#0: &JwkId, b#0#0: &JwkId): bool {
+L2:	%#1: bool
+B0:
+	0: CopyLoc[0](a#0#0: &JwkId)
+	1: ImmBorrowField[6](JwkId.iss: String)
+	2: CopyLoc[1](b#0#0: &JwkId)
+	3: ImmBorrowField[6](JwkId.iss: String)
+	4: Eq
+	5: BrFalse(13)
+B1:
+	6: MoveLoc[0](a#0#0: &JwkId)
+	7: ImmBorrowField[7](JwkId.kid: String)
+	8: MoveLoc[1](b#0#0: &JwkId)
+	9: ImmBorrowField[7](JwkId.kid: String)
+	10: Eq
+	11: StLoc[2](%#1: bool)
+	12: Branch(19)
+B2:
+	13: MoveLoc[1](b#0#0: &JwkId)
+	14: Pop
+	15: MoveLoc[0](a#0#0: &JwkId)
+	16: Pop
+	17: LdFalse
+	18: StLoc[2](%#1: bool)
+B3:
+	19: MoveLoc[2](%#1: bool)
+	20: Ret
+}
+
+string_bytes_lt(a#0#0: &String, b#0#0: &String): bool {
+L2:	%#1: bool
+L3:	%#2: bool
+L4:	a_byte#1#0: u8
+L5:	a_bytes#1#0: &vector<u8>
+L6:	b_byte#1#0: u8
+L7:	b_bytes#1#0: &vector<u8>
+L8:	i#1#0: u64
+B0:
+	0: MoveLoc[0](a#0#0: &String)
+	1: Call string::as_bytes(&String): &vector<u8>
+	2: StLoc[5](a_bytes#1#0: &vector<u8>)
+	3: MoveLoc[1](b#0#0: &String)
+	4: Call string::as_bytes(&String): &vector<u8>
+	5: StLoc[7](b_bytes#1#0: &vector<u8>)
+	6: CopyLoc[5](a_bytes#1#0: &vector<u8>)
+	7: VecLen(23)
+	8: CopyLoc[7](b_bytes#1#0: &vector<u8>)
+	9: VecLen(23)
+	10: Lt
+	11: BrFalse(19)
+B1:
+	12: MoveLoc[7](b_bytes#1#0: &vector<u8>)
+	13: Pop
+	14: MoveLoc[5](a_bytes#1#0: &vector<u8>)
+	15: Pop
+	16: LdTrue
+	17: StLoc[3](%#2: bool)
+	18: Branch(83)
+B2:
+	19: CopyLoc[5](a_bytes#1#0: &vector<u8>)
+	20: VecLen(23)
+	21: CopyLoc[7](b_bytes#1#0: &vector<u8>)
+	22: VecLen(23)
+	23: Gt
+	24: BrFalse(32)
+B3:
+	25: MoveLoc[7](b_bytes#1#0: &vector<u8>)
+	26: Pop
+	27: MoveLoc[5](a_bytes#1#0: &vector<u8>)
+	28: Pop
+	29: LdFalse
+	30: StLoc[2](%#1: bool)
+	31: Branch(81)
+B4:
+	32: LdU64(0)
+	33: StLoc[8](i#1#0: u64)
+B5:
+	34: CopyLoc[8](i#1#0: u64)
+	35: CopyLoc[5](a_bytes#1#0: &vector<u8>)
+	36: VecLen(23)
+	37: Lt
+	38: BrFalse(75)
+B6:
+	39: Branch(40)
+B7:
+	40: CopyLoc[5](a_bytes#1#0: &vector<u8>)
+	41: CopyLoc[8](i#1#0: u64)
+	42: VecImmBorrow(23)
+	43: ReadRef
+	44: StLoc[4](a_byte#1#0: u8)
+	45: CopyLoc[7](b_bytes#1#0: &vector<u8>)
+	46: CopyLoc[8](i#1#0: u64)
+	47: VecImmBorrow(23)
+	48: ReadRef
+	49: StLoc[6](b_byte#1#0: u8)
+	50: CopyLoc[4](a_byte#1#0: u8)
+	51: CopyLoc[6](b_byte#1#0: u8)
+	52: Lt
+	53: BrFalse(60)
+B8:
+	54: MoveLoc[7](b_bytes#1#0: &vector<u8>)
+	55: Pop
+	56: MoveLoc[5](a_bytes#1#0: &vector<u8>)
+	57: Pop
+	58: LdTrue
+	59: Ret
+B9:
+	60: MoveLoc[4](a_byte#1#0: u8)
+	61: MoveLoc[6](b_byte#1#0: u8)
+	62: Gt
+	63: BrFalse(70)
+B10:
+	64: MoveLoc[7](b_bytes#1#0: &vector<u8>)
+	65: Pop
+	66: MoveLoc[5](a_bytes#1#0: &vector<u8>)
+	67: Pop
+	68: LdFalse
+	69: Ret
+B11:
+	70: MoveLoc[8](i#1#0: u64)
+	71: LdU64(1)
+	72: Add
+	73: StLoc[8](i#1#0: u64)
+	74: Branch(34)
+B12:
+	75: MoveLoc[7](b_bytes#1#0: &vector<u8>)
+	76: Pop
+	77: MoveLoc[5](a_bytes#1#0: &vector<u8>)
+	78: Pop
+	79: LdFalse
+	80: StLoc[2](%#1: bool)
+B13:
+	81: MoveLoc[2](%#1: bool)
+	82: StLoc[3](%#2: bool)
+B14:
+	83: MoveLoc[3](%#2: bool)
+	84: Ret
+}
+
+jwk_lt(a#0#0: &ActiveJwk, b#0#0: &ActiveJwk): bool {
+B0:
+	0: CopyLoc[0](a#0#0: &ActiveJwk)
+	1: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	2: ImmBorrowField[6](JwkId.iss: String)
+	3: CopyLoc[1](b#0#0: &ActiveJwk)
+	4: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	5: ImmBorrowField[6](JwkId.iss: String)
+	6: Neq
+	7: BrFalse(16)
+B1:
+	8: MoveLoc[0](a#0#0: &ActiveJwk)
+	9: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	10: ImmBorrowField[6](JwkId.iss: String)
+	11: MoveLoc[1](b#0#0: &ActiveJwk)
+	12: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	13: ImmBorrowField[6](JwkId.iss: String)
+	14: Call string_bytes_lt(&String, &String): bool
+	15: Ret
+B2:
+	16: CopyLoc[0](a#0#0: &ActiveJwk)
+	17: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	18: ImmBorrowField[7](JwkId.kid: String)
+	19: CopyLoc[1](b#0#0: &ActiveJwk)
+	20: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	21: ImmBorrowField[7](JwkId.kid: String)
+	22: Neq
+	23: BrFalse(32)
+B3:
+	24: MoveLoc[0](a#0#0: &ActiveJwk)
+	25: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	26: ImmBorrowField[7](JwkId.kid: String)
+	27: MoveLoc[1](b#0#0: &ActiveJwk)
+	28: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	29: ImmBorrowField[7](JwkId.kid: String)
+	30: Call string_bytes_lt(&String, &String): bool
+	31: Ret
+B4:
+	32: CopyLoc[0](a#0#0: &ActiveJwk)
+	33: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	34: ImmBorrowField[2](JWK.kty: String)
+	35: CopyLoc[1](b#0#0: &ActiveJwk)
+	36: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	37: ImmBorrowField[2](JWK.kty: String)
+	38: Neq
+	39: BrFalse(48)
+B5:
+	40: MoveLoc[0](a#0#0: &ActiveJwk)
+	41: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	42: ImmBorrowField[2](JWK.kty: String)
+	43: MoveLoc[1](b#0#0: &ActiveJwk)
+	44: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	45: ImmBorrowField[2](JWK.kty: String)
+	46: Call string_bytes_lt(&String, &String): bool
+	47: Ret
+B6:
+	48: CopyLoc[0](a#0#0: &ActiveJwk)
+	49: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	50: ImmBorrowField[3](JWK.e: String)
+	51: CopyLoc[1](b#0#0: &ActiveJwk)
+	52: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	53: ImmBorrowField[3](JWK.e: String)
+	54: Neq
+	55: BrFalse(64)
+B7:
+	56: MoveLoc[0](a#0#0: &ActiveJwk)
+	57: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	58: ImmBorrowField[3](JWK.e: String)
+	59: MoveLoc[1](b#0#0: &ActiveJwk)
+	60: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	61: ImmBorrowField[3](JWK.e: String)
+	62: Call string_bytes_lt(&String, &String): bool
+	63: Ret
+B8:
+	64: CopyLoc[0](a#0#0: &ActiveJwk)
+	65: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	66: ImmBorrowField[4](JWK.n: String)
+	67: CopyLoc[1](b#0#0: &ActiveJwk)
+	68: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	69: ImmBorrowField[4](JWK.n: String)
+	70: Neq
+	71: BrFalse(80)
+B9:
+	72: MoveLoc[0](a#0#0: &ActiveJwk)
+	73: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	74: ImmBorrowField[4](JWK.n: String)
+	75: MoveLoc[1](b#0#0: &ActiveJwk)
+	76: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	77: ImmBorrowField[4](JWK.n: String)
+	78: Call string_bytes_lt(&String, &String): bool
+	79: Ret
+B10:
+	80: MoveLoc[0](a#0#0: &ActiveJwk)
+	81: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	82: ImmBorrowField[5](JWK.alg: String)
+	83: MoveLoc[1](b#0#0: &ActiveJwk)
+	84: ImmBorrowField[0](ActiveJwk.jwk: JWK)
+	85: ImmBorrowField[5](JWK.alg: String)
+	86: Call string_bytes_lt(&String, &String): bool
+	87: Ret
+}
+
+create(ctx#0#0: &TxContext) {
+L1:	inner#1#0: AuthenticatorStateInner
+L2:	self#1#0: AuthenticatorState
+L3:	version#1#0: u64
+B0:
+	0: MoveLoc[0](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[6](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdConst[0](u64: 0)
+	7: Abort
+B3:
+	8: LdConst[1](u64: 1)
+	9: StLoc[3](version#1#0: u64)
+	10: CopyLoc[3](version#1#0: u64)
+	11: VecPack(1, 0)
+	12: Pack[1](AuthenticatorStateInner)
+	13: StLoc[1](inner#1#0: AuthenticatorStateInner)
+	14: Call object::authenticator_state(): UID
+	15: CopyLoc[3](version#1#0: u64)
+	16: Pack[0](AuthenticatorState)
+	17: StLoc[2](self#1#0: AuthenticatorState)
+	18: MutBorrowLoc[2](self#1#0: AuthenticatorState)
+	19: MutBorrowField[8](AuthenticatorState.id: UID)
+	20: MoveLoc[3](version#1#0: u64)
+	21: MoveLoc[1](inner#1#0: AuthenticatorStateInner)
+	22: Call dynamic_field::add<u64, AuthenticatorStateInner>(&mut UID, u64, AuthenticatorStateInner)
+	23: MoveLoc[2](self#1#0: AuthenticatorState)
+	24: Call transfer::share_object<AuthenticatorState>(AuthenticatorState)
+	25: Ret
+}
+
+load_inner_mut(self#0#0: &mut AuthenticatorState): &mut AuthenticatorStateInner {
+L1:	inner#1#0: &mut AuthenticatorStateInner
+L2:	version#1#0: u64
+B0:
+	0: CopyLoc[0](self#0#0: &mut AuthenticatorState)
+	1: ImmBorrowField[9](AuthenticatorState.version: u64)
+	2: ReadRef
+	3: StLoc[2](version#1#0: u64)
+	4: CopyLoc[2](version#1#0: u64)
+	5: LdConst[1](u64: 1)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](self#0#0: &mut AuthenticatorState)
+	10: Pop
+	11: LdConst[1](u64: 1)
+	12: Abort
+B3:
+	13: CopyLoc[0](self#0#0: &mut AuthenticatorState)
+	14: MutBorrowField[8](AuthenticatorState.id: UID)
+	15: MoveLoc[0](self#0#0: &mut AuthenticatorState)
+	16: ImmBorrowField[9](AuthenticatorState.version: u64)
+	17: ReadRef
+	18: Call dynamic_field::borrow_mut<u64, AuthenticatorStateInner>(&mut UID, u64): &mut AuthenticatorStateInner
+	19: StLoc[1](inner#1#0: &mut AuthenticatorStateInner)
+	20: CopyLoc[1](inner#1#0: &mut AuthenticatorStateInner)
+	21: ImmBorrowField[10](AuthenticatorStateInner.version: u64)
+	22: ReadRef
+	23: MoveLoc[2](version#1#0: u64)
+	24: Eq
+	25: BrFalse(27)
+B4:
+	26: Branch(31)
+B5:
+	27: MoveLoc[1](inner#1#0: &mut AuthenticatorStateInner)
+	28: Pop
+	29: LdConst[1](u64: 1)
+	30: Abort
+B6:
+	31: MoveLoc[1](inner#1#0: &mut AuthenticatorStateInner)
+	32: Ret
+}
+
+load_inner(self#0#0: &AuthenticatorState): &AuthenticatorStateInner {
+L1:	inner#1#0: &AuthenticatorStateInner
+L2:	version#1#0: u64
+B0:
+	0: CopyLoc[0](self#0#0: &AuthenticatorState)
+	1: ImmBorrowField[9](AuthenticatorState.version: u64)
+	2: ReadRef
+	3: StLoc[2](version#1#0: u64)
+	4: CopyLoc[2](version#1#0: u64)
+	5: LdConst[1](u64: 1)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](self#0#0: &AuthenticatorState)
+	10: Pop
+	11: LdConst[1](u64: 1)
+	12: Abort
+B3:
+	13: CopyLoc[0](self#0#0: &AuthenticatorState)
+	14: ImmBorrowField[8](AuthenticatorState.id: UID)
+	15: MoveLoc[0](self#0#0: &AuthenticatorState)
+	16: ImmBorrowField[9](AuthenticatorState.version: u64)
+	17: ReadRef
+	18: Call dynamic_field::borrow<u64, AuthenticatorStateInner>(&UID, u64): &AuthenticatorStateInner
+	19: StLoc[1](inner#1#0: &AuthenticatorStateInner)
+	20: CopyLoc[1](inner#1#0: &AuthenticatorStateInner)
+	21: ImmBorrowField[10](AuthenticatorStateInner.version: u64)
+	22: ReadRef
+	23: MoveLoc[2](version#1#0: u64)
+	24: Eq
+	25: BrFalse(27)
+B4:
+	26: Branch(31)
+B5:
+	27: MoveLoc[1](inner#1#0: &AuthenticatorStateInner)
+	28: Pop
+	29: LdConst[1](u64: 1)
+	30: Abort
+B6:
+	31: MoveLoc[1](inner#1#0: &AuthenticatorStateInner)
+	32: Ret
+}
+
+check_sorted(new_active_jwks#0#0: &vector<ActiveJwk>) {
+L1:	a#1#0: &ActiveJwk
+L2:	b#1#0: &ActiveJwk
+L3:	i#1#0: u64
+B0:
+	0: LdU64(0)
+	1: StLoc[3](i#1#0: u64)
+B1:
+	2: CopyLoc[3](i#1#0: u64)
+	3: CopyLoc[0](new_active_jwks#0#0: &vector<ActiveJwk>)
+	4: VecLen(1)
+	5: LdU64(1)
+	6: Sub
+	7: Lt
+	8: BrFalse(34)
+B2:
+	9: Branch(10)
+B3:
+	10: CopyLoc[0](new_active_jwks#0#0: &vector<ActiveJwk>)
+	11: CopyLoc[3](i#1#0: u64)
+	12: VecImmBorrow(1)
+	13: StLoc[1](a#1#0: &ActiveJwk)
+	14: CopyLoc[0](new_active_jwks#0#0: &vector<ActiveJwk>)
+	15: CopyLoc[3](i#1#0: u64)
+	16: LdU64(1)
+	17: Add
+	18: VecImmBorrow(1)
+	19: StLoc[2](b#1#0: &ActiveJwk)
+	20: MoveLoc[1](a#1#0: &ActiveJwk)
+	21: MoveLoc[2](b#1#0: &ActiveJwk)
+	22: Call jwk_lt(&ActiveJwk, &ActiveJwk): bool
+	23: BrFalse(25)
+B4:
+	24: Branch(29)
+B5:
+	25: MoveLoc[0](new_active_jwks#0#0: &vector<ActiveJwk>)
+	26: Pop
+	27: LdConst[2](u64: 2)
+	28: Abort
+B6:
+	29: MoveLoc[3](i#1#0: u64)
+	30: LdU64(1)
+	31: Add
+	32: StLoc[3](i#1#0: u64)
+	33: Branch(2)
+B7:
+	34: MoveLoc[0](new_active_jwks#0#0: &vector<ActiveJwk>)
+	35: Pop
+	36: Ret
+}
+
+update_authenticator_state(self#0#0: &mut AuthenticatorState, new_active_jwks#0#0: vector<ActiveJwk>, ctx#0#0: &TxContext) {
+L3:	%#1: bool
+L4:	active_jwks_len#1#0: u64
+L5:	i#1#0: u64
+L6:	inner#1#0: &mut AuthenticatorStateInner
+L7:	j#1#0: u64
+L8:	jwk#1#0: ActiveJwk
+L9:	new_active_jwks#1#0: vector<ActiveJwk>
+L10:	new_active_jwks_len#1#0: u64
+L11:	new_jwk#1#0: &ActiveJwk
+L12:	old_jwk#1#0: &ActiveJwk
+L13:	res#1#0: vector<ActiveJwk>
+B0:
+	0: MoveLoc[2](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[6](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](self#0#0: &mut AuthenticatorState)
+	7: Pop
+	8: LdConst[0](u64: 0)
+	9: Abort
+B3:
+	10: ImmBorrowLoc[1](new_active_jwks#0#0: vector<ActiveJwk>)
+	11: Call check_sorted(&vector<ActiveJwk>)
+	12: MoveLoc[1](new_active_jwks#0#0: vector<ActiveJwk>)
+	13: Call deduplicate(vector<ActiveJwk>): vector<ActiveJwk>
+	14: StLoc[9](new_active_jwks#1#0: vector<ActiveJwk>)
+	15: MoveLoc[0](self#0#0: &mut AuthenticatorState)
+	16: Call load_inner_mut(&mut AuthenticatorState): &mut AuthenticatorStateInner
+	17: StLoc[6](inner#1#0: &mut AuthenticatorStateInner)
+	18: VecPack(1, 0)
+	19: StLoc[13](res#1#0: vector<ActiveJwk>)
+	20: LdU64(0)
+	21: StLoc[5](i#1#0: u64)
+	22: LdU64(0)
+	23: StLoc[7](j#1#0: u64)
+	24: CopyLoc[6](inner#1#0: &mut AuthenticatorStateInner)
+	25: ImmBorrowField[11](AuthenticatorStateInner.active_jwks: vector<ActiveJwk>)
+	26: VecLen(1)
+	27: StLoc[4](active_jwks_len#1#0: u64)
+	28: ImmBorrowLoc[9](new_active_jwks#1#0: vector<ActiveJwk>)
+	29: VecLen(1)
+	30: StLoc[10](new_active_jwks_len#1#0: u64)
+B4:
+	31: CopyLoc[5](i#1#0: u64)
+	32: CopyLoc[4](active_jwks_len#1#0: u64)
+	33: Lt
+	34: BrFalse(40)
+B5:
+	35: CopyLoc[7](j#1#0: u64)
+	36: CopyLoc[10](new_active_jwks_len#1#0: u64)
+	37: Lt
+	38: StLoc[3](%#1: bool)
+	39: Branch(42)
+B6:
+	40: LdFalse
+	41: StLoc[3](%#1: bool)
+B7:
+	42: MoveLoc[3](%#1: bool)
+	43: BrFalse(129)
+B8:
+	44: CopyLoc[6](inner#1#0: &mut AuthenticatorStateInner)
+	45: ImmBorrowField[11](AuthenticatorStateInner.active_jwks: vector<ActiveJwk>)
+	46: CopyLoc[5](i#1#0: u64)
+	47: VecImmBorrow(1)
+	48: StLoc[12](old_jwk#1#0: &ActiveJwk)
+	49: ImmBorrowLoc[9](new_active_jwks#1#0: vector<ActiveJwk>)
+	50: CopyLoc[7](j#1#0: u64)
+	51: VecImmBorrow(1)
+	52: StLoc[11](new_jwk#1#0: &ActiveJwk)
+	53: CopyLoc[12](old_jwk#1#0: &ActiveJwk)
+	54: CopyLoc[11](new_jwk#1#0: &ActiveJwk)
+	55: Call active_jwk_equal(&ActiveJwk, &ActiveJwk): bool
+	56: BrFalse(82)
+B9:
+	57: CopyLoc[12](old_jwk#1#0: &ActiveJwk)
+	58: ReadRef
+	59: StLoc[8](jwk#1#0: ActiveJwk)
+	60: MoveLoc[12](old_jwk#1#0: &ActiveJwk)
+	61: ImmBorrowField[12](ActiveJwk.epoch: u64)
+	62: ReadRef
+	63: MoveLoc[11](new_jwk#1#0: &ActiveJwk)
+	64: ImmBorrowField[12](ActiveJwk.epoch: u64)
+	65: ReadRef
+	66: Call u64::max(u64, u64): u64
+	67: MutBorrowLoc[8](jwk#1#0: ActiveJwk)
+	68: MutBorrowField[12](ActiveJwk.epoch: u64)
+	69: WriteRef
+	70: MutBorrowLoc[13](res#1#0: vector<ActiveJwk>)
+	71: MoveLoc[8](jwk#1#0: ActiveJwk)
+	72: VecPushBack(1)
+	73: MoveLoc[5](i#1#0: u64)
+	74: LdU64(1)
+	75: Add
+	76: StLoc[5](i#1#0: u64)
+	77: MoveLoc[7](j#1#0: u64)
+	78: LdU64(1)
+	79: Add
+	80: StLoc[7](j#1#0: u64)
+	81: Branch(31)
+B10:
+	82: CopyLoc[12](old_jwk#1#0: &ActiveJwk)
+	83: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	84: CopyLoc[11](new_jwk#1#0: &ActiveJwk)
+	85: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	86: Call jwk_id_equal(&JwkId, &JwkId): bool
+	87: BrFalse(103)
+B11:
+	88: MoveLoc[11](new_jwk#1#0: &ActiveJwk)
+	89: Pop
+	90: MutBorrowLoc[13](res#1#0: vector<ActiveJwk>)
+	91: MoveLoc[12](old_jwk#1#0: &ActiveJwk)
+	92: ReadRef
+	93: VecPushBack(1)
+	94: MoveLoc[5](i#1#0: u64)
+	95: LdU64(1)
+	96: Add
+	97: StLoc[5](i#1#0: u64)
+	98: MoveLoc[7](j#1#0: u64)
+	99: LdU64(1)
+	100: Add
+	101: StLoc[7](j#1#0: u64)
+	102: Branch(31)
+B12:
+	103: CopyLoc[12](old_jwk#1#0: &ActiveJwk)
+	104: CopyLoc[11](new_jwk#1#0: &ActiveJwk)
+	105: Call jwk_lt(&ActiveJwk, &ActiveJwk): bool
+	106: BrFalse(118)
+B13:
+	107: MoveLoc[11](new_jwk#1#0: &ActiveJwk)
+	108: Pop
+	109: MutBorrowLoc[13](res#1#0: vector<ActiveJwk>)
+	110: MoveLoc[12](old_jwk#1#0: &ActiveJwk)
+	111: ReadRef
+	112: VecPushBack(1)
+	113: MoveLoc[5](i#1#0: u64)
+	114: LdU64(1)
+	115: Add
+	116: StLoc[5](i#1#0: u64)
+	117: Branch(31)
+B14:
+	118: MoveLoc[12](old_jwk#1#0: &ActiveJwk)
+	119: Pop
+	120: MutBorrowLoc[13](res#1#0: vector<ActiveJwk>)
+	121: MoveLoc[11](new_jwk#1#0: &ActiveJwk)
+	122: ReadRef
+	123: VecPushBack(1)
+	124: MoveLoc[7](j#1#0: u64)
+	125: LdU64(1)
+	126: Add
+	127: StLoc[7](j#1#0: u64)
+	128: Branch(31)
+B15:
+	129: CopyLoc[5](i#1#0: u64)
+	130: CopyLoc[4](active_jwks_len#1#0: u64)
+	131: Lt
+	132: BrFalse(145)
+B16:
+	133: MutBorrowLoc[13](res#1#0: vector<ActiveJwk>)
+	134: CopyLoc[6](inner#1#0: &mut AuthenticatorStateInner)
+	135: ImmBorrowField[11](AuthenticatorStateInner.active_jwks: vector<ActiveJwk>)
+	136: CopyLoc[5](i#1#0: u64)
+	137: VecImmBorrow(1)
+	138: ReadRef
+	139: VecPushBack(1)
+	140: MoveLoc[5](i#1#0: u64)
+	141: LdU64(1)
+	142: Add
+	143: StLoc[5](i#1#0: u64)
+	144: Branch(129)
+B17:
+	145: CopyLoc[7](j#1#0: u64)
+	146: CopyLoc[10](new_active_jwks_len#1#0: u64)
+	147: Lt
+	148: BrFalse(160)
+B18:
+	149: MutBorrowLoc[13](res#1#0: vector<ActiveJwk>)
+	150: ImmBorrowLoc[9](new_active_jwks#1#0: vector<ActiveJwk>)
+	151: CopyLoc[7](j#1#0: u64)
+	152: VecImmBorrow(1)
+	153: ReadRef
+	154: VecPushBack(1)
+	155: MoveLoc[7](j#1#0: u64)
+	156: LdU64(1)
+	157: Add
+	158: StLoc[7](j#1#0: u64)
+	159: Branch(145)
+B19:
+	160: MoveLoc[13](res#1#0: vector<ActiveJwk>)
+	161: MoveLoc[6](inner#1#0: &mut AuthenticatorStateInner)
+	162: MutBorrowField[11](AuthenticatorStateInner.active_jwks: vector<ActiveJwk>)
+	163: WriteRef
+	164: Ret
+}
+
+deduplicate(jwks#0#0: vector<ActiveJwk>): vector<ActiveJwk> {
+L1:	i#1#0: u64
+L2:	jwk#1#0: &ActiveJwk
+L3:	prev#1#0: Option<JwkId>
+L4:	res#1#0: vector<ActiveJwk>
+B0:
+	0: VecPack(1, 0)
+	1: StLoc[4](res#1#0: vector<ActiveJwk>)
+	2: LdU64(0)
+	3: StLoc[1](i#1#0: u64)
+	4: Call option::none<JwkId>(): Option<JwkId>
+	5: StLoc[3](prev#1#0: Option<JwkId>)
+B1:
+	6: CopyLoc[1](i#1#0: u64)
+	7: ImmBorrowLoc[0](jwks#0#0: vector<ActiveJwk>)
+	8: VecLen(1)
+	9: Lt
+	10: BrFalse(53)
+B2:
+	11: Branch(12)
+B3:
+	12: ImmBorrowLoc[0](jwks#0#0: vector<ActiveJwk>)
+	13: CopyLoc[1](i#1#0: u64)
+	14: VecImmBorrow(1)
+	15: StLoc[2](jwk#1#0: &ActiveJwk)
+	16: ImmBorrowLoc[3](prev#1#0: Option<JwkId>)
+	17: Call option::is_none<JwkId>(&Option<JwkId>): bool
+	18: BrFalse(25)
+B4:
+	19: MutBorrowLoc[3](prev#1#0: Option<JwkId>)
+	20: CopyLoc[2](jwk#1#0: &ActiveJwk)
+	21: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	22: ReadRef
+	23: Call option::fill<JwkId>(&mut Option<JwkId>, JwkId)
+	24: Branch(44)
+B5:
+	25: ImmBorrowLoc[3](prev#1#0: Option<JwkId>)
+	26: Call option::borrow<JwkId>(&Option<JwkId>): &JwkId
+	27: CopyLoc[2](jwk#1#0: &ActiveJwk)
+	28: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	29: Call jwk_id_equal(&JwkId, &JwkId): bool
+	30: BrFalse(38)
+B6:
+	31: MoveLoc[2](jwk#1#0: &ActiveJwk)
+	32: Pop
+	33: MoveLoc[1](i#1#0: u64)
+	34: LdU64(1)
+	35: Add
+	36: StLoc[1](i#1#0: u64)
+	37: Branch(6)
+B7:
+	38: CopyLoc[2](jwk#1#0: &ActiveJwk)
+	39: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	40: ReadRef
+	41: MutBorrowLoc[3](prev#1#0: Option<JwkId>)
+	42: Call option::borrow_mut<JwkId>(&mut Option<JwkId>): &mut JwkId
+	43: WriteRef
+B8:
+	44: MutBorrowLoc[4](res#1#0: vector<ActiveJwk>)
+	45: MoveLoc[2](jwk#1#0: &ActiveJwk)
+	46: ReadRef
+	47: VecPushBack(1)
+	48: MoveLoc[1](i#1#0: u64)
+	49: LdU64(1)
+	50: Add
+	51: StLoc[1](i#1#0: u64)
+	52: Branch(6)
+B9:
+	53: MoveLoc[4](res#1#0: vector<ActiveJwk>)
+	54: Ret
+}
+
+expire_jwks(self#0#0: &mut AuthenticatorState, min_epoch#0#0: u64, ctx#0#0: &TxContext) {
+L3:	%#1: bool
+L4:	back#1#0: u64
+L5:	cur#1#0: &ActiveJwk
+L6:	cur_iss#1#0: &String
+L7:	cur_iss#2#0: &String
+L8:	i#1#0: u64
+L9:	i#2#0: u64
+L10:	inner#1#0: &mut AuthenticatorStateInner
+L11:	issuer_max_epochs#1#0: vector<u64>
+L12:	j#1#0: u64
+L13:	jwk#1#0: &ActiveJwk
+L14:	len#1#0: u64
+L15:	new_active_jwks#1#0: vector<ActiveJwk>
+L16:	prev_issuer#1#0: Option<String>
+L17:	prev_issuer#2#0: Option<String>
+L18:	prev_max_epoch#1#0: &mut u64
+B0:
+	0: MoveLoc[2](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[6](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](self#0#0: &mut AuthenticatorState)
+	7: Pop
+	8: LdConst[0](u64: 0)
+	9: Abort
+B3:
+	10: MoveLoc[0](self#0#0: &mut AuthenticatorState)
+	11: Call load_inner_mut(&mut AuthenticatorState): &mut AuthenticatorStateInner
+	12: StLoc[10](inner#1#0: &mut AuthenticatorStateInner)
+	13: CopyLoc[10](inner#1#0: &mut AuthenticatorStateInner)
+	14: ImmBorrowField[11](AuthenticatorStateInner.active_jwks: vector<ActiveJwk>)
+	15: VecLen(1)
+	16: StLoc[14](len#1#0: u64)
+	17: LdConst[7](vector<u64>: 00)
+	18: StLoc[11](issuer_max_epochs#1#0: vector<u64>)
+	19: LdU64(0)
+	20: StLoc[8](i#1#0: u64)
+	21: Call option::none<String>(): Option<String>
+	22: StLoc[16](prev_issuer#1#0: Option<String>)
+B4:
+	23: CopyLoc[8](i#1#0: u64)
+	24: CopyLoc[14](len#1#0: u64)
+	25: Lt
+	26: BrFalse(90)
+B5:
+	27: CopyLoc[10](inner#1#0: &mut AuthenticatorStateInner)
+	28: ImmBorrowField[11](AuthenticatorStateInner.active_jwks: vector<ActiveJwk>)
+	29: CopyLoc[8](i#1#0: u64)
+	30: VecImmBorrow(1)
+	31: StLoc[5](cur#1#0: &ActiveJwk)
+	32: CopyLoc[5](cur#1#0: &ActiveJwk)
+	33: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	34: ImmBorrowField[6](JwkId.iss: String)
+	35: StLoc[6](cur_iss#1#0: &String)
+	36: ImmBorrowLoc[16](prev_issuer#1#0: Option<String>)
+	37: Call option::is_none<String>(&Option<String>): bool
+	38: BrFalse(50)
+B6:
+	39: Branch(40)
+B7:
+	40: MutBorrowLoc[16](prev_issuer#1#0: Option<String>)
+	41: MoveLoc[6](cur_iss#1#0: &String)
+	42: ReadRef
+	43: Call option::fill<String>(&mut Option<String>, String)
+	44: MutBorrowLoc[11](issuer_max_epochs#1#0: vector<u64>)
+	45: MoveLoc[5](cur#1#0: &ActiveJwk)
+	46: ImmBorrowField[12](ActiveJwk.epoch: u64)
+	47: ReadRef
+	48: VecPushBack(40)
+	49: Branch(85)
+B8:
+	50: CopyLoc[6](cur_iss#1#0: &String)
+	51: ImmBorrowLoc[16](prev_issuer#1#0: Option<String>)
+	52: Call option::borrow<String>(&Option<String>): &String
+	53: Eq
+	54: BrFalse(75)
+B9:
+	55: MoveLoc[6](cur_iss#1#0: &String)
+	56: Pop
+	57: ImmBorrowLoc[11](issuer_max_epochs#1#0: vector<u64>)
+	58: VecLen(40)
+	59: LdU64(1)
+	60: Sub
+	61: StLoc[4](back#1#0: u64)
+	62: MutBorrowLoc[11](issuer_max_epochs#1#0: vector<u64>)
+	63: MoveLoc[4](back#1#0: u64)
+	64: VecMutBorrow(40)
+	65: StLoc[18](prev_max_epoch#1#0: &mut u64)
+	66: CopyLoc[18](prev_max_epoch#1#0: &mut u64)
+	67: ReadRef
+	68: MoveLoc[5](cur#1#0: &ActiveJwk)
+	69: ImmBorrowField[12](ActiveJwk.epoch: u64)
+	70: ReadRef
+	71: Call u64::max(u64, u64): u64
+	72: MoveLoc[18](prev_max_epoch#1#0: &mut u64)
+	73: WriteRef
+	74: Branch(85)
+B10:
+	75: MoveLoc[6](cur_iss#1#0: &String)
+	76: ReadRef
+	77: MutBorrowLoc[16](prev_issuer#1#0: Option<String>)
+	78: Call option::borrow_mut<String>(&mut Option<String>): &mut String
+	79: WriteRef
+	80: MutBorrowLoc[11](issuer_max_epochs#1#0: vector<u64>)
+	81: MoveLoc[5](cur#1#0: &ActiveJwk)
+	82: ImmBorrowField[12](ActiveJwk.epoch: u64)
+	83: ReadRef
+	84: VecPushBack(40)
+B11:
+	85: MoveLoc[8](i#1#0: u64)
+	86: LdU64(1)
+	87: Add
+	88: StLoc[8](i#1#0: u64)
+	89: Branch(23)
+B12:
+	90: VecPack(1, 0)
+	91: StLoc[15](new_active_jwks#1#0: vector<ActiveJwk>)
+	92: Call option::none<String>(): Option<String>
+	93: StLoc[17](prev_issuer#2#0: Option<String>)
+	94: LdU64(0)
+	95: StLoc[9](i#2#0: u64)
+	96: LdU64(0)
+	97: StLoc[12](j#1#0: u64)
+B13:
+	98: CopyLoc[9](i#2#0: u64)
+	99: CopyLoc[14](len#1#0: u64)
+	100: Lt
+	101: BrFalse(166)
+B14:
+	102: CopyLoc[10](inner#1#0: &mut AuthenticatorStateInner)
+	103: ImmBorrowField[11](AuthenticatorStateInner.active_jwks: vector<ActiveJwk>)
+	104: CopyLoc[9](i#2#0: u64)
+	105: VecImmBorrow(1)
+	106: StLoc[13](jwk#1#0: &ActiveJwk)
+	107: CopyLoc[13](jwk#1#0: &ActiveJwk)
+	108: ImmBorrowField[1](ActiveJwk.jwk_id: JwkId)
+	109: ImmBorrowField[6](JwkId.iss: String)
+	110: StLoc[7](cur_iss#2#0: &String)
+	111: ImmBorrowLoc[17](prev_issuer#2#0: Option<String>)
+	112: Call option::is_none<String>(&Option<String>): bool
+	113: BrFalse(119)
+B15:
+	114: MutBorrowLoc[17](prev_issuer#2#0: Option<String>)
+	115: MoveLoc[7](cur_iss#2#0: &String)
+	116: ReadRef
+	117: Call option::fill<String>(&mut Option<String>, String)
+	118: Branch(136)
+B16:
+	119: CopyLoc[7](cur_iss#2#0: &String)
+	120: ImmBorrowLoc[17](prev_issuer#2#0: Option<String>)
+	121: Call option::borrow<String>(&Option<String>): &String
+	122: Neq
+	123: BrFalse(134)
+B17:
+	124: MoveLoc[7](cur_iss#2#0: &String)
+	125: ReadRef
+	126: MutBorrowLoc[17](prev_issuer#2#0: Option<String>)
+	127: Call option::borrow_mut<String>(&mut Option<String>): &mut String
+	128: WriteRef
+	129: MoveLoc[12](j#1#0: u64)
+	130: LdU64(1)
+	131: Add
+	132: StLoc[12](j#1#0: u64)
+	133: Branch(136)
+B18:
+	134: MoveLoc[7](cur_iss#2#0: &String)
+	135: Pop
+B19:
+	136: ImmBorrowLoc[11](issuer_max_epochs#1#0: vector<u64>)
+	137: CopyLoc[12](j#1#0: u64)
+	138: VecImmBorrow(40)
+	139: ReadRef
+	140: CopyLoc[1](min_epoch#0#0: u64)
+	141: Lt
+	142: BrFalse(146)
+B20:
+	143: LdTrue
+	144: StLoc[3](%#1: bool)
+	145: Branch(152)
+B21:
+	146: CopyLoc[13](jwk#1#0: &ActiveJwk)
+	147: ImmBorrowField[12](ActiveJwk.epoch: u64)
+	148: ReadRef
+	149: CopyLoc[1](min_epoch#0#0: u64)
+	150: Ge
+	151: StLoc[3](%#1: bool)
+B22:
+	152: MoveLoc[3](%#1: bool)
+	153: BrFalse(159)
+B23:
+	154: MutBorrowLoc[15](new_active_jwks#1#0: vector<ActiveJwk>)
+	155: MoveLoc[13](jwk#1#0: &ActiveJwk)
+	156: ReadRef
+	157: VecPushBack(1)
+	158: Branch(161)
+B24:
+	159: MoveLoc[13](jwk#1#0: &ActiveJwk)
+	160: Pop
+B25:
+	161: MoveLoc[9](i#2#0: u64)
+	162: LdU64(1)
+	163: Add
+	164: StLoc[9](i#2#0: u64)
+	165: Branch(98)
+B26:
+	166: MoveLoc[15](new_active_jwks#1#0: vector<ActiveJwk>)
+	167: MoveLoc[10](inner#1#0: &mut AuthenticatorStateInner)
+	168: MutBorrowField[11](AuthenticatorStateInner.active_jwks: vector<ActiveJwk>)
+	169: WriteRef
+	170: Ret
+}
+
+get_active_jwks(self#0#0: &AuthenticatorState, ctx#0#0: &TxContext): vector<ActiveJwk> {
+B0:
+	0: MoveLoc[1](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[6](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](self#0#0: &AuthenticatorState)
+	7: Pop
+	8: LdConst[0](u64: 0)
+	9: Abort
+B3:
+	10: MoveLoc[0](self#0#0: &AuthenticatorState)
+	11: Call load_inner(&AuthenticatorState): &AuthenticatorStateInner
+	12: ImmBorrowField[11](AuthenticatorStateInner.active_jwks: vector<ActiveJwk>)
+	13: ReadRef
+	14: Ret
+}
+
+public create_for_testing(ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[0](ctx#0#0: &TxContext)
+	1: Call create(&TxContext)
+	2: Ret
+}
+
+public update_authenticator_state_for_testing(self#0#0: &mut AuthenticatorState, new_active_jwks#0#0: vector<ActiveJwk>, ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[0](self#0#0: &mut AuthenticatorState)
+	1: MoveLoc[1](new_active_jwks#0#0: vector<ActiveJwk>)
+	2: MoveLoc[2](ctx#0#0: &TxContext)
+	3: Call update_authenticator_state(&mut AuthenticatorState, vector<ActiveJwk>, &TxContext)
+	4: Ret
+}
+
+public expire_jwks_for_testing(self#0#0: &mut AuthenticatorState, min_epoch#0#0: u64, ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[0](self#0#0: &mut AuthenticatorState)
+	1: MoveLoc[1](min_epoch#0#0: u64)
+	2: MoveLoc[2](ctx#0#0: &TxContext)
+	3: Call expire_jwks(&mut AuthenticatorState, u64, &TxContext)
+	4: Ret
+}
+
+public get_active_jwks_for_testing(self#0#0: &AuthenticatorState, ctx#0#0: &TxContext): vector<ActiveJwk> {
+B0:
+	0: MoveLoc[0](self#0#0: &AuthenticatorState)
+	1: MoveLoc[1](ctx#0#0: &TxContext)
+	2: Call get_active_jwks(&AuthenticatorState, &TxContext): vector<ActiveJwk>
+	3: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => vector<u8>: "AQAB" // interpreted as UTF8 string
+	4 => vector<u8>: "test" // interpreted as UTF8 string
+	5 => vector<u8>: "RS256" // interpreted as UTF8 string
+	6 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	7 => vector<u64>: 00
+]
+}

@@ -1,0 +1,600 @@
+// Move bytecode v6
+module 2.priority_queue {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+
+struct PriorityQueue<T: drop> has drop, store {
+	entries: vector<Entry<T>>
+}
+
+struct Entry<T: drop> has drop, store {
+	priority: u64,
+	value: T
+}
+
+public new<T: drop>(entries#0#0: vector<Entry<T>>): PriorityQueue<T> {
+L1:	i#1#0: u64
+L2:	len#1#0: u64
+B0:
+	0: ImmBorrowLoc[0](entries#0#0: vector<Entry<T>>)
+	1: VecLen(6)
+	2: StLoc[2](len#1#0: u64)
+	3: CopyLoc[2](len#1#0: u64)
+	4: LdU64(2)
+	5: Div
+	6: StLoc[1](i#1#0: u64)
+B1:
+	7: CopyLoc[1](i#1#0: u64)
+	8: LdU64(0)
+	9: Gt
+	10: BrFalse(21)
+B2:
+	11: Branch(12)
+B3:
+	12: MoveLoc[1](i#1#0: u64)
+	13: LdU64(1)
+	14: Sub
+	15: StLoc[1](i#1#0: u64)
+	16: MutBorrowLoc[0](entries#0#0: vector<Entry<T>>)
+	17: CopyLoc[2](len#1#0: u64)
+	18: CopyLoc[1](i#1#0: u64)
+	19: Call max_heapify_recursive<T>(&mut vector<Entry<T>>, u64, u64)
+	20: Branch(7)
+B4:
+	21: MoveLoc[0](entries#0#0: vector<Entry<T>>)
+	22: PackGeneric[0](PriorityQueue<T>)
+	23: Ret
+}
+
+public pop_max<T: drop>(pq#0#0: &mut PriorityQueue<T>): u64 * T {
+L1:	len#1#0: u64
+L2:	priority#1#0: u64
+L3:	value#1#0: T
+B0:
+	0: CopyLoc[0](pq#0#0: &mut PriorityQueue<T>)
+	1: ImmBorrowFieldGeneric[0](PriorityQueue.entries: vector<Entry<T>>)
+	2: VecLen(6)
+	3: StLoc[1](len#1#0: u64)
+	4: CopyLoc[1](len#1#0: u64)
+	5: LdU64(0)
+	6: Gt
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](pq#0#0: &mut PriorityQueue<T>)
+	10: Pop
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: CopyLoc[0](pq#0#0: &mut PriorityQueue<T>)
+	14: MutBorrowFieldGeneric[0](PriorityQueue.entries: vector<Entry<T>>)
+	15: LdU64(0)
+	16: Call vector::swap_remove<Entry<T>>(&mut vector<Entry<T>>, u64): Entry<T>
+	17: UnpackGeneric[1](Entry<T>)
+	18: StLoc[3](value#1#0: T)
+	19: StLoc[2](priority#1#0: u64)
+	20: MoveLoc[0](pq#0#0: &mut PriorityQueue<T>)
+	21: MutBorrowFieldGeneric[0](PriorityQueue.entries: vector<Entry<T>>)
+	22: MoveLoc[1](len#1#0: u64)
+	23: LdU64(1)
+	24: Sub
+	25: LdU64(0)
+	26: Call max_heapify_recursive<T>(&mut vector<Entry<T>>, u64, u64)
+	27: MoveLoc[2](priority#1#0: u64)
+	28: MoveLoc[3](value#1#0: T)
+	29: Ret
+}
+
+public insert<T: drop>(pq#0#0: &mut PriorityQueue<T>, priority#0#0: u64, value#0#0: T) {
+L3:	index#1#0: u64
+B0:
+	0: CopyLoc[0](pq#0#0: &mut PriorityQueue<T>)
+	1: MutBorrowFieldGeneric[0](PriorityQueue.entries: vector<Entry<T>>)
+	2: MoveLoc[1](priority#0#0: u64)
+	3: MoveLoc[2](value#0#0: T)
+	4: PackGeneric[1](Entry<T>)
+	5: VecPushBack(6)
+	6: CopyLoc[0](pq#0#0: &mut PriorityQueue<T>)
+	7: ImmBorrowFieldGeneric[0](PriorityQueue.entries: vector<Entry<T>>)
+	8: VecLen(6)
+	9: LdU64(1)
+	10: Sub
+	11: StLoc[3](index#1#0: u64)
+	12: MoveLoc[0](pq#0#0: &mut PriorityQueue<T>)
+	13: MutBorrowFieldGeneric[0](PriorityQueue.entries: vector<Entry<T>>)
+	14: MoveLoc[3](index#1#0: u64)
+	15: Call restore_heap_recursive<T>(&mut vector<Entry<T>>, u64)
+	16: Ret
+}
+
+public new_entry<T: drop>(priority#0#0: u64, value#0#0: T): Entry<T> {
+B0:
+	0: MoveLoc[0](priority#0#0: u64)
+	1: MoveLoc[1](value#0#0: T)
+	2: PackGeneric[1](Entry<T>)
+	3: Ret
+}
+
+public create_entries<T: drop>(p#0#0: vector<u64>, v#0#0: vector<T>): vector<Entry<T>> {
+L2:	$stop#0#7: u64
+L3:	i#1#10: u64
+L4:	priority#1#15: u64
+L5:	res#1#0: vector<Entry<T>>
+L6:	stop#1#10: u64
+L7:	v#1#4: vector<u64>
+L8:	v1#1#1: vector<u64>
+L9:	v2#1#1: vector<T>
+L10:	value#1#15: T
+B0:
+	0: ImmBorrowLoc[1](v#0#0: vector<T>)
+	1: VecLen(14)
+	2: ImmBorrowLoc[0](p#0#0: vector<u64>)
+	3: VecLen(17)
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(9)
+B2:
+	7: LdConst[1](u64: 1)
+	8: Abort
+B3:
+	9: VecPack(6, 0)
+	10: StLoc[5](res#1#0: vector<Entry<T>>)
+	11: MoveLoc[0](p#0#0: vector<u64>)
+	12: StLoc[8](v1#1#1: vector<u64>)
+	13: MoveLoc[1](v#0#0: vector<T>)
+	14: StLoc[9](v2#1#1: vector<T>)
+	15: ImmBorrowLoc[8](v1#1#1: vector<u64>)
+	16: VecLen(17)
+	17: ImmBorrowLoc[9](v2#1#1: vector<T>)
+	18: VecLen(14)
+	19: Eq
+	20: BrFalse(22)
+B4:
+	21: Branch(24)
+B5:
+	22: LdU64(13906834470696124415)
+	23: Abort
+B6:
+	24: MoveLoc[8](v1#1#1: vector<u64>)
+	25: StLoc[7](v#1#4: vector<u64>)
+	26: ImmBorrowLoc[7](v#1#4: vector<u64>)
+	27: VecLen(17)
+	28: StLoc[2]($stop#0#7: u64)
+	29: LdU64(0)
+	30: StLoc[3](i#1#10: u64)
+	31: MoveLoc[2]($stop#0#7: u64)
+	32: StLoc[6](stop#1#10: u64)
+B7:
+	33: CopyLoc[3](i#1#10: u64)
+	34: CopyLoc[6](stop#1#10: u64)
+	35: Lt
+	36: BrFalse(55)
+B8:
+	37: CopyLoc[3](i#1#10: u64)
+	38: Pop
+	39: MutBorrowLoc[7](v#1#4: vector<u64>)
+	40: VecPopBack(17)
+	41: StLoc[4](priority#1#15: u64)
+	42: MutBorrowLoc[9](v2#1#1: vector<T>)
+	43: VecPopBack(14)
+	44: StLoc[10](value#1#15: T)
+	45: MutBorrowLoc[5](res#1#0: vector<Entry<T>>)
+	46: MoveLoc[4](priority#1#15: u64)
+	47: MoveLoc[10](value#1#15: T)
+	48: PackGeneric[1](Entry<T>)
+	49: VecPushBack(6)
+	50: MoveLoc[3](i#1#10: u64)
+	51: LdU64(1)
+	52: Add
+	53: StLoc[3](i#1#10: u64)
+	54: Branch(33)
+B9:
+	55: MoveLoc[7](v#1#4: vector<u64>)
+	56: VecUnpack(17, 0)
+	57: MutBorrowLoc[5](res#1#0: vector<Entry<T>>)
+	58: Call vector::reverse<Entry<T>>(&mut vector<Entry<T>>)
+	59: MoveLoc[5](res#1#0: vector<Entry<T>>)
+	60: Ret
+}
+
+restore_heap_recursive<T: drop>(v#0#0: &mut vector<Entry<T>>, i#0#0: u64) {
+L2:	parent#1#0: u64
+B0:
+	0: CopyLoc[1](i#0#0: u64)
+	1: LdU64(0)
+	2: Eq
+	3: BrFalse(7)
+B1:
+	4: MoveLoc[0](v#0#0: &mut vector<Entry<T>>)
+	5: Pop
+	6: Ret
+B2:
+	7: CopyLoc[1](i#0#0: u64)
+	8: LdU64(1)
+	9: Sub
+	10: LdU64(2)
+	11: Div
+	12: StLoc[2](parent#1#0: u64)
+	13: CopyLoc[0](v#0#0: &mut vector<Entry<T>>)
+	14: FreezeRef
+	15: CopyLoc[1](i#0#0: u64)
+	16: VecImmBorrow(6)
+	17: ImmBorrowFieldGeneric[1](Entry.priority: u64)
+	18: ReadRef
+	19: CopyLoc[0](v#0#0: &mut vector<Entry<T>>)
+	20: FreezeRef
+	21: CopyLoc[2](parent#1#0: u64)
+	22: VecImmBorrow(6)
+	23: ImmBorrowFieldGeneric[1](Entry.priority: u64)
+	24: ReadRef
+	25: Gt
+	26: BrFalse(35)
+B3:
+	27: CopyLoc[0](v#0#0: &mut vector<Entry<T>>)
+	28: MoveLoc[1](i#0#0: u64)
+	29: CopyLoc[2](parent#1#0: u64)
+	30: VecSwap(6)
+	31: MoveLoc[0](v#0#0: &mut vector<Entry<T>>)
+	32: MoveLoc[2](parent#1#0: u64)
+	33: Call restore_heap_recursive<T>(&mut vector<Entry<T>>, u64)
+	34: Branch(37)
+B4:
+	35: MoveLoc[0](v#0#0: &mut vector<Entry<T>>)
+	36: Pop
+B5:
+	37: Ret
+}
+
+max_heapify_recursive<T: drop>(v#0#0: &mut vector<Entry<T>>, len#0#0: u64, i#0#0: u64) {
+L3:	%#1: bool
+L4:	%#2: bool
+L5:	left#1#0: u64
+L6:	max#1#0: u64
+L7:	right#1#0: u64
+B0:
+	0: CopyLoc[1](len#0#0: u64)
+	1: LdU64(0)
+	2: Eq
+	3: BrFalse(7)
+B1:
+	4: MoveLoc[0](v#0#0: &mut vector<Entry<T>>)
+	5: Pop
+	6: Ret
+B2:
+	7: CopyLoc[2](i#0#0: u64)
+	8: CopyLoc[1](len#0#0: u64)
+	9: Lt
+	10: BrFalse(12)
+B3:
+	11: Branch(16)
+B4:
+	12: MoveLoc[0](v#0#0: &mut vector<Entry<T>>)
+	13: Pop
+	14: LdConst[2](u64: 2)
+	15: Abort
+B5:
+	16: CopyLoc[2](i#0#0: u64)
+	17: LdU64(2)
+	18: Mul
+	19: LdU64(1)
+	20: Add
+	21: StLoc[5](left#1#0: u64)
+	22: CopyLoc[5](left#1#0: u64)
+	23: LdU64(1)
+	24: Add
+	25: StLoc[7](right#1#0: u64)
+	26: CopyLoc[2](i#0#0: u64)
+	27: StLoc[6](max#1#0: u64)
+	28: CopyLoc[5](left#1#0: u64)
+	29: CopyLoc[1](len#0#0: u64)
+	30: Lt
+	31: BrFalse(47)
+B6:
+	32: CopyLoc[0](v#0#0: &mut vector<Entry<T>>)
+	33: FreezeRef
+	34: CopyLoc[5](left#1#0: u64)
+	35: VecImmBorrow(6)
+	36: ImmBorrowFieldGeneric[1](Entry.priority: u64)
+	37: ReadRef
+	38: CopyLoc[0](v#0#0: &mut vector<Entry<T>>)
+	39: FreezeRef
+	40: CopyLoc[6](max#1#0: u64)
+	41: VecImmBorrow(6)
+	42: ImmBorrowFieldGeneric[1](Entry.priority: u64)
+	43: ReadRef
+	44: Gt
+	45: StLoc[3](%#1: bool)
+	46: Branch(49)
+B7:
+	47: LdFalse
+	48: StLoc[3](%#1: bool)
+B8:
+	49: MoveLoc[3](%#1: bool)
+	50: BrFalse(53)
+B9:
+	51: MoveLoc[5](left#1#0: u64)
+	52: StLoc[6](max#1#0: u64)
+B10:
+	53: CopyLoc[7](right#1#0: u64)
+	54: CopyLoc[1](len#0#0: u64)
+	55: Lt
+	56: BrFalse(72)
+B11:
+	57: CopyLoc[0](v#0#0: &mut vector<Entry<T>>)
+	58: FreezeRef
+	59: CopyLoc[7](right#1#0: u64)
+	60: VecImmBorrow(6)
+	61: ImmBorrowFieldGeneric[1](Entry.priority: u64)
+	62: ReadRef
+	63: CopyLoc[0](v#0#0: &mut vector<Entry<T>>)
+	64: FreezeRef
+	65: CopyLoc[6](max#1#0: u64)
+	66: VecImmBorrow(6)
+	67: ImmBorrowFieldGeneric[1](Entry.priority: u64)
+	68: ReadRef
+	69: Gt
+	70: StLoc[4](%#2: bool)
+	71: Branch(74)
+B12:
+	72: LdFalse
+	73: StLoc[4](%#2: bool)
+B13:
+	74: MoveLoc[4](%#2: bool)
+	75: BrFalse(78)
+B14:
+	76: MoveLoc[7](right#1#0: u64)
+	77: StLoc[6](max#1#0: u64)
+B15:
+	78: CopyLoc[6](max#1#0: u64)
+	79: CopyLoc[2](i#0#0: u64)
+	80: Neq
+	81: BrFalse(91)
+B16:
+	82: CopyLoc[0](v#0#0: &mut vector<Entry<T>>)
+	83: CopyLoc[6](max#1#0: u64)
+	84: MoveLoc[2](i#0#0: u64)
+	85: VecSwap(6)
+	86: MoveLoc[0](v#0#0: &mut vector<Entry<T>>)
+	87: MoveLoc[1](len#0#0: u64)
+	88: MoveLoc[6](max#1#0: u64)
+	89: Call max_heapify_recursive<T>(&mut vector<Entry<T>>, u64, u64)
+	90: Branch(93)
+B17:
+	91: MoveLoc[0](v#0#0: &mut vector<Entry<T>>)
+	92: Pop
+B18:
+	93: Ret
+}
+
+public priorities<T: drop>(pq#0#0: &PriorityQueue<T>): vector<u64> {
+L1:	$stop#0#6: u64
+L2:	%#2: u64
+L3:	%#3: &mut vector<u64>
+L4:	e#1#13: &Entry<T>
+L5:	i#1#12: u64
+L6:	i#1#9: u64
+L7:	r#1#1: vector<u64>
+L8:	stop#1#9: u64
+L9:	v#1#1: &vector<Entry<T>>
+L10:	v#1#3: &vector<Entry<T>>
+B0:
+	0: MoveLoc[0](pq#0#0: &PriorityQueue<T>)
+	1: ImmBorrowFieldGeneric[0](PriorityQueue.entries: vector<Entry<T>>)
+	2: StLoc[9](v#1#1: &vector<Entry<T>>)
+	3: LdConst[3](vector<u64>: 00)
+	4: StLoc[7](r#1#1: vector<u64>)
+	5: MoveLoc[9](v#1#1: &vector<Entry<T>>)
+	6: StLoc[10](v#1#3: &vector<Entry<T>>)
+	7: CopyLoc[10](v#1#3: &vector<Entry<T>>)
+	8: VecLen(6)
+	9: StLoc[1]($stop#0#6: u64)
+	10: LdU64(0)
+	11: StLoc[6](i#1#9: u64)
+	12: MoveLoc[1]($stop#0#6: u64)
+	13: StLoc[8](stop#1#9: u64)
+B1:
+	14: CopyLoc[6](i#1#9: u64)
+	15: CopyLoc[8](stop#1#9: u64)
+	16: Lt
+	17: BrFalse(38)
+B2:
+	18: CopyLoc[6](i#1#9: u64)
+	19: StLoc[5](i#1#12: u64)
+	20: CopyLoc[10](v#1#3: &vector<Entry<T>>)
+	21: MoveLoc[5](i#1#12: u64)
+	22: VecImmBorrow(6)
+	23: StLoc[4](e#1#13: &Entry<T>)
+	24: MutBorrowLoc[7](r#1#1: vector<u64>)
+	25: StLoc[3](%#3: &mut vector<u64>)
+	26: MoveLoc[4](e#1#13: &Entry<T>)
+	27: ImmBorrowFieldGeneric[1](Entry.priority: u64)
+	28: ReadRef
+	29: StLoc[2](%#2: u64)
+	30: MoveLoc[3](%#3: &mut vector<u64>)
+	31: MoveLoc[2](%#2: u64)
+	32: VecPushBack(17)
+	33: MoveLoc[6](i#1#9: u64)
+	34: LdU64(1)
+	35: Add
+	36: StLoc[6](i#1#9: u64)
+	37: Branch(14)
+B3:
+	38: MoveLoc[10](v#1#3: &vector<Entry<T>>)
+	39: Pop
+	40: MoveLoc[7](r#1#1: vector<u64>)
+	41: Ret
+}
+
+test_pq() {
+L0:	h#1#0: PriorityQueue<u64>
+L1:	h#2#0: PriorityQueue<u64>
+B0:
+	0: LdConst[4](vector<u64>: 0603..)
+	1: LdConst[5](vector<u64>: 060a..)
+	2: Call create_entries<u64>(vector<u64>, vector<u64>): vector<Entry<u64>>
+	3: Call new<u64>(vector<Entry<u64>>): PriorityQueue<u64>
+	4: StLoc[0](h#1#0: PriorityQueue<u64>)
+	5: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	6: LdU64(5)
+	7: LdU64(50)
+	8: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	9: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	10: LdU64(4)
+	11: LdU64(30)
+	12: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	13: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	14: LdU64(3)
+	15: LdU64(10)
+	16: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	17: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	18: LdU64(7)
+	19: LdU64(70)
+	20: Call insert<u64>(&mut PriorityQueue<u64>, u64, u64)
+	21: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	22: LdU64(7)
+	23: LdU64(70)
+	24: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	25: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	26: LdU64(2)
+	27: LdU64(40)
+	28: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	29: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	30: LdU64(0)
+	31: LdU64(80)
+	32: Call insert<u64>(&mut PriorityQueue<u64>, u64, u64)
+	33: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	34: LdU64(2)
+	35: LdU64(60)
+	36: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	37: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	38: LdU64(1)
+	39: LdU64(20)
+	40: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	41: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	42: LdU64(0)
+	43: LdU64(80)
+	44: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	45: LdConst[6](vector<u64>: 0505..)
+	46: LdConst[7](vector<u64>: 050a..)
+	47: Call create_entries<u64>(vector<u64>, vector<u64>): vector<Entry<u64>>
+	48: Call new<u64>(vector<Entry<u64>>): PriorityQueue<u64>
+	49: StLoc[1](h#2#0: PriorityQueue<u64>)
+	50: MutBorrowLoc[1](h#2#0: PriorityQueue<u64>)
+	51: LdU64(5)
+	52: LdU64(10)
+	53: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	54: MutBorrowLoc[1](h#2#0: PriorityQueue<u64>)
+	55: LdU64(4)
+	56: LdU64(50)
+	57: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	58: MutBorrowLoc[1](h#2#0: PriorityQueue<u64>)
+	59: LdU64(3)
+	60: LdU64(20)
+	61: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	62: MutBorrowLoc[1](h#2#0: PriorityQueue<u64>)
+	63: LdU64(2)
+	64: LdU64(40)
+	65: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	66: MutBorrowLoc[1](h#2#0: PriorityQueue<u64>)
+	67: LdU64(1)
+	68: LdU64(30)
+	69: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	70: Ret
+}
+
+test_swap_remove_edge_case() {
+L0:	h#1#0: PriorityQueue<u64>
+B0:
+	0: LdConst[8](vector<u64>: 0908..)
+	1: LdConst[9](vector<u64>: 0900..)
+	2: Call create_entries<u64>(vector<u64>, vector<u64>): vector<Entry<u64>>
+	3: Call new<u64>(vector<Entry<u64>>): PriorityQueue<u64>
+	4: StLoc[0](h#1#0: PriorityQueue<u64>)
+	5: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	6: LdU64(8)
+	7: LdU64(0)
+	8: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	9: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	10: LdU64(7)
+	11: LdU64(0)
+	12: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	13: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	14: LdU64(6)
+	15: LdU64(0)
+	16: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	17: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	18: LdU64(5)
+	19: LdU64(0)
+	20: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	21: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	22: LdU64(4)
+	23: LdU64(0)
+	24: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	25: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	26: LdU64(3)
+	27: LdU64(0)
+	28: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	29: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	30: LdU64(2)
+	31: LdU64(0)
+	32: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	33: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	34: LdU64(1)
+	35: LdU64(0)
+	36: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	37: MutBorrowLoc[0](h#1#0: PriorityQueue<u64>)
+	38: LdU64(0)
+	39: LdU64(0)
+	40: Call check_pop_max(&mut PriorityQueue<u64>, u64, u64)
+	41: Ret
+}
+
+check_pop_max(h#0#0: &mut PriorityQueue<u64>, expected_priority#0#0: u64, expected_value#0#0: u64) {
+L3:	value#1#0: u64
+B0:
+	0: MoveLoc[0](h#0#0: &mut PriorityQueue<u64>)
+	1: Call pop_max<u64>(&mut PriorityQueue<u64>): u64 * u64
+	2: StLoc[3](value#1#0: u64)
+	3: MoveLoc[1](expected_priority#0#0: u64)
+	4: Eq
+	5: BrFalse(7)
+B1:
+	6: Branch(9)
+B2:
+	7: LdU64(13906834904487821311)
+	8: Abort
+B3:
+	9: MoveLoc[3](value#1#0: u64)
+	10: MoveLoc[2](expected_value#0#0: u64)
+	11: Eq
+	12: BrFalse(14)
+B4:
+	13: Branch(16)
+B5:
+	14: LdU64(13906834908782788607)
+	15: Abort
+B6:
+	16: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => vector<u64>: 00
+	4 => vector<u64>: 06030000000000000001000000000000000400000000000000020000000000000005000000000000000200000000000000
+	5 => vector<u64>: 060a0000000000000014000000000000001e00000000000000280000000000000032000000000000003c00000000000000
+	6 => vector<u64>: 0505000000000000000300000000000000010000000000000002000000000000000400000000000000
+	7 => vector<u64>: 050a0000000000000014000000000000001e0000000000000028000000000000003200000000000000
+	8 => vector<u64>: 09080000000000000007000000000000000300000000000000060000000000000002000000000000000100000000000000000000000000000005000000000000000400000000000000
+	9 => vector<u64>: 09000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
+]
+}

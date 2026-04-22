@@ -1,0 +1,2982 @@
+// Move bytecode v6
+module 2.random_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+use 0000000000000000000000000000000000000000000000000000000000000002::bcs;
+use 0000000000000000000000000000000000000000000000000000000000000002::random;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+random_test_basic_flow() {
+L0:	gen#1#0: RandomGenerator
+L1:	random_state#1#0: Random
+L2:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[2](scenario#1#0: Scenario)
+	3: MutBorrowLoc[2](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call random::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[2](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<Random>(&Scenario): Random
+	12: StLoc[1](random_state#1#0: Random)
+	13: MutBorrowLoc[1](random_state#1#0: Random)
+	14: LdU64(0)
+	15: LdConst[1](vector<u8>: "..)
+	16: MutBorrowLoc[2](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	20: ImmBorrowLoc[1](random_state#1#0: Random)
+	21: MutBorrowLoc[2](scenario#1#0: Scenario)
+	22: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	23: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	24: StLoc[0](gen#1#0: RandomGenerator)
+	25: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	26: Call random::generate_u256(&mut RandomGenerator): u256
+	27: Pop
+	28: MoveLoc[1](random_state#1#0: Random)
+	29: Call test_scenario::return_shared<Random>(Random)
+	30: MoveLoc[2](scenario#1#0: Scenario)
+	31: Call test_scenario::end(Scenario): TransactionEffects
+	32: Pop
+	33: Ret
+}
+
+test_new_generator() {
+L0:	gen1#1#0: RandomGenerator
+L1:	gen2#1#0: RandomGenerator
+L2:	gen3#1#0: RandomGenerator
+L3:	gen4#1#0: RandomGenerator
+L4:	global_random1#1#0: vector<u8>
+L5:	random_state#1#0: Random
+L6:	random_state#2#0: Random
+L7:	random_state#3#0: Random
+L8:	scenario#1#0: Scenario
+L9:	scenario#2#0: Scenario
+L10:	scenario#3#0: Scenario
+L11:	scenario#4#0: Scenario
+B0:
+	0: LdConst[1](vector<u8>: "..)
+	1: StLoc[4](global_random1#1#0: vector<u8>)
+	2: LdConst[0](address: 0x00..)
+	3: Call test_scenario::begin(address): Scenario
+	4: StLoc[8](scenario#1#0: Scenario)
+	5: MutBorrowLoc[8](scenario#1#0: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call random::create_for_testing(&mut TxContext)
+	8: MoveLoc[8](scenario#1#0: Scenario)
+	9: Call test_scenario::end(Scenario): TransactionEffects
+	10: Pop
+	11: LdConst[0](address: 0x00..)
+	12: Call test_scenario::begin(address): Scenario
+	13: StLoc[9](scenario#2#0: Scenario)
+	14: ImmBorrowLoc[9](scenario#2#0: Scenario)
+	15: Call test_scenario::take_shared<Random>(&Scenario): Random
+	16: StLoc[5](random_state#1#0: Random)
+	17: MutBorrowLoc[5](random_state#1#0: Random)
+	18: LdU64(0)
+	19: CopyLoc[4](global_random1#1#0: vector<u8>)
+	20: MutBorrowLoc[9](scenario#2#0: Scenario)
+	21: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	22: FreezeRef
+	23: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	24: MutBorrowLoc[9](scenario#2#0: Scenario)
+	25: LdConst[0](address: 0x00..)
+	26: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	27: Pop
+	28: ImmBorrowLoc[5](random_state#1#0: Random)
+	29: MutBorrowLoc[9](scenario#2#0: Scenario)
+	30: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	31: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	32: StLoc[0](gen1#1#0: RandomGenerator)
+	33: MoveLoc[5](random_state#1#0: Random)
+	34: Call test_scenario::return_shared<Random>(Random)
+	35: MoveLoc[9](scenario#2#0: Scenario)
+	36: Call test_scenario::end(Scenario): TransactionEffects
+	37: Pop
+	38: LdConst[0](address: 0x00..)
+	39: Call test_scenario::begin(address): Scenario
+	40: StLoc[10](scenario#3#0: Scenario)
+	41: ImmBorrowLoc[10](scenario#3#0: Scenario)
+	42: Call test_scenario::take_shared<Random>(&Scenario): Random
+	43: StLoc[6](random_state#2#0: Random)
+	44: MutBorrowLoc[6](random_state#2#0: Random)
+	45: LdU64(1)
+	46: MoveLoc[4](global_random1#1#0: vector<u8>)
+	47: MutBorrowLoc[10](scenario#3#0: Scenario)
+	48: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	49: FreezeRef
+	50: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	51: MutBorrowLoc[10](scenario#3#0: Scenario)
+	52: LdConst[0](address: 0x00..)
+	53: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	54: Pop
+	55: ImmBorrowLoc[6](random_state#2#0: Random)
+	56: MutBorrowLoc[10](scenario#3#0: Scenario)
+	57: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	58: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	59: StLoc[1](gen2#1#0: RandomGenerator)
+	60: MoveLoc[6](random_state#2#0: Random)
+	61: Call test_scenario::return_shared<Random>(Random)
+	62: MoveLoc[10](scenario#3#0: Scenario)
+	63: Call test_scenario::end(Scenario): TransactionEffects
+	64: Pop
+	65: LdConst[0](address: 0x00..)
+	66: Call test_scenario::begin(address): Scenario
+	67: StLoc[11](scenario#4#0: Scenario)
+	68: ImmBorrowLoc[11](scenario#4#0: Scenario)
+	69: Call test_scenario::take_shared<Random>(&Scenario): Random
+	70: StLoc[7](random_state#3#0: Random)
+	71: MutBorrowLoc[7](random_state#3#0: Random)
+	72: LdU64(2)
+	73: LdConst[2](vector<u8>: "/..)
+	74: MutBorrowLoc[11](scenario#4#0: Scenario)
+	75: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	76: FreezeRef
+	77: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	78: MutBorrowLoc[11](scenario#4#0: Scenario)
+	79: LdConst[0](address: 0x00..)
+	80: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	81: Pop
+	82: ImmBorrowLoc[7](random_state#3#0: Random)
+	83: MutBorrowLoc[11](scenario#4#0: Scenario)
+	84: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	85: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	86: StLoc[2](gen3#1#0: RandomGenerator)
+	87: ImmBorrowLoc[7](random_state#3#0: Random)
+	88: MutBorrowLoc[11](scenario#4#0: Scenario)
+	89: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	90: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	91: StLoc[3](gen4#1#0: RandomGenerator)
+	92: MoveLoc[7](random_state#3#0: Random)
+	93: Call test_scenario::return_shared<Random>(Random)
+	94: MoveLoc[11](scenario#4#0: Scenario)
+	95: Call test_scenario::end(Scenario): TransactionEffects
+	96: Pop
+	97: ImmBorrowLoc[0](gen1#1#0: RandomGenerator)
+	98: Call random::generator_counter(&RandomGenerator): u16
+	99: LdU16(0)
+	100: Eq
+	101: BrFalse(103)
+B1:
+	102: Branch(105)
+B2:
+	103: LdU64(13906834543710568447)
+	104: Abort
+B3:
+	105: ImmBorrowLoc[0](gen1#1#0: RandomGenerator)
+	106: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	107: Call vector::is_empty<u8>(&vector<u8>): bool
+	108: BrFalse(110)
+B4:
+	109: Branch(112)
+B5:
+	110: LdU64(13906834548005535743)
+	111: Abort
+B6:
+	112: ImmBorrowLoc[0](gen1#1#0: RandomGenerator)
+	113: Call random::generator_seed(&RandomGenerator): &vector<u8>
+	114: ImmBorrowLoc[1](gen2#1#0: RandomGenerator)
+	115: Call random::generator_seed(&RandomGenerator): &vector<u8>
+	116: Eq
+	117: BrFalse(119)
+B7:
+	118: Branch(121)
+B8:
+	119: LdU64(13906834552300503039)
+	120: Abort
+B9:
+	121: ImmBorrowLoc[0](gen1#1#0: RandomGenerator)
+	122: Call random::generator_seed(&RandomGenerator): &vector<u8>
+	123: ImmBorrowLoc[2](gen3#1#0: RandomGenerator)
+	124: Call random::generator_seed(&RandomGenerator): &vector<u8>
+	125: Neq
+	126: BrFalse(128)
+B10:
+	127: Branch(130)
+B11:
+	128: LdU64(13906834556595470335)
+	129: Abort
+B12:
+	130: ImmBorrowLoc[2](gen3#1#0: RandomGenerator)
+	131: Call random::generator_seed(&RandomGenerator): &vector<u8>
+	132: ImmBorrowLoc[3](gen4#1#0: RandomGenerator)
+	133: Call random::generator_seed(&RandomGenerator): &vector<u8>
+	134: Neq
+	135: BrFalse(137)
+B13:
+	136: Branch(139)
+B14:
+	137: LdU64(13906834560890437631)
+	138: Abort
+B15:
+	139: Ret
+}
+
+random_tests_regression() {
+L0:	gen#1#0: RandomGenerator
+L1:	random_state#1#0: Random
+L2:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[2](scenario#1#0: Scenario)
+	3: MutBorrowLoc[2](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call random::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[2](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<Random>(&Scenario): Random
+	12: StLoc[1](random_state#1#0: Random)
+	13: MutBorrowLoc[1](random_state#1#0: Random)
+	14: LdU64(0)
+	15: LdConst[1](vector<u8>: "..)
+	16: MutBorrowLoc[2](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	20: ImmBorrowLoc[1](random_state#1#0: Random)
+	21: MutBorrowLoc[2](scenario#1#0: Scenario)
+	22: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	23: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	24: StLoc[0](gen#1#0: RandomGenerator)
+	25: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	26: Call random::generate_u256(&mut RandomGenerator): u256
+	27: LdU256(85985798878417437391783029796051418802193098452099584085821130568389745847195)
+	28: Eq
+	29: BrFalse(31)
+B1:
+	30: Branch(33)
+B2:
+	31: LdU64(13906834646789783551)
+	32: Abort
+B3:
+	33: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	34: Call random::generate_u128(&mut RandomGenerator): u128
+	35: LdU128(332057125240408555349883177059479920214)
+	36: Eq
+	37: BrFalse(39)
+B4:
+	38: Branch(41)
+B5:
+	39: LdU64(13906834655379718143)
+	40: Abort
+B6:
+	41: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	42: Call random::generate_u64(&mut RandomGenerator): u64
+	43: LdU64(13202990749492462163)
+	44: Eq
+	45: BrFalse(47)
+B7:
+	46: Branch(49)
+B8:
+	47: LdU64(13906834663969652735)
+	48: Abort
+B9:
+	49: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	50: Call random::generate_u32(&mut RandomGenerator): u32
+	51: LdU32(3316307786)
+	52: Eq
+	53: BrFalse(55)
+B10:
+	54: Branch(57)
+B11:
+	55: LdU64(13906834672559587327)
+	56: Abort
+B12:
+	57: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	58: Call random::generate_u16(&mut RandomGenerator): u16
+	59: LdU16(5961)
+	60: Eq
+	61: BrFalse(63)
+B13:
+	62: Branch(65)
+B14:
+	63: LdU64(13906834681149521919)
+	64: Abort
+B15:
+	65: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	66: Call random::generate_u8(&mut RandomGenerator): u8
+	67: LdU8(222)
+	68: Eq
+	69: BrFalse(71)
+B16:
+	70: Branch(73)
+B17:
+	71: LdU64(13906834689739456511)
+	72: Abort
+B18:
+	73: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	74: LdU128(51)
+	75: LdU128(123456789)
+	76: Call random::generate_u128_in_range(&mut RandomGenerator, u128, u128): u128
+	77: LdU128(99859235)
+	78: Eq
+	79: BrFalse(81)
+B19:
+	80: Branch(83)
+B20:
+	81: LdU64(13906834698329391103)
+	82: Abort
+B21:
+	83: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	84: LdU64(51)
+	85: LdU64(123456789)
+	86: Call random::generate_u64_in_range(&mut RandomGenerator, u64, u64): u64
+	87: LdU64(87557915)
+	88: Eq
+	89: BrFalse(91)
+B22:
+	90: Branch(93)
+B23:
+	91: LdU64(13906834706919325695)
+	92: Abort
+B24:
+	93: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	94: LdU32(51)
+	95: LdU32(123456789)
+	96: Call random::generate_u32_in_range(&mut RandomGenerator, u32, u32): u32
+	97: LdU32(57096277)
+	98: Eq
+	99: BrFalse(101)
+B25:
+	100: Branch(103)
+B26:
+	101: LdU64(13906834715509260287)
+	102: Abort
+B27:
+	103: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	104: LdU16(51)
+	105: LdU16(1234)
+	106: Call random::generate_u16_in_range(&mut RandomGenerator, u16, u16): u16
+	107: LdU16(349)
+	108: Eq
+	109: BrFalse(111)
+B28:
+	110: Branch(113)
+B29:
+	111: LdU64(13906834724099194879)
+	112: Abort
+B30:
+	113: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	114: LdU8(51)
+	115: LdU8(123)
+	116: Call random::generate_u8_in_range(&mut RandomGenerator, u8, u8): u8
+	117: LdU8(60)
+	118: Eq
+	119: BrFalse(121)
+B31:
+	120: Branch(123)
+B32:
+	121: LdU64(13906834732689129471)
+	122: Abort
+B33:
+	123: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	124: LdU16(11)
+	125: Call random::generate_bytes(&mut RandomGenerator, u16): vector<u8>
+	126: LdConst[3](vector<u8>: 0b25..)
+	127: Eq
+	128: BrFalse(130)
+B34:
+	129: Branch(132)
+B35:
+	130: LdU64(13906834741279064063)
+	131: Abort
+B36:
+	132: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	133: Call random::generate_bool(&mut RandomGenerator): bool
+	134: LdTrue
+	135: Eq
+	136: BrFalse(138)
+B37:
+	137: Branch(140)
+B38:
+	138: LdU64(13906834749868998655)
+	139: Abort
+B39:
+	140: MoveLoc[1](random_state#1#0: Random)
+	141: Call test_scenario::return_shared<Random>(Random)
+	142: MoveLoc[2](scenario#1#0: Scenario)
+	143: Call test_scenario::end(Scenario): TransactionEffects
+	144: Pop
+	145: Ret
+}
+
+test_bytes() {
+L0:	gen#1#0: RandomGenerator
+L1:	i#1#0: u64
+L2:	output#1#0: vector<u8>
+L3:	output#2#0: vector<u8>
+L4:	output#3#0: vector<u8>
+L5:	output#4#0: vector<u8>
+L6:	output#5#0: vector<u8>
+L7:	output#6#0: vector<u8>
+L8:	output#7#0: vector<u8>
+L9:	output1#1#0: vector<u8>
+L10:	output2#1#0: vector<u8>
+L11:	random_state#1#0: Random
+L12:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[12](scenario#1#0: Scenario)
+	3: MutBorrowLoc[12](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call random::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[12](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[12](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<Random>(&Scenario): Random
+	12: StLoc[11](random_state#1#0: Random)
+	13: MutBorrowLoc[11](random_state#1#0: Random)
+	14: LdU64(0)
+	15: LdConst[1](vector<u8>: "..)
+	16: MutBorrowLoc[12](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	20: ImmBorrowLoc[11](random_state#1#0: Random)
+	21: MutBorrowLoc[12](scenario#1#0: Scenario)
+	22: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	23: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	24: StLoc[0](gen#1#0: RandomGenerator)
+	25: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	26: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	27: Call vector::is_empty<u8>(&vector<u8>): bool
+	28: BrFalse(30)
+B1:
+	29: Branch(32)
+B2:
+	30: LdU64(13906834848653246463)
+	31: Abort
+B3:
+	32: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	33: LdU16(1)
+	34: Call random::generate_bytes(&mut RandomGenerator, u16): vector<u8>
+	35: StLoc[2](output#1#0: vector<u8>)
+	36: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	37: Call random::generator_counter(&RandomGenerator): u16
+	38: LdU16(1)
+	39: Eq
+	40: BrFalse(42)
+B4:
+	41: Branch(44)
+B5:
+	42: LdU64(13906834857243181055)
+	43: Abort
+B6:
+	44: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	45: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	46: VecLen(20)
+	47: LdU64(31)
+	48: Eq
+	49: BrFalse(51)
+B7:
+	50: Branch(53)
+B8:
+	51: LdU64(13906834861538148351)
+	52: Abort
+B9:
+	53: ImmBorrowLoc[2](output#1#0: vector<u8>)
+	54: VecLen(20)
+	55: LdU64(1)
+	56: Eq
+	57: BrFalse(59)
+B10:
+	58: Branch(61)
+B11:
+	59: LdU64(13906834865833115647)
+	60: Abort
+B12:
+	61: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	62: LdU16(2)
+	63: Call random::generate_bytes(&mut RandomGenerator, u16): vector<u8>
+	64: StLoc[3](output#2#0: vector<u8>)
+	65: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	66: Call random::generator_counter(&RandomGenerator): u16
+	67: LdU16(1)
+	68: Eq
+	69: BrFalse(71)
+B13:
+	70: Branch(73)
+B14:
+	71: LdU64(13906834874423050239)
+	72: Abort
+B15:
+	73: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	74: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	75: VecLen(20)
+	76: LdU64(29)
+	77: Eq
+	78: BrFalse(80)
+B16:
+	79: Branch(82)
+B17:
+	80: LdU64(13906834878718017535)
+	81: Abort
+B18:
+	82: ImmBorrowLoc[3](output#2#0: vector<u8>)
+	83: VecLen(20)
+	84: LdU64(2)
+	85: Eq
+	86: BrFalse(88)
+B19:
+	87: Branch(90)
+B20:
+	88: LdU64(13906834883012984831)
+	89: Abort
+B21:
+	90: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	91: LdU16(29)
+	92: Call random::generate_bytes(&mut RandomGenerator, u16): vector<u8>
+	93: StLoc[4](output#3#0: vector<u8>)
+	94: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	95: Call random::generator_counter(&RandomGenerator): u16
+	96: LdU16(1)
+	97: Eq
+	98: BrFalse(100)
+B22:
+	99: Branch(102)
+B23:
+	100: LdU64(13906834891602919423)
+	101: Abort
+B24:
+	102: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	103: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	104: VecLen(20)
+	105: LdU64(0)
+	106: Eq
+	107: BrFalse(109)
+B25:
+	108: Branch(111)
+B26:
+	109: LdU64(13906834895897886719)
+	110: Abort
+B27:
+	111: ImmBorrowLoc[4](output#3#0: vector<u8>)
+	112: VecLen(20)
+	113: LdU64(29)
+	114: Eq
+	115: BrFalse(117)
+B28:
+	116: Branch(119)
+B29:
+	117: LdU64(13906834900192854015)
+	118: Abort
+B30:
+	119: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	120: LdU16(11)
+	121: Call random::generate_bytes(&mut RandomGenerator, u16): vector<u8>
+	122: StLoc[5](output#4#0: vector<u8>)
+	123: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	124: Call random::generator_counter(&RandomGenerator): u16
+	125: LdU16(2)
+	126: Eq
+	127: BrFalse(129)
+B31:
+	128: Branch(131)
+B32:
+	129: LdU64(13906834908782788607)
+	130: Abort
+B33:
+	131: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	132: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	133: VecLen(20)
+	134: LdU64(21)
+	135: Eq
+	136: BrFalse(138)
+B34:
+	137: Branch(140)
+B35:
+	138: LdU64(13906834913077755903)
+	139: Abort
+B36:
+	140: ImmBorrowLoc[5](output#4#0: vector<u8>)
+	141: VecLen(20)
+	142: LdU64(11)
+	143: Eq
+	144: BrFalse(146)
+B37:
+	145: Branch(148)
+B38:
+	146: LdU64(13906834917372723199)
+	147: Abort
+B39:
+	148: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	149: LdU16(64)
+	150: Call random::generate_bytes(&mut RandomGenerator, u16): vector<u8>
+	151: StLoc[6](output#5#0: vector<u8>)
+	152: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	153: Call random::generator_counter(&RandomGenerator): u16
+	154: LdU16(4)
+	155: Eq
+	156: BrFalse(158)
+B40:
+	157: Branch(160)
+B41:
+	158: LdU64(13906834925962657791)
+	159: Abort
+B42:
+	160: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	161: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	162: VecLen(20)
+	163: LdU64(21)
+	164: Eq
+	165: BrFalse(167)
+B43:
+	166: Branch(169)
+B44:
+	167: LdU64(13906834930257625087)
+	168: Abort
+B45:
+	169: ImmBorrowLoc[6](output#5#0: vector<u8>)
+	170: VecLen(20)
+	171: LdU64(64)
+	172: Eq
+	173: BrFalse(175)
+B46:
+	174: Branch(177)
+B47:
+	175: LdU64(13906834934552592383)
+	176: Abort
+B48:
+	177: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	178: LdU16(165)
+	179: Call random::generate_bytes(&mut RandomGenerator, u16): vector<u8>
+	180: StLoc[7](output#6#0: vector<u8>)
+	181: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	182: Call random::generator_counter(&RandomGenerator): u16
+	183: LdU16(9)
+	184: Eq
+	185: BrFalse(187)
+B49:
+	186: Branch(189)
+B50:
+	187: LdU64(13906834943142526975)
+	188: Abort
+B51:
+	189: ImmBorrowLoc[0](gen#1#0: RandomGenerator)
+	190: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	191: VecLen(20)
+	192: LdU64(16)
+	193: Eq
+	194: BrFalse(196)
+B52:
+	195: Branch(198)
+B53:
+	196: LdU64(13906834947437494271)
+	197: Abort
+B54:
+	198: ImmBorrowLoc[7](output#6#0: vector<u8>)
+	199: VecLen(20)
+	200: LdU64(165)
+	201: Eq
+	202: BrFalse(204)
+B55:
+	203: Branch(206)
+B56:
+	204: LdU64(13906834951732461567)
+	205: Abort
+B57:
+	206: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	207: LdU16(10)
+	208: Call random::generate_bytes(&mut RandomGenerator, u16): vector<u8>
+	209: StLoc[8](output#7#0: vector<u8>)
+	210: LdU64(0)
+	211: StLoc[1](i#1#0: u64)
+B58:
+	212: ImmBorrowLoc[8](output#7#0: vector<u8>)
+	213: CopyLoc[1](i#1#0: u64)
+	214: VecImmBorrow(20)
+	215: ReadRef
+	216: LdU8(0)
+	217: Neq
+	218: BrFalse(220)
+B59:
+	219: Branch(225)
+B60:
+	220: MoveLoc[1](i#1#0: u64)
+	221: LdU64(1)
+	222: Add
+	223: StLoc[1](i#1#0: u64)
+	224: Branch(212)
+B61:
+	225: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	226: LdU16(10)
+	227: Call random::generate_bytes(&mut RandomGenerator, u16): vector<u8>
+	228: StLoc[9](output1#1#0: vector<u8>)
+	229: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	230: LdU16(10)
+	231: Call random::generate_bytes(&mut RandomGenerator, u16): vector<u8>
+	232: StLoc[10](output2#1#0: vector<u8>)
+	233: LdU64(0)
+	234: StLoc[1](i#1#0: u64)
+B62:
+	235: ImmBorrowLoc[9](output1#1#0: vector<u8>)
+	236: CopyLoc[1](i#1#0: u64)
+	237: VecImmBorrow(20)
+	238: ImmBorrowLoc[10](output2#1#0: vector<u8>)
+	239: CopyLoc[1](i#1#0: u64)
+	240: VecImmBorrow(20)
+	241: Neq
+	242: BrFalse(244)
+B63:
+	243: Branch(249)
+B64:
+	244: MoveLoc[1](i#1#0: u64)
+	245: LdU64(1)
+	246: Add
+	247: StLoc[1](i#1#0: u64)
+	248: Branch(235)
+B65:
+	249: MoveLoc[11](random_state#1#0: Random)
+	250: Call test_scenario::return_shared<Random>(Random)
+	251: MoveLoc[12](scenario#1#0: Scenario)
+	252: Call test_scenario::end(Scenario): TransactionEffects
+	253: Pop
+	254: Ret
+}
+
+random_tests_uints() {
+L0:	%#1: bool
+L1:	%#2: bool
+L2:	gen#1#0: RandomGenerator
+L3:	i#1#0: u64
+L4:	i#2#0: u64
+L5:	i#3#0: u64
+L6:	i#4#0: u64
+L7:	i#5#0: u64
+L8:	output1#1#0: u256
+L9:	output1#2#0: u128
+L10:	output1#3#0: u64
+L11:	output1#4#0: u32
+L12:	output1#5#0: u16
+L13:	output1#6#0: u8
+L14:	output1#7#0: bool
+L15:	output2#1#0: u256
+L16:	output2#2#0: u128
+L17:	output2#3#0: u64
+L18:	output2#4#0: u32
+L19:	output2#5#0: u16
+L20:	output2#6#0: u8
+L21:	output2#7#0: bool
+L22:	random_state#1#0: Random
+L23:	saw_false#1#0: bool
+L24:	scenario#1#0: Scenario
+L25:	x#1#0: u256
+L26:	x#2#0: u128
+L27:	x#3#0: u64
+L28:	x#4#0: u32
+L29:	x#5#0: u16
+L30:	x#7#0: bool
+L31:	x_bytes#1#0: vector<u8>
+L32:	x_bytes#2#0: vector<u8>
+L33:	x_bytes#3#0: vector<u8>
+L34:	x_bytes#4#0: vector<u8>
+L35:	x_bytes#5#0: vector<u8>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[24](scenario#1#0: Scenario)
+	3: MutBorrowLoc[24](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call random::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[24](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[24](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<Random>(&Scenario): Random
+	12: StLoc[22](random_state#1#0: Random)
+	13: MutBorrowLoc[22](random_state#1#0: Random)
+	14: LdU64(0)
+	15: LdConst[1](vector<u8>: "..)
+	16: MutBorrowLoc[24](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	20: ImmBorrowLoc[22](random_state#1#0: Random)
+	21: MutBorrowLoc[24](scenario#1#0: Scenario)
+	22: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	23: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	24: StLoc[2](gen#1#0: RandomGenerator)
+	25: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	26: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	27: Call vector::is_empty<u8>(&vector<u8>): bool
+	28: BrFalse(30)
+B1:
+	29: Branch(32)
+B2:
+	30: LdU64(13906835127826120703)
+	31: Abort
+B3:
+	32: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	33: Call random::generate_u256(&mut RandomGenerator): u256
+	34: StLoc[8](output1#1#0: u256)
+	35: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	36: Call random::generator_counter(&RandomGenerator): u16
+	37: LdU16(1)
+	38: Eq
+	39: BrFalse(41)
+B4:
+	40: Branch(43)
+B5:
+	41: LdU64(13906835136416055295)
+	42: Abort
+B6:
+	43: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	44: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	45: VecLen(20)
+	46: LdU64(0)
+	47: Eq
+	48: BrFalse(50)
+B7:
+	49: Branch(52)
+B8:
+	50: LdU64(13906835140711022591)
+	51: Abort
+B9:
+	52: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	53: Call random::generate_u256(&mut RandomGenerator): u256
+	54: StLoc[15](output2#1#0: u256)
+	55: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	56: Call random::generator_counter(&RandomGenerator): u16
+	57: LdU16(2)
+	58: Eq
+	59: BrFalse(61)
+B10:
+	60: Branch(63)
+B11:
+	61: LdU64(13906835149300957183)
+	62: Abort
+B12:
+	63: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	64: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	65: VecLen(20)
+	66: LdU64(0)
+	67: Eq
+	68: BrFalse(70)
+B13:
+	69: Branch(72)
+B14:
+	70: LdU64(13906835153595924479)
+	71: Abort
+B15:
+	72: MoveLoc[8](output1#1#0: u256)
+	73: MoveLoc[15](output2#1#0: u256)
+	74: Neq
+	75: BrFalse(77)
+B16:
+	76: Branch(79)
+B17:
+	77: LdU64(13906835157890891775)
+	78: Abort
+B18:
+	79: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	80: Call random::generate_u8(&mut RandomGenerator): u8
+	81: Pop
+	82: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	83: Call random::generate_u256(&mut RandomGenerator): u256
+	84: Pop
+	85: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	86: Call random::generator_counter(&RandomGenerator): u16
+	87: LdU16(4)
+	88: Eq
+	89: BrFalse(91)
+B19:
+	90: Branch(93)
+B20:
+	91: LdU64(13906835170775793663)
+	92: Abort
+B21:
+	93: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	94: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	95: VecLen(20)
+	96: LdU64(31)
+	97: Eq
+	98: BrFalse(100)
+B22:
+	99: Branch(102)
+B23:
+	100: LdU64(13906835175070760959)
+	101: Abort
+B24:
+	102: LdU64(0)
+	103: StLoc[3](i#1#0: u64)
+B25:
+	104: CopyLoc[3](i#1#0: u64)
+	105: LdU64(32)
+	106: Lt
+	107: BrFalse(126)
+B26:
+	108: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	109: Call random::generate_u256(&mut RandomGenerator): u256
+	110: StLoc[25](x#1#0: u256)
+	111: ImmBorrowLoc[25](x#1#0: u256)
+	112: Call bcs::to_bytes<u256>(&u256): vector<u8>
+	113: StLoc[31](x_bytes#1#0: vector<u8>)
+	114: ImmBorrowLoc[31](x_bytes#1#0: vector<u8>)
+	115: CopyLoc[3](i#1#0: u64)
+	116: VecImmBorrow(20)
+	117: ReadRef
+	118: LdU8(0)
+	119: Neq
+	120: BrFalse(104)
+B27:
+	121: MoveLoc[3](i#1#0: u64)
+	122: LdU64(1)
+	123: Add
+	124: StLoc[3](i#1#0: u64)
+	125: Branch(104)
+B28:
+	126: ImmBorrowLoc[22](random_state#1#0: Random)
+	127: MutBorrowLoc[24](scenario#1#0: Scenario)
+	128: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	129: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	130: StLoc[2](gen#1#0: RandomGenerator)
+	131: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	132: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	133: Call vector::is_empty<u8>(&vector<u8>): bool
+	134: BrFalse(136)
+B29:
+	135: Branch(138)
+B30:
+	136: LdU64(13906835222315401215)
+	137: Abort
+B31:
+	138: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	139: Call random::generate_u128(&mut RandomGenerator): u128
+	140: StLoc[9](output1#2#0: u128)
+	141: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	142: Call random::generator_counter(&RandomGenerator): u16
+	143: LdU16(1)
+	144: Eq
+	145: BrFalse(147)
+B32:
+	146: Branch(149)
+B33:
+	147: LdU64(13906835230905335807)
+	148: Abort
+B34:
+	149: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	150: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	151: VecLen(20)
+	152: LdU64(16)
+	153: Eq
+	154: BrFalse(156)
+B35:
+	155: Branch(158)
+B36:
+	156: LdU64(13906835235200303103)
+	157: Abort
+B37:
+	158: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	159: Call random::generate_u128(&mut RandomGenerator): u128
+	160: StLoc[16](output2#2#0: u128)
+	161: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	162: Call random::generator_counter(&RandomGenerator): u16
+	163: LdU16(1)
+	164: Eq
+	165: BrFalse(167)
+B38:
+	166: Branch(169)
+B39:
+	167: LdU64(13906835243790237695)
+	168: Abort
+B40:
+	169: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	170: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	171: VecLen(20)
+	172: LdU64(0)
+	173: Eq
+	174: BrFalse(176)
+B41:
+	175: Branch(178)
+B42:
+	176: LdU64(13906835248085204991)
+	177: Abort
+B43:
+	178: MoveLoc[9](output1#2#0: u128)
+	179: MoveLoc[16](output2#2#0: u128)
+	180: Neq
+	181: BrFalse(183)
+B44:
+	182: Branch(185)
+B45:
+	183: LdU64(13906835252380172287)
+	184: Abort
+B46:
+	185: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	186: Call random::generate_u8(&mut RandomGenerator): u8
+	187: Pop
+	188: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	189: Call random::generate_u128(&mut RandomGenerator): u128
+	190: Pop
+	191: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	192: Call random::generator_counter(&RandomGenerator): u16
+	193: LdU16(2)
+	194: Eq
+	195: BrFalse(197)
+B47:
+	196: Branch(199)
+B48:
+	197: LdU64(13906835265265074175)
+	198: Abort
+B49:
+	199: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	200: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	201: VecLen(20)
+	202: LdU64(15)
+	203: Eq
+	204: BrFalse(206)
+B50:
+	205: Branch(208)
+B51:
+	206: LdU64(13906835269560041471)
+	207: Abort
+B52:
+	208: LdU64(0)
+	209: StLoc[4](i#2#0: u64)
+B53:
+	210: CopyLoc[4](i#2#0: u64)
+	211: LdU64(16)
+	212: Lt
+	213: BrFalse(232)
+B54:
+	214: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	215: Call random::generate_u128(&mut RandomGenerator): u128
+	216: StLoc[26](x#2#0: u128)
+	217: ImmBorrowLoc[26](x#2#0: u128)
+	218: Call bcs::to_bytes<u128>(&u128): vector<u8>
+	219: StLoc[32](x_bytes#2#0: vector<u8>)
+	220: ImmBorrowLoc[32](x_bytes#2#0: vector<u8>)
+	221: CopyLoc[4](i#2#0: u64)
+	222: VecImmBorrow(20)
+	223: ReadRef
+	224: LdU8(0)
+	225: Neq
+	226: BrFalse(210)
+B55:
+	227: MoveLoc[4](i#2#0: u64)
+	228: LdU64(1)
+	229: Add
+	230: StLoc[4](i#2#0: u64)
+	231: Branch(210)
+B56:
+	232: ImmBorrowLoc[22](random_state#1#0: Random)
+	233: MutBorrowLoc[24](scenario#1#0: Scenario)
+	234: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	235: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	236: StLoc[2](gen#1#0: RandomGenerator)
+	237: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	238: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	239: Call vector::is_empty<u8>(&vector<u8>): bool
+	240: BrFalse(242)
+B57:
+	241: Branch(244)
+B58:
+	242: LdU64(13906835312509714431)
+	243: Abort
+B59:
+	244: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	245: Call random::generate_u64(&mut RandomGenerator): u64
+	246: StLoc[10](output1#3#0: u64)
+	247: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	248: Call random::generator_counter(&RandomGenerator): u16
+	249: LdU16(1)
+	250: Eq
+	251: BrFalse(253)
+B60:
+	252: Branch(255)
+B61:
+	253: LdU64(13906835321099649023)
+	254: Abort
+B62:
+	255: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	256: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	257: VecLen(20)
+	258: LdU64(24)
+	259: Eq
+	260: BrFalse(262)
+B63:
+	261: Branch(264)
+B64:
+	262: LdU64(13906835325394616319)
+	263: Abort
+B65:
+	264: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	265: Call random::generate_u64(&mut RandomGenerator): u64
+	266: StLoc[17](output2#3#0: u64)
+	267: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	268: Call random::generator_counter(&RandomGenerator): u16
+	269: LdU16(1)
+	270: Eq
+	271: BrFalse(273)
+B66:
+	272: Branch(275)
+B67:
+	273: LdU64(13906835333984550911)
+	274: Abort
+B68:
+	275: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	276: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	277: VecLen(20)
+	278: LdU64(16)
+	279: Eq
+	280: BrFalse(282)
+B69:
+	281: Branch(284)
+B70:
+	282: LdU64(13906835338279518207)
+	283: Abort
+B71:
+	284: MoveLoc[10](output1#3#0: u64)
+	285: MoveLoc[17](output2#3#0: u64)
+	286: Neq
+	287: BrFalse(289)
+B72:
+	288: Branch(291)
+B73:
+	289: LdU64(13906835342574485503)
+	290: Abort
+B74:
+	291: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	292: Call random::generate_u8(&mut RandomGenerator): u8
+	293: Pop
+	294: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	295: Call random::generate_u64(&mut RandomGenerator): u64
+	296: Pop
+	297: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	298: Call random::generator_counter(&RandomGenerator): u16
+	299: LdU16(1)
+	300: Eq
+	301: BrFalse(303)
+B75:
+	302: Branch(305)
+B76:
+	303: LdU64(13906835355459387391)
+	304: Abort
+B77:
+	305: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	306: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	307: VecLen(20)
+	308: LdU64(7)
+	309: Eq
+	310: BrFalse(312)
+B78:
+	311: Branch(314)
+B79:
+	312: LdU64(13906835359754354687)
+	313: Abort
+B80:
+	314: LdU64(0)
+	315: StLoc[5](i#3#0: u64)
+B81:
+	316: CopyLoc[5](i#3#0: u64)
+	317: LdU64(8)
+	318: Lt
+	319: BrFalse(338)
+B82:
+	320: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	321: Call random::generate_u64(&mut RandomGenerator): u64
+	322: StLoc[27](x#3#0: u64)
+	323: ImmBorrowLoc[27](x#3#0: u64)
+	324: Call bcs::to_bytes<u64>(&u64): vector<u8>
+	325: StLoc[33](x_bytes#3#0: vector<u8>)
+	326: ImmBorrowLoc[33](x_bytes#3#0: vector<u8>)
+	327: CopyLoc[5](i#3#0: u64)
+	328: VecImmBorrow(20)
+	329: ReadRef
+	330: LdU8(0)
+	331: Neq
+	332: BrFalse(316)
+B83:
+	333: MoveLoc[5](i#3#0: u64)
+	334: LdU64(1)
+	335: Add
+	336: StLoc[5](i#3#0: u64)
+	337: Branch(316)
+B84:
+	338: ImmBorrowLoc[22](random_state#1#0: Random)
+	339: MutBorrowLoc[24](scenario#1#0: Scenario)
+	340: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	341: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	342: StLoc[2](gen#1#0: RandomGenerator)
+	343: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	344: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	345: Call vector::is_empty<u8>(&vector<u8>): bool
+	346: BrFalse(348)
+B85:
+	347: Branch(350)
+B86:
+	348: LdU64(13906835402704027647)
+	349: Abort
+B87:
+	350: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	351: Call random::generate_u32(&mut RandomGenerator): u32
+	352: StLoc[11](output1#4#0: u32)
+	353: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	354: Call random::generator_counter(&RandomGenerator): u16
+	355: LdU16(1)
+	356: Eq
+	357: BrFalse(359)
+B88:
+	358: Branch(361)
+B89:
+	359: LdU64(13906835411293962239)
+	360: Abort
+B90:
+	361: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	362: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	363: VecLen(20)
+	364: LdU64(28)
+	365: Eq
+	366: BrFalse(368)
+B91:
+	367: Branch(370)
+B92:
+	368: LdU64(13906835415588929535)
+	369: Abort
+B93:
+	370: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	371: Call random::generate_u32(&mut RandomGenerator): u32
+	372: StLoc[18](output2#4#0: u32)
+	373: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	374: Call random::generator_counter(&RandomGenerator): u16
+	375: LdU16(1)
+	376: Eq
+	377: BrFalse(379)
+B94:
+	378: Branch(381)
+B95:
+	379: LdU64(13906835424178864127)
+	380: Abort
+B96:
+	381: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	382: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	383: VecLen(20)
+	384: LdU64(24)
+	385: Eq
+	386: BrFalse(388)
+B97:
+	387: Branch(390)
+B98:
+	388: LdU64(13906835428473831423)
+	389: Abort
+B99:
+	390: MoveLoc[11](output1#4#0: u32)
+	391: MoveLoc[18](output2#4#0: u32)
+	392: Neq
+	393: BrFalse(395)
+B100:
+	394: Branch(397)
+B101:
+	395: LdU64(13906835432768798719)
+	396: Abort
+B102:
+	397: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	398: Call random::generate_u8(&mut RandomGenerator): u8
+	399: Pop
+	400: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	401: Call random::generate_u32(&mut RandomGenerator): u32
+	402: Pop
+	403: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	404: Call random::generator_counter(&RandomGenerator): u16
+	405: LdU16(1)
+	406: Eq
+	407: BrFalse(409)
+B103:
+	408: Branch(411)
+B104:
+	409: LdU64(13906835445653700607)
+	410: Abort
+B105:
+	411: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	412: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	413: VecLen(20)
+	414: LdU64(19)
+	415: Eq
+	416: BrFalse(418)
+B106:
+	417: Branch(420)
+B107:
+	418: LdU64(13906835449948667903)
+	419: Abort
+B108:
+	420: LdU64(0)
+	421: StLoc[6](i#4#0: u64)
+B109:
+	422: CopyLoc[6](i#4#0: u64)
+	423: LdU64(4)
+	424: Lt
+	425: BrFalse(444)
+B110:
+	426: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	427: Call random::generate_u32(&mut RandomGenerator): u32
+	428: StLoc[28](x#4#0: u32)
+	429: ImmBorrowLoc[28](x#4#0: u32)
+	430: Call bcs::to_bytes<u32>(&u32): vector<u8>
+	431: StLoc[34](x_bytes#4#0: vector<u8>)
+	432: ImmBorrowLoc[34](x_bytes#4#0: vector<u8>)
+	433: CopyLoc[6](i#4#0: u64)
+	434: VecImmBorrow(20)
+	435: ReadRef
+	436: LdU8(0)
+	437: Neq
+	438: BrFalse(422)
+B111:
+	439: MoveLoc[6](i#4#0: u64)
+	440: LdU64(1)
+	441: Add
+	442: StLoc[6](i#4#0: u64)
+	443: Branch(422)
+B112:
+	444: ImmBorrowLoc[22](random_state#1#0: Random)
+	445: MutBorrowLoc[24](scenario#1#0: Scenario)
+	446: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	447: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	448: StLoc[2](gen#1#0: RandomGenerator)
+	449: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	450: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	451: Call vector::is_empty<u8>(&vector<u8>): bool
+	452: BrFalse(454)
+B113:
+	453: Branch(456)
+B114:
+	454: LdU64(13906835492898340863)
+	455: Abort
+B115:
+	456: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	457: Call random::generate_u16(&mut RandomGenerator): u16
+	458: StLoc[12](output1#5#0: u16)
+	459: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	460: Call random::generator_counter(&RandomGenerator): u16
+	461: LdU16(1)
+	462: Eq
+	463: BrFalse(465)
+B116:
+	464: Branch(467)
+B117:
+	465: LdU64(13906835501488275455)
+	466: Abort
+B118:
+	467: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	468: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	469: VecLen(20)
+	470: LdU64(30)
+	471: Eq
+	472: BrFalse(474)
+B119:
+	473: Branch(476)
+B120:
+	474: LdU64(13906835505783242751)
+	475: Abort
+B121:
+	476: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	477: Call random::generate_u16(&mut RandomGenerator): u16
+	478: StLoc[19](output2#5#0: u16)
+	479: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	480: Call random::generator_counter(&RandomGenerator): u16
+	481: LdU16(1)
+	482: Eq
+	483: BrFalse(485)
+B122:
+	484: Branch(487)
+B123:
+	485: LdU64(13906835514373177343)
+	486: Abort
+B124:
+	487: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	488: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	489: VecLen(20)
+	490: LdU64(28)
+	491: Eq
+	492: BrFalse(494)
+B125:
+	493: Branch(496)
+B126:
+	494: LdU64(13906835518668144639)
+	495: Abort
+B127:
+	496: MoveLoc[12](output1#5#0: u16)
+	497: MoveLoc[19](output2#5#0: u16)
+	498: Neq
+	499: BrFalse(501)
+B128:
+	500: Branch(503)
+B129:
+	501: LdU64(13906835522963111935)
+	502: Abort
+B130:
+	503: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	504: Call random::generate_u8(&mut RandomGenerator): u8
+	505: Pop
+	506: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	507: Call random::generate_u16(&mut RandomGenerator): u16
+	508: Pop
+	509: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	510: Call random::generator_counter(&RandomGenerator): u16
+	511: LdU16(1)
+	512: Eq
+	513: BrFalse(515)
+B131:
+	514: Branch(517)
+B132:
+	515: LdU64(13906835535848013823)
+	516: Abort
+B133:
+	517: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	518: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	519: VecLen(20)
+	520: LdU64(25)
+	521: Eq
+	522: BrFalse(524)
+B134:
+	523: Branch(526)
+B135:
+	524: LdU64(13906835540142981119)
+	525: Abort
+B136:
+	526: LdU64(0)
+	527: StLoc[7](i#5#0: u64)
+B137:
+	528: CopyLoc[7](i#5#0: u64)
+	529: LdU64(2)
+	530: Lt
+	531: BrFalse(550)
+B138:
+	532: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	533: Call random::generate_u16(&mut RandomGenerator): u16
+	534: StLoc[29](x#5#0: u16)
+	535: ImmBorrowLoc[29](x#5#0: u16)
+	536: Call bcs::to_bytes<u16>(&u16): vector<u8>
+	537: StLoc[35](x_bytes#5#0: vector<u8>)
+	538: ImmBorrowLoc[35](x_bytes#5#0: vector<u8>)
+	539: CopyLoc[7](i#5#0: u64)
+	540: VecImmBorrow(20)
+	541: ReadRef
+	542: LdU8(0)
+	543: Neq
+	544: BrFalse(528)
+B139:
+	545: MoveLoc[7](i#5#0: u64)
+	546: LdU64(1)
+	547: Add
+	548: StLoc[7](i#5#0: u64)
+	549: Branch(528)
+B140:
+	550: ImmBorrowLoc[22](random_state#1#0: Random)
+	551: MutBorrowLoc[24](scenario#1#0: Scenario)
+	552: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	553: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	554: StLoc[2](gen#1#0: RandomGenerator)
+	555: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	556: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	557: Call vector::is_empty<u8>(&vector<u8>): bool
+	558: BrFalse(560)
+B141:
+	559: Branch(562)
+B142:
+	560: LdU64(13906835583092654079)
+	561: Abort
+B143:
+	562: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	563: Call random::generate_u8(&mut RandomGenerator): u8
+	564: StLoc[13](output1#6#0: u8)
+	565: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	566: Call random::generator_counter(&RandomGenerator): u16
+	567: LdU16(1)
+	568: Eq
+	569: BrFalse(571)
+B144:
+	570: Branch(573)
+B145:
+	571: LdU64(13906835591682588671)
+	572: Abort
+B146:
+	573: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	574: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	575: VecLen(20)
+	576: LdU64(31)
+	577: Eq
+	578: BrFalse(580)
+B147:
+	579: Branch(582)
+B148:
+	580: LdU64(13906835595977555967)
+	581: Abort
+B149:
+	582: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	583: Call random::generate_u8(&mut RandomGenerator): u8
+	584: StLoc[20](output2#6#0: u8)
+	585: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	586: Call random::generator_counter(&RandomGenerator): u16
+	587: LdU16(1)
+	588: Eq
+	589: BrFalse(591)
+B150:
+	590: Branch(593)
+B151:
+	591: LdU64(13906835604567490559)
+	592: Abort
+B152:
+	593: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	594: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	595: VecLen(20)
+	596: LdU64(30)
+	597: Eq
+	598: BrFalse(600)
+B153:
+	599: Branch(602)
+B154:
+	600: LdU64(13906835608862457855)
+	601: Abort
+B155:
+	602: MoveLoc[13](output1#6#0: u8)
+	603: MoveLoc[20](output2#6#0: u8)
+	604: Neq
+	605: BrFalse(607)
+B156:
+	606: Branch(609)
+B157:
+	607: LdU64(13906835613157425151)
+	608: Abort
+B158:
+	609: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	610: Call random::generate_u128(&mut RandomGenerator): u128
+	611: Pop
+	612: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	613: Call random::generate_u8(&mut RandomGenerator): u8
+	614: Pop
+	615: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	616: Call random::generator_counter(&RandomGenerator): u16
+	617: LdU16(1)
+	618: Eq
+	619: BrFalse(621)
+B159:
+	620: Branch(623)
+B160:
+	621: LdU64(13906835626042327039)
+	622: Abort
+B161:
+	623: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	624: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	625: VecLen(20)
+	626: LdU64(13)
+	627: Eq
+	628: BrFalse(630)
+B162:
+	629: Branch(632)
+B163:
+	630: LdU64(13906835630337294335)
+	631: Abort
+B164:
+	632: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	633: Call random::generate_u8(&mut RandomGenerator): u8
+	634: LdU8(0)
+	635: Neq
+	636: BrFalse(632)
+B165:
+	637: ImmBorrowLoc[22](random_state#1#0: Random)
+	638: MutBorrowLoc[24](scenario#1#0: Scenario)
+	639: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	640: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	641: StLoc[2](gen#1#0: RandomGenerator)
+	642: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	643: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	644: Call vector::is_empty<u8>(&vector<u8>): bool
+	645: BrFalse(647)
+B166:
+	646: Branch(649)
+B167:
+	647: LdU64(13906835664697032703)
+	648: Abort
+B168:
+	649: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	650: Call random::generate_bool(&mut RandomGenerator): bool
+	651: StLoc[14](output1#7#0: bool)
+	652: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	653: Call random::generator_counter(&RandomGenerator): u16
+	654: LdU16(1)
+	655: Eq
+	656: BrFalse(658)
+B169:
+	657: Branch(660)
+B170:
+	658: LdU64(13906835673286967295)
+	659: Abort
+B171:
+	660: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	661: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	662: VecLen(20)
+	663: LdU64(31)
+	664: Eq
+	665: BrFalse(667)
+B172:
+	666: Branch(669)
+B173:
+	667: LdU64(13906835677581934591)
+	668: Abort
+B174:
+	669: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	670: Call random::generate_bool(&mut RandomGenerator): bool
+	671: StLoc[21](output2#7#0: bool)
+	672: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	673: Call random::generator_counter(&RandomGenerator): u16
+	674: LdU16(1)
+	675: Eq
+	676: BrFalse(678)
+B175:
+	677: Branch(680)
+B176:
+	678: LdU64(13906835686171869183)
+	679: Abort
+B177:
+	680: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	681: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	682: VecLen(20)
+	683: LdU64(30)
+	684: Eq
+	685: BrFalse(687)
+B178:
+	686: Branch(689)
+B179:
+	687: LdU64(13906835690466836479)
+	688: Abort
+B180:
+	689: MoveLoc[14](output1#7#0: bool)
+	690: MoveLoc[21](output2#7#0: bool)
+	691: Neq
+	692: BrFalse(694)
+B181:
+	693: Branch(696)
+B182:
+	694: LdU64(13906835694761803775)
+	695: Abort
+B183:
+	696: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	697: Call random::generate_u128(&mut RandomGenerator): u128
+	698: Pop
+	699: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	700: Call random::generate_u8(&mut RandomGenerator): u8
+	701: Pop
+	702: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	703: Call random::generator_counter(&RandomGenerator): u16
+	704: LdU16(1)
+	705: Eq
+	706: BrFalse(708)
+B184:
+	707: Branch(710)
+B185:
+	708: LdU64(13906835707646705663)
+	709: Abort
+B186:
+	710: ImmBorrowLoc[2](gen#1#0: RandomGenerator)
+	711: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	712: VecLen(20)
+	713: LdU64(13)
+	714: Eq
+	715: BrFalse(717)
+B187:
+	716: Branch(719)
+B188:
+	717: LdU64(13906835711941672959)
+	718: Abort
+B189:
+	719: LdFalse
+	720: StLoc[23](saw_false#1#0: bool)
+B190:
+	721: MutBorrowLoc[2](gen#1#0: RandomGenerator)
+	722: Call random::generate_bool(&mut RandomGenerator): bool
+	723: StLoc[30](x#7#0: bool)
+	724: MoveLoc[23](saw_false#1#0: bool)
+	725: BrFalse(729)
+B191:
+	726: LdTrue
+	727: StLoc[0](%#1: bool)
+	728: Branch(732)
+B192:
+	729: CopyLoc[30](x#7#0: bool)
+	730: Not
+	731: StLoc[0](%#1: bool)
+B193:
+	732: MoveLoc[0](%#1: bool)
+	733: StLoc[23](saw_false#1#0: bool)
+	734: MoveLoc[30](x#7#0: bool)
+	735: BrFalse(739)
+B194:
+	736: CopyLoc[23](saw_false#1#0: bool)
+	737: StLoc[1](%#2: bool)
+	738: Branch(741)
+B195:
+	739: LdFalse
+	740: StLoc[1](%#2: bool)
+B196:
+	741: MoveLoc[1](%#2: bool)
+	742: BrFalse(721)
+B197:
+	743: MoveLoc[22](random_state#1#0: Random)
+	744: Call test_scenario::return_shared<Random>(Random)
+	745: MoveLoc[24](scenario#1#0: Scenario)
+	746: Call test_scenario::end(Scenario): TransactionEffects
+	747: Pop
+	748: Ret
+}
+
+test_shuffle() {
+L0:	gen#1#0: RandomGenerator
+L1:	i#1#0: u16
+L2:	random_state#1#0: Random
+L3:	scenario#1#0: Scenario
+L4:	v#1#0: vector<u16>
+L5:	v#2#0: vector<u32>
+L6:	v#3#0: vector<u32>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[3](scenario#1#0: Scenario)
+	3: MutBorrowLoc[3](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call random::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[3](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<Random>(&Scenario): Random
+	12: StLoc[2](random_state#1#0: Random)
+	13: MutBorrowLoc[2](random_state#1#0: Random)
+	14: LdU64(0)
+	15: LdConst[1](vector<u8>: "..)
+	16: MutBorrowLoc[3](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	20: ImmBorrowLoc[2](random_state#1#0: Random)
+	21: MutBorrowLoc[3](scenario#1#0: Scenario)
+	22: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	23: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	24: StLoc[0](gen#1#0: RandomGenerator)
+	25: LdConst[4](vector<u16>: 0500..)
+	26: StLoc[4](v#1#0: vector<u16>)
+	27: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	28: MutBorrowLoc[4](v#1#0: vector<u16>)
+	29: Call random::shuffle<u16>(&mut RandomGenerator, &mut vector<u16>)
+	30: ImmBorrowLoc[4](v#1#0: vector<u16>)
+	31: VecLen(18)
+	32: LdU64(5)
+	33: Eq
+	34: BrFalse(36)
+B1:
+	35: Branch(38)
+B2:
+	36: LdU64(13906835836495724543)
+	37: Abort
+B3:
+	38: LdU16(0)
+	39: StLoc[1](i#1#0: u16)
+B4:
+	40: CopyLoc[1](i#1#0: u16)
+	41: LdU16(5)
+	42: Lt
+	43: BrFalse(56)
+B5:
+	44: ImmBorrowLoc[4](v#1#0: vector<u16>)
+	45: ImmBorrowLoc[1](i#1#0: u16)
+	46: Call vector::contains<u16>(&vector<u16>, &u16): bool
+	47: BrFalse(49)
+B6:
+	48: Branch(51)
+B7:
+	49: LdU64(13906835849380626431)
+	50: Abort
+B8:
+	51: MoveLoc[1](i#1#0: u16)
+	52: LdU16(1)
+	53: Add
+	54: StLoc[1](i#1#0: u16)
+	55: Branch(40)
+B9:
+	56: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	57: MutBorrowLoc[4](v#1#0: vector<u16>)
+	58: Call random::shuffle<u16>(&mut RandomGenerator, &mut vector<u16>)
+	59: ImmBorrowLoc[4](v#1#0: vector<u16>)
+	60: LdU64(4)
+	61: VecImmBorrow(18)
+	62: ReadRef
+	63: LdU16(1)
+	64: Eq
+	65: BrFalse(56)
+B10:
+	66: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	67: MutBorrowLoc[4](v#1#0: vector<u16>)
+	68: Call random::shuffle<u16>(&mut RandomGenerator, &mut vector<u16>)
+	69: ImmBorrowLoc[4](v#1#0: vector<u16>)
+	70: LdU64(0)
+	71: VecImmBorrow(18)
+	72: ReadRef
+	73: LdU16(2)
+	74: Eq
+	75: BrFalse(66)
+B11:
+	76: LdConst[5](vector<u32>: 00)
+	77: StLoc[5](v#2#0: vector<u32>)
+	78: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	79: MutBorrowLoc[5](v#2#0: vector<u32>)
+	80: Call random::shuffle<u32>(&mut RandomGenerator, &mut vector<u32>)
+	81: ImmBorrowLoc[5](v#2#0: vector<u32>)
+	82: VecLen(25)
+	83: LdU64(0)
+	84: Eq
+	85: BrFalse(87)
+B12:
+	86: Branch(89)
+B13:
+	87: LdU64(13906835918100103167)
+	88: Abort
+B14:
+	89: LdConst[6](vector<u32>: 0141..)
+	90: StLoc[6](v#3#0: vector<u32>)
+	91: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	92: MutBorrowLoc[6](v#3#0: vector<u32>)
+	93: Call random::shuffle<u32>(&mut RandomGenerator, &mut vector<u32>)
+	94: ImmBorrowLoc[6](v#3#0: vector<u32>)
+	95: VecLen(25)
+	96: LdU64(1)
+	97: Eq
+	98: BrFalse(100)
+B15:
+	99: Branch(102)
+B16:
+	100: LdU64(13906835935279972351)
+	101: Abort
+B17:
+	102: ImmBorrowLoc[6](v#3#0: vector<u32>)
+	103: LdU64(0)
+	104: VecImmBorrow(25)
+	105: ReadRef
+	106: LdU32(321)
+	107: Eq
+	108: BrFalse(110)
+B18:
+	109: Branch(112)
+B19:
+	110: LdU64(13906835939574939647)
+	111: Abort
+B20:
+	112: MoveLoc[2](random_state#1#0: Random)
+	113: Call test_scenario::return_shared<Random>(Random)
+	114: MoveLoc[3](scenario#1#0: Scenario)
+	115: Call test_scenario::end(Scenario): TransactionEffects
+	116: Pop
+	117: Ret
+}
+
+random_tests_in_range() {
+L0:	%#1: bool
+L1:	%#10: String
+L2:	%#11: String
+L3:	%#2: bool
+L4:	%#3: bool
+L5:	%#4: bool
+L6:	%#5: bool
+L7:	%#6: u8
+L8:	%#7: u8
+L9:	%#8: u8
+L10:	%#9: u8
+L11:	gen#1#0: RandomGenerator
+L12:	i#1#0: u64
+L13:	i#2#0: u64
+L14:	i#3#0: u64
+L15:	i#4#0: u64
+L16:	i#5#0: u64
+L17:	max#1#0: u128
+L18:	max#2#0: u64
+L19:	max#3#0: u32
+L20:	max#4#0: u16
+L21:	max#5#0: u8
+L22:	max#6#0: u8
+L23:	max#7#0: u8
+L24:	min#1#0: u128
+L25:	min#2#0: u64
+L26:	min#3#0: u32
+L27:	min#4#0: u16
+L28:	min#5#0: u8
+L29:	min#6#0: u8
+L30:	min#7#0: u8
+L31:	output#1#0: u128
+L32:	output#10#0: u8
+L33:	output#2#0: u128
+L34:	output#3#0: u64
+L35:	output#4#0: u64
+L36:	output#5#0: u32
+L37:	output#6#0: u32
+L38:	output#7#0: u16
+L39:	output#8#0: u16
+L40:	output#9#0: u8
+L41:	output1#1#0: u128
+L42:	output1#2#0: u64
+L43:	output1#3#0: u32
+L44:	output1#4#0: u16
+L45:	output1#5#0: u8
+L46:	output2#1#0: u128
+L47:	output2#2#0: u64
+L48:	output2#3#0: u32
+L49:	output2#4#0: u16
+L50:	output2#5#0: u8
+L51:	random_state#1#0: Random
+L52:	scenario#1#0: Scenario
+L53:	t1#1#1: u32
+L54:	t1#1#4: &u32
+L55:	t2#1#1: u32
+L56:	t2#1#4: &u32
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[52](scenario#1#0: Scenario)
+	3: MutBorrowLoc[52](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call random::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[52](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[52](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<Random>(&Scenario): Random
+	12: StLoc[51](random_state#1#0: Random)
+	13: MutBorrowLoc[51](random_state#1#0: Random)
+	14: LdU64(0)
+	15: LdConst[1](vector<u8>: "..)
+	16: MutBorrowLoc[52](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	20: ImmBorrowLoc[51](random_state#1#0: Random)
+	21: MutBorrowLoc[52](scenario#1#0: Scenario)
+	22: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	23: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	24: StLoc[11](gen#1#0: RandomGenerator)
+	25: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	26: LdU128(11)
+	27: LdU128(123454321)
+	28: Call random::generate_u128_in_range(&mut RandomGenerator, u128, u128): u128
+	29: StLoc[41](output1#1#0: u128)
+	30: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	31: Call random::generator_counter(&RandomGenerator): u16
+	32: LdU16(1)
+	33: Eq
+	34: BrFalse(36)
+B1:
+	35: Branch(38)
+B2:
+	36: LdU64(13906836038359187455)
+	37: Abort
+B3:
+	38: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	39: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	40: VecLen(20)
+	41: LdU64(8)
+	42: Eq
+	43: BrFalse(45)
+B4:
+	44: Branch(47)
+B5:
+	45: LdU64(13906836042654154751)
+	46: Abort
+B6:
+	47: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	48: LdU128(11)
+	49: LdU128(123454321)
+	50: Call random::generate_u128_in_range(&mut RandomGenerator, u128, u128): u128
+	51: StLoc[46](output2#1#0: u128)
+	52: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	53: Call random::generator_counter(&RandomGenerator): u16
+	54: LdU16(2)
+	55: Eq
+	56: BrFalse(58)
+B7:
+	57: Branch(60)
+B8:
+	58: LdU64(13906836051244089343)
+	59: Abort
+B9:
+	60: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	61: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	62: VecLen(20)
+	63: LdU64(16)
+	64: Eq
+	65: BrFalse(67)
+B10:
+	66: Branch(69)
+B11:
+	67: LdU64(13906836055539056639)
+	68: Abort
+B12:
+	69: MoveLoc[41](output1#1#0: u128)
+	70: MoveLoc[46](output2#1#0: u128)
+	71: Neq
+	72: BrFalse(74)
+B13:
+	73: Branch(76)
+B14:
+	74: LdU64(13906836059834023935)
+	75: Abort
+B15:
+	76: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	77: LdU128(123454321)
+	78: LdU128(123454322)
+	79: Call random::generate_u128_in_range(&mut RandomGenerator, u128, u128): u128
+	80: StLoc[31](output#1#0: u128)
+	81: CopyLoc[31](output#1#0: u128)
+	82: LdU128(123454321)
+	83: Eq
+	84: BrFalse(88)
+B16:
+	85: LdTrue
+	86: StLoc[0](%#1: bool)
+	87: Branch(92)
+B17:
+	88: MoveLoc[31](output#1#0: u128)
+	89: LdU128(123454322)
+	90: Eq
+	91: StLoc[0](%#1: bool)
+B18:
+	92: MoveLoc[0](%#1: bool)
+	93: BrFalse(95)
+B19:
+	94: Branch(97)
+B20:
+	95: LdU64(13906836068423958527)
+	96: Abort
+B21:
+	97: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	98: LdU128(0)
+	99: LdU128(340282366920938463463374607431768211455)
+	100: Call random::generate_u128_in_range(&mut RandomGenerator, u128, u128): u128
+	101: Pop
+	102: LdU64(0)
+	103: StLoc[12](i#1#0: u64)
+B22:
+	104: CopyLoc[12](i#1#0: u64)
+	105: LdU64(50)
+	106: Lt
+	107: BrFalse(141)
+B23:
+	108: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	109: Call random::generate_u128(&mut RandomGenerator): u128
+	110: StLoc[24](min#1#0: u128)
+	111: CopyLoc[24](min#1#0: u128)
+	112: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	113: Call random::generate_u64(&mut RandomGenerator): u64
+	114: CastU128
+	115: Add
+	116: StLoc[17](max#1#0: u128)
+	117: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	118: CopyLoc[24](min#1#0: u128)
+	119: CopyLoc[17](max#1#0: u128)
+	120: Call random::generate_u128_in_range(&mut RandomGenerator, u128, u128): u128
+	121: StLoc[33](output#2#0: u128)
+	122: CopyLoc[33](output#2#0: u128)
+	123: MoveLoc[24](min#1#0: u128)
+	124: Ge
+	125: BrFalse(127)
+B24:
+	126: Branch(129)
+B25:
+	127: LdU64(13906836102783696895)
+	128: Abort
+B26:
+	129: MoveLoc[33](output#2#0: u128)
+	130: MoveLoc[17](max#1#0: u128)
+	131: Le
+	132: BrFalse(134)
+B27:
+	133: Branch(136)
+B28:
+	134: LdU64(13906836107078664191)
+	135: Abort
+B29:
+	136: MoveLoc[12](i#1#0: u64)
+	137: LdU64(1)
+	138: Add
+	139: StLoc[12](i#1#0: u64)
+	140: Branch(104)
+B30:
+	141: ImmBorrowLoc[51](random_state#1#0: Random)
+	142: MutBorrowLoc[52](scenario#1#0: Scenario)
+	143: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	144: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	145: StLoc[11](gen#1#0: RandomGenerator)
+	146: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	147: LdU64(11)
+	148: LdU64(123454321)
+	149: Call random::generate_u64_in_range(&mut RandomGenerator, u64, u64): u64
+	150: StLoc[42](output1#2#0: u64)
+	151: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	152: Call random::generator_counter(&RandomGenerator): u16
+	153: LdU16(1)
+	154: Eq
+	155: BrFalse(157)
+B31:
+	156: Branch(159)
+B32:
+	157: LdU64(13906836137143435263)
+	158: Abort
+B33:
+	159: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	160: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	161: VecLen(20)
+	162: LdU64(16)
+	163: Eq
+	164: BrFalse(166)
+B34:
+	165: Branch(168)
+B35:
+	166: LdU64(13906836141438402559)
+	167: Abort
+B36:
+	168: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	169: LdU64(11)
+	170: LdU64(123454321)
+	171: Call random::generate_u64_in_range(&mut RandomGenerator, u64, u64): u64
+	172: StLoc[47](output2#2#0: u64)
+	173: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	174: Call random::generator_counter(&RandomGenerator): u16
+	175: LdU16(1)
+	176: Eq
+	177: BrFalse(179)
+B37:
+	178: Branch(181)
+B38:
+	179: LdU64(13906836150028337151)
+	180: Abort
+B39:
+	181: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	182: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	183: VecLen(20)
+	184: LdU64(0)
+	185: Eq
+	186: BrFalse(188)
+B40:
+	187: Branch(190)
+B41:
+	188: LdU64(13906836154323304447)
+	189: Abort
+B42:
+	190: MoveLoc[42](output1#2#0: u64)
+	191: MoveLoc[47](output2#2#0: u64)
+	192: Neq
+	193: BrFalse(195)
+B43:
+	194: Branch(197)
+B44:
+	195: LdU64(13906836158618271743)
+	196: Abort
+B45:
+	197: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	198: LdU64(123454321)
+	199: LdU64(123454322)
+	200: Call random::generate_u64_in_range(&mut RandomGenerator, u64, u64): u64
+	201: StLoc[34](output#3#0: u64)
+	202: CopyLoc[34](output#3#0: u64)
+	203: LdU64(123454321)
+	204: Eq
+	205: BrFalse(209)
+B46:
+	206: LdTrue
+	207: StLoc[3](%#2: bool)
+	208: Branch(213)
+B47:
+	209: MoveLoc[34](output#3#0: u64)
+	210: LdU64(123454322)
+	211: Eq
+	212: StLoc[3](%#2: bool)
+B48:
+	213: MoveLoc[3](%#2: bool)
+	214: BrFalse(216)
+B49:
+	215: Branch(218)
+B50:
+	216: LdU64(13906836167208206335)
+	217: Abort
+B51:
+	218: LdU64(0)
+	219: StLoc[13](i#2#0: u64)
+B52:
+	220: CopyLoc[13](i#2#0: u64)
+	221: LdU64(50)
+	222: Lt
+	223: BrFalse(257)
+B53:
+	224: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	225: Call random::generate_u64(&mut RandomGenerator): u64
+	226: StLoc[25](min#2#0: u64)
+	227: CopyLoc[25](min#2#0: u64)
+	228: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	229: Call random::generate_u32(&mut RandomGenerator): u32
+	230: CastU64
+	231: Add
+	232: StLoc[18](max#2#0: u64)
+	233: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	234: CopyLoc[25](min#2#0: u64)
+	235: CopyLoc[18](max#2#0: u64)
+	236: Call random::generate_u64_in_range(&mut RandomGenerator, u64, u64): u64
+	237: StLoc[35](output#4#0: u64)
+	238: CopyLoc[35](output#4#0: u64)
+	239: MoveLoc[25](min#2#0: u64)
+	240: Ge
+	241: BrFalse(243)
+B54:
+	242: Branch(245)
+B55:
+	243: LdU64(13906836192978010111)
+	244: Abort
+B56:
+	245: MoveLoc[35](output#4#0: u64)
+	246: MoveLoc[18](max#2#0: u64)
+	247: Le
+	248: BrFalse(250)
+B57:
+	249: Branch(252)
+B58:
+	250: LdU64(13906836197272977407)
+	251: Abort
+B59:
+	252: MoveLoc[13](i#2#0: u64)
+	253: LdU64(1)
+	254: Add
+	255: StLoc[13](i#2#0: u64)
+	256: Branch(220)
+B60:
+	257: ImmBorrowLoc[51](random_state#1#0: Random)
+	258: MutBorrowLoc[52](scenario#1#0: Scenario)
+	259: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	260: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	261: StLoc[11](gen#1#0: RandomGenerator)
+	262: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	263: LdU32(11)
+	264: LdU32(123454321)
+	265: Call random::generate_u32_in_range(&mut RandomGenerator, u32, u32): u32
+	266: StLoc[43](output1#3#0: u32)
+	267: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	268: Call random::generator_counter(&RandomGenerator): u16
+	269: LdU16(1)
+	270: Eq
+	271: BrFalse(273)
+B61:
+	272: Branch(275)
+B62:
+	273: LdU64(13906836227337748479)
+	274: Abort
+B63:
+	275: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	276: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	277: VecLen(20)
+	278: LdU64(20)
+	279: Eq
+	280: BrFalse(282)
+B64:
+	281: Branch(284)
+B65:
+	282: LdU64(13906836231632715775)
+	283: Abort
+B66:
+	284: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	285: LdU32(11)
+	286: LdU32(123454321)
+	287: Call random::generate_u32_in_range(&mut RandomGenerator, u32, u32): u32
+	288: StLoc[48](output2#3#0: u32)
+	289: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	290: Call random::generator_counter(&RandomGenerator): u16
+	291: LdU16(1)
+	292: Eq
+	293: BrFalse(295)
+B67:
+	294: Branch(297)
+B68:
+	295: LdU64(13906836240222650367)
+	296: Abort
+B69:
+	297: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	298: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	299: VecLen(20)
+	300: LdU64(8)
+	301: Eq
+	302: BrFalse(304)
+B70:
+	303: Branch(306)
+B71:
+	304: LdU64(13906836244517617663)
+	305: Abort
+B72:
+	306: MoveLoc[43](output1#3#0: u32)
+	307: MoveLoc[48](output2#3#0: u32)
+	308: Neq
+	309: BrFalse(311)
+B73:
+	310: Branch(313)
+B74:
+	311: LdU64(13906836248812584959)
+	312: Abort
+B75:
+	313: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	314: LdU32(123454321)
+	315: LdU32(123454322)
+	316: Call random::generate_u32_in_range(&mut RandomGenerator, u32, u32): u32
+	317: StLoc[36](output#5#0: u32)
+	318: CopyLoc[36](output#5#0: u32)
+	319: LdU32(123454321)
+	320: Eq
+	321: BrFalse(325)
+B76:
+	322: LdTrue
+	323: StLoc[4](%#3: bool)
+	324: Branch(329)
+B77:
+	325: MoveLoc[36](output#5#0: u32)
+	326: LdU32(123454322)
+	327: Eq
+	328: StLoc[4](%#3: bool)
+B78:
+	329: MoveLoc[4](%#3: bool)
+	330: BrFalse(332)
+B79:
+	331: Branch(334)
+B80:
+	332: LdU64(13906836257402519551)
+	333: Abort
+B81:
+	334: LdU64(0)
+	335: StLoc[14](i#3#0: u64)
+B82:
+	336: CopyLoc[14](i#3#0: u64)
+	337: LdU64(50)
+	338: Lt
+	339: BrFalse(373)
+B83:
+	340: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	341: Call random::generate_u32(&mut RandomGenerator): u32
+	342: StLoc[26](min#3#0: u32)
+	343: CopyLoc[26](min#3#0: u32)
+	344: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	345: Call random::generate_u16(&mut RandomGenerator): u16
+	346: CastU32
+	347: Add
+	348: StLoc[19](max#3#0: u32)
+	349: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	350: CopyLoc[26](min#3#0: u32)
+	351: CopyLoc[19](max#3#0: u32)
+	352: Call random::generate_u32_in_range(&mut RandomGenerator, u32, u32): u32
+	353: StLoc[37](output#6#0: u32)
+	354: CopyLoc[37](output#6#0: u32)
+	355: MoveLoc[26](min#3#0: u32)
+	356: Ge
+	357: BrFalse(359)
+B84:
+	358: Branch(361)
+B85:
+	359: LdU64(13906836283172323327)
+	360: Abort
+B86:
+	361: MoveLoc[37](output#6#0: u32)
+	362: MoveLoc[19](max#3#0: u32)
+	363: Le
+	364: BrFalse(366)
+B87:
+	365: Branch(368)
+B88:
+	366: LdU64(13906836287467290623)
+	367: Abort
+B89:
+	368: MoveLoc[14](i#3#0: u64)
+	369: LdU64(1)
+	370: Add
+	371: StLoc[14](i#3#0: u64)
+	372: Branch(336)
+B90:
+	373: ImmBorrowLoc[51](random_state#1#0: Random)
+	374: MutBorrowLoc[52](scenario#1#0: Scenario)
+	375: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	376: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	377: StLoc[11](gen#1#0: RandomGenerator)
+	378: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	379: LdU16(11)
+	380: LdU16(12345)
+	381: Call random::generate_u16_in_range(&mut RandomGenerator, u16, u16): u16
+	382: StLoc[44](output1#4#0: u16)
+	383: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	384: Call random::generator_counter(&RandomGenerator): u16
+	385: LdU16(1)
+	386: Eq
+	387: BrFalse(389)
+B91:
+	388: Branch(391)
+B92:
+	389: LdU64(13906836317532061695)
+	390: Abort
+B93:
+	391: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	392: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	393: VecLen(20)
+	394: LdU64(22)
+	395: Eq
+	396: BrFalse(398)
+B94:
+	397: Branch(400)
+B95:
+	398: LdU64(13906836321827028991)
+	399: Abort
+B96:
+	400: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	401: LdU16(11)
+	402: LdU16(12345)
+	403: Call random::generate_u16_in_range(&mut RandomGenerator, u16, u16): u16
+	404: StLoc[49](output2#4#0: u16)
+	405: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	406: Call random::generator_counter(&RandomGenerator): u16
+	407: LdU16(1)
+	408: Eq
+	409: BrFalse(411)
+B97:
+	410: Branch(413)
+B98:
+	411: LdU64(13906836330416963583)
+	412: Abort
+B99:
+	413: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	414: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	415: VecLen(20)
+	416: LdU64(12)
+	417: Eq
+	418: BrFalse(420)
+B100:
+	419: Branch(422)
+B101:
+	420: LdU64(13906836334711930879)
+	421: Abort
+B102:
+	422: MoveLoc[44](output1#4#0: u16)
+	423: MoveLoc[49](output2#4#0: u16)
+	424: Neq
+	425: BrFalse(427)
+B103:
+	426: Branch(429)
+B104:
+	427: LdU64(13906836339006898175)
+	428: Abort
+B105:
+	429: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	430: LdU16(12345)
+	431: LdU16(12346)
+	432: Call random::generate_u16_in_range(&mut RandomGenerator, u16, u16): u16
+	433: StLoc[38](output#7#0: u16)
+	434: CopyLoc[38](output#7#0: u16)
+	435: LdU16(12345)
+	436: Eq
+	437: BrFalse(441)
+B106:
+	438: LdTrue
+	439: StLoc[5](%#4: bool)
+	440: Branch(445)
+B107:
+	441: MoveLoc[38](output#7#0: u16)
+	442: LdU16(12346)
+	443: Eq
+	444: StLoc[5](%#4: bool)
+B108:
+	445: MoveLoc[5](%#4: bool)
+	446: BrFalse(448)
+B109:
+	447: Branch(450)
+B110:
+	448: LdU64(13906836347596832767)
+	449: Abort
+B111:
+	450: LdU64(0)
+	451: StLoc[15](i#4#0: u64)
+B112:
+	452: CopyLoc[15](i#4#0: u64)
+	453: LdU64(50)
+	454: Lt
+	455: BrFalse(490)
+B113:
+	456: Branch(457)
+B114:
+	457: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	458: Call random::generate_u16(&mut RandomGenerator): u16
+	459: StLoc[27](min#4#0: u16)
+	460: CopyLoc[27](min#4#0: u16)
+	461: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	462: Call random::generate_u8(&mut RandomGenerator): u8
+	463: CastU16
+	464: Add
+	465: StLoc[20](max#4#0: u16)
+	466: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	467: CopyLoc[27](min#4#0: u16)
+	468: CopyLoc[20](max#4#0: u16)
+	469: Call random::generate_u16_in_range(&mut RandomGenerator, u16, u16): u16
+	470: StLoc[39](output#8#0: u16)
+	471: CopyLoc[39](output#8#0: u16)
+	472: MoveLoc[27](min#4#0: u16)
+	473: Ge
+	474: BrFalse(476)
+B115:
+	475: Branch(478)
+B116:
+	476: LdU64(13906836373366636543)
+	477: Abort
+B117:
+	478: MoveLoc[39](output#8#0: u16)
+	479: MoveLoc[20](max#4#0: u16)
+	480: Le
+	481: BrFalse(483)
+B118:
+	482: Branch(485)
+B119:
+	483: LdU64(13906836377661603839)
+	484: Abort
+B120:
+	485: MoveLoc[15](i#4#0: u64)
+	486: LdU64(1)
+	487: Add
+	488: StLoc[15](i#4#0: u64)
+	489: Branch(452)
+B121:
+	490: ImmBorrowLoc[51](random_state#1#0: Random)
+	491: MutBorrowLoc[52](scenario#1#0: Scenario)
+	492: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	493: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	494: StLoc[11](gen#1#0: RandomGenerator)
+	495: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	496: LdU8(11)
+	497: LdU8(123)
+	498: Call random::generate_u8_in_range(&mut RandomGenerator, u8, u8): u8
+	499: StLoc[45](output1#5#0: u8)
+	500: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	501: Call random::generator_counter(&RandomGenerator): u16
+	502: LdU16(1)
+	503: Eq
+	504: BrFalse(506)
+B122:
+	505: Branch(508)
+B123:
+	506: LdU64(13906836407726374911)
+	507: Abort
+B124:
+	508: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	509: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	510: VecLen(20)
+	511: LdU64(23)
+	512: Eq
+	513: BrFalse(515)
+B125:
+	514: Branch(517)
+B126:
+	515: LdU64(13906836412021342207)
+	516: Abort
+B127:
+	517: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	518: LdU8(11)
+	519: LdU8(123)
+	520: Call random::generate_u8_in_range(&mut RandomGenerator, u8, u8): u8
+	521: StLoc[50](output2#5#0: u8)
+	522: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	523: Call random::generator_counter(&RandomGenerator): u16
+	524: LdU16(1)
+	525: Eq
+	526: BrFalse(528)
+B128:
+	527: Branch(530)
+B129:
+	528: LdU64(13906836420611276799)
+	529: Abort
+B130:
+	530: ImmBorrowLoc[11](gen#1#0: RandomGenerator)
+	531: Call random::generator_buffer(&RandomGenerator): &vector<u8>
+	532: VecLen(20)
+	533: LdU64(14)
+	534: Eq
+	535: BrFalse(537)
+B131:
+	536: Branch(539)
+B132:
+	537: LdU64(13906836424906244095)
+	538: Abort
+B133:
+	539: MoveLoc[45](output1#5#0: u8)
+	540: MoveLoc[50](output2#5#0: u8)
+	541: Neq
+	542: BrFalse(544)
+B134:
+	543: Branch(546)
+B135:
+	544: LdU64(13906836429201211391)
+	545: Abort
+B136:
+	546: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	547: LdU8(123)
+	548: LdU8(124)
+	549: Call random::generate_u8_in_range(&mut RandomGenerator, u8, u8): u8
+	550: StLoc[40](output#9#0: u8)
+	551: CopyLoc[40](output#9#0: u8)
+	552: LdU8(123)
+	553: Eq
+	554: BrFalse(558)
+B137:
+	555: LdTrue
+	556: StLoc[6](%#5: bool)
+	557: Branch(562)
+B138:
+	558: MoveLoc[40](output#9#0: u8)
+	559: LdU8(124)
+	560: Eq
+	561: StLoc[6](%#5: bool)
+B139:
+	562: MoveLoc[6](%#5: bool)
+	563: BrFalse(565)
+B140:
+	564: Branch(567)
+B141:
+	565: LdU64(13906836437791145983)
+	566: Abort
+B142:
+	567: LdU64(0)
+	568: StLoc[16](i#5#0: u64)
+B143:
+	569: CopyLoc[16](i#5#0: u64)
+	570: LdU64(50)
+	571: Lt
+	572: BrFalse(639)
+B144:
+	573: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	574: Call random::generate_u8(&mut RandomGenerator): u8
+	575: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	576: Call random::generate_u8(&mut RandomGenerator): u8
+	577: StLoc[21](max#5#0: u8)
+	578: StLoc[28](min#5#0: u8)
+	579: CopyLoc[28](min#5#0: u8)
+	580: CopyLoc[21](max#5#0: u8)
+	581: Lt
+	582: BrFalse(588)
+B145:
+	583: MoveLoc[28](min#5#0: u8)
+	584: MoveLoc[21](max#5#0: u8)
+	585: StLoc[8](%#7: u8)
+	586: StLoc[7](%#6: u8)
+	587: Branch(592)
+B146:
+	588: MoveLoc[21](max#5#0: u8)
+	589: MoveLoc[28](min#5#0: u8)
+	590: StLoc[8](%#7: u8)
+	591: StLoc[7](%#6: u8)
+B147:
+	592: MoveLoc[7](%#6: u8)
+	593: MoveLoc[8](%#7: u8)
+	594: StLoc[22](max#6#0: u8)
+	595: StLoc[29](min#6#0: u8)
+	596: CopyLoc[29](min#6#0: u8)
+	597: CopyLoc[22](max#6#0: u8)
+	598: Eq
+	599: BrFalse(607)
+B148:
+	600: MoveLoc[29](min#6#0: u8)
+	601: MoveLoc[22](max#6#0: u8)
+	602: LdU8(1)
+	603: Add
+	604: StLoc[10](%#9: u8)
+	605: StLoc[9](%#8: u8)
+	606: Branch(611)
+B149:
+	607: MoveLoc[29](min#6#0: u8)
+	608: MoveLoc[22](max#6#0: u8)
+	609: StLoc[10](%#9: u8)
+	610: StLoc[9](%#8: u8)
+B150:
+	611: MoveLoc[9](%#8: u8)
+	612: MoveLoc[10](%#9: u8)
+	613: StLoc[23](max#7#0: u8)
+	614: StLoc[30](min#7#0: u8)
+	615: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	616: CopyLoc[30](min#7#0: u8)
+	617: CopyLoc[23](max#7#0: u8)
+	618: Call random::generate_u8_in_range(&mut RandomGenerator, u8, u8): u8
+	619: StLoc[32](output#10#0: u8)
+	620: CopyLoc[32](output#10#0: u8)
+	621: MoveLoc[30](min#7#0: u8)
+	622: Ge
+	623: BrFalse(625)
+B151:
+	624: Branch(627)
+B152:
+	625: LdU64(13906836467855917055)
+	626: Abort
+B153:
+	627: MoveLoc[32](output#10#0: u8)
+	628: MoveLoc[23](max#7#0: u8)
+	629: Le
+	630: BrFalse(632)
+B154:
+	631: Branch(634)
+B155:
+	632: LdU64(13906836472150884351)
+	633: Abort
+B156:
+	634: MoveLoc[16](i#5#0: u64)
+	635: LdU64(1)
+	636: Add
+	637: StLoc[16](i#5#0: u64)
+	638: Branch(569)
+B157:
+	639: MutBorrowLoc[11](gen#1#0: RandomGenerator)
+	640: LdU32(123)
+	641: LdU32(123)
+	642: Call random::generate_u32_in_range(&mut RandomGenerator, u32, u32): u32
+	643: StLoc[53](t1#1#1: u32)
+	644: LdU32(123)
+	645: StLoc[55](t2#1#1: u32)
+	646: ImmBorrowLoc[53](t1#1#1: u32)
+	647: StLoc[54](t1#1#4: &u32)
+	648: ImmBorrowLoc[55](t2#1#1: u32)
+	649: StLoc[56](t2#1#4: &u32)
+	650: CopyLoc[54](t1#1#4: &u32)
+	651: CopyLoc[56](t2#1#4: &u32)
+	652: Eq
+	653: Not
+	654: BrFalse(671)
+B158:
+	655: LdConst[7](vector<u8>: "Ass..)
+	656: Call string::utf8(vector<u8>): String
+	657: StLoc[1](%#10: String)
+	658: ImmBorrowLoc[1](%#10: String)
+	659: Call debug::print<String>(&String)
+	660: MoveLoc[54](t1#1#4: &u32)
+	661: Call debug::print<u32>(&u32)
+	662: LdConst[8](vector<u8>: "!="..)
+	663: Call string::utf8(vector<u8>): String
+	664: StLoc[2](%#11: String)
+	665: ImmBorrowLoc[2](%#11: String)
+	666: Call debug::print<String>(&String)
+	667: MoveLoc[56](t2#1#4: &u32)
+	668: Call debug::print<u32>(&u32)
+	669: LdU64(13906836493625720831)
+	670: Abort
+B159:
+	671: MoveLoc[56](t2#1#4: &u32)
+	672: Pop
+	673: MoveLoc[54](t1#1#4: &u32)
+	674: Pop
+	675: MoveLoc[51](random_state#1#0: Random)
+	676: Call test_scenario::return_shared<Random>(Random)
+	677: MoveLoc[52](scenario#1#0: Scenario)
+	678: Call test_scenario::end(Scenario): TransactionEffects
+	679: Pop
+	680: Ret
+}
+
+random_tests_invalid_range() {
+L0:	gen#1#0: RandomGenerator
+L1:	random_state#1#0: Random
+L2:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[2](scenario#1#0: Scenario)
+	3: MutBorrowLoc[2](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call random::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[2](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[2](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<Random>(&Scenario): Random
+	12: StLoc[1](random_state#1#0: Random)
+	13: MutBorrowLoc[1](random_state#1#0: Random)
+	14: LdU64(0)
+	15: LdConst[1](vector<u8>: "..)
+	16: MutBorrowLoc[2](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	20: ImmBorrowLoc[1](random_state#1#0: Random)
+	21: MutBorrowLoc[2](scenario#1#0: Scenario)
+	22: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	23: Call random::new_generator(&Random, &mut TxContext): RandomGenerator
+	24: StLoc[0](gen#1#0: RandomGenerator)
+	25: MutBorrowLoc[0](gen#1#0: RandomGenerator)
+	26: LdU128(511)
+	27: LdU128(500)
+	28: Call random::generate_u128_in_range(&mut RandomGenerator, u128, u128): u128
+	29: Pop
+	30: MoveLoc[1](random_state#1#0: Random)
+	31: Call test_scenario::return_shared<Random>(Random)
+	32: MoveLoc[2](scenario#1#0: Scenario)
+	33: Call test_scenario::end(Scenario): TransactionEffects
+	34: Pop
+	35: Ret
+}
+
+random_tests_update_after_epoch_change() {
+L0:	random_state#1#0: Random
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call random::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[1](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<Random>(&Scenario): Random
+	12: StLoc[0](random_state#1#0: Random)
+	13: MutBorrowLoc[0](random_state#1#0: Random)
+	14: LdU64(0)
+	15: LdConst[9](vector<u8>: " ..)
+	16: MutBorrowLoc[1](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	20: MutBorrowLoc[0](random_state#1#0: Random)
+	21: LdU64(1)
+	22: LdConst[10](vector<u8>: "..)
+	23: MutBorrowLoc[1](scenario#1#0: Scenario)
+	24: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	25: FreezeRef
+	26: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	27: MutBorrowLoc[1](scenario#1#0: Scenario)
+	28: LdConst[0](address: 0x00..)
+	29: Call test_scenario::next_epoch(&mut Scenario, address): TransactionEffects
+	30: Pop
+	31: MutBorrowLoc[0](random_state#1#0: Random)
+	32: LdU64(0)
+	33: LdConst[11](vector<u8>: "	
+..)
+	34: MutBorrowLoc[1](scenario#1#0: Scenario)
+	35: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	36: FreezeRef
+	37: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	38: MoveLoc[0](random_state#1#0: Random)
+	39: Call test_scenario::return_shared<Random>(Random)
+	40: MoveLoc[1](scenario#1#0: Scenario)
+	41: Call test_scenario::end(Scenario): TransactionEffects
+	42: Pop
+	43: Ret
+}
+
+random_tests_duplicate() {
+L0:	random_state#1#0: Random
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call random::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[1](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<Random>(&Scenario): Random
+	12: StLoc[0](random_state#1#0: Random)
+	13: MutBorrowLoc[0](random_state#1#0: Random)
+	14: LdU64(0)
+	15: LdConst[9](vector<u8>: " ..)
+	16: MutBorrowLoc[1](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	20: MutBorrowLoc[0](random_state#1#0: Random)
+	21: LdU64(0)
+	22: LdConst[9](vector<u8>: " ..)
+	23: MutBorrowLoc[1](scenario#1#0: Scenario)
+	24: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	25: FreezeRef
+	26: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	27: MoveLoc[0](random_state#1#0: Random)
+	28: Call test_scenario::return_shared<Random>(Random)
+	29: MoveLoc[1](scenario#1#0: Scenario)
+	30: Call test_scenario::end(Scenario): TransactionEffects
+	31: Pop
+	32: Ret
+}
+
+random_tests_out_of_order() {
+L0:	random_state#1#0: Random
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call random::create_for_testing(&mut TxContext)
+	6: MutBorrowLoc[1](scenario#1#0: Scenario)
+	7: LdConst[0](address: 0x00..)
+	8: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	9: Pop
+	10: ImmBorrowLoc[1](scenario#1#0: Scenario)
+	11: Call test_scenario::take_shared<Random>(&Scenario): Random
+	12: StLoc[0](random_state#1#0: Random)
+	13: MutBorrowLoc[0](random_state#1#0: Random)
+	14: LdU64(0)
+	15: LdConst[9](vector<u8>: " ..)
+	16: MutBorrowLoc[1](scenario#1#0: Scenario)
+	17: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	18: FreezeRef
+	19: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	20: MutBorrowLoc[0](random_state#1#0: Random)
+	21: LdU64(3)
+	22: LdConst[9](vector<u8>: " ..)
+	23: MutBorrowLoc[1](scenario#1#0: Scenario)
+	24: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	25: FreezeRef
+	26: Call random::update_randomness_state_for_testing(&mut Random, u64, vector<u8>, &TxContext)
+	27: MoveLoc[0](random_state#1#0: Random)
+	28: Call test_scenario::return_shared<Random>(Random)
+	29: MoveLoc[1](scenario#1#0: Scenario)
+	30: Call test_scenario::end(Scenario): TransactionEffects
+	31: Pop
+	32: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	1 => vector<u8>: "" // interpreted as UTF8 string
+	2 => vector<u8>: "/" // interpreted as UTF8 string
+	3 => vector<u8>: 0b252cfdbb59205fcc509c9e
+	4 => vector<u16>: 0500000100020003000400
+	5 => vector<u32>: 00
+	6 => vector<u32>: 0141010000
+	7 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	8 => vector<u8>: "!=" // interpreted as UTF8 string
+	9 => vector<u8>: " " // interpreted as UTF8 string
+	10 => vector<u8>: "" // interpreted as UTF8 string
+	11 => vector<u8>: "	
+" // interpreted as UTF8 string
+]
+}

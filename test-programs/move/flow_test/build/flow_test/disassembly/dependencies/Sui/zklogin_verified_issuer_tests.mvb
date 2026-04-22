@@ -1,0 +1,173 @@
+// Move bytecode v6
+module 2.zklogin_verified_issuer_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::zklogin_verified_issuer;
+
+test_check_zklogin_issuer() {
+L0:	address#1#0: address
+L1:	address_seed#1#0: u256
+L2:	iss#1#0: String
+L3:	other_iss#1#0: String
+B0:
+	0: LdConst[0](address: 0x1c..)
+	1: StLoc[0](address#1#0: address)
+	2: LdConst[1](vector<u8>: "htt..)
+	3: Call string::utf8(vector<u8>): String
+	4: StLoc[2](iss#1#0: String)
+	5: LdU256(3006596378422062745101035755700472756930796952630484939867684134047976874601)
+	6: StLoc[1](address_seed#1#0: u256)
+	7: CopyLoc[0](address#1#0: address)
+	8: CopyLoc[1](address_seed#1#0: u256)
+	9: ImmBorrowLoc[2](iss#1#0: String)
+	10: Call zklogin_verified_issuer::check_zklogin_issuer(address, u256, &String): bool
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834268832661503)
+	14: Abort
+B3:
+	15: LdConst[2](address: 0x00..)
+	16: CopyLoc[1](address_seed#1#0: u256)
+	17: ImmBorrowLoc[2](iss#1#0: String)
+	18: Call zklogin_verified_issuer::check_zklogin_issuer(address, u256, &String): bool
+	19: Not
+	20: BrFalse(22)
+B4:
+	21: Branch(24)
+B5:
+	22: LdU64(13906834281717563391)
+	23: Abort
+B6:
+	24: CopyLoc[0](address#1#0: address)
+	25: LdU256(1234)
+	26: ImmBorrowLoc[2](iss#1#0: String)
+	27: Call zklogin_verified_issuer::check_zklogin_issuer(address, u256, &String): bool
+	28: Not
+	29: BrFalse(31)
+B7:
+	30: Branch(33)
+B8:
+	31: LdU64(13906834294602465279)
+	32: Abort
+B9:
+	33: LdConst[3](vector<u8>: "htt..)
+	34: Call string::utf8(vector<u8>): String
+	35: StLoc[3](other_iss#1#0: String)
+	36: MoveLoc[0](address#1#0: address)
+	37: MoveLoc[1](address_seed#1#0: u256)
+	38: ImmBorrowLoc[3](other_iss#1#0: String)
+	39: Call zklogin_verified_issuer::check_zklogin_issuer(address, u256, &String): bool
+	40: Not
+	41: BrFalse(43)
+B10:
+	42: Branch(45)
+B11:
+	43: LdU64(13906834307487367167)
+	44: Abort
+B12:
+	45: Ret
+}
+
+test_verified_issuer() {
+L0:	address#1#0: address
+L1:	address_seed#1#0: u256
+L2:	iss#1#0: String
+L3:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x1c..)
+	1: StLoc[0](address#1#0: address)
+	2: LdConst[1](vector<u8>: "htt..)
+	3: Call string::utf8(vector<u8>): String
+	4: StLoc[2](iss#1#0: String)
+	5: LdU256(3006596378422062745101035755700472756930796952630484939867684134047976874601)
+	6: StLoc[1](address_seed#1#0: u256)
+	7: CopyLoc[0](address#1#0: address)
+	8: CopyLoc[1](address_seed#1#0: u256)
+	9: ImmBorrowLoc[2](iss#1#0: String)
+	10: Call zklogin_verified_issuer::check_zklogin_issuer(address, u256, &String): bool
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834350437040127)
+	14: Abort
+B3:
+	15: CopyLoc[0](address#1#0: address)
+	16: Call test_scenario::begin(address): Scenario
+	17: StLoc[3](scenario#1#0: Scenario)
+	18: MoveLoc[1](address_seed#1#0: u256)
+	19: MoveLoc[2](iss#1#0: String)
+	20: MutBorrowLoc[3](scenario#1#0: Scenario)
+	21: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	22: Call zklogin_verified_issuer::verify_zklogin_issuer(u256, String, &mut TxContext)
+	23: MutBorrowLoc[3](scenario#1#0: Scenario)
+	24: MoveLoc[0](address#1#0: address)
+	25: Call test_scenario::next_tx(&mut Scenario, address): TransactionEffects
+	26: Pop
+	27: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	28: Call test_scenario::has_most_recent_for_sender<VerifiedIssuer>(&Scenario): bool
+	29: BrFalse(31)
+B4:
+	30: Branch(33)
+B5:
+	31: LdU64(13906834384796778495)
+	32: Abort
+B6:
+	33: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	34: Call test_scenario::take_from_sender<VerifiedIssuer>(&Scenario): VerifiedIssuer
+	35: Call zklogin_verified_issuer::delete(VerifiedIssuer)
+	36: ImmBorrowLoc[3](scenario#1#0: Scenario)
+	37: Call test_scenario::has_most_recent_for_sender<VerifiedIssuer>(&Scenario): bool
+	38: Not
+	39: BrFalse(41)
+B7:
+	40: Branch(43)
+B8:
+	41: LdU64(13906834393386713087)
+	42: Abort
+B9:
+	43: MoveLoc[3](scenario#1#0: Scenario)
+	44: Call test_scenario::end(Scenario): TransactionEffects
+	45: Pop
+	46: Ret
+}
+
+test_invalid_verified_issuer() {
+L0:	iss#1#0: String
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[1](vector<u8>: "htt..)
+	1: Call string::utf8(vector<u8>): String
+	2: StLoc[0](iss#1#0: String)
+	3: LdConst[4](address: 0x00..)
+	4: Call test_scenario::begin(address): Scenario
+	5: StLoc[1](scenario#1#0: Scenario)
+	6: LdU256(3006596378422062745101035755700472756930796952630484939867684134047976874601)
+	7: MoveLoc[0](iss#1#0: String)
+	8: MutBorrowLoc[1](scenario#1#0: Scenario)
+	9: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	10: Call zklogin_verified_issuer::verify_zklogin_issuer(u256, String, &mut TxContext)
+	11: MoveLoc[1](scenario#1#0: Scenario)
+	12: Call test_scenario::end(Scenario): TransactionEffects
+	13: Pop
+	14: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x1c6b623a2f2c91333df730c98d220f11484953b391a3818680f922c264cc0c6b
+	1 => vector<u8>: "https://accounts.google.com" // interpreted as UTF8 string
+	2 => address: 0x006b623a2f2c91333df730c98d220f11484953b391a3818680f922c264cc0c6b
+	3 => vector<u8>: "https://other.issuer.com" // interpreted as UTF8 string
+	4 => address: 0x0000000000000000000000000000000000000000000000000000000000000001
+]
+}

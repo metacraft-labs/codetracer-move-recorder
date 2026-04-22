@@ -1,0 +1,13 @@
+// Move bytecode v6
+module 1.bcs {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+native public to_bytes<MoveValue>(v#0#0: &MoveValue): vector<u8>;
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+}

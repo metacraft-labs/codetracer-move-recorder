@@ -1,0 +1,92 @@
+// Move bytecode v6
+module 2.display_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::display;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::package;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Capy has key {
+	id: UID,
+	name: String
+}
+
+struct CAPY has drop {
+	dummy_field: bool
+}
+
+capy_init() {
+L0:	display#1#0: Display<Capy>
+L1:	pub#1#0: Publisher
+L2:	test#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[2](test#1#0: Scenario)
+	3: LdFalse
+	4: Pack[1](CAPY)
+	5: MutBorrowLoc[2](test#1#0: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call package::test_claim<CAPY>(CAPY, &mut TxContext): Publisher
+	8: StLoc[1](pub#1#0: Publisher)
+	9: ImmBorrowLoc[1](pub#1#0: Publisher)
+	10: MutBorrowLoc[2](test#1#0: Scenario)
+	11: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	12: Call display::new<Capy>(&Publisher, &mut TxContext): Display<Capy>
+	13: StLoc[0](display#1#0: Display<Capy>)
+	14: MutBorrowLoc[0](display#1#0: Display<Capy>)
+	15: LdConst[1](vector<u8>: "nam..)
+	16: Call string::utf8(vector<u8>): String
+	17: LdConst[2](vector<u8>: "Cap..)
+	18: Call string::utf8(vector<u8>): String
+	19: Call display::add<Capy>(&mut Display<Capy>, String, String)
+	20: MutBorrowLoc[0](display#1#0: Display<Capy>)
+	21: LdConst[3](vector<u8>: "lin..)
+	22: Call string::utf8(vector<u8>): String
+	23: LdConst[4](vector<u8>: "htt..)
+	24: Call string::utf8(vector<u8>): String
+	25: Call display::add<Capy>(&mut Display<Capy>, String, String)
+	26: MutBorrowLoc[0](display#1#0: Display<Capy>)
+	27: LdConst[5](vector<u8>: "ima..)
+	28: Call string::utf8(vector<u8>): String
+	29: LdConst[6](vector<u8>: "htt..)
+	30: Call string::utf8(vector<u8>): String
+	31: Call display::add<Capy>(&mut Display<Capy>, String, String)
+	32: MutBorrowLoc[0](display#1#0: Display<Capy>)
+	33: LdConst[7](vector<u8>: "des..)
+	34: Call string::utf8(vector<u8>): String
+	35: LdConst[8](vector<u8>: "A L..)
+	36: Call string::utf8(vector<u8>): String
+	37: Call display::add<Capy>(&mut Display<Capy>, String, String)
+	38: MoveLoc[1](pub#1#0: Publisher)
+	39: Call package::burn_publisher(Publisher)
+	40: MoveLoc[0](display#1#0: Display<Capy>)
+	41: LdConst[0](address: 0x00..)
+	42: Call transfer::public_transfer<Display<Capy>>(Display<Capy>, address)
+	43: MoveLoc[2](test#1#0: Scenario)
+	44: Call test_scenario::end(Scenario): TransactionEffects
+	45: Pop
+	46: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000002
+	1 => vector<u8>: "name" // interpreted as UTF8 string
+	2 => vector<u8>: "Capy {name}" // interpreted as UTF8 string
+	3 => vector<u8>: "link" // interpreted as UTF8 string
+	4 => vector<u8>: "https://capy.art/capy/{id}" // interpreted as UTF8 string
+	5 => vector<u8>: "image" // interpreted as UTF8 string
+	6 => vector<u8>: "https://api.capy.art/capy/{id}/svg" // interpreted as UTF8 string
+	7 => vector<u8>: "description" // interpreted as UTF8 string
+	8 => vector<u8>: "A Lovely Capy" // interpreted as UTF8 string
+]
+}

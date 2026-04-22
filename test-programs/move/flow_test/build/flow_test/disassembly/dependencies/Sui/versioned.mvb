@@ -1,0 +1,154 @@
+// Move bytecode v6
+module 2.versioned {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::dynamic_field;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Versioned has store, key {
+	id: UID,
+	version: u64
+}
+
+struct VersionChangeCap {
+	versioned_id: ID,
+	old_version: u64
+}
+
+public create<T: store>(init_version#0#0: u64, init_value#0#0: T, ctx#0#0: &mut TxContext): Versioned {
+L3:	self#1#0: Versioned
+B0:
+	0: MoveLoc[2](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: CopyLoc[0](init_version#0#0: u64)
+	3: Pack[0](Versioned)
+	4: StLoc[3](self#1#0: Versioned)
+	5: MutBorrowLoc[3](self#1#0: Versioned)
+	6: MutBorrowField[0](Versioned.id: UID)
+	7: MoveLoc[0](init_version#0#0: u64)
+	8: MoveLoc[1](init_value#0#0: T)
+	9: Call dynamic_field::add<u64, T>(&mut UID, u64, T)
+	10: MoveLoc[3](self#1#0: Versioned)
+	11: Ret
+}
+
+public version(self#0#0: &Versioned): u64 {
+B0:
+	0: MoveLoc[0](self#0#0: &Versioned)
+	1: ImmBorrowField[1](Versioned.version: u64)
+	2: ReadRef
+	3: Ret
+}
+
+public load_value<T: store>(self#0#0: &Versioned): &T {
+B0:
+	0: CopyLoc[0](self#0#0: &Versioned)
+	1: ImmBorrowField[0](Versioned.id: UID)
+	2: MoveLoc[0](self#0#0: &Versioned)
+	3: ImmBorrowField[1](Versioned.version: u64)
+	4: ReadRef
+	5: Call dynamic_field::borrow<u64, T>(&UID, u64): &T
+	6: Ret
+}
+
+public load_value_mut<T: store>(self#0#0: &mut Versioned): &mut T {
+B0:
+	0: CopyLoc[0](self#0#0: &mut Versioned)
+	1: MutBorrowField[0](Versioned.id: UID)
+	2: MoveLoc[0](self#0#0: &mut Versioned)
+	3: ImmBorrowField[1](Versioned.version: u64)
+	4: ReadRef
+	5: Call dynamic_field::borrow_mut<u64, T>(&mut UID, u64): &mut T
+	6: Ret
+}
+
+public remove_value_for_upgrade<T: store>(self#0#0: &mut Versioned): T * VersionChangeCap {
+B0:
+	0: CopyLoc[0](self#0#0: &mut Versioned)
+	1: MutBorrowField[0](Versioned.id: UID)
+	2: CopyLoc[0](self#0#0: &mut Versioned)
+	3: ImmBorrowField[1](Versioned.version: u64)
+	4: ReadRef
+	5: Call dynamic_field::remove<u64, T>(&mut UID, u64): T
+	6: CopyLoc[0](self#0#0: &mut Versioned)
+	7: FreezeRef
+	8: Call object::id<Versioned>(&Versioned): ID
+	9: MoveLoc[0](self#0#0: &mut Versioned)
+	10: ImmBorrowField[1](Versioned.version: u64)
+	11: ReadRef
+	12: Pack[1](VersionChangeCap)
+	13: Ret
+}
+
+public upgrade<T: store>(self#0#0: &mut Versioned, new_version#0#0: u64, new_value#0#0: T, cap#0#0: VersionChangeCap) {
+L4:	old_version#1#0: u64
+B0:
+	0: MoveLoc[3](cap#0#0: VersionChangeCap)
+	1: Unpack[1](VersionChangeCap)
+	2: StLoc[4](old_version#1#0: u64)
+	3: CopyLoc[0](self#0#0: &mut Versioned)
+	4: FreezeRef
+	5: Call object::id<Versioned>(&Versioned): ID
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](self#0#0: &mut Versioned)
+	10: Pop
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: MoveLoc[4](old_version#1#0: u64)
+	14: CopyLoc[1](new_version#0#0: u64)
+	15: Lt
+	16: BrFalse(18)
+B4:
+	17: Branch(22)
+B5:
+	18: MoveLoc[0](self#0#0: &mut Versioned)
+	19: Pop
+	20: LdConst[0](u64: 0)
+	21: Abort
+B6:
+	22: CopyLoc[0](self#0#0: &mut Versioned)
+	23: MutBorrowField[0](Versioned.id: UID)
+	24: CopyLoc[1](new_version#0#0: u64)
+	25: MoveLoc[2](new_value#0#0: T)
+	26: Call dynamic_field::add<u64, T>(&mut UID, u64, T)
+	27: MoveLoc[1](new_version#0#0: u64)
+	28: MoveLoc[0](self#0#0: &mut Versioned)
+	29: MutBorrowField[1](Versioned.version: u64)
+	30: WriteRef
+	31: Ret
+}
+
+public destroy<T: store>(self#0#0: Versioned): T {
+L1:	id#1#0: UID
+L2:	ret#1#0: T
+L3:	version#1#0: u64
+B0:
+	0: MoveLoc[0](self#0#0: Versioned)
+	1: Unpack[0](Versioned)
+	2: StLoc[3](version#1#0: u64)
+	3: StLoc[1](id#1#0: UID)
+	4: MutBorrowLoc[1](id#1#0: UID)
+	5: MoveLoc[3](version#1#0: u64)
+	6: Call dynamic_field::remove<u64, T>(&mut UID, u64): T
+	7: StLoc[2](ret#1#0: T)
+	8: MoveLoc[1](id#1#0: UID)
+	9: Call object::delete(UID)
+	10: MoveLoc[2](ret#1#0: T)
+	11: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+]
+}

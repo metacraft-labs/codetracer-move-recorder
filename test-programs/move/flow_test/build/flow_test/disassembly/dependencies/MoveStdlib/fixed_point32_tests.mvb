@@ -1,0 +1,386 @@
+// Move bytecode v6
+module 1.fixed_point32_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::debug;
+use 0000000000000000000000000000000000000000000000000000000000000001::fixed_point32;
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+
+create_div_zero() {
+B0:
+	0: LdU64(2)
+	1: LdU64(0)
+	2: Call fixed_point32::create_from_rational(u64, u64): FixedPoint32
+	3: Pop
+	4: Ret
+}
+
+create_overflow() {
+B0:
+	0: LdU64(4294967296)
+	1: LdU64(1)
+	2: Call fixed_point32::create_from_rational(u64, u64): FixedPoint32
+	3: Pop
+	4: Ret
+}
+
+create_underflow() {
+B0:
+	0: LdU64(1)
+	1: LdU64(8589934592)
+	2: Call fixed_point32::create_from_rational(u64, u64): FixedPoint32
+	3: Pop
+	4: Ret
+}
+
+create_zero() {
+B0:
+	0: LdU64(0)
+	1: LdU64(1)
+	2: Call fixed_point32::create_from_rational(u64, u64): FixedPoint32
+	3: Call fixed_point32::is_zero(FixedPoint32): bool
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdU64(13906834328962203647)
+	7: Abort
+B3:
+	8: Ret
+}
+
+divide_by_zero() {
+L0:	f#1#0: FixedPoint32
+B0:
+	0: LdU64(0)
+	1: Call fixed_point32::create_from_raw_value(u64): FixedPoint32
+	2: StLoc[0](f#1#0: FixedPoint32)
+	3: LdU64(1)
+	4: MoveLoc[0](f#1#0: FixedPoint32)
+	5: Call fixed_point32::divide_u64(u64, FixedPoint32): u64
+	6: Pop
+	7: Ret
+}
+
+divide_overflow_small_divisore() {
+L0:	f#1#0: FixedPoint32
+B0:
+	0: LdU64(1)
+	1: Call fixed_point32::create_from_raw_value(u64): FixedPoint32
+	2: StLoc[0](f#1#0: FixedPoint32)
+	3: LdU64(4294967296)
+	4: MoveLoc[0](f#1#0: FixedPoint32)
+	5: Call fixed_point32::divide_u64(u64, FixedPoint32): u64
+	6: Pop
+	7: Ret
+}
+
+divide_overflow_large_numerator() {
+L0:	f#1#0: FixedPoint32
+B0:
+	0: LdU64(1)
+	1: LdU64(2)
+	2: Call fixed_point32::create_from_rational(u64, u64): FixedPoint32
+	3: StLoc[0](f#1#0: FixedPoint32)
+	4: LdU64(18446744073709551615)
+	5: MoveLoc[0](f#1#0: FixedPoint32)
+	6: Call fixed_point32::divide_u64(u64, FixedPoint32): u64
+	7: Pop
+	8: Ret
+}
+
+multiply_overflow_small_multiplier() {
+L0:	f#1#0: FixedPoint32
+B0:
+	0: LdU64(3)
+	1: LdU64(2)
+	2: Call fixed_point32::create_from_rational(u64, u64): FixedPoint32
+	3: StLoc[0](f#1#0: FixedPoint32)
+	4: LdU64(18446744073709551615)
+	5: MoveLoc[0](f#1#0: FixedPoint32)
+	6: Call fixed_point32::multiply_u64(u64, FixedPoint32): u64
+	7: Pop
+	8: Ret
+}
+
+multiply_overflow_large_multiplier() {
+L0:	f#1#0: FixedPoint32
+B0:
+	0: LdU64(18446744073709551615)
+	1: Call fixed_point32::create_from_raw_value(u64): FixedPoint32
+	2: StLoc[0](f#1#0: FixedPoint32)
+	3: LdU64(8589934592)
+	4: MoveLoc[0](f#1#0: FixedPoint32)
+	5: Call fixed_point32::multiply_u64(u64, FixedPoint32): u64
+	6: Pop
+	7: Ret
+}
+
+exact_multiply() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	f#1#0: FixedPoint32
+L3:	t1#1#1: u64
+L4:	t1#1#4: &u64
+L5:	t2#1#1: u64
+L6:	t2#1#4: &u64
+B0:
+	0: LdU64(3)
+	1: LdU64(4)
+	2: Call fixed_point32::create_from_rational(u64, u64): FixedPoint32
+	3: StLoc[2](f#1#0: FixedPoint32)
+	4: LdU64(12)
+	5: MoveLoc[2](f#1#0: FixedPoint32)
+	6: Call fixed_point32::multiply_u64(u64, FixedPoint32): u64
+	7: StLoc[3](t1#1#1: u64)
+	8: LdU64(9)
+	9: StLoc[5](t2#1#1: u64)
+	10: ImmBorrowLoc[3](t1#1#1: u64)
+	11: StLoc[4](t1#1#4: &u64)
+	12: ImmBorrowLoc[5](t2#1#1: u64)
+	13: StLoc[6](t2#1#4: &u64)
+	14: CopyLoc[4](t1#1#4: &u64)
+	15: CopyLoc[6](t2#1#4: &u64)
+	16: Eq
+	17: Not
+	18: BrFalse(35)
+B1:
+	19: LdConst[0](vector<u8>: "Ass..)
+	20: Call string::utf8(vector<u8>): String
+	21: StLoc[0](%#1: String)
+	22: ImmBorrowLoc[0](%#1: String)
+	23: Call debug::print<String>(&String)
+	24: MoveLoc[4](t1#1#4: &u64)
+	25: Call debug::print<u64>(&u64)
+	26: LdConst[1](vector<u8>: "!="..)
+	27: Call string::utf8(vector<u8>): String
+	28: StLoc[1](%#2: String)
+	29: ImmBorrowLoc[1](%#2: String)
+	30: Call debug::print<String>(&String)
+	31: MoveLoc[6](t2#1#4: &u64)
+	32: Call debug::print<u64>(&u64)
+	33: LdU64(13906834509350830079)
+	34: Abort
+B2:
+	35: MoveLoc[6](t2#1#4: &u64)
+	36: Pop
+	37: MoveLoc[4](t1#1#4: &u64)
+	38: Pop
+	39: Ret
+}
+
+exact_divide() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	f#1#0: FixedPoint32
+L3:	t1#1#1: u64
+L4:	t1#1#4: &u64
+L5:	t2#1#1: u64
+L6:	t2#1#4: &u64
+B0:
+	0: LdU64(3)
+	1: LdU64(4)
+	2: Call fixed_point32::create_from_rational(u64, u64): FixedPoint32
+	3: StLoc[2](f#1#0: FixedPoint32)
+	4: LdU64(9)
+	5: MoveLoc[2](f#1#0: FixedPoint32)
+	6: Call fixed_point32::divide_u64(u64, FixedPoint32): u64
+	7: StLoc[3](t1#1#1: u64)
+	8: LdU64(12)
+	9: StLoc[5](t2#1#1: u64)
+	10: ImmBorrowLoc[3](t1#1#1: u64)
+	11: StLoc[4](t1#1#4: &u64)
+	12: ImmBorrowLoc[5](t2#1#1: u64)
+	13: StLoc[6](t2#1#4: &u64)
+	14: CopyLoc[4](t1#1#4: &u64)
+	15: CopyLoc[6](t2#1#4: &u64)
+	16: Eq
+	17: Not
+	18: BrFalse(35)
+B1:
+	19: LdConst[0](vector<u8>: "Ass..)
+	20: Call string::utf8(vector<u8>): String
+	21: StLoc[0](%#1: String)
+	22: ImmBorrowLoc[0](%#1: String)
+	23: Call debug::print<String>(&String)
+	24: MoveLoc[4](t1#1#4: &u64)
+	25: Call debug::print<u64>(&u64)
+	26: LdConst[1](vector<u8>: "!="..)
+	27: Call string::utf8(vector<u8>): String
+	28: StLoc[1](%#2: String)
+	29: ImmBorrowLoc[1](%#2: String)
+	30: Call debug::print<String>(&String)
+	31: MoveLoc[6](t2#1#4: &u64)
+	32: Call debug::print<u64>(&u64)
+	33: LdU64(13906834539415601151)
+	34: Abort
+B2:
+	35: MoveLoc[6](t2#1#4: &u64)
+	36: Pop
+	37: MoveLoc[4](t1#1#4: &u64)
+	38: Pop
+	39: Ret
+}
+
+multiply_truncates() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	%#3: String
+L3:	%#4: String
+L4:	f#1#0: FixedPoint32
+L5:	f#2#0: FixedPoint32
+L6:	t1#1#1: u64
+L7:	t1#1#10: &u64
+L8:	t1#1#4: &u64
+L9:	t1#1#7: u64
+L10:	t2#1#1: u64
+L11:	t2#1#10: &u64
+L12:	t2#1#4: &u64
+L13:	t2#1#7: u64
+B0:
+	0: LdU64(1)
+	1: LdU64(3)
+	2: Call fixed_point32::create_from_rational(u64, u64): FixedPoint32
+	3: StLoc[4](f#1#0: FixedPoint32)
+	4: LdU64(9)
+	5: CopyLoc[4](f#1#0: FixedPoint32)
+	6: Call fixed_point32::multiply_u64(u64, FixedPoint32): u64
+	7: StLoc[6](t1#1#1: u64)
+	8: LdU64(2)
+	9: StLoc[10](t2#1#1: u64)
+	10: ImmBorrowLoc[6](t1#1#1: u64)
+	11: StLoc[8](t1#1#4: &u64)
+	12: ImmBorrowLoc[10](t2#1#1: u64)
+	13: StLoc[12](t2#1#4: &u64)
+	14: CopyLoc[8](t1#1#4: &u64)
+	15: CopyLoc[12](t2#1#4: &u64)
+	16: Eq
+	17: Not
+	18: BrFalse(35)
+B1:
+	19: LdConst[0](vector<u8>: "Ass..)
+	20: Call string::utf8(vector<u8>): String
+	21: StLoc[0](%#1: String)
+	22: ImmBorrowLoc[0](%#1: String)
+	23: Call debug::print<String>(&String)
+	24: MoveLoc[8](t1#1#4: &u64)
+	25: Call debug::print<u64>(&u64)
+	26: LdConst[1](vector<u8>: "!="..)
+	27: Call string::utf8(vector<u8>): String
+	28: StLoc[1](%#2: String)
+	29: ImmBorrowLoc[1](%#2: String)
+	30: Call debug::print<String>(&String)
+	31: MoveLoc[12](t2#1#4: &u64)
+	32: Call debug::print<u64>(&u64)
+	33: LdU64(13906834578070306815)
+	34: Abort
+B2:
+	35: MoveLoc[12](t2#1#4: &u64)
+	36: Pop
+	37: MoveLoc[8](t1#1#4: &u64)
+	38: Pop
+	39: MoveLoc[4](f#1#0: FixedPoint32)
+	40: Call fixed_point32::get_raw_value(FixedPoint32): u64
+	41: LdU64(1)
+	42: Add
+	43: Call fixed_point32::create_from_raw_value(u64): FixedPoint32
+	44: StLoc[5](f#2#0: FixedPoint32)
+	45: LdU64(9)
+	46: MoveLoc[5](f#2#0: FixedPoint32)
+	47: Call fixed_point32::multiply_u64(u64, FixedPoint32): u64
+	48: StLoc[9](t1#1#7: u64)
+	49: LdU64(3)
+	50: StLoc[13](t2#1#7: u64)
+	51: ImmBorrowLoc[9](t1#1#7: u64)
+	52: StLoc[7](t1#1#10: &u64)
+	53: ImmBorrowLoc[13](t2#1#7: u64)
+	54: StLoc[11](t2#1#10: &u64)
+	55: CopyLoc[7](t1#1#10: &u64)
+	56: CopyLoc[11](t2#1#10: &u64)
+	57: Eq
+	58: Not
+	59: BrFalse(76)
+B3:
+	60: LdConst[0](vector<u8>: "Ass..)
+	61: Call string::utf8(vector<u8>): String
+	62: StLoc[2](%#3: String)
+	63: ImmBorrowLoc[2](%#3: String)
+	64: Call debug::print<String>(&String)
+	65: MoveLoc[7](t1#1#10: &u64)
+	66: Call debug::print<u64>(&u64)
+	67: LdConst[1](vector<u8>: "!="..)
+	68: Call string::utf8(vector<u8>): String
+	69: StLoc[3](%#4: String)
+	70: ImmBorrowLoc[3](%#4: String)
+	71: Call debug::print<String>(&String)
+	72: MoveLoc[11](t2#1#10: &u64)
+	73: Call debug::print<u64>(&u64)
+	74: LdU64(13906834599545143295)
+	75: Abort
+B4:
+	76: MoveLoc[11](t2#1#10: &u64)
+	77: Pop
+	78: MoveLoc[7](t1#1#10: &u64)
+	79: Pop
+	80: Ret
+}
+
+create_from_rational_max_numerator_denominator() {
+L0:	%#1: String
+L1:	%#2: String
+L2:	t1#1#1: u64
+L3:	t1#1#4: &u64
+L4:	t2#1#1: u64
+L5:	t2#1#4: &u64
+B0:
+	0: LdU64(18446744073709551615)
+	1: LdU64(18446744073709551615)
+	2: Call fixed_point32::create_from_rational(u64, u64): FixedPoint32
+	3: Call fixed_point32::get_raw_value(FixedPoint32): u64
+	4: StLoc[2](t1#1#1: u64)
+	5: LdU64(4294967296)
+	6: StLoc[4](t2#1#1: u64)
+	7: ImmBorrowLoc[2](t1#1#1: u64)
+	8: StLoc[3](t1#1#4: &u64)
+	9: ImmBorrowLoc[4](t2#1#1: u64)
+	10: StLoc[5](t2#1#4: &u64)
+	11: CopyLoc[3](t1#1#4: &u64)
+	12: CopyLoc[5](t2#1#4: &u64)
+	13: Eq
+	14: Not
+	15: BrFalse(32)
+B1:
+	16: LdConst[0](vector<u8>: "Ass..)
+	17: Call string::utf8(vector<u8>): String
+	18: StLoc[0](%#1: String)
+	19: ImmBorrowLoc[0](%#1: String)
+	20: Call debug::print<String>(&String)
+	21: MoveLoc[3](t1#1#4: &u64)
+	22: Call debug::print<u64>(&u64)
+	23: LdConst[1](vector<u8>: "!="..)
+	24: Call string::utf8(vector<u8>): String
+	25: StLoc[1](%#2: String)
+	26: ImmBorrowLoc[1](%#2: String)
+	27: Call debug::print<String>(&String)
+	28: MoveLoc[5](t2#1#4: &u64)
+	29: Call debug::print<u64>(&u64)
+	30: LdU64(13906834633904881663)
+	31: Abort
+B2:
+	32: MoveLoc[5](t2#1#4: &u64)
+	33: Pop
+	34: MoveLoc[3](t1#1#4: &u64)
+	35: Pop
+	36: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "Assertion failed:" // interpreted as UTF8 string
+	1 => vector<u8>: "!=" // interpreted as UTF8 string
+]
+}

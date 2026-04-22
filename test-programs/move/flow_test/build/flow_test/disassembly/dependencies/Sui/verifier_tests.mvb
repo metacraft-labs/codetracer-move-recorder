@@ -1,0 +1,74 @@
+// Move bytecode v6
+module 2.verifier_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::types;
+
+struct VERIFIER_TESTS has drop {
+	dummy_field: bool
+}
+
+init(otw#0#0: VERIFIER_TESTS, _#0#0: &mut TxContext) {
+B0:
+	0: ImmBorrowLoc[0](otw#0#0: VERIFIER_TESTS)
+	1: Call types::is_one_time_witness<VERIFIER_TESTS>(&VERIFIER_TESTS): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(6)
+B2:
+	4: LdU64(13906834225882988543)
+	5: Abort
+B3:
+	6: Ret
+}
+
+test_init() {
+L0:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[0](scenario#1#0: Scenario)
+	3: LdFalse
+	4: Pack[0](VERIFIER_TESTS)
+	5: MutBorrowLoc[0](scenario#1#0: Scenario)
+	6: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	7: Call init(VERIFIER_TESTS, &mut TxContext)
+	8: MoveLoc[0](scenario#1#0: Scenario)
+	9: Call test_scenario::end(Scenario): TransactionEffects
+	10: Pop
+	11: Ret
+}
+
+is_otw(witness#0#0: VERIFIER_TESTS): bool {
+B0:
+	0: ImmBorrowLoc[0](witness#0#0: VERIFIER_TESTS)
+	1: Call types::is_one_time_witness<VERIFIER_TESTS>(&VERIFIER_TESTS): bool
+	2: Ret
+}
+
+test_otw() {
+B0:
+	0: LdFalse
+	1: Pack[0](VERIFIER_TESTS)
+	2: Call is_otw(VERIFIER_TESTS): bool
+	3: BrFalse(5)
+B1:
+	4: Branch(7)
+B2:
+	5: LdU64(13906834320372269055)
+	6: Abort
+B3:
+	7: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x000000000000000000000000000000000000000000000000000000000000babe
+]
+}

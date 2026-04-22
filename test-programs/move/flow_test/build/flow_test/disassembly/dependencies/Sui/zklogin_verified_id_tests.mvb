@@ -1,0 +1,87 @@
+// Move bytecode v6
+module 2.zklogin_verified_id_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::string;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+use 0000000000000000000000000000000000000000000000000000000000000002::zklogin_verified_id;
+
+test_check_zklogin_id() {
+L0:	aud#1#0: String
+L1:	iss#1#0: String
+L2:	kc_name#1#0: String
+L3:	kc_value#1#0: String
+B0:
+	0: LdConst[0](vector<u8>: "sub..)
+	1: Call string::utf8(vector<u8>): String
+	2: StLoc[2](kc_name#1#0: String)
+	3: LdConst[1](vector<u8>: "106..)
+	4: Call string::utf8(vector<u8>): String
+	5: StLoc[3](kc_value#1#0: String)
+	6: LdConst[2](vector<u8>: "575..)
+	7: Call string::utf8(vector<u8>): String
+	8: StLoc[0](aud#1#0: String)
+	9: LdConst[3](vector<u8>: "htt..)
+	10: Call string::utf8(vector<u8>): String
+	11: StLoc[1](iss#1#0: String)
+	12: LdConst[4](address: 0x1c..)
+	13: ImmBorrowLoc[2](kc_name#1#0: String)
+	14: ImmBorrowLoc[3](kc_value#1#0: String)
+	15: ImmBorrowLoc[1](iss#1#0: String)
+	16: ImmBorrowLoc[0](aud#1#0: String)
+	17: LdU256(15232766888716517538274372547598053531354666056102343895255590477425668733026)
+	18: Call zklogin_verified_id::check_zklogin_id(address, &String, &String, &String, &String, u256): bool
+	19: Pop
+	20: Ret
+}
+
+test_verified_id() {
+L0:	aud#1#0: String
+L1:	iss#1#0: String
+L2:	kc_name#1#0: String
+L3:	kc_value#1#0: String
+L4:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](vector<u8>: "sub..)
+	1: Call string::utf8(vector<u8>): String
+	2: StLoc[2](kc_name#1#0: String)
+	3: LdConst[1](vector<u8>: "106..)
+	4: Call string::utf8(vector<u8>): String
+	5: StLoc[3](kc_value#1#0: String)
+	6: LdConst[2](vector<u8>: "575..)
+	7: Call string::utf8(vector<u8>): String
+	8: StLoc[0](aud#1#0: String)
+	9: LdConst[3](vector<u8>: "htt..)
+	10: Call string::utf8(vector<u8>): String
+	11: StLoc[1](iss#1#0: String)
+	12: LdConst[4](address: 0x1c..)
+	13: Call test_scenario::begin(address): Scenario
+	14: StLoc[4](scenario#1#0: Scenario)
+	15: MoveLoc[2](kc_name#1#0: String)
+	16: MoveLoc[3](kc_value#1#0: String)
+	17: MoveLoc[1](iss#1#0: String)
+	18: MoveLoc[0](aud#1#0: String)
+	19: LdU256(15232766888716517538274372547598053531354666056102343895255590477425668733026)
+	20: MutBorrowLoc[4](scenario#1#0: Scenario)
+	21: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	22: Call zklogin_verified_id::verify_zklogin_id(String, String, String, String, u256, &mut TxContext)
+	23: MoveLoc[4](scenario#1#0: Scenario)
+	24: Call test_scenario::end(Scenario): TransactionEffects
+	25: Pop
+	26: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u8>: "sub" // interpreted as UTF8 string
+	1 => vector<u8>: "106294049240999307923" // interpreted as UTF8 string
+	2 => vector<u8>: "575519204237-msop9ep45u2uo98hapqmngv8d84qdc8k.apps.googleusercontent.com" // interpreted as UTF8 string
+	3 => vector<u8>: "https://accounts.google.com" // interpreted as UTF8 string
+	4 => address: 0x1c6b623a2f2c91333df730c98d220f11484953b391a3818680f922c264cc0c6b
+]
+}

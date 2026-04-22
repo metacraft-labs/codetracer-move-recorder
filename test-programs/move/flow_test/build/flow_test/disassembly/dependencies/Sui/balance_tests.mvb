@@ -1,0 +1,229 @@
+// Move bytecode v6
+module 2.balance_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::balance;
+use 0000000000000000000000000000000000000000000000000000000000000002::coin;
+use 0000000000000000000000000000000000000000000000000000000000000002::pay;
+use 0000000000000000000000000000000000000000000000000000000000000002::sui;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct MY_COIN has drop {
+	dummy_field: bool
+}
+
+type_morphing() {
+L0:	balance#3#0: Balance<SUI>
+L1:	coin#2#0: Coin<SUI>
+L2:	scenario#1#0: Scenario
+L3:	sub_balance#1#0: Balance<SUI>
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[2](scenario#1#0: Scenario)
+	3: Call balance::zero<SUI>(): Balance<SUI>
+	4: MutBorrowLoc[2](scenario#1#0: Scenario)
+	5: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	6: Call coin::from_balance<SUI>(Balance<SUI>, &mut TxContext): Coin<SUI>
+	7: Call coin::into_balance<SUI>(Coin<SUI>): Balance<SUI>
+	8: Call balance::destroy_zero<SUI>(Balance<SUI>)
+	9: LdU64(100)
+	10: MutBorrowLoc[2](scenario#1#0: Scenario)
+	11: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	12: Call coin::mint_for_testing<SUI>(u64, &mut TxContext): Coin<SUI>
+	13: StLoc[1](coin#2#0: Coin<SUI>)
+	14: MutBorrowLoc[1](coin#2#0: Coin<SUI>)
+	15: Call coin::balance_mut<SUI>(&mut Coin<SUI>): &mut Balance<SUI>
+	16: LdU64(50)
+	17: Call balance::split<SUI>(&mut Balance<SUI>, u64): Balance<SUI>
+	18: StLoc[3](sub_balance#1#0: Balance<SUI>)
+	19: ImmBorrowLoc[3](sub_balance#1#0: Balance<SUI>)
+	20: Call balance::value<SUI>(&Balance<SUI>): u64
+	21: LdU64(50)
+	22: Eq
+	23: BrFalse(25)
+B1:
+	24: Branch(27)
+B2:
+	25: LdU64(13906834298897432575)
+	26: Abort
+B3:
+	27: ImmBorrowLoc[1](coin#2#0: Coin<SUI>)
+	28: Call coin::value<SUI>(&Coin<SUI>): u64
+	29: LdU64(50)
+	30: Eq
+	31: BrFalse(33)
+B4:
+	32: Branch(35)
+B5:
+	33: LdU64(13906834303192399871)
+	34: Abort
+B6:
+	35: MoveLoc[1](coin#2#0: Coin<SUI>)
+	36: Call coin::into_balance<SUI>(Coin<SUI>): Balance<SUI>
+	37: StLoc[0](balance#3#0: Balance<SUI>)
+	38: MutBorrowLoc[0](balance#3#0: Balance<SUI>)
+	39: MoveLoc[3](sub_balance#1#0: Balance<SUI>)
+	40: Call balance::join<SUI>(&mut Balance<SUI>, Balance<SUI>): u64
+	41: Pop
+	42: ImmBorrowLoc[0](balance#3#0: Balance<SUI>)
+	43: Call balance::value<SUI>(&Balance<SUI>): u64
+	44: LdU64(100)
+	45: Eq
+	46: BrFalse(48)
+B7:
+	47: Branch(50)
+B8:
+	48: LdU64(13906834324667236351)
+	49: Abort
+B9:
+	50: MoveLoc[0](balance#3#0: Balance<SUI>)
+	51: MutBorrowLoc[2](scenario#1#0: Scenario)
+	52: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	53: Call coin::from_balance<SUI>(Balance<SUI>, &mut TxContext): Coin<SUI>
+	54: MutBorrowLoc[2](scenario#1#0: Scenario)
+	55: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	56: FreezeRef
+	57: Call pay::keep<SUI>(Coin<SUI>, &TxContext)
+	58: MoveLoc[2](scenario#1#0: Scenario)
+	59: Call test_scenario::end(Scenario): TransactionEffects
+	60: Pop
+	61: Ret
+}
+
+max_supply() {
+L0:	supply#1#0: Supply<MY_COIN>
+B0:
+	0: LdFalse
+	1: Pack[0](MY_COIN)
+	2: Call balance::create_supply<MY_COIN>(MY_COIN): Supply<MY_COIN>
+	3: StLoc[0](supply#1#0: Supply<MY_COIN>)
+	4: MutBorrowLoc[0](supply#1#0: Supply<MY_COIN>)
+	5: LdU64(18446744073709551614)
+	6: Call balance::increase_supply<MY_COIN>(&mut Supply<MY_COIN>, u64): Balance<MY_COIN>
+	7: Call balance::destroy_for_testing<MY_COIN>(Balance<MY_COIN>): u64
+	8: Pop
+	9: MutBorrowLoc[0](supply#1#0: Supply<MY_COIN>)
+	10: LdU64(1)
+	11: Call balance::increase_supply<MY_COIN>(&mut Supply<MY_COIN>, u64): Balance<MY_COIN>
+	12: Call balance::destroy_for_testing<MY_COIN>(Balance<MY_COIN>): u64
+	13: Pop
+	14: MoveLoc[0](supply#1#0: Supply<MY_COIN>)
+	15: Call unit_test::destroy<Supply<MY_COIN>>(Supply<MY_COIN>)
+	16: Ret
+}
+
+max_supply_overflow_fail() {
+L0:	supply#1#0: Supply<MY_COIN>
+B0:
+	0: LdFalse
+	1: Pack[0](MY_COIN)
+	2: Call balance::create_supply<MY_COIN>(MY_COIN): Supply<MY_COIN>
+	3: StLoc[0](supply#1#0: Supply<MY_COIN>)
+	4: MutBorrowLoc[0](supply#1#0: Supply<MY_COIN>)
+	5: LdU64(18446744073709551615)
+	6: Call balance::increase_supply<MY_COIN>(&mut Supply<MY_COIN>, u64): Balance<MY_COIN>
+	7: Call balance::destroy_for_testing<MY_COIN>(Balance<MY_COIN>): u64
+	8: Pop
+	9: MutBorrowLoc[0](supply#1#0: Supply<MY_COIN>)
+	10: LdU64(1)
+	11: Call balance::increase_supply<MY_COIN>(&mut Supply<MY_COIN>, u64): Balance<MY_COIN>
+	12: Call balance::destroy_for_testing<MY_COIN>(Balance<MY_COIN>): u64
+	13: Pop
+	14: LdU64(13906834427746451455)
+	15: Abort
+}
+
+test_balance() {
+L0:	another#1#0: Balance<SUI>
+L1:	balance#1#0: Balance<SUI>
+L2:	balance1#1#0: Balance<SUI>
+L3:	balance2#1#0: Balance<SUI>
+L4:	balance3#1#0: Balance<SUI>
+B0:
+	0: Call balance::zero<SUI>(): Balance<SUI>
+	1: StLoc[1](balance#1#0: Balance<SUI>)
+	2: LdU64(1000)
+	3: Call balance::create_for_testing<SUI>(u64): Balance<SUI>
+	4: StLoc[0](another#1#0: Balance<SUI>)
+	5: MutBorrowLoc[1](balance#1#0: Balance<SUI>)
+	6: MoveLoc[0](another#1#0: Balance<SUI>)
+	7: Call balance::join<SUI>(&mut Balance<SUI>, Balance<SUI>): u64
+	8: Pop
+	9: ImmBorrowLoc[1](balance#1#0: Balance<SUI>)
+	10: Call balance::value<SUI>(&Balance<SUI>): u64
+	11: LdU64(1000)
+	12: Eq
+	13: BrFalse(15)
+B1:
+	14: Branch(17)
+B2:
+	15: LdU64(13906834470696124415)
+	16: Abort
+B3:
+	17: MutBorrowLoc[1](balance#1#0: Balance<SUI>)
+	18: LdU64(333)
+	19: Call balance::split<SUI>(&mut Balance<SUI>, u64): Balance<SUI>
+	20: StLoc[2](balance1#1#0: Balance<SUI>)
+	21: MutBorrowLoc[1](balance#1#0: Balance<SUI>)
+	22: LdU64(333)
+	23: Call balance::split<SUI>(&mut Balance<SUI>, u64): Balance<SUI>
+	24: StLoc[3](balance2#1#0: Balance<SUI>)
+	25: MutBorrowLoc[1](balance#1#0: Balance<SUI>)
+	26: LdU64(334)
+	27: Call balance::split<SUI>(&mut Balance<SUI>, u64): Balance<SUI>
+	28: StLoc[4](balance3#1#0: Balance<SUI>)
+	29: MoveLoc[1](balance#1#0: Balance<SUI>)
+	30: Call balance::destroy_zero<SUI>(Balance<SUI>)
+	31: ImmBorrowLoc[2](balance1#1#0: Balance<SUI>)
+	32: Call balance::value<SUI>(&Balance<SUI>): u64
+	33: LdU64(333)
+	34: Eq
+	35: BrFalse(37)
+B4:
+	36: Branch(39)
+B5:
+	37: LdU64(13906834505055862783)
+	38: Abort
+B6:
+	39: ImmBorrowLoc[3](balance2#1#0: Balance<SUI>)
+	40: Call balance::value<SUI>(&Balance<SUI>): u64
+	41: LdU64(333)
+	42: Eq
+	43: BrFalse(45)
+B7:
+	44: Branch(47)
+B8:
+	45: LdU64(13906834509350830079)
+	46: Abort
+B9:
+	47: ImmBorrowLoc[4](balance3#1#0: Balance<SUI>)
+	48: Call balance::value<SUI>(&Balance<SUI>): u64
+	49: LdU64(334)
+	50: Eq
+	51: BrFalse(53)
+B10:
+	52: Branch(55)
+B11:
+	53: LdU64(13906834513645797375)
+	54: Abort
+B12:
+	55: MoveLoc[2](balance1#1#0: Balance<SUI>)
+	56: Call unit_test::destroy<Balance<SUI>>(Balance<SUI>)
+	57: MoveLoc[3](balance2#1#0: Balance<SUI>)
+	58: Call unit_test::destroy<Balance<SUI>>(Balance<SUI>)
+	59: MoveLoc[4](balance3#1#0: Balance<SUI>)
+	60: Call unit_test::destroy<Balance<SUI>>(Balance<SUI>)
+	61: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000001
+]
+}

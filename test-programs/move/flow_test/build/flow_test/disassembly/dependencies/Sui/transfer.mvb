@@ -1,0 +1,194 @@
+// Move bytecode v6
+module 2.transfer {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::party;
+
+struct Receiving<phantom T: key> has drop {
+	id: ID,
+	version: u64
+}
+
+public transfer<T: key>(obj#0#0: T, recipient#0#0: address) {
+B0:
+	0: MoveLoc[0](obj#0#0: T)
+	1: MoveLoc[1](recipient#0#0: address)
+	2: Call transfer_impl<T>(T, address)
+	3: Ret
+}
+
+public public_transfer<T: store + key>(obj#0#0: T, recipient#0#0: address) {
+B0:
+	0: MoveLoc[0](obj#0#0: T)
+	1: MoveLoc[1](recipient#0#0: address)
+	2: Call transfer_impl<T>(T, address)
+	3: Ret
+}
+
+public party_transfer<T: key>(obj#0#0: T, party#0#0: Party) {
+L2:	addresses#1#0: vector<address>
+L3:	default#1#0: u64
+L4:	permissions#1#0: vector<u64>
+B0:
+	0: ImmBorrowLoc[1](party#0#0: Party)
+	1: Call party::is_single_owner(&Party): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(6)
+B2:
+	4: LdU64(13836747240150269959)
+	5: Abort
+B3:
+	6: MoveLoc[1](party#0#0: Party)
+	7: Call party::into_native(Party): u64 * vector<address> * vector<u64>
+	8: StLoc[4](permissions#1#0: vector<u64>)
+	9: StLoc[2](addresses#1#0: vector<address>)
+	10: StLoc[3](default#1#0: u64)
+	11: MoveLoc[0](obj#0#0: T)
+	12: MoveLoc[3](default#1#0: u64)
+	13: MoveLoc[2](addresses#1#0: vector<address>)
+	14: MoveLoc[4](permissions#1#0: vector<u64>)
+	15: Call party_transfer_impl<T>(T, u64, vector<address>, vector<u64>)
+	16: Ret
+}
+
+public public_party_transfer<T: store + key>(obj#0#0: T, party#0#0: Party) {
+L2:	addresses#1#0: vector<address>
+L3:	default#1#0: u64
+L4:	permissions#1#0: vector<u64>
+B0:
+	0: ImmBorrowLoc[1](party#0#0: Party)
+	1: Call party::is_single_owner(&Party): bool
+	2: BrFalse(4)
+B1:
+	3: Branch(6)
+B2:
+	4: LdU64(13836747300279812103)
+	5: Abort
+B3:
+	6: MoveLoc[1](party#0#0: Party)
+	7: Call party::into_native(Party): u64 * vector<address> * vector<u64>
+	8: StLoc[4](permissions#1#0: vector<u64>)
+	9: StLoc[2](addresses#1#0: vector<address>)
+	10: StLoc[3](default#1#0: u64)
+	11: MoveLoc[0](obj#0#0: T)
+	12: MoveLoc[3](default#1#0: u64)
+	13: MoveLoc[2](addresses#1#0: vector<address>)
+	14: MoveLoc[4](permissions#1#0: vector<u64>)
+	15: Call party_transfer_impl<T>(T, u64, vector<address>, vector<u64>)
+	16: Ret
+}
+
+public freeze_object<T: key>(obj#0#0: T) {
+B0:
+	0: MoveLoc[0](obj#0#0: T)
+	1: Call freeze_object_impl<T>(T)
+	2: Ret
+}
+
+public public_freeze_object<T: store + key>(obj#0#0: T) {
+B0:
+	0: MoveLoc[0](obj#0#0: T)
+	1: Call freeze_object_impl<T>(T)
+	2: Ret
+}
+
+public share_object<T: key>(obj#0#0: T) {
+B0:
+	0: MoveLoc[0](obj#0#0: T)
+	1: Call share_object_impl<T>(T)
+	2: Ret
+}
+
+public public_share_object<T: store + key>(obj#0#0: T) {
+B0:
+	0: MoveLoc[0](obj#0#0: T)
+	1: Call share_object_impl<T>(T)
+	2: Ret
+}
+
+public receive<T: key>(parent#0#0: &mut UID, to_receive#0#0: Receiving<T>): T {
+L2:	id#1#0: ID
+L3:	version#1#0: u64
+B0:
+	0: MoveLoc[1](to_receive#0#0: Receiving<T>)
+	1: UnpackGeneric[0](Receiving<T>)
+	2: StLoc[3](version#1#0: u64)
+	3: StLoc[2](id#1#0: ID)
+	4: MoveLoc[0](parent#0#0: &mut UID)
+	5: FreezeRef
+	6: Call object::uid_to_address(&UID): address
+	7: MoveLoc[2](id#1#0: ID)
+	8: MoveLoc[3](version#1#0: u64)
+	9: Call receive_impl<T>(address, ID, u64): T
+	10: Ret
+}
+
+public public_receive<T: store + key>(parent#0#0: &mut UID, to_receive#0#0: Receiving<T>): T {
+L2:	id#1#0: ID
+L3:	version#1#0: u64
+B0:
+	0: MoveLoc[1](to_receive#0#0: Receiving<T>)
+	1: UnpackGeneric[0](Receiving<T>)
+	2: StLoc[3](version#1#0: u64)
+	3: StLoc[2](id#1#0: ID)
+	4: MoveLoc[0](parent#0#0: &mut UID)
+	5: FreezeRef
+	6: Call object::uid_to_address(&UID): address
+	7: MoveLoc[2](id#1#0: ID)
+	8: MoveLoc[3](version#1#0: u64)
+	9: Call receive_impl<T>(address, ID, u64): T
+	10: Ret
+}
+
+public receiving_object_id<T: key>(receiving#0#0: &Receiving<T>): ID {
+B0:
+	0: MoveLoc[0](receiving#0#0: &Receiving<T>)
+	1: ImmBorrowFieldGeneric[0](Receiving.id: ID)
+	2: ReadRef
+	3: Ret
+}
+
+native public(friend) freeze_object_impl<T: key>(obj#0#0: T);
+
+native public(friend) share_object_impl<T: key>(obj#0#0: T);
+
+native public(friend) party_transfer_impl<T: key>(obj#0#0: T, default_permissions#0#0: u64, addresses#0#0: vector<address>, permissions#0#0: vector<u64>);
+
+native public(friend) transfer_impl<T: key>(obj#0#0: T, recipient#0#0: address);
+
+native receive_impl<T: key>(parent#0#0: address, to_receive#0#0: ID, version#0#0: u64): T;
+
+public(friend) make_receiver<T: key>(id#0#0: ID, version#0#0: u64): Receiving<T> {
+B0:
+	0: MoveLoc[0](id#0#0: ID)
+	1: MoveLoc[1](version#0#0: u64)
+	2: PackGeneric[0](Receiving<T>)
+	3: Ret
+}
+
+public(friend) receiving_id<T: key>(r#0#0: &Receiving<T>): ID {
+B0:
+	0: MoveLoc[0](r#0#0: &Receiving<T>)
+	1: ImmBorrowFieldGeneric[0](Receiving.id: ID)
+	2: ReadRef
+	3: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => u64: 3
+	4 => u64: 4
+	5 => u64: 5
+	6 => vector<u8>: "EInvalidPartyPermissions" // interpreted as UTF8 string
+	7 => vector<u8>: "Party transfer is currently limited to one party." // interpreted as UTF8 string
+]
+}

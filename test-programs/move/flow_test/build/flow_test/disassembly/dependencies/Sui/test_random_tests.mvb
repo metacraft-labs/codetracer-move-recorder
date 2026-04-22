@@ -1,0 +1,1189 @@
+// Move bytecode v6
+module 2.test_random_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_random;
+
+test_next_bytes() {
+L0:	bytes#1#0: vector<u8>
+L1:	i#1#0: u64
+L2:	length#1#0: u64
+L3:	lengths#1#0: vector<u64>
+L4:	random1#1#0: Random
+L5:	random1#2#0: Random
+L6:	random1#3#0: Random
+L7:	random2#1#0: Random
+L8:	random2#2#0: Random
+B0:
+	0: LdConst[0](vector<u64>: 0701..)
+	1: StLoc[3](lengths#1#0: vector<u64>)
+	2: LdU64(0)
+	3: StLoc[1](i#1#0: u64)
+B1:
+	4: CopyLoc[1](i#1#0: u64)
+	5: ImmBorrowLoc[3](lengths#1#0: vector<u64>)
+	6: VecLen(2)
+	7: Lt
+	8: BrFalse(69)
+B2:
+	9: Branch(10)
+B3:
+	10: ImmBorrowLoc[3](lengths#1#0: vector<u64>)
+	11: CopyLoc[1](i#1#0: u64)
+	12: VecImmBorrow(2)
+	13: ReadRef
+	14: StLoc[2](length#1#0: u64)
+	15: LdConst[1](vector<u8>: "see..)
+	16: Call test_random::new(vector<u8>): Random
+	17: StLoc[4](random1#1#0: Random)
+	18: MutBorrowLoc[4](random1#1#0: Random)
+	19: CopyLoc[2](length#1#0: u64)
+	20: Call test_random::next_bytes(&mut Random, u64): vector<u8>
+	21: StLoc[0](bytes#1#0: vector<u8>)
+	22: ImmBorrowLoc[0](bytes#1#0: vector<u8>)
+	23: VecLen(6)
+	24: CopyLoc[2](length#1#0: u64)
+	25: Eq
+	26: BrFalse(28)
+B4:
+	27: Branch(30)
+B5:
+	28: LdU64(13906834264537694207)
+	29: Abort
+B6:
+	30: LdConst[2](vector<u8>: "see..)
+	31: Call test_random::new(vector<u8>): Random
+	32: StLoc[5](random1#2#0: Random)
+	33: LdConst[3](vector<u8>: "see..)
+	34: Call test_random::new(vector<u8>): Random
+	35: StLoc[7](random2#1#0: Random)
+	36: MutBorrowLoc[5](random1#2#0: Random)
+	37: CopyLoc[2](length#1#0: u64)
+	38: Call test_random::next_bytes(&mut Random, u64): vector<u8>
+	39: MutBorrowLoc[7](random2#1#0: Random)
+	40: CopyLoc[2](length#1#0: u64)
+	41: Call test_random::next_bytes(&mut Random, u64): vector<u8>
+	42: Neq
+	43: BrFalse(45)
+B7:
+	44: Branch(47)
+B8:
+	45: LdU64(2)
+	46: Abort
+B9:
+	47: LdConst[1](vector<u8>: "see..)
+	48: Call test_random::new(vector<u8>): Random
+	49: StLoc[6](random1#3#0: Random)
+	50: LdConst[1](vector<u8>: "see..)
+	51: Call test_random::new(vector<u8>): Random
+	52: StLoc[8](random2#2#0: Random)
+	53: MutBorrowLoc[6](random1#3#0: Random)
+	54: CopyLoc[2](length#1#0: u64)
+	55: Call test_random::next_bytes(&mut Random, u64): vector<u8>
+	56: MutBorrowLoc[8](random2#2#0: Random)
+	57: MoveLoc[2](length#1#0: u64)
+	58: Call test_random::next_bytes(&mut Random, u64): vector<u8>
+	59: Eq
+	60: BrFalse(62)
+B10:
+	61: Branch(64)
+B11:
+	62: LdU64(3)
+	63: Abort
+B12:
+	64: MoveLoc[1](i#1#0: u64)
+	65: LdU64(1)
+	66: Add
+	67: StLoc[1](i#1#0: u64)
+	68: Branch(4)
+B13:
+	69: Ret
+}
+
+test_next_bool() {
+L0:	random#1#0: Random
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[0](random#1#0: Random)
+	3: MutBorrowLoc[0](random#1#0: Random)
+	4: Call test_random::next_bool(&mut Random): bool
+	5: LdFalse
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(11)
+B2:
+	9: LdU64(13906834359026974719)
+	10: Abort
+B3:
+	11: MutBorrowLoc[0](random#1#0: Random)
+	12: Call test_random::next_bool(&mut Random): bool
+	13: LdFalse
+	14: Eq
+	15: BrFalse(17)
+B4:
+	16: Branch(19)
+B5:
+	17: LdU64(13906834363321942015)
+	18: Abort
+B6:
+	19: MutBorrowLoc[0](random#1#0: Random)
+	20: Call test_random::next_bool(&mut Random): bool
+	21: LdTrue
+	22: Eq
+	23: BrFalse(25)
+B7:
+	24: Branch(27)
+B8:
+	25: LdU64(13906834367616909311)
+	26: Abort
+B9:
+	27: MutBorrowLoc[0](random#1#0: Random)
+	28: Call test_random::next_bool(&mut Random): bool
+	29: LdFalse
+	30: Eq
+	31: BrFalse(33)
+B10:
+	32: Branch(35)
+B11:
+	33: LdU64(13906834371911876607)
+	34: Abort
+B12:
+	35: MutBorrowLoc[0](random#1#0: Random)
+	36: Call test_random::next_bool(&mut Random): bool
+	37: LdFalse
+	38: Eq
+	39: BrFalse(41)
+B13:
+	40: Branch(43)
+B14:
+	41: LdU64(13906834376206843903)
+	42: Abort
+B15:
+	43: MutBorrowLoc[0](random#1#0: Random)
+	44: Call test_random::next_bool(&mut Random): bool
+	45: LdTrue
+	46: Eq
+	47: BrFalse(49)
+B16:
+	48: Branch(51)
+B17:
+	49: LdU64(13906834380501811199)
+	50: Abort
+B18:
+	51: MutBorrowLoc[0](random#1#0: Random)
+	52: Call test_random::next_bool(&mut Random): bool
+	53: LdTrue
+	54: Eq
+	55: BrFalse(57)
+B19:
+	56: Branch(59)
+B20:
+	57: LdU64(13906834384796778495)
+	58: Abort
+B21:
+	59: MutBorrowLoc[0](random#1#0: Random)
+	60: Call test_random::next_bool(&mut Random): bool
+	61: LdTrue
+	62: Eq
+	63: BrFalse(65)
+B22:
+	64: Branch(67)
+B23:
+	65: LdU64(13906834389091745791)
+	66: Abort
+B24:
+	67: Ret
+}
+
+test_next_u8() {
+L0:	random#1#0: Random
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[0](random#1#0: Random)
+	3: MutBorrowLoc[0](random#1#0: Random)
+	4: Call test_random::next_u8(&mut Random): u8
+	5: LdU8(228)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(11)
+B2:
+	9: LdU64(13906834419156516863)
+	10: Abort
+B3:
+	11: MutBorrowLoc[0](random#1#0: Random)
+	12: Call test_random::next_u8(&mut Random): u8
+	13: LdU8(182)
+	14: Eq
+	15: BrFalse(17)
+B4:
+	16: Branch(19)
+B5:
+	17: LdU64(13906834423451484159)
+	18: Abort
+B6:
+	19: MutBorrowLoc[0](random#1#0: Random)
+	20: Call test_random::next_u8(&mut Random): u8
+	21: LdU8(229)
+	22: Eq
+	23: BrFalse(25)
+B7:
+	24: Branch(27)
+B8:
+	25: LdU64(13906834427746451455)
+	26: Abort
+B9:
+	27: MutBorrowLoc[0](random#1#0: Random)
+	28: Call test_random::next_u8(&mut Random): u8
+	29: LdU8(184)
+	30: Eq
+	31: BrFalse(33)
+B10:
+	32: Branch(35)
+B11:
+	33: LdU64(13906834432041418751)
+	34: Abort
+B12:
+	35: MutBorrowLoc[0](random#1#0: Random)
+	36: Call test_random::next_u8(&mut Random): u8
+	37: LdU8(40)
+	38: Eq
+	39: BrFalse(41)
+B13:
+	40: Branch(43)
+B14:
+	41: LdU64(13906834436336386047)
+	42: Abort
+B15:
+	43: MutBorrowLoc[0](random#1#0: Random)
+	44: Call test_random::next_u8(&mut Random): u8
+	45: LdU8(199)
+	46: Eq
+	47: BrFalse(49)
+B16:
+	48: Branch(51)
+B17:
+	49: LdU64(13906834440631353343)
+	50: Abort
+B18:
+	51: MutBorrowLoc[0](random#1#0: Random)
+	52: Call test_random::next_u8(&mut Random): u8
+	53: LdU8(63)
+	54: Eq
+	55: BrFalse(57)
+B19:
+	56: Branch(59)
+B20:
+	57: LdU64(13906834444926320639)
+	58: Abort
+B21:
+	59: MutBorrowLoc[0](random#1#0: Random)
+	60: Call test_random::next_u8(&mut Random): u8
+	61: LdU8(51)
+	62: Eq
+	63: BrFalse(65)
+B22:
+	64: Branch(67)
+B23:
+	65: LdU64(13906834449221287935)
+	66: Abort
+B24:
+	67: Ret
+}
+
+test_next_u8_in_range() {
+L0:	bounds#1#0: vector<u8>
+L1:	i#1#0: u64
+L2:	j#1#0: u64
+L3:	random#1#0: Random
+L4:	upper_bound#1#0: u8
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[3](random#1#0: Random)
+	3: LdU64(0)
+	4: StLoc[1](i#1#0: u64)
+	5: LdConst[4](vector<u8>: "..)
+	6: StLoc[0](bounds#1#0: vector<u8>)
+B1:
+	7: CopyLoc[1](i#1#0: u64)
+	8: ImmBorrowLoc[0](bounds#1#0: vector<u8>)
+	9: VecLen(6)
+	10: Lt
+	11: BrFalse(44)
+B2:
+	12: Branch(13)
+B3:
+	13: ImmBorrowLoc[0](bounds#1#0: vector<u8>)
+	14: CopyLoc[1](i#1#0: u64)
+	15: VecImmBorrow(6)
+	16: ReadRef
+	17: StLoc[4](upper_bound#1#0: u8)
+	18: LdU64(0)
+	19: StLoc[2](j#1#0: u64)
+B4:
+	20: CopyLoc[2](j#1#0: u64)
+	21: LdU64(10)
+	22: Lt
+	23: BrFalse(39)
+B5:
+	24: Branch(25)
+B6:
+	25: MutBorrowLoc[3](random#1#0: Random)
+	26: CopyLoc[4](upper_bound#1#0: u8)
+	27: Call test_random::next_u8_in_range(&mut Random, u8): u8
+	28: CopyLoc[4](upper_bound#1#0: u8)
+	29: Lt
+	30: BrFalse(32)
+B7:
+	31: Branch(34)
+B8:
+	32: LdU64(13906834509350830079)
+	33: Abort
+B9:
+	34: MoveLoc[2](j#1#0: u64)
+	35: LdU64(1)
+	36: Add
+	37: StLoc[2](j#1#0: u64)
+	38: Branch(20)
+B10:
+	39: MoveLoc[1](i#1#0: u64)
+	40: LdU64(1)
+	41: Add
+	42: StLoc[1](i#1#0: u64)
+	43: Branch(7)
+B11:
+	44: Ret
+}
+
+test_next_u16() {
+L0:	random#1#0: Random
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[0](random#1#0: Random)
+	3: MutBorrowLoc[0](random#1#0: Random)
+	4: Call test_random::next_u16(&mut Random): u16
+	5: LdU16(23524)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(11)
+B2:
+	9: LdU64(13906834556595470335)
+	10: Abort
+B3:
+	11: MutBorrowLoc[0](random#1#0: Random)
+	12: Call test_random::next_u16(&mut Random): u16
+	13: LdU16(30390)
+	14: Eq
+	15: BrFalse(17)
+B4:
+	16: Branch(19)
+B5:
+	17: LdU64(13906834560890437631)
+	18: Abort
+B6:
+	19: MutBorrowLoc[0](random#1#0: Random)
+	20: Call test_random::next_u16(&mut Random): u16
+	21: LdU16(60645)
+	22: Eq
+	23: BrFalse(25)
+B7:
+	24: Branch(27)
+B8:
+	25: LdU64(13906834565185404927)
+	26: Abort
+B9:
+	27: MutBorrowLoc[0](random#1#0: Random)
+	28: Call test_random::next_u16(&mut Random): u16
+	29: LdU16(2488)
+	30: Eq
+	31: BrFalse(33)
+B10:
+	32: Branch(35)
+B11:
+	33: LdU64(13906834569480372223)
+	34: Abort
+B12:
+	35: MutBorrowLoc[0](random#1#0: Random)
+	36: Call test_random::next_u16(&mut Random): u16
+	37: LdU16(5672)
+	38: Eq
+	39: BrFalse(41)
+B13:
+	40: Branch(43)
+B14:
+	41: LdU64(13906834573775339519)
+	42: Abort
+B15:
+	43: MutBorrowLoc[0](random#1#0: Random)
+	44: Call test_random::next_u16(&mut Random): u16
+	45: LdU16(36807)
+	46: Eq
+	47: BrFalse(49)
+B16:
+	48: Branch(51)
+B17:
+	49: LdU64(13906834578070306815)
+	50: Abort
+B18:
+	51: MutBorrowLoc[0](random#1#0: Random)
+	52: Call test_random::next_u16(&mut Random): u16
+	53: LdU16(54591)
+	54: Eq
+	55: BrFalse(57)
+B19:
+	56: Branch(59)
+B20:
+	57: LdU64(13906834582365274111)
+	58: Abort
+B21:
+	59: MutBorrowLoc[0](random#1#0: Random)
+	60: Call test_random::next_u16(&mut Random): u16
+	61: LdU16(41523)
+	62: Eq
+	63: BrFalse(65)
+B22:
+	64: Branch(67)
+B23:
+	65: LdU64(13906834586660241407)
+	66: Abort
+B24:
+	67: Ret
+}
+
+test_next_u16_in_range() {
+L0:	bounds#1#0: vector<u16>
+L1:	i#1#0: u64
+L2:	j#1#0: u64
+L3:	random#1#0: Random
+L4:	upper_bound#1#0: u16
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[3](random#1#0: Random)
+	3: LdU64(0)
+	4: StLoc[1](i#1#0: u64)
+	5: LdConst[5](vector<u16>: 0701..)
+	6: StLoc[0](bounds#1#0: vector<u16>)
+B1:
+	7: CopyLoc[1](i#1#0: u64)
+	8: ImmBorrowLoc[0](bounds#1#0: vector<u16>)
+	9: VecLen(11)
+	10: Lt
+	11: BrFalse(44)
+B2:
+	12: Branch(13)
+B3:
+	13: ImmBorrowLoc[0](bounds#1#0: vector<u16>)
+	14: CopyLoc[1](i#1#0: u64)
+	15: VecImmBorrow(11)
+	16: ReadRef
+	17: StLoc[4](upper_bound#1#0: u16)
+	18: LdU64(0)
+	19: StLoc[2](j#1#0: u64)
+B4:
+	20: CopyLoc[2](j#1#0: u64)
+	21: LdU64(10)
+	22: Lt
+	23: BrFalse(39)
+B5:
+	24: Branch(25)
+B6:
+	25: MutBorrowLoc[3](random#1#0: Random)
+	26: CopyLoc[4](upper_bound#1#0: u16)
+	27: Call test_random::next_u16_in_range(&mut Random, u16): u16
+	28: CopyLoc[4](upper_bound#1#0: u16)
+	29: Lt
+	30: BrFalse(32)
+B7:
+	31: Branch(34)
+B8:
+	32: LdU64(13906834646789783551)
+	33: Abort
+B9:
+	34: MoveLoc[2](j#1#0: u64)
+	35: LdU64(1)
+	36: Add
+	37: StLoc[2](j#1#0: u64)
+	38: Branch(20)
+B10:
+	39: MoveLoc[1](i#1#0: u64)
+	40: LdU64(1)
+	41: Add
+	42: StLoc[1](i#1#0: u64)
+	43: Branch(7)
+B11:
+	44: Ret
+}
+
+test_next_u32() {
+L0:	random#1#0: Random
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[0](random#1#0: Random)
+	3: MutBorrowLoc[0](random#1#0: Random)
+	4: Call test_random::next_u32(&mut Random): u32
+	5: LdU32(2356042724)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(11)
+B2:
+	9: LdU64(13906834694034423807)
+	10: Abort
+B3:
+	11: MutBorrowLoc[0](random#1#0: Random)
+	12: Call test_random::next_u32(&mut Random): u32
+	13: LdU32(2194372278)
+	14: Eq
+	15: BrFalse(17)
+B4:
+	16: Branch(19)
+B5:
+	17: LdU64(13906834698329391103)
+	18: Abort
+B6:
+	19: MutBorrowLoc[0](random#1#0: Random)
+	20: Call test_random::next_u32(&mut Random): u32
+	21: LdU32(1943727333)
+	22: Eq
+	23: BrFalse(25)
+B7:
+	24: Branch(27)
+B8:
+	25: LdU64(13906834702624358399)
+	26: Abort
+B9:
+	27: MutBorrowLoc[0](random#1#0: Random)
+	28: Call test_random::next_u32(&mut Random): u32
+	29: LdU32(3674540472)
+	30: Eq
+	31: BrFalse(33)
+B10:
+	32: Branch(35)
+B11:
+	33: LdU64(13906834706919325695)
+	34: Abort
+B12:
+	35: MutBorrowLoc[0](random#1#0: Random)
+	36: Call test_random::next_u32(&mut Random): u32
+	37: LdU32(560141864)
+	38: Eq
+	39: BrFalse(41)
+B13:
+	40: Branch(43)
+B14:
+	41: LdU64(13906834711214292991)
+	42: Abort
+B15:
+	43: MutBorrowLoc[0](random#1#0: Random)
+	44: Call test_random::next_u32(&mut Random): u32
+	45: LdU32(2309459911)
+	46: Eq
+	47: BrFalse(49)
+B16:
+	48: Branch(51)
+B17:
+	49: LdU64(13906834715509260287)
+	50: Abort
+B18:
+	51: MutBorrowLoc[0](random#1#0: Random)
+	52: Call test_random::next_u32(&mut Random): u32
+	53: LdU32(2130498879)
+	54: Eq
+	55: BrFalse(57)
+B19:
+	56: Branch(59)
+B20:
+	57: LdU64(13906834719804227583)
+	58: Abort
+B21:
+	59: MutBorrowLoc[0](random#1#0: Random)
+	60: Call test_random::next_u32(&mut Random): u32
+	61: LdU32(2063835699)
+	62: Eq
+	63: BrFalse(65)
+B22:
+	64: Branch(67)
+B23:
+	65: LdU64(13906834724099194879)
+	66: Abort
+B24:
+	67: Ret
+}
+
+test_next_u32_in_range() {
+L0:	bounds#1#0: vector<u32>
+L1:	i#1#0: u64
+L2:	j#1#0: u64
+L3:	random#1#0: Random
+L4:	upper_bound#1#0: u32
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[3](random#1#0: Random)
+	3: LdU64(0)
+	4: StLoc[1](i#1#0: u64)
+	5: LdConst[6](vector<u32>: 0701..)
+	6: StLoc[0](bounds#1#0: vector<u32>)
+B1:
+	7: CopyLoc[1](i#1#0: u64)
+	8: ImmBorrowLoc[0](bounds#1#0: vector<u32>)
+	9: VecLen(14)
+	10: Lt
+	11: BrFalse(44)
+B2:
+	12: Branch(13)
+B3:
+	13: ImmBorrowLoc[0](bounds#1#0: vector<u32>)
+	14: CopyLoc[1](i#1#0: u64)
+	15: VecImmBorrow(14)
+	16: ReadRef
+	17: StLoc[4](upper_bound#1#0: u32)
+	18: LdU64(0)
+	19: StLoc[2](j#1#0: u64)
+B4:
+	20: CopyLoc[2](j#1#0: u64)
+	21: LdU64(10)
+	22: Lt
+	23: BrFalse(39)
+B5:
+	24: Branch(25)
+B6:
+	25: MutBorrowLoc[3](random#1#0: Random)
+	26: CopyLoc[4](upper_bound#1#0: u32)
+	27: Call test_random::next_u32_in_range(&mut Random, u32): u32
+	28: CopyLoc[4](upper_bound#1#0: u32)
+	29: Lt
+	30: BrFalse(32)
+B7:
+	31: Branch(34)
+B8:
+	32: LdU64(13906834784228737023)
+	33: Abort
+B9:
+	34: MoveLoc[2](j#1#0: u64)
+	35: LdU64(1)
+	36: Add
+	37: StLoc[2](j#1#0: u64)
+	38: Branch(20)
+B10:
+	39: MoveLoc[1](i#1#0: u64)
+	40: LdU64(1)
+	41: Add
+	42: StLoc[1](i#1#0: u64)
+	43: Branch(7)
+B11:
+	44: Ret
+}
+
+test_next_u64() {
+L0:	random#1#0: Random
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[0](random#1#0: Random)
+	3: MutBorrowLoc[0](random#1#0: Random)
+	4: Call test_random::next_u64(&mut Random): u64
+	5: LdU64(5845420307181886436)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(11)
+B2:
+	9: LdU64(13906834831473377279)
+	10: Abort
+B3:
+	11: MutBorrowLoc[0](random#1#0: Random)
+	12: Call test_random::next_u64(&mut Random): u64
+	13: LdU64(7169586959492019894)
+	14: Eq
+	15: BrFalse(17)
+B4:
+	16: Branch(19)
+B5:
+	17: LdU64(13906834835768344575)
+	18: Abort
+B6:
+	19: MutBorrowLoc[0](random#1#0: Random)
+	20: Call test_random::next_u64(&mut Random): u64
+	21: LdU64(8821413273700855013)
+	22: Eq
+	23: BrFalse(25)
+B7:
+	24: Branch(27)
+B8:
+	25: LdU64(13906834840063311871)
+	26: Abort
+B9:
+	27: MutBorrowLoc[0](random#1#0: Random)
+	28: Call test_random::next_u64(&mut Random): u64
+	29: LdU64(17006289909767801272)
+	30: Eq
+	31: BrFalse(33)
+B10:
+	32: Branch(35)
+B11:
+	33: LdU64(13906834844358279167)
+	34: Abort
+B12:
+	35: MutBorrowLoc[0](random#1#0: Random)
+	36: Call test_random::next_u64(&mut Random): u64
+	37: LdU64(8349531451798263336)
+	38: Eq
+	39: BrFalse(41)
+B13:
+	40: Branch(43)
+B14:
+	41: LdU64(13906834848653246463)
+	42: Abort
+B15:
+	43: MutBorrowLoc[0](random#1#0: Random)
+	44: Call test_random::next_u64(&mut Random): u64
+	45: LdU64(1662646395949518791)
+	46: Eq
+	47: BrFalse(49)
+B16:
+	48: Branch(51)
+B17:
+	49: LdU64(13906834852948213759)
+	50: Abort
+B18:
+	51: MutBorrowLoc[0](random#1#0: Random)
+	52: Call test_random::next_u64(&mut Random): u64
+	53: LdU64(17661794895045383487)
+	54: Eq
+	55: BrFalse(57)
+B19:
+	56: Branch(59)
+B20:
+	57: LdU64(13906834857243181055)
+	58: Abort
+B21:
+	59: MutBorrowLoc[0](random#1#0: Random)
+	60: Call test_random::next_u64(&mut Random): u64
+	61: LdU64(12177043863244087859)
+	62: Eq
+	63: BrFalse(65)
+B22:
+	64: Branch(67)
+B23:
+	65: LdU64(13906834861538148351)
+	66: Abort
+B24:
+	67: Ret
+}
+
+test_next_u64_in_range() {
+L0:	bounds#1#0: vector<u64>
+L1:	i#1#0: u64
+L2:	j#1#0: u64
+L3:	random#1#0: Random
+L4:	upper_bound#1#0: u64
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[3](random#1#0: Random)
+	3: LdU64(0)
+	4: StLoc[1](i#1#0: u64)
+	5: LdConst[7](vector<u64>: 0701..)
+	6: StLoc[0](bounds#1#0: vector<u64>)
+B1:
+	7: CopyLoc[1](i#1#0: u64)
+	8: ImmBorrowLoc[0](bounds#1#0: vector<u64>)
+	9: VecLen(2)
+	10: Lt
+	11: BrFalse(44)
+B2:
+	12: Branch(13)
+B3:
+	13: ImmBorrowLoc[0](bounds#1#0: vector<u64>)
+	14: CopyLoc[1](i#1#0: u64)
+	15: VecImmBorrow(2)
+	16: ReadRef
+	17: StLoc[4](upper_bound#1#0: u64)
+	18: LdU64(0)
+	19: StLoc[2](j#1#0: u64)
+B4:
+	20: CopyLoc[2](j#1#0: u64)
+	21: LdU64(10)
+	22: Lt
+	23: BrFalse(39)
+B5:
+	24: Branch(25)
+B6:
+	25: MutBorrowLoc[3](random#1#0: Random)
+	26: CopyLoc[4](upper_bound#1#0: u64)
+	27: Call test_random::next_u64_in_range(&mut Random, u64): u64
+	28: CopyLoc[4](upper_bound#1#0: u64)
+	29: Lt
+	30: BrFalse(32)
+B7:
+	31: Branch(34)
+B8:
+	32: LdU64(13906834921667690495)
+	33: Abort
+B9:
+	34: MoveLoc[2](j#1#0: u64)
+	35: LdU64(1)
+	36: Add
+	37: StLoc[2](j#1#0: u64)
+	38: Branch(20)
+B10:
+	39: MoveLoc[1](i#1#0: u64)
+	40: LdU64(1)
+	41: Add
+	42: StLoc[1](i#1#0: u64)
+	43: Branch(7)
+B11:
+	44: Ret
+}
+
+test_next_u128() {
+L0:	random#1#0: Random
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[0](random#1#0: Random)
+	3: MutBorrowLoc[0](random#1#0: Random)
+	4: Call test_random::next_u128(&mut Random): u128
+	5: LdU128(69353424864165392191432166318042668004)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(11)
+B2:
+	9: LdU64(13906834968912330751)
+	10: Abort
+B3:
+	11: MutBorrowLoc[0](random#1#0: Random)
+	12: Call test_random::next_u128(&mut Random): u128
+	13: LdU128(12194030816161474852776228502914168502)
+	14: Eq
+	15: BrFalse(17)
+B4:
+	16: Branch(19)
+B5:
+	17: LdU64(13906834973207298047)
+	18: Abort
+B6:
+	19: MutBorrowLoc[0](random#1#0: Random)
+	20: Call test_random::next_u128(&mut Random): u128
+	21: LdU128(206987904376642456854249538403010538725)
+	22: Eq
+	23: BrFalse(25)
+B7:
+	24: Branch(27)
+B8:
+	25: LdU64(13906834977502265343)
+	26: Abort
+B9:
+	27: MutBorrowLoc[0](random#1#0: Random)
+	28: Call test_random::next_u128(&mut Random): u128
+	29: LdU128(197466311403128565716545068165788666296)
+	30: Eq
+	31: BrFalse(33)
+B10:
+	32: Branch(35)
+B11:
+	33: LdU64(13906834981797232639)
+	34: Abort
+B12:
+	35: MutBorrowLoc[0](random#1#0: Random)
+	36: Call test_random::next_u128(&mut Random): u128
+	37: LdU128(15530841291297409371230861184202905128)
+	38: Eq
+	39: BrFalse(41)
+B13:
+	40: Branch(43)
+B14:
+	41: LdU64(13906834986092199935)
+	42: Abort
+B15:
+	43: MutBorrowLoc[0](random#1#0: Random)
+	44: Call test_random::next_u128(&mut Random): u128
+	45: LdU128(165552967413296855339223280683074424775)
+	46: Eq
+	47: BrFalse(49)
+B16:
+	48: Branch(51)
+B17:
+	49: LdU64(13906834990387167231)
+	50: Abort
+B18:
+	51: MutBorrowLoc[0](random#1#0: Random)
+	52: Call test_random::next_u128(&mut Random): u128
+	53: LdU128(8783412497932783467700075003507430719)
+	54: Eq
+	55: BrFalse(57)
+B19:
+	56: Branch(59)
+B20:
+	57: LdU64(13906834994682134527)
+	58: Abort
+B21:
+	59: MutBorrowLoc[0](random#1#0: Random)
+	60: Call test_random::next_u128(&mut Random): u128
+	61: LdU128(253037866491608363794848265776744604211)
+	62: Eq
+	63: BrFalse(65)
+B22:
+	64: Branch(67)
+B23:
+	65: LdU64(13906834998977101823)
+	66: Abort
+B24:
+	67: Ret
+}
+
+test_next_u128_in_range() {
+L0:	bounds#1#0: vector<u128>
+L1:	i#1#0: u64
+L2:	j#1#0: u64
+L3:	random#1#0: Random
+L4:	upper_bound#1#0: u128
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[3](random#1#0: Random)
+	3: LdU64(0)
+	4: StLoc[1](i#1#0: u64)
+	5: LdConst[8](vector<u128>: 0701..)
+	6: StLoc[0](bounds#1#0: vector<u128>)
+B1:
+	7: CopyLoc[1](i#1#0: u64)
+	8: ImmBorrowLoc[0](bounds#1#0: vector<u128>)
+	9: VecLen(18)
+	10: Lt
+	11: BrFalse(44)
+B2:
+	12: Branch(13)
+B3:
+	13: ImmBorrowLoc[0](bounds#1#0: vector<u128>)
+	14: CopyLoc[1](i#1#0: u64)
+	15: VecImmBorrow(18)
+	16: ReadRef
+	17: StLoc[4](upper_bound#1#0: u128)
+	18: LdU64(0)
+	19: StLoc[2](j#1#0: u64)
+B4:
+	20: CopyLoc[2](j#1#0: u64)
+	21: LdU64(10)
+	22: Lt
+	23: BrFalse(39)
+B5:
+	24: Branch(25)
+B6:
+	25: MutBorrowLoc[3](random#1#0: Random)
+	26: CopyLoc[4](upper_bound#1#0: u128)
+	27: Call test_random::next_u128_in_range(&mut Random, u128): u128
+	28: CopyLoc[4](upper_bound#1#0: u128)
+	29: Lt
+	30: BrFalse(32)
+B7:
+	31: Branch(34)
+B8:
+	32: LdU64(13906835059106643967)
+	33: Abort
+B9:
+	34: MoveLoc[2](j#1#0: u64)
+	35: LdU64(1)
+	36: Add
+	37: StLoc[2](j#1#0: u64)
+	38: Branch(20)
+B10:
+	39: MoveLoc[1](i#1#0: u64)
+	40: LdU64(1)
+	41: Add
+	42: StLoc[1](i#1#0: u64)
+	43: Branch(7)
+B11:
+	44: Ret
+}
+
+test_next_u256() {
+L0:	random#1#0: Random
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[0](random#1#0: Random)
+	3: MutBorrowLoc[0](random#1#0: Random)
+	4: Call test_random::next_u256(&mut Random): u256
+	5: LdU256(86613847811709056614394817717810651756872989141966064397767345384420144995300)
+	6: Eq
+	7: BrFalse(9)
+B1:
+	8: Branch(11)
+B2:
+	9: LdU64(0)
+	10: Abort
+B3:
+	11: MutBorrowLoc[0](random#1#0: Random)
+	12: Call test_random::next_u256(&mut Random): u256
+	13: LdU256(77800816446193124932998172029673839405392227151477062245771844997605157992118)
+	14: Eq
+	15: BrFalse(17)
+B4:
+	16: Branch(19)
+B5:
+	17: LdU64(1)
+	18: Abort
+B6:
+	19: MutBorrowLoc[0](random#1#0: Random)
+	20: Call test_random::next_u256(&mut Random): u256
+	21: LdU256(45725748659421166954417450578509602234536262489471512215816310423253128244453)
+	22: Eq
+	23: BrFalse(25)
+B7:
+	24: Branch(27)
+B8:
+	25: LdU64(2)
+	26: Abort
+B9:
+	27: MutBorrowLoc[0](random#1#0: Random)
+	28: Call test_random::next_u256(&mut Random): u256
+	29: LdU256(19696026105199390416727112585766461108620822978182620644600554326664686143928)
+	30: Eq
+	31: BrFalse(33)
+B10:
+	32: Branch(35)
+B11:
+	33: LdU64(3)
+	34: Abort
+B12:
+	35: MutBorrowLoc[0](random#1#0: Random)
+	36: Call test_random::next_u256(&mut Random): u256
+	37: LdU256(4837202928086718576193880638295431461498764555598430221157283092238776342056)
+	38: Eq
+	39: BrFalse(41)
+B13:
+	40: Branch(43)
+B14:
+	41: LdU64(4)
+	42: Abort
+B15:
+	43: MutBorrowLoc[0](random#1#0: Random)
+	44: Call test_random::next_u256(&mut Random): u256
+	45: LdU256(64381219501514114493056586541507267846517000509074341237350219945295894515655)
+	46: Eq
+	47: BrFalse(49)
+B16:
+	48: Branch(51)
+B17:
+	49: LdU64(5)
+	50: Abort
+B18:
+	51: MutBorrowLoc[0](random#1#0: Random)
+	52: Call test_random::next_u256(&mut Random): u256
+	53: LdU256(112652690078173752677112416039396981893266964593788132944794761758835606345023)
+	54: Eq
+	55: BrFalse(57)
+B19:
+	56: Branch(59)
+B20:
+	57: LdU64(6)
+	58: Abort
+B21:
+	59: MutBorrowLoc[0](random#1#0: Random)
+	60: Call test_random::next_u256(&mut Random): u256
+	61: LdU256(64098809897132458178637712714755106201123339790293900115362940842770040070707)
+	62: Eq
+	63: BrFalse(65)
+B22:
+	64: Branch(67)
+B23:
+	65: LdU64(7)
+	66: Abort
+B24:
+	67: Ret
+}
+
+test_next_u256_in_range() {
+L0:	bounds#1#0: vector<u256>
+L1:	i#1#0: u64
+L2:	j#1#0: u64
+L3:	random#1#0: Random
+L4:	upper_bound#1#0: u256
+B0:
+	0: LdConst[1](vector<u8>: "see..)
+	1: Call test_random::new(vector<u8>): Random
+	2: StLoc[3](random#1#0: Random)
+	3: LdU64(0)
+	4: StLoc[1](i#1#0: u64)
+	5: LdConst[9](vector<u256>: 0701..)
+	6: StLoc[0](bounds#1#0: vector<u256>)
+B1:
+	7: CopyLoc[1](i#1#0: u64)
+	8: ImmBorrowLoc[0](bounds#1#0: vector<u256>)
+	9: VecLen(21)
+	10: Lt
+	11: BrFalse(44)
+B2:
+	12: Branch(13)
+B3:
+	13: ImmBorrowLoc[0](bounds#1#0: vector<u256>)
+	14: CopyLoc[1](i#1#0: u64)
+	15: VecImmBorrow(21)
+	16: ReadRef
+	17: StLoc[4](upper_bound#1#0: u256)
+	18: LdU64(0)
+	19: StLoc[2](j#1#0: u64)
+B4:
+	20: CopyLoc[2](j#1#0: u64)
+	21: LdU64(10)
+	22: Lt
+	23: BrFalse(39)
+B5:
+	24: Branch(25)
+B6:
+	25: MutBorrowLoc[3](random#1#0: Random)
+	26: CopyLoc[4](upper_bound#1#0: u256)
+	27: Call test_random::next_u256_in_range(&mut Random, u256): u256
+	28: CopyLoc[4](upper_bound#1#0: u256)
+	29: Lt
+	30: BrFalse(32)
+B7:
+	31: Branch(34)
+B8:
+	32: LdU64(13906835299624812543)
+	33: Abort
+B9:
+	34: MoveLoc[2](j#1#0: u64)
+	35: LdU64(1)
+	36: Add
+	37: StLoc[2](j#1#0: u64)
+	38: Branch(20)
+B10:
+	39: MoveLoc[1](i#1#0: u64)
+	40: LdU64(1)
+	41: Add
+	42: StLoc[1](i#1#0: u64)
+	43: Branch(7)
+B11:
+	44: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => vector<u64>: 0701000000000000001f00000000000000200000000000000021000000000000003f0000000000000040000000000000004100000000000000
+	1 => vector<u8>: "seed" // interpreted as UTF8 string
+	2 => vector<u8>: "seed 1" // interpreted as UTF8 string
+	3 => vector<u8>: "seed 2" // interpreted as UTF8 string
+	4 => vector<u8>: "	" // interpreted as UTF8 string
+	5 => vector<u16>: 0701000700080009000f0010001100
+	6 => vector<u32>: 07010000000700000008000000090000000f0000001000000011000000
+	7 => vector<u64>: 0701000000000000000700000000000000080000000000000009000000000000000f0000000000000010000000000000001100000000000000
+	8 => vector<u128>: 07010000000000000000000000000000000700000000000000000000000000000008000000000000000000000000000000090000000000000000000000000000000f0000000000000000000000000000001000000000000000000000000000000011000000000000000000000000000000
+	9 => vector<u256>: 0701000000000000000000000000000000000000000000000000000000000000000700000000000000000000000000000000000000000000000000000000000000080000000000000000000000000000000000000000000000000000000000000009000000000000000000000000000000000000000000000000000000000000000f0000000000000000000000000000000000000000000000000000000000000010000000000000000000000000000000000000000000000000000000000000001100000000000000000000000000000000000000000000000000000000000000
+]
+}

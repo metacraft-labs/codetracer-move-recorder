@@ -1,0 +1,14 @@
+// Move bytecode v6
+module 1.unit_test {
+
+native public poison();
+
+native public destroy<T>(v#0#0: T);
+
+entry public unit_test_poison() {
+B0:
+	0: Call poison()
+	1: Ret
+}
+
+}

@@ -1,0 +1,342 @@
+// Move bytecode v6
+module 2.table_vec {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::table;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct TableVec<phantom Element: store> has store {
+	contents: Table<u64, Element>
+}
+
+public empty<Element: store>(ctx#0#0: &mut TxContext): TableVec<Element> {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call table::new<u64, Element>(&mut TxContext): Table<u64, Element>
+	2: PackGeneric[0](TableVec<Element>)
+	3: Ret
+}
+
+public singleton<Element: store>(e#0#0: Element, ctx#0#0: &mut TxContext): TableVec<Element> {
+L2:	t#1#0: TableVec<Element>
+B0:
+	0: MoveLoc[1](ctx#0#0: &mut TxContext)
+	1: Call empty<Element>(&mut TxContext): TableVec<Element>
+	2: StLoc[2](t#1#0: TableVec<Element>)
+	3: MutBorrowLoc[2](t#1#0: TableVec<Element>)
+	4: MoveLoc[0](e#0#0: Element)
+	5: Call push_back<Element>(&mut TableVec<Element>, Element)
+	6: MoveLoc[2](t#1#0: TableVec<Element>)
+	7: Ret
+}
+
+public length<Element: store>(t#0#0: &TableVec<Element>): u64 {
+B0:
+	0: MoveLoc[0](t#0#0: &TableVec<Element>)
+	1: ImmBorrowFieldGeneric[0](TableVec.contents: Table<u64, Element>)
+	2: Call table::length<u64, Element>(&Table<u64, Element>): u64
+	3: Ret
+}
+
+public is_empty<Element: store>(t#0#0: &TableVec<Element>): bool {
+B0:
+	0: MoveLoc[0](t#0#0: &TableVec<Element>)
+	1: Call length<Element>(&TableVec<Element>): u64
+	2: LdU64(0)
+	3: Eq
+	4: Ret
+}
+
+public borrow<Element: store>(t#0#0: &TableVec<Element>, i#0#0: u64): &Element {
+B0:
+	0: CopyLoc[0](t#0#0: &TableVec<Element>)
+	1: Call length<Element>(&TableVec<Element>): u64
+	2: CopyLoc[1](i#0#0: u64)
+	3: Gt
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](t#0#0: &TableVec<Element>)
+	7: Pop
+	8: LdConst[0](u64: 0)
+	9: Abort
+B3:
+	10: MoveLoc[0](t#0#0: &TableVec<Element>)
+	11: ImmBorrowFieldGeneric[0](TableVec.contents: Table<u64, Element>)
+	12: MoveLoc[1](i#0#0: u64)
+	13: Call table::borrow<u64, Element>(&Table<u64, Element>, u64): &Element
+	14: Ret
+}
+
+public push_back<Element: store>(t#0#0: &mut TableVec<Element>, e#0#0: Element) {
+L2:	key#1#0: u64
+B0:
+	0: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	1: FreezeRef
+	2: Call length<Element>(&TableVec<Element>): u64
+	3: StLoc[2](key#1#0: u64)
+	4: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	5: MutBorrowFieldGeneric[0](TableVec.contents: Table<u64, Element>)
+	6: MoveLoc[2](key#1#0: u64)
+	7: MoveLoc[1](e#0#0: Element)
+	8: Call table::add<u64, Element>(&mut Table<u64, Element>, u64, Element)
+	9: Ret
+}
+
+public borrow_mut<Element: store>(t#0#0: &mut TableVec<Element>, i#0#0: u64): &mut Element {
+B0:
+	0: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	1: FreezeRef
+	2: Call length<Element>(&TableVec<Element>): u64
+	3: CopyLoc[1](i#0#0: u64)
+	4: Gt
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	8: Pop
+	9: LdConst[0](u64: 0)
+	10: Abort
+B3:
+	11: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	12: MutBorrowFieldGeneric[0](TableVec.contents: Table<u64, Element>)
+	13: MoveLoc[1](i#0#0: u64)
+	14: Call table::borrow_mut<u64, Element>(&mut Table<u64, Element>, u64): &mut Element
+	15: Ret
+}
+
+public pop_back<Element: store>(t#0#0: &mut TableVec<Element>): Element {
+L1:	length#1#0: u64
+B0:
+	0: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	1: FreezeRef
+	2: Call length<Element>(&TableVec<Element>): u64
+	3: StLoc[1](length#1#0: u64)
+	4: CopyLoc[1](length#1#0: u64)
+	5: LdU64(0)
+	6: Gt
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	10: Pop
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	14: MutBorrowFieldGeneric[0](TableVec.contents: Table<u64, Element>)
+	15: MoveLoc[1](length#1#0: u64)
+	16: LdU64(1)
+	17: Sub
+	18: Call table::remove<u64, Element>(&mut Table<u64, Element>, u64): Element
+	19: Ret
+}
+
+public destroy_empty<Element: store>(t#0#0: TableVec<Element>) {
+B0:
+	0: ImmBorrowLoc[0](t#0#0: TableVec<Element>)
+	1: Call length<Element>(&TableVec<Element>): u64
+	2: LdU64(0)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdConst[1](u64: 1)
+	7: Abort
+B3:
+	8: MoveLoc[0](t#0#0: TableVec<Element>)
+	9: UnpackGeneric[0](TableVec<Element>)
+	10: Call table::destroy_empty<u64, Element>(Table<u64, Element>)
+	11: Ret
+}
+
+public drop<Element: drop + store>(t#0#0: TableVec<Element>) {
+B0:
+	0: MoveLoc[0](t#0#0: TableVec<Element>)
+	1: UnpackGeneric[0](TableVec<Element>)
+	2: Call table::drop<u64, Element>(Table<u64, Element>)
+	3: Ret
+}
+
+public swap<Element: store>(t#0#0: &mut TableVec<Element>, i#0#0: u64, j#0#0: u64) {
+L3:	element_i#1#0: Element
+L4:	element_j#1#0: Element
+B0:
+	0: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	1: FreezeRef
+	2: Call length<Element>(&TableVec<Element>): u64
+	3: CopyLoc[1](i#0#0: u64)
+	4: Gt
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	8: Pop
+	9: LdConst[0](u64: 0)
+	10: Abort
+B3:
+	11: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	12: FreezeRef
+	13: Call length<Element>(&TableVec<Element>): u64
+	14: CopyLoc[2](j#0#0: u64)
+	15: Gt
+	16: BrFalse(18)
+B4:
+	17: Branch(22)
+B5:
+	18: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	19: Pop
+	20: LdConst[0](u64: 0)
+	21: Abort
+B6:
+	22: CopyLoc[1](i#0#0: u64)
+	23: CopyLoc[2](j#0#0: u64)
+	24: Eq
+	25: BrFalse(29)
+B7:
+	26: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	27: Pop
+	28: Ret
+B8:
+	29: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	30: MutBorrowFieldGeneric[0](TableVec.contents: Table<u64, Element>)
+	31: CopyLoc[1](i#0#0: u64)
+	32: Call table::remove<u64, Element>(&mut Table<u64, Element>, u64): Element
+	33: StLoc[3](element_i#1#0: Element)
+	34: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	35: MutBorrowFieldGeneric[0](TableVec.contents: Table<u64, Element>)
+	36: CopyLoc[2](j#0#0: u64)
+	37: Call table::remove<u64, Element>(&mut Table<u64, Element>, u64): Element
+	38: StLoc[4](element_j#1#0: Element)
+	39: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	40: MutBorrowFieldGeneric[0](TableVec.contents: Table<u64, Element>)
+	41: MoveLoc[2](j#0#0: u64)
+	42: MoveLoc[3](element_i#1#0: Element)
+	43: Call table::add<u64, Element>(&mut Table<u64, Element>, u64, Element)
+	44: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	45: MutBorrowFieldGeneric[0](TableVec.contents: Table<u64, Element>)
+	46: MoveLoc[1](i#0#0: u64)
+	47: MoveLoc[4](element_j#1#0: Element)
+	48: Call table::add<u64, Element>(&mut Table<u64, Element>, u64, Element)
+	49: Ret
+}
+
+public swap_remove<Element: store>(t#0#0: &mut TableVec<Element>, i#0#0: u64): Element {
+L2:	last_idx#1#0: u64
+B0:
+	0: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	1: FreezeRef
+	2: Call length<Element>(&TableVec<Element>): u64
+	3: CopyLoc[1](i#0#0: u64)
+	4: Gt
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	8: Pop
+	9: LdConst[0](u64: 0)
+	10: Abort
+B3:
+	11: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	12: FreezeRef
+	13: Call length<Element>(&TableVec<Element>): u64
+	14: LdU64(1)
+	15: Sub
+	16: StLoc[2](last_idx#1#0: u64)
+	17: CopyLoc[0](t#0#0: &mut TableVec<Element>)
+	18: MoveLoc[1](i#0#0: u64)
+	19: MoveLoc[2](last_idx#1#0: u64)
+	20: Call swap<Element>(&mut TableVec<Element>, u64, u64)
+	21: MoveLoc[0](t#0#0: &mut TableVec<Element>)
+	22: Call pop_back<Element>(&mut TableVec<Element>): Element
+	23: Ret
+}
+
+test_swap() {
+L0:	%#1: TxContext
+L1:	ctx#1#0: &mut TxContext
+L2:	tv#1#0: TableVec<u64>
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](%#1: TxContext)
+	2: MutBorrowLoc[0](%#1: TxContext)
+	3: StLoc[1](ctx#1#0: &mut TxContext)
+	4: LdU64(0)
+	5: MoveLoc[1](ctx#1#0: &mut TxContext)
+	6: Call singleton<u64>(u64, &mut TxContext): TableVec<u64>
+	7: StLoc[2](tv#1#0: TableVec<u64>)
+	8: MutBorrowLoc[2](tv#1#0: TableVec<u64>)
+	9: LdU64(1)
+	10: Call push_back<u64>(&mut TableVec<u64>, u64)
+	11: MutBorrowLoc[2](tv#1#0: TableVec<u64>)
+	12: LdU64(2)
+	13: Call push_back<u64>(&mut TableVec<u64>, u64)
+	14: MutBorrowLoc[2](tv#1#0: TableVec<u64>)
+	15: LdU64(3)
+	16: Call push_back<u64>(&mut TableVec<u64>, u64)
+	17: MutBorrowLoc[2](tv#1#0: TableVec<u64>)
+	18: LdU64(4)
+	19: Call push_back<u64>(&mut TableVec<u64>, u64)
+	20: MutBorrowLoc[2](tv#1#0: TableVec<u64>)
+	21: LdU64(4)
+	22: LdU64(2)
+	23: Call swap<u64>(&mut TableVec<u64>, u64, u64)
+	24: MutBorrowLoc[2](tv#1#0: TableVec<u64>)
+	25: LdU64(2)
+	26: Call check_pop(&mut TableVec<u64>, u64)
+	27: MutBorrowLoc[2](tv#1#0: TableVec<u64>)
+	28: LdU64(3)
+	29: Call check_pop(&mut TableVec<u64>, u64)
+	30: MutBorrowLoc[2](tv#1#0: TableVec<u64>)
+	31: LdU64(4)
+	32: Call check_pop(&mut TableVec<u64>, u64)
+	33: MutBorrowLoc[2](tv#1#0: TableVec<u64>)
+	34: LdU64(1)
+	35: Call check_pop(&mut TableVec<u64>, u64)
+	36: MutBorrowLoc[2](tv#1#0: TableVec<u64>)
+	37: LdU64(0)
+	38: Call check_pop(&mut TableVec<u64>, u64)
+	39: MoveLoc[2](tv#1#0: TableVec<u64>)
+	40: Call drop<u64>(TableVec<u64>)
+	41: Ret
+}
+
+check_pop(tv#0#0: &mut TableVec<u64>, expected_value#0#0: u64) {
+L2:	value#1#0: u64
+B0:
+	0: MoveLoc[0](tv#0#0: &mut TableVec<u64>)
+	1: Call pop_back<u64>(&mut TableVec<u64>): u64
+	2: StLoc[2](value#1#0: u64)
+	3: CopyLoc[2](value#1#0: u64)
+	4: CopyLoc[1](expected_value#0#0: u64)
+	5: Eq
+	6: BrFalse(8)
+B1:
+	7: Branch(14)
+B2:
+	8: MoveLoc[2](value#1#0: u64)
+	9: LdU64(100)
+	10: Mul
+	11: MoveLoc[1](expected_value#0#0: u64)
+	12: Add
+	13: Abort
+B3:
+	14: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+]
+}

@@ -1,0 +1,534 @@
+// Move bytecode v6
+module 2.bag_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::bag;
+use 0000000000000000000000000000000000000000000000000000000000000002::test_scenario;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+simple_all_functions() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: MutBorrowLoc[0](bag#1#0: Bag)
+	8: LdConst[1](vector<u8>: "hel..)
+	9: LdU64(0)
+	10: Call bag::add<vector<u8>, u64>(&mut Bag, vector<u8>, u64)
+	11: MutBorrowLoc[0](bag#1#0: Bag)
+	12: LdU64(1)
+	13: LdU8(1)
+	14: Call bag::add<u64, u8>(&mut Bag, u64, u8)
+	15: ImmBorrowLoc[0](bag#1#0: Bag)
+	16: LdConst[1](vector<u8>: "hel..)
+	17: Call bag::contains_with_type<vector<u8>, u64>(&Bag, vector<u8>): bool
+	18: BrFalse(20)
+B1:
+	19: Branch(22)
+B2:
+	20: LdU64(13906834260242726911)
+	21: Abort
+B3:
+	22: ImmBorrowLoc[0](bag#1#0: Bag)
+	23: LdU64(1)
+	24: Call bag::contains_with_type<u64, u8>(&Bag, u64): bool
+	25: BrFalse(27)
+B4:
+	26: Branch(29)
+B5:
+	27: LdU64(13906834264537694207)
+	28: Abort
+B6:
+	29: ImmBorrowLoc[0](bag#1#0: Bag)
+	30: LdConst[1](vector<u8>: "hel..)
+	31: Call bag::borrow<vector<u8>, u64>(&Bag, vector<u8>): &u64
+	32: ReadRef
+	33: LdU64(0)
+	34: Eq
+	35: BrFalse(37)
+B7:
+	36: Branch(39)
+B8:
+	37: LdU64(13906834273127628799)
+	38: Abort
+B9:
+	39: ImmBorrowLoc[0](bag#1#0: Bag)
+	40: LdU64(1)
+	41: Call bag::borrow<u64, u8>(&Bag, u64): &u8
+	42: ReadRef
+	43: LdU8(1)
+	44: Eq
+	45: BrFalse(47)
+B10:
+	46: Branch(49)
+B11:
+	47: LdU64(13906834277422596095)
+	48: Abort
+B12:
+	49: ImmBorrowLoc[0](bag#1#0: Bag)
+	50: LdConst[1](vector<u8>: "hel..)
+	51: Call bag::borrow<vector<u8>, u64>(&Bag, vector<u8>): &u64
+	52: ReadRef
+	53: LdU64(2)
+	54: Mul
+	55: MutBorrowLoc[0](bag#1#0: Bag)
+	56: LdConst[1](vector<u8>: "hel..)
+	57: Call bag::borrow_mut<vector<u8>, u64>(&mut Bag, vector<u8>): &mut u64
+	58: WriteRef
+	59: ImmBorrowLoc[0](bag#1#0: Bag)
+	60: LdU64(1)
+	61: Call bag::borrow<u64, u8>(&Bag, u64): &u8
+	62: ReadRef
+	63: LdU8(2)
+	64: Mul
+	65: MutBorrowLoc[0](bag#1#0: Bag)
+	66: LdU64(1)
+	67: Call bag::borrow_mut<u64, u8>(&mut Bag, u64): &mut u8
+	68: WriteRef
+	69: ImmBorrowLoc[0](bag#1#0: Bag)
+	70: LdConst[1](vector<u8>: "hel..)
+	71: Call bag::borrow<vector<u8>, u64>(&Bag, vector<u8>): &u64
+	72: ReadRef
+	73: LdU64(0)
+	74: Eq
+	75: BrFalse(77)
+B13:
+	76: Branch(79)
+B14:
+	77: LdU64(13906834298897432575)
+	78: Abort
+B15:
+	79: ImmBorrowLoc[0](bag#1#0: Bag)
+	80: LdU64(1)
+	81: Call bag::borrow<u64, u8>(&Bag, u64): &u8
+	82: ReadRef
+	83: LdU8(2)
+	84: Eq
+	85: BrFalse(87)
+B16:
+	86: Branch(89)
+B17:
+	87: LdU64(13906834303192399871)
+	88: Abort
+B18:
+	89: MutBorrowLoc[0](bag#1#0: Bag)
+	90: LdConst[1](vector<u8>: "hel..)
+	91: Call bag::remove<vector<u8>, u64>(&mut Bag, vector<u8>): u64
+	92: LdU64(0)
+	93: Eq
+	94: BrFalse(96)
+B19:
+	95: Branch(98)
+B20:
+	96: LdU64(13906834311782334463)
+	97: Abort
+B21:
+	98: MutBorrowLoc[0](bag#1#0: Bag)
+	99: LdU64(1)
+	100: Call bag::remove<u64, u8>(&mut Bag, u64): u8
+	101: LdU8(2)
+	102: Eq
+	103: BrFalse(105)
+B22:
+	104: Branch(107)
+B23:
+	105: LdU64(13906834316077301759)
+	106: Abort
+B24:
+	107: ImmBorrowLoc[0](bag#1#0: Bag)
+	108: LdConst[1](vector<u8>: "hel..)
+	109: Call bag::contains_with_type<vector<u8>, u64>(&Bag, vector<u8>): bool
+	110: Not
+	111: BrFalse(113)
+B25:
+	112: Branch(115)
+B26:
+	113: LdU64(13906834324667236351)
+	114: Abort
+B27:
+	115: ImmBorrowLoc[0](bag#1#0: Bag)
+	116: LdU64(1)
+	117: Call bag::contains_with_type<u64, u8>(&Bag, u64): bool
+	118: Not
+	119: BrFalse(121)
+B28:
+	120: Branch(123)
+B29:
+	121: LdU64(13906834328962203647)
+	122: Abort
+B30:
+	123: MoveLoc[1](scenario#1#0: Scenario)
+	124: Call test_scenario::end(Scenario): TransactionEffects
+	125: Pop
+	126: MoveLoc[0](bag#1#0: Bag)
+	127: Call bag::destroy_empty(Bag)
+	128: Ret
+}
+
+add_duplicate() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: MutBorrowLoc[0](bag#1#0: Bag)
+	8: LdConst[1](vector<u8>: "hel..)
+	9: LdU8(0)
+	10: Call bag::add<vector<u8>, u8>(&mut Bag, vector<u8>, u8)
+	11: MutBorrowLoc[0](bag#1#0: Bag)
+	12: LdConst[1](vector<u8>: "hel..)
+	13: LdU8(1)
+	14: Call bag::add<vector<u8>, u8>(&mut Bag, vector<u8>, u8)
+	15: LdU64(42)
+	16: Abort
+}
+
+add_duplicate_mismatched_type() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: MutBorrowLoc[0](bag#1#0: Bag)
+	8: LdConst[1](vector<u8>: "hel..)
+	9: LdU128(0)
+	10: Call bag::add<vector<u8>, u128>(&mut Bag, vector<u8>, u128)
+	11: MutBorrowLoc[0](bag#1#0: Bag)
+	12: LdConst[1](vector<u8>: "hel..)
+	13: LdU8(1)
+	14: Call bag::add<vector<u8>, u8>(&mut Bag, vector<u8>, u8)
+	15: LdU64(42)
+	16: Abort
+}
+
+borrow_missing() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: ImmBorrowLoc[0](bag#1#0: Bag)
+	8: LdU64(0)
+	9: Call bag::borrow<u64, u64>(&Bag, u64): &u64
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+borrow_wrong_type() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: MutBorrowLoc[0](bag#1#0: Bag)
+	8: LdU64(0)
+	9: LdU64(0)
+	10: Call bag::add<u64, u64>(&mut Bag, u64, u64)
+	11: ImmBorrowLoc[0](bag#1#0: Bag)
+	12: LdU64(0)
+	13: Call bag::borrow<u64, u8>(&Bag, u64): &u8
+	14: Pop
+	15: LdU64(42)
+	16: Abort
+}
+
+borrow_mut_missing() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: MutBorrowLoc[0](bag#1#0: Bag)
+	8: LdU64(0)
+	9: Call bag::borrow_mut<u64, u64>(&mut Bag, u64): &mut u64
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+borrow_mut_wrong_type() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: MutBorrowLoc[0](bag#1#0: Bag)
+	8: LdU64(0)
+	9: LdU64(0)
+	10: Call bag::add<u64, u64>(&mut Bag, u64, u64)
+	11: MutBorrowLoc[0](bag#1#0: Bag)
+	12: LdU64(0)
+	13: Call bag::borrow_mut<u64, u8>(&mut Bag, u64): &mut u8
+	14: Pop
+	15: LdU64(42)
+	16: Abort
+}
+
+remove_missing() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: MutBorrowLoc[0](bag#1#0: Bag)
+	8: LdU64(0)
+	9: Call bag::remove<u64, u64>(&mut Bag, u64): u64
+	10: Pop
+	11: LdU64(42)
+	12: Abort
+}
+
+remove_wrong_type() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: MutBorrowLoc[0](bag#1#0: Bag)
+	8: LdU64(0)
+	9: LdU64(0)
+	10: Call bag::add<u64, u64>(&mut Bag, u64, u64)
+	11: MutBorrowLoc[0](bag#1#0: Bag)
+	12: LdU64(0)
+	13: Call bag::remove<u64, u8>(&mut Bag, u64): u8
+	14: Pop
+	15: LdU64(42)
+	16: Abort
+}
+
+destroy_non_empty() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: MutBorrowLoc[0](bag#1#0: Bag)
+	8: LdU64(0)
+	9: LdU64(0)
+	10: Call bag::add<u64, u64>(&mut Bag, u64, u64)
+	11: MoveLoc[0](bag#1#0: Bag)
+	12: Call bag::destroy_empty(Bag)
+	13: MoveLoc[1](scenario#1#0: Scenario)
+	14: Call test_scenario::end(Scenario): TransactionEffects
+	15: Pop
+	16: Ret
+}
+
+sanity_check_contains() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: ImmBorrowLoc[0](bag#1#0: Bag)
+	8: LdU64(0)
+	9: Call bag::contains_with_type<u64, u64>(&Bag, u64): bool
+	10: Not
+	11: BrFalse(13)
+B1:
+	12: Branch(15)
+B2:
+	13: LdU64(13906834784228737023)
+	14: Abort
+B3:
+	15: MutBorrowLoc[0](bag#1#0: Bag)
+	16: LdU64(0)
+	17: LdU64(0)
+	18: Call bag::add<u64, u64>(&mut Bag, u64, u64)
+	19: ImmBorrowLoc[0](bag#1#0: Bag)
+	20: LdU64(0)
+	21: Call bag::contains_with_type<u64, u64>(&Bag, u64): bool
+	22: BrFalse(24)
+B4:
+	23: Branch(26)
+B5:
+	24: LdU64(13906834792818671615)
+	25: Abort
+B6:
+	26: ImmBorrowLoc[0](bag#1#0: Bag)
+	27: LdU64(1)
+	28: Call bag::contains_with_type<u64, u64>(&Bag, u64): bool
+	29: Not
+	30: BrFalse(32)
+B7:
+	31: Branch(34)
+B8:
+	32: LdU64(13906834797113638911)
+	33: Abort
+B9:
+	34: MoveLoc[1](scenario#1#0: Scenario)
+	35: Call test_scenario::end(Scenario): TransactionEffects
+	36: Pop
+	37: MutBorrowLoc[0](bag#1#0: Bag)
+	38: LdU64(0)
+	39: Call bag::remove<u64, u64>(&mut Bag, u64): u64
+	40: Pop
+	41: MoveLoc[0](bag#1#0: Bag)
+	42: Call bag::destroy_empty(Bag)
+	43: Ret
+}
+
+sanity_check_size() {
+L0:	bag#1#0: Bag
+L1:	scenario#1#0: Scenario
+B0:
+	0: LdConst[0](address: 0x00..)
+	1: Call test_scenario::begin(address): Scenario
+	2: StLoc[1](scenario#1#0: Scenario)
+	3: MutBorrowLoc[1](scenario#1#0: Scenario)
+	4: Call test_scenario::ctx(&mut Scenario): &mut TxContext
+	5: Call bag::new(&mut TxContext): Bag
+	6: StLoc[0](bag#1#0: Bag)
+	7: ImmBorrowLoc[0](bag#1#0: Bag)
+	8: Call bag::is_empty(&Bag): bool
+	9: BrFalse(11)
+B1:
+	10: Branch(13)
+B2:
+	11: LdU64(13906834844358279167)
+	12: Abort
+B3:
+	13: ImmBorrowLoc[0](bag#1#0: Bag)
+	14: Call bag::length(&Bag): u64
+	15: LdU64(0)
+	16: Eq
+	17: BrFalse(19)
+B4:
+	18: Branch(21)
+B5:
+	19: LdU64(13906834848653246463)
+	20: Abort
+B6:
+	21: MutBorrowLoc[0](bag#1#0: Bag)
+	22: LdU64(0)
+	23: LdU64(0)
+	24: Call bag::add<u64, u64>(&mut Bag, u64, u64)
+	25: ImmBorrowLoc[0](bag#1#0: Bag)
+	26: Call bag::is_empty(&Bag): bool
+	27: Not
+	28: BrFalse(30)
+B7:
+	29: Branch(32)
+B8:
+	30: LdU64(13906834857243181055)
+	31: Abort
+B9:
+	32: ImmBorrowLoc[0](bag#1#0: Bag)
+	33: Call bag::length(&Bag): u64
+	34: LdU64(1)
+	35: Eq
+	36: BrFalse(38)
+B10:
+	37: Branch(40)
+B11:
+	38: LdU64(13906834861538148351)
+	39: Abort
+B12:
+	40: MutBorrowLoc[0](bag#1#0: Bag)
+	41: LdU64(1)
+	42: LdU64(0)
+	43: Call bag::add<u64, u64>(&mut Bag, u64, u64)
+	44: ImmBorrowLoc[0](bag#1#0: Bag)
+	45: Call bag::is_empty(&Bag): bool
+	46: Not
+	47: BrFalse(49)
+B13:
+	48: Branch(51)
+B14:
+	49: LdU64(13906834870128082943)
+	50: Abort
+B15:
+	51: ImmBorrowLoc[0](bag#1#0: Bag)
+	52: Call bag::length(&Bag): u64
+	53: LdU64(2)
+	54: Eq
+	55: BrFalse(57)
+B16:
+	56: Branch(59)
+B17:
+	57: LdU64(13906834874423050239)
+	58: Abort
+B18:
+	59: MutBorrowLoc[0](bag#1#0: Bag)
+	60: LdU64(0)
+	61: Call bag::remove<u64, u64>(&mut Bag, u64): u64
+	62: Pop
+	63: MutBorrowLoc[0](bag#1#0: Bag)
+	64: LdU64(1)
+	65: Call bag::remove<u64, u64>(&mut Bag, u64): u64
+	66: Pop
+	67: MoveLoc[1](scenario#1#0: Scenario)
+	68: Call test_scenario::end(Scenario): TransactionEffects
+	69: Pop
+	70: MoveLoc[0](bag#1#0: Bag)
+	71: Call bag::destroy_empty(Bag)
+	72: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+	1 => vector<u8>: "hello" // interpreted as UTF8 string
+]
+}

@@ -1,0 +1,1202 @@
+// Move bytecode v6
+module 2.bcs {
+use 0000000000000000000000000000000000000000000000000000000000000001::bcs as 1bcs;
+use 0000000000000000000000000000000000000000000000000000000000000001::option;
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000001::vector;
+use 0000000000000000000000000000000000000000000000000000000000000002::address;
+
+struct BCS has copy, drop, store {
+	bytes: vector<u8>
+}
+
+public to_bytes<T>(value#0#0: &T): vector<u8> {
+B0:
+	0: MoveLoc[0](value#0#0: &T)
+	1: Call 1bcs::to_bytes<T>(&T): vector<u8>
+	2: Ret
+}
+
+public new(bytes#0#0: vector<u8>): BCS {
+B0:
+	0: MutBorrowLoc[0](bytes#0#0: vector<u8>)
+	1: Call vector::reverse<u8>(&mut vector<u8>)
+	2: MoveLoc[0](bytes#0#0: vector<u8>)
+	3: Pack[0](BCS)
+	4: Ret
+}
+
+public into_remainder_bytes(bcs#0#0: BCS): vector<u8> {
+L1:	bytes#1#0: vector<u8>
+B0:
+	0: MoveLoc[0](bcs#0#0: BCS)
+	1: Unpack[0](BCS)
+	2: StLoc[1](bytes#1#0: vector<u8>)
+	3: MutBorrowLoc[1](bytes#1#0: vector<u8>)
+	4: Call vector::reverse<u8>(&mut vector<u8>)
+	5: MoveLoc[1](bytes#1#0: vector<u8>)
+	6: Ret
+}
+
+public peel_address(bcs#0#0: &mut BCS): address {
+L1:	$stop#0#4: u64
+L2:	%#2: u8
+L3:	%#3: &mut vector<u8>
+L4:	i#1#10: u64
+L5:	i#1#7: u64
+L6:	stop#1#7: u64
+L7:	v#1#1: vector<u8>
+B0:
+	0: CopyLoc[0](bcs#0#0: &mut BCS)
+	1: ImmBorrowField[0](BCS.bytes: vector<u8>)
+	2: VecLen(6)
+	3: Call address::length(): u64
+	4: Ge
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](bcs#0#0: &mut BCS)
+	8: Pop
+	9: LdConst[0](u64: 0)
+	10: Abort
+B3:
+	11: LdConst[3](vector<u8>: "" /..)
+	12: StLoc[7](v#1#1: vector<u8>)
+	13: Call address::length(): u64
+	14: StLoc[1]($stop#0#4: u64)
+	15: LdU64(0)
+	16: StLoc[5](i#1#7: u64)
+	17: MoveLoc[1]($stop#0#4: u64)
+	18: StLoc[6](stop#1#7: u64)
+B4:
+	19: CopyLoc[5](i#1#7: u64)
+	20: CopyLoc[6](stop#1#7: u64)
+	21: Lt
+	22: BrFalse(41)
+B5:
+	23: CopyLoc[5](i#1#7: u64)
+	24: StLoc[4](i#1#10: u64)
+	25: MutBorrowLoc[7](v#1#1: vector<u8>)
+	26: StLoc[3](%#3: &mut vector<u8>)
+	27: MoveLoc[4](i#1#10: u64)
+	28: Pop
+	29: CopyLoc[0](bcs#0#0: &mut BCS)
+	30: MutBorrowField[0](BCS.bytes: vector<u8>)
+	31: VecPopBack(6)
+	32: StLoc[2](%#2: u8)
+	33: MoveLoc[3](%#3: &mut vector<u8>)
+	34: MoveLoc[2](%#2: u8)
+	35: VecPushBack(6)
+	36: MoveLoc[5](i#1#7: u64)
+	37: LdU64(1)
+	38: Add
+	39: StLoc[5](i#1#7: u64)
+	40: Branch(19)
+B6:
+	41: MoveLoc[0](bcs#0#0: &mut BCS)
+	42: Pop
+	43: MoveLoc[7](v#1#1: vector<u8>)
+	44: Call address::from_bytes(vector<u8>): address
+	45: Ret
+}
+
+public peel_bool(bcs#0#0: &mut BCS): bool {
+L1:	%#2: bool
+L2:	value#1#0: u8
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: Call peel_u8(&mut BCS): u8
+	2: StLoc[2](value#1#0: u8)
+	3: CopyLoc[2](value#1#0: u8)
+	4: LdU8(0)
+	5: Eq
+	6: BrFalse(10)
+B1:
+	7: LdFalse
+	8: StLoc[1](%#2: bool)
+	9: Branch(19)
+B2:
+	10: MoveLoc[2](value#1#0: u8)
+	11: LdU8(1)
+	12: Eq
+	13: BrFalse(15)
+B3:
+	14: Branch(17)
+B4:
+	15: LdConst[1](u64: 1)
+	16: Abort
+B5:
+	17: LdTrue
+	18: StLoc[1](%#2: bool)
+B6:
+	19: MoveLoc[1](%#2: bool)
+	20: Ret
+}
+
+public peel_u8(bcs#0#0: &mut BCS): u8 {
+B0:
+	0: CopyLoc[0](bcs#0#0: &mut BCS)
+	1: ImmBorrowField[0](BCS.bytes: vector<u8>)
+	2: VecLen(6)
+	3: LdU64(1)
+	4: Ge
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](bcs#0#0: &mut BCS)
+	8: Pop
+	9: LdConst[0](u64: 0)
+	10: Abort
+B3:
+	11: MoveLoc[0](bcs#0#0: &mut BCS)
+	12: MutBorrowField[0](BCS.bytes: vector<u8>)
+	13: VecPopBack(6)
+	14: Ret
+}
+
+public peel_u16(bcs#0#0: &mut BCS): u16 {
+L1:	bcs#1#1: &mut BCS
+L2:	byte#1#1: u16
+L3:	i#1#1: u8
+L4:	value#1#1: u16
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[1](bcs#1#1: &mut BCS)
+	2: CopyLoc[1](bcs#1#1: &mut BCS)
+	3: ImmBorrowField[0](BCS.bytes: vector<u8>)
+	4: VecLen(6)
+	5: LdU64(2)
+	6: Ge
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[1](bcs#1#1: &mut BCS)
+	10: Pop
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: LdU16(0)
+	14: StLoc[4](value#1#1: u16)
+	15: LdU8(0)
+	16: StLoc[3](i#1#1: u8)
+B4:
+	17: CopyLoc[3](i#1#1: u8)
+	18: LdU8(16)
+	19: Lt
+	20: BrFalse(38)
+B5:
+	21: CopyLoc[1](bcs#1#1: &mut BCS)
+	22: MutBorrowField[0](BCS.bytes: vector<u8>)
+	23: VecPopBack(6)
+	24: CastU16
+	25: StLoc[2](byte#1#1: u16)
+	26: MoveLoc[4](value#1#1: u16)
+	27: MoveLoc[2](byte#1#1: u16)
+	28: CopyLoc[3](i#1#1: u8)
+	29: CastU8
+	30: Shl
+	31: Add
+	32: StLoc[4](value#1#1: u16)
+	33: MoveLoc[3](i#1#1: u8)
+	34: LdU8(8)
+	35: Add
+	36: StLoc[3](i#1#1: u8)
+	37: Branch(17)
+B6:
+	38: MoveLoc[1](bcs#1#1: &mut BCS)
+	39: Pop
+	40: MoveLoc[4](value#1#1: u16)
+	41: Ret
+}
+
+public peel_u32(bcs#0#0: &mut BCS): u32 {
+L1:	bcs#1#1: &mut BCS
+L2:	byte#1#1: u32
+L3:	i#1#1: u8
+L4:	value#1#1: u32
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[1](bcs#1#1: &mut BCS)
+	2: CopyLoc[1](bcs#1#1: &mut BCS)
+	3: ImmBorrowField[0](BCS.bytes: vector<u8>)
+	4: VecLen(6)
+	5: LdU64(4)
+	6: Ge
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[1](bcs#1#1: &mut BCS)
+	10: Pop
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: LdU32(0)
+	14: StLoc[4](value#1#1: u32)
+	15: LdU8(0)
+	16: StLoc[3](i#1#1: u8)
+B4:
+	17: CopyLoc[3](i#1#1: u8)
+	18: LdU8(32)
+	19: Lt
+	20: BrFalse(38)
+B5:
+	21: CopyLoc[1](bcs#1#1: &mut BCS)
+	22: MutBorrowField[0](BCS.bytes: vector<u8>)
+	23: VecPopBack(6)
+	24: CastU32
+	25: StLoc[2](byte#1#1: u32)
+	26: MoveLoc[4](value#1#1: u32)
+	27: MoveLoc[2](byte#1#1: u32)
+	28: CopyLoc[3](i#1#1: u8)
+	29: CastU8
+	30: Shl
+	31: Add
+	32: StLoc[4](value#1#1: u32)
+	33: MoveLoc[3](i#1#1: u8)
+	34: LdU8(8)
+	35: Add
+	36: StLoc[3](i#1#1: u8)
+	37: Branch(17)
+B6:
+	38: MoveLoc[1](bcs#1#1: &mut BCS)
+	39: Pop
+	40: MoveLoc[4](value#1#1: u32)
+	41: Ret
+}
+
+public peel_u64(bcs#0#0: &mut BCS): u64 {
+L1:	bcs#1#1: &mut BCS
+L2:	byte#1#1: u64
+L3:	i#1#1: u8
+L4:	value#1#1: u64
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[1](bcs#1#1: &mut BCS)
+	2: CopyLoc[1](bcs#1#1: &mut BCS)
+	3: ImmBorrowField[0](BCS.bytes: vector<u8>)
+	4: VecLen(6)
+	5: LdU64(8)
+	6: Ge
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[1](bcs#1#1: &mut BCS)
+	10: Pop
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: LdU64(0)
+	14: StLoc[4](value#1#1: u64)
+	15: LdU8(0)
+	16: StLoc[3](i#1#1: u8)
+B4:
+	17: CopyLoc[3](i#1#1: u8)
+	18: LdU8(64)
+	19: Lt
+	20: BrFalse(38)
+B5:
+	21: CopyLoc[1](bcs#1#1: &mut BCS)
+	22: MutBorrowField[0](BCS.bytes: vector<u8>)
+	23: VecPopBack(6)
+	24: CastU64
+	25: StLoc[2](byte#1#1: u64)
+	26: MoveLoc[4](value#1#1: u64)
+	27: MoveLoc[2](byte#1#1: u64)
+	28: CopyLoc[3](i#1#1: u8)
+	29: CastU8
+	30: Shl
+	31: Add
+	32: StLoc[4](value#1#1: u64)
+	33: MoveLoc[3](i#1#1: u8)
+	34: LdU8(8)
+	35: Add
+	36: StLoc[3](i#1#1: u8)
+	37: Branch(17)
+B6:
+	38: MoveLoc[1](bcs#1#1: &mut BCS)
+	39: Pop
+	40: MoveLoc[4](value#1#1: u64)
+	41: Ret
+}
+
+public peel_u128(bcs#0#0: &mut BCS): u128 {
+L1:	bcs#1#1: &mut BCS
+L2:	byte#1#1: u128
+L3:	i#1#1: u8
+L4:	value#1#1: u128
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[1](bcs#1#1: &mut BCS)
+	2: CopyLoc[1](bcs#1#1: &mut BCS)
+	3: ImmBorrowField[0](BCS.bytes: vector<u8>)
+	4: VecLen(6)
+	5: LdU64(16)
+	6: Ge
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[1](bcs#1#1: &mut BCS)
+	10: Pop
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: LdU128(0)
+	14: StLoc[4](value#1#1: u128)
+	15: LdU8(0)
+	16: StLoc[3](i#1#1: u8)
+B4:
+	17: CopyLoc[3](i#1#1: u8)
+	18: LdU8(128)
+	19: Lt
+	20: BrFalse(38)
+B5:
+	21: CopyLoc[1](bcs#1#1: &mut BCS)
+	22: MutBorrowField[0](BCS.bytes: vector<u8>)
+	23: VecPopBack(6)
+	24: CastU128
+	25: StLoc[2](byte#1#1: u128)
+	26: MoveLoc[4](value#1#1: u128)
+	27: MoveLoc[2](byte#1#1: u128)
+	28: CopyLoc[3](i#1#1: u8)
+	29: CastU8
+	30: Shl
+	31: Add
+	32: StLoc[4](value#1#1: u128)
+	33: MoveLoc[3](i#1#1: u8)
+	34: LdU8(8)
+	35: Add
+	36: StLoc[3](i#1#1: u8)
+	37: Branch(17)
+B6:
+	38: MoveLoc[1](bcs#1#1: &mut BCS)
+	39: Pop
+	40: MoveLoc[4](value#1#1: u128)
+	41: Ret
+}
+
+public peel_u256(bcs#0#0: &mut BCS): u256 {
+L1:	bcs#1#1: &mut BCS
+L2:	byte#1#1: u256
+L3:	i#1#1: u16
+L4:	value#1#1: u256
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[1](bcs#1#1: &mut BCS)
+	2: CopyLoc[1](bcs#1#1: &mut BCS)
+	3: ImmBorrowField[0](BCS.bytes: vector<u8>)
+	4: VecLen(6)
+	5: LdU64(32)
+	6: Ge
+	7: BrFalse(9)
+B1:
+	8: Branch(13)
+B2:
+	9: MoveLoc[1](bcs#1#1: &mut BCS)
+	10: Pop
+	11: LdConst[0](u64: 0)
+	12: Abort
+B3:
+	13: LdU256(0)
+	14: StLoc[4](value#1#1: u256)
+	15: LdU16(0)
+	16: StLoc[3](i#1#1: u16)
+B4:
+	17: CopyLoc[3](i#1#1: u16)
+	18: LdU16(256)
+	19: Lt
+	20: BrFalse(38)
+B5:
+	21: CopyLoc[1](bcs#1#1: &mut BCS)
+	22: MutBorrowField[0](BCS.bytes: vector<u8>)
+	23: VecPopBack(6)
+	24: CastU256
+	25: StLoc[2](byte#1#1: u256)
+	26: MoveLoc[4](value#1#1: u256)
+	27: MoveLoc[2](byte#1#1: u256)
+	28: CopyLoc[3](i#1#1: u16)
+	29: CastU8
+	30: Shl
+	31: Add
+	32: StLoc[4](value#1#1: u256)
+	33: MoveLoc[3](i#1#1: u16)
+	34: LdU16(8)
+	35: Add
+	36: StLoc[3](i#1#1: u16)
+	37: Branch(17)
+B6:
+	38: MoveLoc[1](bcs#1#1: &mut BCS)
+	39: Pop
+	40: MoveLoc[4](value#1#1: u256)
+	41: Ret
+}
+
+public peel_vec_length(bcs#0#0: &mut BCS): u64 {
+L1:	byte#1#0: u64
+L2:	len#1#0: u64
+L3:	shift#1#0: u8
+L4:	total#1#0: u64
+B0:
+	0: LdU64(0)
+	1: LdU8(0)
+	2: LdU64(0)
+	3: StLoc[2](len#1#0: u64)
+	4: StLoc[3](shift#1#0: u8)
+	5: StLoc[4](total#1#0: u64)
+B1:
+	6: CopyLoc[2](len#1#0: u64)
+	7: LdU64(4)
+	8: Le
+	9: BrFalse(11)
+B2:
+	10: Branch(15)
+B3:
+	11: MoveLoc[0](bcs#0#0: &mut BCS)
+	12: Pop
+	13: LdConst[2](u64: 2)
+	14: Abort
+B4:
+	15: CopyLoc[0](bcs#0#0: &mut BCS)
+	16: MutBorrowField[0](BCS.bytes: vector<u8>)
+	17: VecPopBack(6)
+	18: CastU64
+	19: StLoc[1](byte#1#0: u64)
+	20: MoveLoc[2](len#1#0: u64)
+	21: LdU64(1)
+	22: Add
+	23: StLoc[2](len#1#0: u64)
+	24: MoveLoc[4](total#1#0: u64)
+	25: CopyLoc[1](byte#1#0: u64)
+	26: LdU64(127)
+	27: BitAnd
+	28: CopyLoc[3](shift#1#0: u8)
+	29: Shl
+	30: BitOr
+	31: StLoc[4](total#1#0: u64)
+	32: MoveLoc[1](byte#1#0: u64)
+	33: LdU64(128)
+	34: BitAnd
+	35: LdU64(0)
+	36: Eq
+	37: BrFalse(39)
+B5:
+	38: Branch(44)
+B6:
+	39: MoveLoc[3](shift#1#0: u8)
+	40: LdU8(7)
+	41: Add
+	42: StLoc[3](shift#1#0: u8)
+	43: Branch(6)
+B7:
+	44: MoveLoc[0](bcs#0#0: &mut BCS)
+	45: Pop
+	46: MoveLoc[4](total#1#0: u64)
+	47: Ret
+}
+
+public peel_vec_address(bcs#0#0: &mut BCS): vector<address> {
+L1:	$stop#0#7: u64
+L2:	%#3: address
+L3:	%#5: &mut vector<address>
+L4:	bcs#1#1: &mut BCS
+L5:	i#1#10: u64
+L6:	i#1#13: u64
+L7:	stop#1#10: u64
+L8:	v#1#3: vector<address>
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[4](bcs#1#1: &mut BCS)
+	2: LdConst[4](vector<address>: 00)
+	3: StLoc[8](v#1#3: vector<address>)
+	4: CopyLoc[4](bcs#1#1: &mut BCS)
+	5: Call peel_vec_length(&mut BCS): u64
+	6: StLoc[1]($stop#0#7: u64)
+	7: LdU64(0)
+	8: StLoc[5](i#1#10: u64)
+	9: MoveLoc[1]($stop#0#7: u64)
+	10: StLoc[7](stop#1#10: u64)
+B1:
+	11: CopyLoc[5](i#1#10: u64)
+	12: CopyLoc[7](stop#1#10: u64)
+	13: Lt
+	14: BrFalse(32)
+B2:
+	15: CopyLoc[5](i#1#10: u64)
+	16: StLoc[6](i#1#13: u64)
+	17: MutBorrowLoc[8](v#1#3: vector<address>)
+	18: StLoc[3](%#5: &mut vector<address>)
+	19: MoveLoc[6](i#1#13: u64)
+	20: Pop
+	21: CopyLoc[4](bcs#1#1: &mut BCS)
+	22: Call peel_address(&mut BCS): address
+	23: StLoc[2](%#3: address)
+	24: MoveLoc[3](%#5: &mut vector<address>)
+	25: MoveLoc[2](%#3: address)
+	26: VecPushBack(4)
+	27: MoveLoc[5](i#1#10: u64)
+	28: LdU64(1)
+	29: Add
+	30: StLoc[5](i#1#10: u64)
+	31: Branch(11)
+B3:
+	32: MoveLoc[4](bcs#1#1: &mut BCS)
+	33: Pop
+	34: MoveLoc[8](v#1#3: vector<address>)
+	35: Ret
+}
+
+public peel_vec_bool(bcs#0#0: &mut BCS): vector<bool> {
+L1:	$stop#0#7: u64
+L2:	%#3: bool
+L3:	%#5: &mut vector<bool>
+L4:	bcs#1#1: &mut BCS
+L5:	i#1#10: u64
+L6:	i#1#13: u64
+L7:	stop#1#10: u64
+L8:	v#1#3: vector<bool>
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[4](bcs#1#1: &mut BCS)
+	2: LdConst[5](vector<bool>: 00)
+	3: StLoc[8](v#1#3: vector<bool>)
+	4: CopyLoc[4](bcs#1#1: &mut BCS)
+	5: Call peel_vec_length(&mut BCS): u64
+	6: StLoc[1]($stop#0#7: u64)
+	7: LdU64(0)
+	8: StLoc[5](i#1#10: u64)
+	9: MoveLoc[1]($stop#0#7: u64)
+	10: StLoc[7](stop#1#10: u64)
+B1:
+	11: CopyLoc[5](i#1#10: u64)
+	12: CopyLoc[7](stop#1#10: u64)
+	13: Lt
+	14: BrFalse(32)
+B2:
+	15: CopyLoc[5](i#1#10: u64)
+	16: StLoc[6](i#1#13: u64)
+	17: MutBorrowLoc[8](v#1#3: vector<bool>)
+	18: StLoc[3](%#5: &mut vector<bool>)
+	19: MoveLoc[6](i#1#13: u64)
+	20: Pop
+	21: CopyLoc[4](bcs#1#1: &mut BCS)
+	22: Call peel_bool(&mut BCS): bool
+	23: StLoc[2](%#3: bool)
+	24: MoveLoc[3](%#5: &mut vector<bool>)
+	25: MoveLoc[2](%#3: bool)
+	26: VecPushBack(5)
+	27: MoveLoc[5](i#1#10: u64)
+	28: LdU64(1)
+	29: Add
+	30: StLoc[5](i#1#10: u64)
+	31: Branch(11)
+B3:
+	32: MoveLoc[4](bcs#1#1: &mut BCS)
+	33: Pop
+	34: MoveLoc[8](v#1#3: vector<bool>)
+	35: Ret
+}
+
+public peel_vec_u8(bcs#0#0: &mut BCS): vector<u8> {
+L1:	$stop#0#7: u64
+L2:	%#3: u8
+L3:	%#5: &mut vector<u8>
+L4:	bcs#1#1: &mut BCS
+L5:	i#1#10: u64
+L6:	i#1#13: u64
+L7:	stop#1#10: u64
+L8:	v#1#3: vector<u8>
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[4](bcs#1#1: &mut BCS)
+	2: LdConst[3](vector<u8>: "" /..)
+	3: StLoc[8](v#1#3: vector<u8>)
+	4: CopyLoc[4](bcs#1#1: &mut BCS)
+	5: Call peel_vec_length(&mut BCS): u64
+	6: StLoc[1]($stop#0#7: u64)
+	7: LdU64(0)
+	8: StLoc[5](i#1#10: u64)
+	9: MoveLoc[1]($stop#0#7: u64)
+	10: StLoc[7](stop#1#10: u64)
+B1:
+	11: CopyLoc[5](i#1#10: u64)
+	12: CopyLoc[7](stop#1#10: u64)
+	13: Lt
+	14: BrFalse(32)
+B2:
+	15: CopyLoc[5](i#1#10: u64)
+	16: StLoc[6](i#1#13: u64)
+	17: MutBorrowLoc[8](v#1#3: vector<u8>)
+	18: StLoc[3](%#5: &mut vector<u8>)
+	19: MoveLoc[6](i#1#13: u64)
+	20: Pop
+	21: CopyLoc[4](bcs#1#1: &mut BCS)
+	22: Call peel_u8(&mut BCS): u8
+	23: StLoc[2](%#3: u8)
+	24: MoveLoc[3](%#5: &mut vector<u8>)
+	25: MoveLoc[2](%#3: u8)
+	26: VecPushBack(6)
+	27: MoveLoc[5](i#1#10: u64)
+	28: LdU64(1)
+	29: Add
+	30: StLoc[5](i#1#10: u64)
+	31: Branch(11)
+B3:
+	32: MoveLoc[4](bcs#1#1: &mut BCS)
+	33: Pop
+	34: MoveLoc[8](v#1#3: vector<u8>)
+	35: Ret
+}
+
+public peel_vec_vec_u8(bcs#0#0: &mut BCS): vector<vector<u8>> {
+L1:	$stop#0#7: u64
+L2:	%#3: vector<u8>
+L3:	%#5: &mut vector<vector<u8>>
+L4:	bcs#1#1: &mut BCS
+L5:	i#1#10: u64
+L6:	i#1#13: u64
+L7:	stop#1#10: u64
+L8:	v#1#3: vector<vector<u8>>
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[4](bcs#1#1: &mut BCS)
+	2: LdConst[6](vector<vector<u8>>: 00)
+	3: StLoc[8](v#1#3: vector<vector<u8>>)
+	4: CopyLoc[4](bcs#1#1: &mut BCS)
+	5: Call peel_vec_length(&mut BCS): u64
+	6: StLoc[1]($stop#0#7: u64)
+	7: LdU64(0)
+	8: StLoc[5](i#1#10: u64)
+	9: MoveLoc[1]($stop#0#7: u64)
+	10: StLoc[7](stop#1#10: u64)
+B1:
+	11: CopyLoc[5](i#1#10: u64)
+	12: CopyLoc[7](stop#1#10: u64)
+	13: Lt
+	14: BrFalse(32)
+B2:
+	15: CopyLoc[5](i#1#10: u64)
+	16: StLoc[6](i#1#13: u64)
+	17: MutBorrowLoc[8](v#1#3: vector<vector<u8>>)
+	18: StLoc[3](%#5: &mut vector<vector<u8>>)
+	19: MoveLoc[6](i#1#13: u64)
+	20: Pop
+	21: CopyLoc[4](bcs#1#1: &mut BCS)
+	22: Call peel_vec_u8(&mut BCS): vector<u8>
+	23: StLoc[2](%#3: vector<u8>)
+	24: MoveLoc[3](%#5: &mut vector<vector<u8>>)
+	25: MoveLoc[2](%#3: vector<u8>)
+	26: VecPushBack(1)
+	27: MoveLoc[5](i#1#10: u64)
+	28: LdU64(1)
+	29: Add
+	30: StLoc[5](i#1#10: u64)
+	31: Branch(11)
+B3:
+	32: MoveLoc[4](bcs#1#1: &mut BCS)
+	33: Pop
+	34: MoveLoc[8](v#1#3: vector<vector<u8>>)
+	35: Ret
+}
+
+public peel_vec_u16(bcs#0#0: &mut BCS): vector<u16> {
+L1:	$stop#0#7: u64
+L2:	%#3: u16
+L3:	%#5: &mut vector<u16>
+L4:	bcs#1#1: &mut BCS
+L5:	i#1#10: u64
+L6:	i#1#13: u64
+L7:	stop#1#10: u64
+L8:	v#1#3: vector<u16>
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[4](bcs#1#1: &mut BCS)
+	2: LdConst[7](vector<u16>: 00)
+	3: StLoc[8](v#1#3: vector<u16>)
+	4: CopyLoc[4](bcs#1#1: &mut BCS)
+	5: Call peel_vec_length(&mut BCS): u64
+	6: StLoc[1]($stop#0#7: u64)
+	7: LdU64(0)
+	8: StLoc[5](i#1#10: u64)
+	9: MoveLoc[1]($stop#0#7: u64)
+	10: StLoc[7](stop#1#10: u64)
+B1:
+	11: CopyLoc[5](i#1#10: u64)
+	12: CopyLoc[7](stop#1#10: u64)
+	13: Lt
+	14: BrFalse(32)
+B2:
+	15: CopyLoc[5](i#1#10: u64)
+	16: StLoc[6](i#1#13: u64)
+	17: MutBorrowLoc[8](v#1#3: vector<u16>)
+	18: StLoc[3](%#5: &mut vector<u16>)
+	19: MoveLoc[6](i#1#13: u64)
+	20: Pop
+	21: CopyLoc[4](bcs#1#1: &mut BCS)
+	22: Call peel_u16(&mut BCS): u16
+	23: StLoc[2](%#3: u16)
+	24: MoveLoc[3](%#5: &mut vector<u16>)
+	25: MoveLoc[2](%#3: u16)
+	26: VecPushBack(7)
+	27: MoveLoc[5](i#1#10: u64)
+	28: LdU64(1)
+	29: Add
+	30: StLoc[5](i#1#10: u64)
+	31: Branch(11)
+B3:
+	32: MoveLoc[4](bcs#1#1: &mut BCS)
+	33: Pop
+	34: MoveLoc[8](v#1#3: vector<u16>)
+	35: Ret
+}
+
+public peel_vec_u32(bcs#0#0: &mut BCS): vector<u32> {
+L1:	$stop#0#7: u64
+L2:	%#3: u32
+L3:	%#5: &mut vector<u32>
+L4:	bcs#1#1: &mut BCS
+L5:	i#1#10: u64
+L6:	i#1#13: u64
+L7:	stop#1#10: u64
+L8:	v#1#3: vector<u32>
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[4](bcs#1#1: &mut BCS)
+	2: LdConst[8](vector<u32>: 00)
+	3: StLoc[8](v#1#3: vector<u32>)
+	4: CopyLoc[4](bcs#1#1: &mut BCS)
+	5: Call peel_vec_length(&mut BCS): u64
+	6: StLoc[1]($stop#0#7: u64)
+	7: LdU64(0)
+	8: StLoc[5](i#1#10: u64)
+	9: MoveLoc[1]($stop#0#7: u64)
+	10: StLoc[7](stop#1#10: u64)
+B1:
+	11: CopyLoc[5](i#1#10: u64)
+	12: CopyLoc[7](stop#1#10: u64)
+	13: Lt
+	14: BrFalse(32)
+B2:
+	15: CopyLoc[5](i#1#10: u64)
+	16: StLoc[6](i#1#13: u64)
+	17: MutBorrowLoc[8](v#1#3: vector<u32>)
+	18: StLoc[3](%#5: &mut vector<u32>)
+	19: MoveLoc[6](i#1#13: u64)
+	20: Pop
+	21: CopyLoc[4](bcs#1#1: &mut BCS)
+	22: Call peel_u32(&mut BCS): u32
+	23: StLoc[2](%#3: u32)
+	24: MoveLoc[3](%#5: &mut vector<u32>)
+	25: MoveLoc[2](%#3: u32)
+	26: VecPushBack(8)
+	27: MoveLoc[5](i#1#10: u64)
+	28: LdU64(1)
+	29: Add
+	30: StLoc[5](i#1#10: u64)
+	31: Branch(11)
+B3:
+	32: MoveLoc[4](bcs#1#1: &mut BCS)
+	33: Pop
+	34: MoveLoc[8](v#1#3: vector<u32>)
+	35: Ret
+}
+
+public peel_vec_u64(bcs#0#0: &mut BCS): vector<u64> {
+L1:	$stop#0#7: u64
+L2:	%#3: u64
+L3:	%#5: &mut vector<u64>
+L4:	bcs#1#1: &mut BCS
+L5:	i#1#10: u64
+L6:	i#1#13: u64
+L7:	stop#1#10: u64
+L8:	v#1#3: vector<u64>
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[4](bcs#1#1: &mut BCS)
+	2: LdConst[9](vector<u64>: 00)
+	3: StLoc[8](v#1#3: vector<u64>)
+	4: CopyLoc[4](bcs#1#1: &mut BCS)
+	5: Call peel_vec_length(&mut BCS): u64
+	6: StLoc[1]($stop#0#7: u64)
+	7: LdU64(0)
+	8: StLoc[5](i#1#10: u64)
+	9: MoveLoc[1]($stop#0#7: u64)
+	10: StLoc[7](stop#1#10: u64)
+B1:
+	11: CopyLoc[5](i#1#10: u64)
+	12: CopyLoc[7](stop#1#10: u64)
+	13: Lt
+	14: BrFalse(32)
+B2:
+	15: CopyLoc[5](i#1#10: u64)
+	16: StLoc[6](i#1#13: u64)
+	17: MutBorrowLoc[8](v#1#3: vector<u64>)
+	18: StLoc[3](%#5: &mut vector<u64>)
+	19: MoveLoc[6](i#1#13: u64)
+	20: Pop
+	21: CopyLoc[4](bcs#1#1: &mut BCS)
+	22: Call peel_u64(&mut BCS): u64
+	23: StLoc[2](%#3: u64)
+	24: MoveLoc[3](%#5: &mut vector<u64>)
+	25: MoveLoc[2](%#3: u64)
+	26: VecPushBack(9)
+	27: MoveLoc[5](i#1#10: u64)
+	28: LdU64(1)
+	29: Add
+	30: StLoc[5](i#1#10: u64)
+	31: Branch(11)
+B3:
+	32: MoveLoc[4](bcs#1#1: &mut BCS)
+	33: Pop
+	34: MoveLoc[8](v#1#3: vector<u64>)
+	35: Ret
+}
+
+public peel_vec_u128(bcs#0#0: &mut BCS): vector<u128> {
+L1:	$stop#0#7: u64
+L2:	%#3: u128
+L3:	%#5: &mut vector<u128>
+L4:	bcs#1#1: &mut BCS
+L5:	i#1#10: u64
+L6:	i#1#13: u64
+L7:	stop#1#10: u64
+L8:	v#1#3: vector<u128>
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[4](bcs#1#1: &mut BCS)
+	2: LdConst[10](vector<u128>: 00)
+	3: StLoc[8](v#1#3: vector<u128>)
+	4: CopyLoc[4](bcs#1#1: &mut BCS)
+	5: Call peel_vec_length(&mut BCS): u64
+	6: StLoc[1]($stop#0#7: u64)
+	7: LdU64(0)
+	8: StLoc[5](i#1#10: u64)
+	9: MoveLoc[1]($stop#0#7: u64)
+	10: StLoc[7](stop#1#10: u64)
+B1:
+	11: CopyLoc[5](i#1#10: u64)
+	12: CopyLoc[7](stop#1#10: u64)
+	13: Lt
+	14: BrFalse(32)
+B2:
+	15: CopyLoc[5](i#1#10: u64)
+	16: StLoc[6](i#1#13: u64)
+	17: MutBorrowLoc[8](v#1#3: vector<u128>)
+	18: StLoc[3](%#5: &mut vector<u128>)
+	19: MoveLoc[6](i#1#13: u64)
+	20: Pop
+	21: CopyLoc[4](bcs#1#1: &mut BCS)
+	22: Call peel_u128(&mut BCS): u128
+	23: StLoc[2](%#3: u128)
+	24: MoveLoc[3](%#5: &mut vector<u128>)
+	25: MoveLoc[2](%#3: u128)
+	26: VecPushBack(10)
+	27: MoveLoc[5](i#1#10: u64)
+	28: LdU64(1)
+	29: Add
+	30: StLoc[5](i#1#10: u64)
+	31: Branch(11)
+B3:
+	32: MoveLoc[4](bcs#1#1: &mut BCS)
+	33: Pop
+	34: MoveLoc[8](v#1#3: vector<u128>)
+	35: Ret
+}
+
+public peel_vec_u256(bcs#0#0: &mut BCS): vector<u256> {
+L1:	$stop#0#7: u64
+L2:	%#3: u256
+L3:	%#5: &mut vector<u256>
+L4:	bcs#1#1: &mut BCS
+L5:	i#1#10: u64
+L6:	i#1#13: u64
+L7:	stop#1#10: u64
+L8:	v#1#3: vector<u256>
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[4](bcs#1#1: &mut BCS)
+	2: LdConst[11](vector<u256>: 00)
+	3: StLoc[8](v#1#3: vector<u256>)
+	4: CopyLoc[4](bcs#1#1: &mut BCS)
+	5: Call peel_vec_length(&mut BCS): u64
+	6: StLoc[1]($stop#0#7: u64)
+	7: LdU64(0)
+	8: StLoc[5](i#1#10: u64)
+	9: MoveLoc[1]($stop#0#7: u64)
+	10: StLoc[7](stop#1#10: u64)
+B1:
+	11: CopyLoc[5](i#1#10: u64)
+	12: CopyLoc[7](stop#1#10: u64)
+	13: Lt
+	14: BrFalse(32)
+B2:
+	15: CopyLoc[5](i#1#10: u64)
+	16: StLoc[6](i#1#13: u64)
+	17: MutBorrowLoc[8](v#1#3: vector<u256>)
+	18: StLoc[3](%#5: &mut vector<u256>)
+	19: MoveLoc[6](i#1#13: u64)
+	20: Pop
+	21: CopyLoc[4](bcs#1#1: &mut BCS)
+	22: Call peel_u256(&mut BCS): u256
+	23: StLoc[2](%#3: u256)
+	24: MoveLoc[3](%#5: &mut vector<u256>)
+	25: MoveLoc[2](%#3: u256)
+	26: VecPushBack(11)
+	27: MoveLoc[5](i#1#10: u64)
+	28: LdU64(1)
+	29: Add
+	30: StLoc[5](i#1#10: u64)
+	31: Branch(11)
+B3:
+	32: MoveLoc[4](bcs#1#1: &mut BCS)
+	33: Pop
+	34: MoveLoc[8](v#1#3: vector<u256>)
+	35: Ret
+}
+
+public peel_enum_tag(bcs#0#0: &mut BCS): u32 {
+L1:	tag#1#0: u64
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: Call peel_vec_length(&mut BCS): u64
+	2: StLoc[1](tag#1#0: u64)
+	3: CopyLoc[1](tag#1#0: u64)
+	4: LdU64(4294967295)
+	5: Le
+	6: BrFalse(8)
+B1:
+	7: Branch(10)
+B2:
+	8: LdConst[0](u64: 0)
+	9: Abort
+B3:
+	10: MoveLoc[1](tag#1#0: u64)
+	11: CastU32
+	12: Ret
+}
+
+public peel_option_address(bcs#0#0: &mut BCS): Option<address> {
+L1:	%#3: Option<address>
+L2:	bcs#1#1: &mut BCS
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[2](bcs#1#1: &mut BCS)
+	2: CopyLoc[2](bcs#1#1: &mut BCS)
+	3: Call peel_bool(&mut BCS): bool
+	4: BrFalse(10)
+B1:
+	5: MoveLoc[2](bcs#1#1: &mut BCS)
+	6: Call peel_address(&mut BCS): address
+	7: Call option::some<address>(address): Option<address>
+	8: StLoc[1](%#3: Option<address>)
+	9: Branch(14)
+B2:
+	10: MoveLoc[2](bcs#1#1: &mut BCS)
+	11: Pop
+	12: Call option::none<address>(): Option<address>
+	13: StLoc[1](%#3: Option<address>)
+B3:
+	14: MoveLoc[1](%#3: Option<address>)
+	15: Ret
+}
+
+public peel_option_bool(bcs#0#0: &mut BCS): Option<bool> {
+L1:	%#3: Option<bool>
+L2:	bcs#1#1: &mut BCS
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[2](bcs#1#1: &mut BCS)
+	2: CopyLoc[2](bcs#1#1: &mut BCS)
+	3: Call peel_bool(&mut BCS): bool
+	4: BrFalse(10)
+B1:
+	5: MoveLoc[2](bcs#1#1: &mut BCS)
+	6: Call peel_bool(&mut BCS): bool
+	7: Call option::some<bool>(bool): Option<bool>
+	8: StLoc[1](%#3: Option<bool>)
+	9: Branch(14)
+B2:
+	10: MoveLoc[2](bcs#1#1: &mut BCS)
+	11: Pop
+	12: Call option::none<bool>(): Option<bool>
+	13: StLoc[1](%#3: Option<bool>)
+B3:
+	14: MoveLoc[1](%#3: Option<bool>)
+	15: Ret
+}
+
+public peel_option_u8(bcs#0#0: &mut BCS): Option<u8> {
+L1:	%#3: Option<u8>
+L2:	bcs#1#1: &mut BCS
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[2](bcs#1#1: &mut BCS)
+	2: CopyLoc[2](bcs#1#1: &mut BCS)
+	3: Call peel_bool(&mut BCS): bool
+	4: BrFalse(10)
+B1:
+	5: MoveLoc[2](bcs#1#1: &mut BCS)
+	6: Call peel_u8(&mut BCS): u8
+	7: Call option::some<u8>(u8): Option<u8>
+	8: StLoc[1](%#3: Option<u8>)
+	9: Branch(14)
+B2:
+	10: MoveLoc[2](bcs#1#1: &mut BCS)
+	11: Pop
+	12: Call option::none<u8>(): Option<u8>
+	13: StLoc[1](%#3: Option<u8>)
+B3:
+	14: MoveLoc[1](%#3: Option<u8>)
+	15: Ret
+}
+
+public peel_option_u16(bcs#0#0: &mut BCS): Option<u16> {
+L1:	%#3: Option<u16>
+L2:	bcs#1#1: &mut BCS
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[2](bcs#1#1: &mut BCS)
+	2: CopyLoc[2](bcs#1#1: &mut BCS)
+	3: Call peel_bool(&mut BCS): bool
+	4: BrFalse(10)
+B1:
+	5: MoveLoc[2](bcs#1#1: &mut BCS)
+	6: Call peel_u16(&mut BCS): u16
+	7: Call option::some<u16>(u16): Option<u16>
+	8: StLoc[1](%#3: Option<u16>)
+	9: Branch(14)
+B2:
+	10: MoveLoc[2](bcs#1#1: &mut BCS)
+	11: Pop
+	12: Call option::none<u16>(): Option<u16>
+	13: StLoc[1](%#3: Option<u16>)
+B3:
+	14: MoveLoc[1](%#3: Option<u16>)
+	15: Ret
+}
+
+public peel_option_u32(bcs#0#0: &mut BCS): Option<u32> {
+L1:	%#3: Option<u32>
+L2:	bcs#1#1: &mut BCS
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[2](bcs#1#1: &mut BCS)
+	2: CopyLoc[2](bcs#1#1: &mut BCS)
+	3: Call peel_bool(&mut BCS): bool
+	4: BrFalse(10)
+B1:
+	5: MoveLoc[2](bcs#1#1: &mut BCS)
+	6: Call peel_u32(&mut BCS): u32
+	7: Call option::some<u32>(u32): Option<u32>
+	8: StLoc[1](%#3: Option<u32>)
+	9: Branch(14)
+B2:
+	10: MoveLoc[2](bcs#1#1: &mut BCS)
+	11: Pop
+	12: Call option::none<u32>(): Option<u32>
+	13: StLoc[1](%#3: Option<u32>)
+B3:
+	14: MoveLoc[1](%#3: Option<u32>)
+	15: Ret
+}
+
+public peel_option_u64(bcs#0#0: &mut BCS): Option<u64> {
+L1:	%#3: Option<u64>
+L2:	bcs#1#1: &mut BCS
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[2](bcs#1#1: &mut BCS)
+	2: CopyLoc[2](bcs#1#1: &mut BCS)
+	3: Call peel_bool(&mut BCS): bool
+	4: BrFalse(10)
+B1:
+	5: MoveLoc[2](bcs#1#1: &mut BCS)
+	6: Call peel_u64(&mut BCS): u64
+	7: Call option::some<u64>(u64): Option<u64>
+	8: StLoc[1](%#3: Option<u64>)
+	9: Branch(14)
+B2:
+	10: MoveLoc[2](bcs#1#1: &mut BCS)
+	11: Pop
+	12: Call option::none<u64>(): Option<u64>
+	13: StLoc[1](%#3: Option<u64>)
+B3:
+	14: MoveLoc[1](%#3: Option<u64>)
+	15: Ret
+}
+
+public peel_option_u128(bcs#0#0: &mut BCS): Option<u128> {
+L1:	%#3: Option<u128>
+L2:	bcs#1#1: &mut BCS
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[2](bcs#1#1: &mut BCS)
+	2: CopyLoc[2](bcs#1#1: &mut BCS)
+	3: Call peel_bool(&mut BCS): bool
+	4: BrFalse(10)
+B1:
+	5: MoveLoc[2](bcs#1#1: &mut BCS)
+	6: Call peel_u128(&mut BCS): u128
+	7: Call option::some<u128>(u128): Option<u128>
+	8: StLoc[1](%#3: Option<u128>)
+	9: Branch(14)
+B2:
+	10: MoveLoc[2](bcs#1#1: &mut BCS)
+	11: Pop
+	12: Call option::none<u128>(): Option<u128>
+	13: StLoc[1](%#3: Option<u128>)
+B3:
+	14: MoveLoc[1](%#3: Option<u128>)
+	15: Ret
+}
+
+public peel_option_u256(bcs#0#0: &mut BCS): Option<u256> {
+L1:	%#3: Option<u256>
+L2:	bcs#1#1: &mut BCS
+B0:
+	0: MoveLoc[0](bcs#0#0: &mut BCS)
+	1: StLoc[2](bcs#1#1: &mut BCS)
+	2: CopyLoc[2](bcs#1#1: &mut BCS)
+	3: Call peel_bool(&mut BCS): bool
+	4: BrFalse(10)
+B1:
+	5: MoveLoc[2](bcs#1#1: &mut BCS)
+	6: Call peel_u256(&mut BCS): u256
+	7: Call option::some<u256>(u256): Option<u256>
+	8: StLoc[1](%#3: Option<u256>)
+	9: Branch(14)
+B2:
+	10: MoveLoc[2](bcs#1#1: &mut BCS)
+	11: Pop
+	12: Call option::none<u256>(): Option<u256>
+	13: StLoc[1](%#3: Option<u256>)
+B3:
+	14: MoveLoc[1](%#3: Option<u256>)
+	15: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => u64: 1
+	2 => u64: 2
+	3 => vector<u8>: "" // interpreted as UTF8 string
+	4 => vector<address>: 00
+	5 => vector<bool>: 00
+	6 => vector<vector<u8>>: 00
+	7 => vector<u16>: 00
+	8 => vector<u32>: 00
+	9 => vector<u64>: 00
+	10 => vector<u128>: 00
+	11 => vector<u256>: 00
+]
+}

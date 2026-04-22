@@ -1,0 +1,134 @@
+// Move bytecode v6
+module 2.clock {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::transfer;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Clock has key {
+	id: UID,
+	timestamp_ms: u64
+}
+
+public timestamp_ms(clock#0#0: &Clock): u64 {
+B0:
+	0: MoveLoc[0](clock#0#0: &Clock)
+	1: ImmBorrowField[0](Clock.timestamp_ms: u64)
+	2: ReadRef
+	3: Ret
+}
+
+create(ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[0](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[1](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(8)
+B2:
+	6: LdConst[0](u64: 0)
+	7: Abort
+B3:
+	8: Call object::clock(): UID
+	9: LdU64(0)
+	10: Pack[0](Clock)
+	11: Call transfer::share_object<Clock>(Clock)
+	12: Ret
+}
+
+consensus_commit_prologue(clock#0#0: &mut Clock, timestamp_ms#0#0: u64, ctx#0#0: &TxContext) {
+B0:
+	0: MoveLoc[2](ctx#0#0: &TxContext)
+	1: Call tx_context::sender(&TxContext): address
+	2: LdConst[1](address: 0x00..)
+	3: Eq
+	4: BrFalse(6)
+B1:
+	5: Branch(10)
+B2:
+	6: MoveLoc[0](clock#0#0: &mut Clock)
+	7: Pop
+	8: LdConst[0](u64: 0)
+	9: Abort
+B3:
+	10: MoveLoc[1](timestamp_ms#0#0: u64)
+	11: MoveLoc[0](clock#0#0: &mut Clock)
+	12: MutBorrowField[0](Clock.timestamp_ms: u64)
+	13: WriteRef
+	14: Ret
+}
+
+public create_for_testing(ctx#0#0: &mut TxContext): Clock {
+B0:
+	0: MoveLoc[0](ctx#0#0: &mut TxContext)
+	1: Call object::new(&mut TxContext): UID
+	2: LdU64(0)
+	3: Pack[0](Clock)
+	4: Ret
+}
+
+public share_for_testing(clock#0#0: Clock) {
+B0:
+	0: MoveLoc[0](clock#0#0: Clock)
+	1: Call transfer::share_object<Clock>(Clock)
+	2: Ret
+}
+
+public increment_for_testing(clock#0#0: &mut Clock, tick#0#0: u64) {
+B0:
+	0: CopyLoc[0](clock#0#0: &mut Clock)
+	1: ImmBorrowField[0](Clock.timestamp_ms: u64)
+	2: ReadRef
+	3: MoveLoc[1](tick#0#0: u64)
+	4: Add
+	5: MoveLoc[0](clock#0#0: &mut Clock)
+	6: MutBorrowField[0](Clock.timestamp_ms: u64)
+	7: WriteRef
+	8: Ret
+}
+
+public set_for_testing(clock#0#0: &mut Clock, timestamp_ms#0#0: u64) {
+B0:
+	0: CopyLoc[1](timestamp_ms#0#0: u64)
+	1: CopyLoc[0](clock#0#0: &mut Clock)
+	2: ImmBorrowField[0](Clock.timestamp_ms: u64)
+	3: ReadRef
+	4: Ge
+	5: BrFalse(7)
+B1:
+	6: Branch(11)
+B2:
+	7: MoveLoc[0](clock#0#0: &mut Clock)
+	8: Pop
+	9: LdU64(13906834522235731967)
+	10: Abort
+B3:
+	11: MoveLoc[1](timestamp_ms#0#0: u64)
+	12: MoveLoc[0](clock#0#0: &mut Clock)
+	13: MutBorrowField[0](Clock.timestamp_ms: u64)
+	14: WriteRef
+	15: Ret
+}
+
+public destroy_for_testing(clock#0#0: Clock) {
+B0:
+	0: MoveLoc[0](clock#0#0: Clock)
+	1: Unpack[0](Clock)
+	2: Pop
+	3: Call object::delete(UID)
+	4: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+	1 => address: 0x0000000000000000000000000000000000000000000000000000000000000000
+]
+}

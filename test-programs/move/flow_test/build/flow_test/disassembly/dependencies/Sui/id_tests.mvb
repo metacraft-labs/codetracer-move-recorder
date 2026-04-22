@@ -1,0 +1,54 @@
+// Move bytecode v6
+module 2.id_tests {
+use 0000000000000000000000000000000000000000000000000000000000000001::unit_test;
+use 0000000000000000000000000000000000000000000000000000000000000002::object;
+use 0000000000000000000000000000000000000000000000000000000000000002::tx_context;
+
+struct Object has key {
+	id: UID
+}
+
+test_get_id() {
+L0:	ctx#1#0: TxContext
+L1:	id#1#0: UID
+L2:	obj#1#0: Object
+L3:	obj_id#1#0: ID
+B0:
+	0: Call tx_context::dummy(): TxContext
+	1: StLoc[0](ctx#1#0: TxContext)
+	2: MutBorrowLoc[0](ctx#1#0: TxContext)
+	3: Call object::new(&mut TxContext): UID
+	4: StLoc[1](id#1#0: UID)
+	5: ImmBorrowLoc[1](id#1#0: UID)
+	6: Call object::uid_to_inner(&UID): ID
+	7: StLoc[3](obj_id#1#0: ID)
+	8: MoveLoc[1](id#1#0: UID)
+	9: Pack[0](Object)
+	10: StLoc[2](obj#1#0: Object)
+	11: ImmBorrowLoc[2](obj#1#0: Object)
+	12: Call object::id<Object>(&Object): ID
+	13: MoveLoc[3](obj_id#1#0: ID)
+	14: Eq
+	15: BrFalse(17)
+B1:
+	16: Branch(19)
+B2:
+	17: LdConst[0](u64: 0)
+	18: Abort
+B3:
+	19: MoveLoc[2](obj#1#0: Object)
+	20: Unpack[0](Object)
+	21: Call object::delete(UID)
+	22: Ret
+}
+
+entry public unit_test_poison() {
+B0:
+	0: Call unit_test::poison()
+	1: Ret
+}
+
+Constants [
+	0 => u64: 0
+]
+}
