@@ -65,12 +65,15 @@ fn record_creates_output_files() {
         String::from_utf8_lossy(&output.stderr)
     );
 
-    assert!(
-        out_dir.join("trace_metadata.json").exists(),
-        "trace_metadata.json should be created"
-    );
-    assert!(
-        out_dir.join("trace_paths.json").exists(),
-        "trace_paths.json should be created"
-    );
+    // Verify .ct output with CTFS magic bytes.
+    let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
+        .expect("read output dir")
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| p.extension().map_or(false, |ext| ext == "ct"))
+        .collect();
+    assert!(!ct_files.is_empty(), "expected at least one .ct file in output dir");
+    let content = std::fs::read(&ct_files[0]).expect("read .ct file");
+    assert!(content.len() >= 5, ".ct file too small");
+    assert_eq!(&content[..5], &[0xC0, 0xDE, 0x72, 0xAC, 0xE2], "CTFS magic bytes mismatch");
 }

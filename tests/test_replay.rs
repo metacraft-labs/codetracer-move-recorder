@@ -143,31 +143,15 @@ fn test_replay_end_to_end_with_existing_trace() {
     )
     .expect("replay_from_existing_trace should succeed");
 
-    // Verify the 3-file output.
-    assert!(
-        out_dir.join("trace.json").exists(),
-        "trace.json should be created"
-    );
-    assert!(
-        out_dir.join("trace_metadata.json").exists(),
-        "trace_metadata.json should be created"
-    );
-    assert!(
-        out_dir.join("trace_paths.json").exists(),
-        "trace_paths.json should be created"
-    );
-
-    // Verify metadata is valid JSON.
-    let metadata_str =
-        fs::read_to_string(out_dir.join("trace_metadata.json")).unwrap();
-    let metadata: serde_json::Value =
-        serde_json::from_str(&metadata_str).expect("trace_metadata.json should be valid JSON");
-    assert!(
-        metadata.get("program").is_some(),
-        "trace_metadata.json should have a 'program' field"
-    );
-
-    // Verify trace.json is non-empty.
-    let trace_size = fs::metadata(out_dir.join("trace.json")).unwrap().len();
-    assert!(trace_size > 0, "trace.json should be non-empty");
+    // Verify .ct output with CTFS magic bytes.
+    let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
+        .expect("read output dir")
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| p.extension().map_or(false, |ext| ext == "ct"))
+        .collect();
+    assert!(!ct_files.is_empty(), "expected at least one .ct file in output dir");
+    let content = std::fs::read(&ct_files[0]).expect("read .ct file");
+    assert!(content.len() >= 5, ".ct file too small");
+    assert_eq!(&content[..5], &[0xC0, 0xDE, 0x72, 0xAC, 0xE2], "CTFS magic bytes mismatch");
 }
