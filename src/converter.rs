@@ -24,6 +24,58 @@ pub fn convert_trace(
     out_dir: &Path,
     format: TraceEventsFileFormat,
 ) -> Result<()> {
+    // -- 1. Create trace writer ------------------------------------------------
+    let program_name = source_path
+        .file_stem()
+        .map(|s| s.to_string_lossy().to_string())
+        .unwrap_or_else(|| "move_program".to_string());
+
+    let mut writer = create_trace_writer(&program_name, &[], format);
+
+    // -- 2. Set up output files ------------------------------------------------
+    std::fs::create_dir_all(out_dir)
+        .map_err(|e| eyre!("cannot create output dir: {e}"))?;
+
+    let events_filename = match format {
+        TraceEventsFileFormat::Json => "trace.json",
+        TraceEventsFileFormat::Binary | TraceEventsFileFormat::BinaryV0 | TraceEventsFileFormat::Ctfs => "trace.bin",
+    };
+    let events_path = out_dir.join(events_filename);
+    let metadata_path = out_dir.join("trace_metadata.json");
+    let paths_path = out_dir.join("trace_paths.json");
+
+    TraceWriter::begin_writing_trace_events(&mut *writer, &events_path)
+        .map_err(|e| eyre!("{e}"))?;
+    TraceWriter::begin_writing_trace_metadata(&mut *writer, &metadata_path)
+        .map_err(|e| eyre!("{e}"))?;
+    TraceWriter::begin_writing_trace_paths(&mut *writer, &paths_path)
+        .map_err(|e| eyre!("{e}"))?;
+
+    // -- 3. Convert events into writer ----------------------------------------
+    convert_trace_into_writer(trace_data, source_map, source_path, &mut *writer)?;
+
+    // -- 4. Finish writing ----------------------------------------------------
+    TraceWriter::finish_writing_trace_events(&mut *writer)
+        .map_err(|e| eyre!("{e}"))?;
+    TraceWriter::finish_writing_trace_metadata(&mut *writer)
+        .map_err(|e| eyre!("{e}"))?;
+    TraceWriter::finish_writing_trace_paths(&mut *writer)
+        .map_err(|e| eyre!("{e}"))?;
+    writer.close().map_err(|e| eyre!("{e}"))?;
+
+    Ok(())
+}
+
+/// Convert Move NDJSON trace data into events on the given writer.
+///
+/// This is the core conversion logic, separated from file I/O so that tests
+/// can use a `NonStreamingTraceWriter` for in-memory inspection.
+pub fn convert_trace_into_writer(
+    trace_data: &[u8],
+    source_map: &SourceMapResolver,
+    source_path: &Path,
+    writer: &mut dyn TraceWriter,
+) -> Result<()> {
     // -- 1. Parse NDJSON -------------------------------------------------------
     let text = std::str::from_utf8(trace_data)
         .map_err(|e| eyre!("trace data is not valid UTF-8: {e}"))?;
@@ -53,40 +105,13 @@ pub fn convert_trace(
         events.push(event);
     }
 
-    // -- 2. Create trace writer ------------------------------------------------
-    let program_name = source_path
-        .file_stem()
-        .map(|s| s.to_string_lossy().to_string())
-        .unwrap_or_else(|| "move_program".to_string());
-
-    let mut writer = create_trace_writer(&program_name, &[], format);
-
-    // -- 3. Set up output files ------------------------------------------------
-    std::fs::create_dir_all(out_dir)
-        .map_err(|e| eyre!("cannot create output dir: {e}"))?;
-
-    let events_filename = match format {
-        TraceEventsFileFormat::Json => "trace.json",
-        TraceEventsFileFormat::Binary | TraceEventsFileFormat::BinaryV0 | TraceEventsFileFormat::Ctfs => "trace.bin",
-    };
-    let events_path = out_dir.join(events_filename);
-    let metadata_path = out_dir.join("trace_metadata.json");
-    let paths_path = out_dir.join("trace_paths.json");
-
-    TraceWriter::begin_writing_trace_events(&mut *writer, &events_path)
-        .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::begin_writing_trace_metadata(&mut *writer, &metadata_path)
-        .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::begin_writing_trace_paths(&mut *writer, &paths_path)
-        .map_err(|e| eyre!("{e}"))?;
-
-    // -- 4. Start the trace ----------------------------------------------------
-    TraceWriter::start(&mut *writer, source_path, Line(1));
+    // -- 2. Start the trace ----------------------------------------------------
+    TraceWriter::start(writer, source_path, Line(1));
 
     // Register common Move types.
-    let type_ids = TypeIds::register(&mut *writer);
+    let type_ids = TypeIds::register(writer);
 
-    // -- 5. Walk trace events --------------------------------------------------
+    // -- 3. Walk trace events --------------------------------------------------
     let mut prev_line: Option<u32> = None;
     let mut current_module: Option<String> = None;
 
@@ -102,13 +127,13 @@ pub fn convert_trace(
                 current_module = Some(module.name.clone());
 
                 let fn_id = TraceWriter::ensure_function_id(
-                    &mut *writer,
+                    writer,
                     function_name,
                     source_path,
                     Line(1),
                 );
 
-                TraceWriter::register_call(&mut *writer, fn_id, vec![]);
+                TraceWriter::register_call(writer, fn_id, vec![]);
             }
 
             TraceEvent::CloseFrame {
@@ -120,7 +145,7 @@ pub fn convert_trace(
                     .map(|v| convert_move_value(v.inner_value(), &type_ids))
                     .unwrap_or(NONE_VALUE);
 
-                TraceWriter::register_return(&mut *writer, ret_val);
+                TraceWriter::register_return(writer, ret_val);
             }
 
             TraceEvent::Instruction { pc, .. } => {
@@ -129,7 +154,7 @@ pub fn convert_trace(
                     && prev_line != Some(line)
                 {
                     TraceWriter::register_step(
-                        &mut *writer,
+                        writer,
                         source_path,
                         Line(line as i64),
                     );
@@ -148,7 +173,7 @@ pub fn convert_trace(
                         &type_ids,
                     );
                     TraceWriter::register_variable_with_full_value(
-                        &mut *writer,
+                        writer,
                         &name,
                         val,
                     );
@@ -164,7 +189,7 @@ pub fn convert_trace(
                         &type_ids,
                     );
                     TraceWriter::register_variable_with_full_value(
-                        &mut *writer,
+                        writer,
                         &name,
                         val,
                     );
@@ -172,7 +197,7 @@ pub fn convert_trace(
                 Effect::Push(value) => {
                     let val = convert_move_value(value.inner_value(), &type_ids);
                     TraceWriter::register_variable_with_full_value(
-                        &mut *writer,
+                        writer,
                         "stack_top",
                         val,
                     );
@@ -180,7 +205,7 @@ pub fn convert_trace(
                 Effect::Pop(value) => {
                     let val = convert_move_value(value.inner_value(), &type_ids);
                     TraceWriter::register_variable_with_full_value(
-                        &mut *writer,
+                        writer,
                         "popped",
                         val,
                     );
@@ -199,16 +224,8 @@ pub fn convert_trace(
         }
     }
 
-    // -- 6. Finish writing -----------------------------------------------------
     // Close the implicit toplevel frame opened by `TraceWriter::start`.
-    TraceWriter::register_return(&mut *writer, NONE_VALUE);
-
-    TraceWriter::finish_writing_trace_events(&mut *writer)
-        .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::finish_writing_trace_metadata(&mut *writer)
-        .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::finish_writing_trace_paths(&mut *writer)
-        .map_err(|e| eyre!("{e}"))?;
+    TraceWriter::register_return(writer, NONE_VALUE);
 
     Ok(())
 }
