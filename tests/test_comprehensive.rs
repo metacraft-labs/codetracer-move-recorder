@@ -1345,7 +1345,7 @@ fn test_wrong_version_rejected() {
         &SourceMapResolver::empty(),
         Path::new("test.move"),
         &out_dir,
-        TraceEventsFileFormat::Json,
+        TraceEventsFileFormat::Binary,
     );
     assert!(result.is_err());
     let err = result.unwrap_err().to_string();
@@ -1364,7 +1364,7 @@ fn test_empty_trace_data_rejected() {
         &SourceMapResolver::empty(),
         Path::new("test.move"),
         &out_dir,
-        TraceEventsFileFormat::Json,
+        TraceEventsFileFormat::Binary,
     );
     assert!(result.is_err());
 }
