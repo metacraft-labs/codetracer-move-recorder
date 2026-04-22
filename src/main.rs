@@ -3,7 +3,7 @@ use std::io::Read;
 use std::path::PathBuf;
 
 use clap::{Parser, Subcommand};
-use codetracer_trace_writer::TraceEventsFileFormat;
+use codetracer_trace_writer_nim::TraceEventsFileFormat;
 use eyre::{bail, WrapErr};
 
 use codetracer_move_recorder::aptos_adapter;

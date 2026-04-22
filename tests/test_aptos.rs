@@ -5,7 +5,7 @@
 
 use std::path::Path;
 
-use codetracer_trace_writer::TraceEventsFileFormat;
+use codetracer_trace_writer_nim::TraceEventsFileFormat;
 
 use codetracer_move_recorder::aptos_adapter::{
     self, AptosEnrichedEntry, AptosGasProfile, AptosRestConfig,

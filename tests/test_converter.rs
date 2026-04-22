@@ -3,7 +3,7 @@
 use std::path::Path;
 
 use codetracer_trace_types::TraceLowLevelEvent;
-use codetracer_trace_writer::TraceEventsFileFormat;
+use codetracer_trace_writer_nim::TraceEventsFileFormat;
 use std::collections::HashMap;
 
 use codetracer_move_recorder::converter;

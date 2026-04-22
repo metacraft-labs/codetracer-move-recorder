@@ -4,7 +4,7 @@ use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 
-use codetracer_trace_writer::TraceEventsFileFormat;
+use codetracer_trace_writer_nim::TraceEventsFileFormat;
 
 use codetracer_move_recorder::replay::{self, ReplayConfig};
 use codetracer_move_recorder::source_lookup::SourceLookup;
