@@ -2,9 +2,41 @@ use std::fs;
 use std::io::Read;
 use std::path::PathBuf;
 
-use clap::{Parser, Subcommand};
+use clap::{Parser, Subcommand, ValueEnum};
 use codetracer_trace_writer_nim::TraceEventsFileFormat;
 use eyre::{bail, WrapErr};
+
+/// Output trace container format selection for the CLI.
+///
+/// `Ctfs` is the canonical multi-stream container that the upstream Nim
+/// reader (`NimTraceReaderHandle`) and the db-backend `CTFSTraceReader`
+/// consume directly.  It is the default for new traces.
+///
+/// `Binary` is the legacy CBOR + Zstd format kept for backward compatibility
+/// with older traces; `Json` is the human-readable variant useful for
+/// debugging.
+///
+/// This mirrors the format selection added to other recorders during the
+/// 2026-05 CTFS audits (Solana 1.44, EVM 1.39).
+#[derive(Debug, Clone, Copy, ValueEnum)]
+enum OutputFormat {
+    /// Canonical CodeTracer multi-stream container (recommended).
+    Ctfs,
+    /// Legacy CBOR + Zstd binary format.
+    Binary,
+    /// Human-readable JSON (slower; useful for debugging).
+    Json,
+}
+
+impl From<OutputFormat> for TraceEventsFileFormat {
+    fn from(f: OutputFormat) -> Self {
+        match f {
+            OutputFormat::Ctfs => TraceEventsFileFormat::Ctfs,
+            OutputFormat::Binary => TraceEventsFileFormat::Binary,
+            OutputFormat::Json => TraceEventsFileFormat::Json,
+        }
+    }
+}
 
 use codetracer_move_recorder::aptos_adapter;
 use codetracer_move_recorder::aptos_replay::{self, AptosReplayConfig};
@@ -29,9 +61,10 @@ enum Commands {
         #[arg(short, long, default_value = "./ct-traces/")]
         out_dir: PathBuf,
 
-        /// Output format (binary or json)
-        #[arg(short, long, default_value = "binary")]
-        format: String,
+        /// Output format (ctfs, binary or json).  Defaults to `ctfs`,
+        /// the canonical CodeTracer multi-stream container.
+        #[arg(short, long, value_enum, default_value_t = OutputFormat::Ctfs)]
+        format: OutputFormat,
 
         /// Path to the Move source file (used for source mapping)
         #[arg(short, long)]
@@ -59,9 +92,10 @@ enum Commands {
         #[arg(short, long, default_value = "./ct-traces/")]
         out_dir: PathBuf,
 
-        /// Output format (binary or json)
-        #[arg(short, long, default_value = "binary")]
-        format: String,
+        /// Output format (ctfs, binary or json).  Defaults to `ctfs`,
+        /// the canonical CodeTracer multi-stream container.
+        #[arg(short, long, value_enum, default_value_t = OutputFormat::Ctfs)]
+        format: OutputFormat,
     },
 
     /// Replay an on-chain Aptos transaction and produce a CodeTracer trace
@@ -82,9 +116,10 @@ enum Commands {
         #[arg(short, long, default_value = "./ct-traces/")]
         out_dir: PathBuf,
 
-        /// Output format (binary or json)
-        #[arg(short, long, default_value = "binary")]
-        format: String,
+        /// Output format (ctfs, binary or json).  Defaults to `ctfs`,
+        /// the canonical CodeTracer multi-stream container.
+        #[arg(short, long, value_enum, default_value_t = OutputFormat::Ctfs)]
+        format: OutputFormat,
 
         /// Also run --profile-gas for additional gas data
         #[arg(long, default_value = "true")]
@@ -145,10 +180,7 @@ fn main() -> eyre::Result<()> {
             // later milestone when we parse .mvsm files.
             let source_map = SourceMapResolver::empty();
 
-            let fmt = match format.as_str() {
-                "json" => TraceEventsFileFormat::Json,
-                _ => TraceEventsFileFormat::Binary,
-            };
+            let fmt: TraceEventsFileFormat = format.into();
 
             fs::create_dir_all(&out_dir)
                 .wrap_err_with(|| {
@@ -175,10 +207,7 @@ fn main() -> eyre::Result<()> {
             out_dir,
             format,
         } => {
-            let fmt = match format.as_str() {
-                "json" => TraceEventsFileFormat::Json,
-                _ => TraceEventsFileFormat::Binary,
-            };
+            let fmt: TraceEventsFileFormat = format.into();
 
             let config = ReplayConfig {
                 rpc_url,
@@ -198,10 +227,7 @@ fn main() -> eyre::Result<()> {
             format,
             profile_gas,
         } => {
-            let fmt = match format.as_str() {
-                "json" => TraceEventsFileFormat::Json,
-                _ => TraceEventsFileFormat::Binary,
-            };
+            let fmt: TraceEventsFileFormat = format.into();
 
             let config = AptosReplayConfig {
                 node_url,
