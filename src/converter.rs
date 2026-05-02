@@ -5,12 +5,12 @@
 
 use std::path::Path;
 
-use codetracer_trace_types::{Line, TypeKind, ValueRecord, NONE_VALUE};
+use codetracer_trace_types::{EventLogKind, Line, TypeKind, ValueRecord, NONE_VALUE};
 use codetracer_trace_writer_nim::trace_writer::TraceWriter;
 use codetracer_trace_writer_nim::{TraceEventsFileFormat, create_trace_writer};
 use eyre::{Result, eyre};
 
-use crate::move_types::{Effect, Frame, SerializableMoveValue, TraceEvent, VersionHeader};
+use crate::move_types::{Effect, SerializableMoveValue, TraceEvent, VersionHeader};
 use crate::source_map::SourceMapResolver;
 
 /// Convert Move NDJSON trace data into CodeTracer trace files.
@@ -118,20 +118,31 @@ pub fn convert_trace_into_writer(
     for event in &events {
         match event {
             TraceEvent::OpenFrame { frame, .. } => {
-                let Frame {
-                    function_name,
-                    module,
-                    ..
-                } = frame;
-
-                current_module = Some(module.name.clone());
+                current_module = Some(frame.module.name.clone());
 
                 let fn_id = TraceWriter::ensure_function_id(
                     writer,
-                    function_name,
+                    &frame.function_name,
                     source_path,
                     Line(1),
                 );
+
+                // Stage each formal parameter as a call arg via the
+                // canonical TraceWriter::arg(name, value) entry point so
+                // the call record carries them.  Move's v3 trace format
+                // delivers parameters per `OpenFrame` in `frame.parameters`
+                // — mirrors the Ruby (1.22) / JS (1.38) call-arg staging
+                // pattern used by other recorder audits.
+                //
+                // We synthesise positional names (`arg0`, `arg1`, ...)
+                // because Sui's frame schema only carries the *values*
+                // of the parameters, not their declared identifiers.
+                // Higher-fidelity names would require parsing the
+                // function's source-map (.mvsm) — tracked as a follow-up.
+                for (idx, param) in frame.parameters.iter().enumerate() {
+                    let value = convert_move_value(param.inner_value(), &type_ids);
+                    let _ = TraceWriter::arg(writer, &format!("arg{idx}"), value);
+                }
 
                 TraceWriter::register_call(writer, fn_id, vec![]);
             }
@@ -211,15 +222,40 @@ pub fn convert_trace_into_writer(
                     );
                 }
                 Effect::ExecutionError(error) => {
-                    eprintln!("Move execution error: {error}");
+                    // Surface execution errors as an Error special event so
+                    // they appear in the CodeTracer event-log pane.  Prior
+                    // behaviour silently dropped the message via eprintln!.
+                    // `metadata` carries a stable tag the frontend can key
+                    // off; `content` is the human-readable message.
+                    TraceWriter::register_special_event(
+                        writer,
+                        EventLogKind::Error,
+                        "MoveExecutionError",
+                        error,
+                    );
                 }
                 Effect::DataLoad { .. } => {
                     // Data load effects are informational; nothing to emit.
                 }
             },
 
-            TraceEvent::External(_) => {
-                // External effects are informational for now.
+            TraceEvent::External(ext) => {
+                // External effects represent Sui-specific side effects
+                // (object transfers, native event emission, etc.) that
+                // are recorded outside the Move VM's stack/local state.
+                // Route them through the canonical `register_special_event`
+                // entry point so the trace contains a structured record
+                // rather than silently dropping the data.  Use
+                // `TraceLogEvent` (the "structured trace event" bucket
+                // shared with Solana's non-stdout syscalls — see Solana
+                // audit 1.44) so they do not pollute the program-log
+                // pane.
+                TraceWriter::register_special_event(
+                    writer,
+                    EventLogKind::TraceLogEvent,
+                    "MoveExternalEffect",
+                    &ext.kind,
+                );
             }
         }
     }
