@@ -21,7 +21,6 @@ use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use codetracer_trace_writer_nim::TraceEventsFileFormat;
 use eyre::{Result, bail, eyre};
 
 use crate::aptos_adapter::{
@@ -29,6 +28,11 @@ use crate::aptos_adapter::{
 };
 
 /// Configuration for replaying an Aptos transaction.
+///
+/// The output format is fixed to CTFS — see
+/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.  Use
+/// `ct print` (from `codetracer-trace-format-nim`) for human-readable
+/// conversion of the produced bundle.
 #[derive(Debug, Clone)]
 pub struct AptosReplayConfig {
     /// Aptos REST API base URL.
@@ -39,8 +43,6 @@ pub struct AptosReplayConfig {
     pub source_dir: Option<PathBuf>,
     /// Output directory for CodeTracer trace files.
     pub out_dir: PathBuf,
-    /// Output format (binary or json).
-    pub format: TraceEventsFileFormat,
     /// Whether to also run --profile-gas for additional data.
     pub profile_gas: bool,
 }
@@ -53,7 +55,6 @@ impl AptosReplayConfig {
             txn_version,
             source_dir: None,
             out_dir: PathBuf::from("./ct-traces/"),
-            format: TraceEventsFileFormat::Binary,
             profile_gas: true,
         }
     }
@@ -80,8 +81,7 @@ pub fn aptos_replay_transaction(config: &AptosReplayConfig) -> Result<()> {
 
     // Create working directory.
     let work_dir = std::env::temp_dir().join(format!("aptos-replay-{}", config.txn_version));
-    fs::create_dir_all(&work_dir)
-        .map_err(|e| eyre!("failed to create working directory: {e}"))?;
+    fs::create_dir_all(&work_dir).map_err(|e| eyre!("failed to create working directory: {e}"))?;
 
     // Step 1: Run aptos move replay with MOVE_VM_TRACE
     let trace_csv_path = work_dir.join("move_vm_trace.csv");
@@ -94,11 +94,7 @@ pub fn aptos_replay_transaction(config: &AptosReplayConfig) -> Result<()> {
 
     // Step 2: Optionally get gas profile data.
     let gas_profile = if config.profile_gas {
-        match run_aptos_replay_with_gas_profile(
-            &config.node_url,
-            config.txn_version,
-            &work_dir,
-        ) {
+        match run_aptos_replay_with_gas_profile(&config.node_url, config.txn_version, &work_dir) {
             Ok(profile) => Some(profile),
             Err(e) => {
                 eprintln!("warning: gas profiling failed (continuing without gas data): {e}");
@@ -133,7 +129,7 @@ pub fn aptos_replay_transaction(config: &AptosReplayConfig) -> Result<()> {
     fs::create_dir_all(&config.out_dir)
         .map_err(|e| eyre!("failed to create output directory: {e}"))?;
 
-    aptos_adapter::convert_aptos_trace(&enriched, &source_path, &config.out_dir, config.format)?;
+    aptos_adapter::convert_aptos_trace(&enriched, &source_path, &config.out_dir)?;
 
     eprintln!(
         "Aptos trace files written to {}\n\n{}",
@@ -147,12 +143,14 @@ pub fn aptos_replay_transaction(config: &AptosReplayConfig) -> Result<()> {
 /// Process existing MOVE_VM_TRACE CSV data (bypassing the aptos CLI).
 ///
 /// Useful for testing and for cases where trace data was collected separately.
+///
+/// The output format is fixed to CTFS — see
+/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.
 pub fn aptos_replay_from_existing_data(
     trace_csv: &str,
     gas_profile_json: Option<&str>,
     source_path: &Path,
     out_dir: &Path,
-    format: TraceEventsFileFormat,
 ) -> Result<()> {
     let trace_entries = parse_move_vm_trace_csv(trace_csv);
     if trace_entries.is_empty() {
@@ -166,10 +164,9 @@ pub fn aptos_replay_from_existing_data(
 
     let enriched = merge_trace_and_gas(&trace_entries, gas_profile.as_ref());
 
-    fs::create_dir_all(out_dir)
-        .map_err(|e| eyre!("failed to create output directory: {e}"))?;
+    fs::create_dir_all(out_dir).map_err(|e| eyre!("failed to create output directory: {e}"))?;
 
-    aptos_adapter::convert_aptos_trace(&enriched, source_path, out_dir, format)?;
+    aptos_adapter::convert_aptos_trace(&enriched, source_path, out_dir)?;
 
     Ok(())
 }
@@ -263,8 +260,8 @@ fn run_aptos_replay_with_gas_profile(
 
 /// Find the gas profile JSON file in the work directory.
 fn find_gas_profile_json(dir: &Path) -> Result<PathBuf> {
-    let entries = fs::read_dir(dir)
-        .map_err(|e| eyre!("failed to read directory {}: {e}", dir.display()))?;
+    let entries =
+        fs::read_dir(dir).map_err(|e| eyre!("failed to read directory {}: {e}", dir.display()))?;
 
     for entry in entries.filter_map(|e| e.ok()) {
         let path = entry.path();
@@ -274,10 +271,7 @@ fn find_gas_profile_json(dir: &Path) -> Result<PathBuf> {
         }
     }
 
-    Err(eyre!(
-        "no gas profile JSON file found in {}",
-        dir.display()
-    ))
+    Err(eyre!("no gas profile JSON file found in {}", dir.display()))
 }
 
 /// Find the first .move file in a directory (recursively).
@@ -288,11 +282,7 @@ fn find_first_move_file(dir: &Path) -> Option<PathBuf> {
     walkdir::WalkDir::new(dir)
         .into_iter()
         .filter_map(|e| e.ok())
-        .find(|e| {
-            e.path()
-                .extension()
-                .is_some_and(|ext| ext == "move")
-        })
+        .find(|e| e.path().extension().is_some_and(|ext| ext == "move"))
         .map(|e| e.path().to_path_buf())
 }
 
@@ -318,9 +308,7 @@ pub fn fetch_historical_resources(
 
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!(
-            "failed to fetch resources from {url}: HTTP error\n{stderr}"
-        );
+        bail!("failed to fetch resources from {url}: HTTP error\n{stderr}");
     }
 
     let body = String::from_utf8_lossy(&output.stdout);

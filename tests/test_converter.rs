@@ -4,7 +4,6 @@ use std::path::Path;
 
 use codetracer_trace_types::TraceLowLevelEvent;
 use codetracer_trace_writer_nim::non_streaming_trace_writer::NonStreamingTraceWriter;
-use codetracer_trace_writer_nim::TraceEventsFileFormat;
 use std::collections::HashMap;
 
 use codetracer_move_recorder::converter;
@@ -63,13 +62,8 @@ fn run_converter_events(
     let source_path = Path::new(source_name);
     let mut writer = NonStreamingTraceWriter::new(source_name, &[]);
 
-    converter::convert_trace_into_writer(
-        ndjson.as_bytes(),
-        source_map,
-        source_path,
-        &mut writer,
-    )
-    .expect("convert_trace_into_writer should succeed");
+    converter::convert_trace_into_writer(ndjson.as_bytes(), source_map, source_path, &mut writer)
+        .expect("convert_trace_into_writer should succeed");
 
     writer.events
 }
@@ -193,8 +187,14 @@ fn test_move_to_ct_call_trace() {
         .count();
 
     // 2 OpenFrame + 1 toplevel Call from start() = 3 total.
-    assert_eq!(call_count, 3, "expected 3 Call events (toplevel + outer + inner)");
-    assert_eq!(return_count, 3, "expected 3 Return events (outer + inner + toplevel)");
+    assert_eq!(
+        call_count, 3,
+        "expected 3 Call events (toplevel + outer + inner)"
+    );
+    assert_eq!(
+        return_count, 3,
+        "expected 3 Return events (outer + inner + toplevel)"
+    );
 
     // Build a function name lookup from Function events.
     let mut function_names: HashMap<usize, String> = HashMap::new();
@@ -210,15 +210,16 @@ fn test_move_to_ct_call_trace() {
     let call_fn_names: Vec<String> = events
         .iter()
         .filter_map(|e| match e {
-            TraceLowLevelEvent::Call(call) => {
-                function_names.get(&call.function_id.0).cloned()
-            }
+            TraceLowLevelEvent::Call(call) => function_names.get(&call.function_id.0).cloned(),
             _ => None,
         })
         .collect();
 
     assert_eq!(call_fn_names.len(), 3);
-    assert_eq!(call_fn_names[0], "<toplevel>", "first call should be toplevel");
+    assert_eq!(
+        call_fn_names[0], "<toplevel>",
+        "first call should be toplevel"
+    );
     assert_eq!(call_fn_names[1], "outer", "second call should be 'outer'");
     assert_eq!(call_fn_names[2], "inner", "third call should be 'inner'");
 
@@ -236,11 +237,17 @@ fn test_move_to_ct_call_trace() {
         codetracer_trace_types::ValueRecord::Int { i, .. } => {
             assert_eq!(*i, 1, "inner function should return 1");
         }
-        _ => panic!("expected Int return value from inner function, got {:?}", return_values[0]),
+        _ => panic!(
+            "expected Int return value from inner function, got {:?}",
+            return_values[0]
+        ),
     }
 
     assert!(
-        matches!(return_values[1], codetracer_trace_types::ValueRecord::None { .. }),
+        matches!(
+            return_values[1],
+            codetracer_trace_types::ValueRecord::None { .. }
+        ),
         "outer function with no return_ should produce None value, got {:?}",
         return_values[1]
     );
@@ -295,7 +302,10 @@ fn test_move_to_ct_value_conversion() {
     .expect("parse Struct");
     match struct_val {
         SerializableMoveValue::Struct { value: content } => {
-            assert_eq!(content.type_.get("name").and_then(|v| v.as_str()), Some("Foo"));
+            assert_eq!(
+                content.type_.get("name").and_then(|v| v.as_str()),
+                Some("Foo")
+            );
             assert_eq!(content.fields.len(), 1);
         }
         _ => panic!("expected Struct variant"),
@@ -312,14 +322,8 @@ fn test_move_trace_3file_output() {
     let out_dir = tmp.path().join("ct-out");
     let source_path = Path::new("flow_test.move");
 
-    converter::convert_trace(
-        trace_str.as_bytes(),
-        &source_map,
-        source_path,
-        &out_dir,
-        TraceEventsFileFormat::Binary,
-    )
-    .expect("convert_trace should succeed");
+    converter::convert_trace(trace_str.as_bytes(), &source_map, source_path, &out_dir)
+        .expect("convert_trace should succeed");
 
     // Verify .ct output with CTFS magic bytes.
     let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
@@ -328,8 +332,15 @@ fn test_move_trace_3file_output() {
         .map(|e| e.path())
         .filter(|p| p.extension().map_or(false, |ext| ext == "ct"))
         .collect();
-    assert!(!ct_files.is_empty(), "expected at least one .ct file in output dir");
+    assert!(
+        !ct_files.is_empty(),
+        "expected at least one .ct file in output dir"
+    );
     let content = std::fs::read(&ct_files[0]).expect("read .ct file");
     assert!(content.len() >= 5, ".ct file too small");
-    assert_eq!(&content[..5], &[0xC0, 0xDE, 0x72, 0xAC, 0xE2], "CTFS magic bytes mismatch");
+    assert_eq!(
+        &content[..5],
+        &[0xC0, 0xDE, 0x72, 0xAC, 0xE2],
+        "CTFS magic bytes mismatch"
+    );
 }

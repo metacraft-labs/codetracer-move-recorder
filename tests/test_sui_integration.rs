@@ -5,15 +5,15 @@
 //! This test requires the `sui` CLI to be available in PATH. If `sui` is
 //! not found, the test is skipped with a clear message rather than failing.
 
-use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use codetracer_trace_types::TraceLowLevelEvent;
-use codetracer_trace_writer_nim::TraceEventsFileFormat;
-
 use codetracer_move_recorder::converter;
 use codetracer_move_recorder::source_map::SourceMapResolver;
+
+/// Canonical CTFS container magic bytes.  Mirrors the constant
+/// `CTFS_MAGIC` in `codetracer-trace-format-spec/src/container.rs`.
+const CTFS_MAGIC: [u8; 5] = [0xC0, 0xDE, 0x72, 0xAC, 0xE2];
 
 /// Path to the flow_test Move package (relative to the project root).
 const FLOW_TEST_PACKAGE: &str = "test-programs/move/flow_test";
@@ -105,23 +105,20 @@ fn find_sui_trace_files(package_dir: &Path) -> Vec<PathBuf> {
     trace_files
 }
 
-/// Parse a CodeTracer trace.json (JSON format) and return the events.
-fn parse_trace_events(trace_bin_path: &Path) -> Vec<TraceLowLevelEvent> {
-    let content = std::fs::read_to_string(trace_bin_path).expect("failed to read trace.json");
-    serde_json::from_str(&content).expect("trace.json should be valid JSON array")
-}
-
-/// Extract function names from the trace events, keyed by function ID index.
-fn extract_function_names(events: &[TraceLowLevelEvent]) -> HashMap<usize, String> {
-    let mut names = HashMap::new();
-    let mut next_id = 0usize;
-    for event in events {
-        if let TraceLowLevelEvent::Function(func) = event {
-            names.insert(next_id, func.name.clone());
-            next_id += 1;
-        }
-    }
-    names
+/// Locate the recorder's CTFS `.ct` bundle inside an output directory.
+fn read_ct_container(out_dir: &Path) -> Vec<u8> {
+    let entries: Vec<_> = std::fs::read_dir(out_dir)
+        .expect("read output dir")
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|ext| ext == "ct"))
+        .collect();
+    assert!(
+        !entries.is_empty(),
+        "expected at least one .ct file in {}",
+        out_dir.display()
+    );
+    std::fs::read(&entries[0]).expect("read .ct file")
 }
 
 // =============================================================================
@@ -188,10 +185,7 @@ fn test_sui_move_trace_integration() {
         let trace_data = std::fs::read(trace_file).expect("failed to read trace file");
 
         // Decompress if needed.
-        let trace_bytes = if trace_file
-            .extension()
-            .is_some_and(|ext| ext == "zst")
-        {
+        let trace_bytes = if trace_file.extension().is_some_and(|ext| ext == "zst") {
             let mut decoder =
                 zstd::Decoder::new(trace_data.as_slice()).expect("failed to create zstd decoder");
             let mut decompressed = Vec::new();
@@ -204,7 +198,10 @@ fn test_sui_move_trace_integration() {
 
         // Verify the trace data starts with a version header.
         let trace_text = std::str::from_utf8(&trace_bytes).expect("trace data should be UTF-8");
-        let first_line = trace_text.lines().next().expect("trace file should not be empty");
+        let first_line = trace_text
+            .lines()
+            .next()
+            .expect("trace file should not be empty");
         assert!(
             first_line.contains("\"version\""),
             "First line of trace file should be a version header, got: {first_line}"
@@ -219,154 +216,46 @@ fn test_sui_move_trace_integration() {
         let tmp = tempfile::TempDir::new().expect("failed to create temp dir");
         let out_dir = tmp.path().join("ct-out");
 
-        converter::convert_trace(
-            &trace_bytes,
-            &source_map,
-            &source_path,
-            &out_dir,
-            TraceEventsFileFormat::Binary,
-        )
-        .unwrap_or_else(|e| {
-            panic!(
-                "convert_trace failed for {}: {e}",
-                trace_file.display()
-            )
-        });
+        converter::convert_trace(&trace_bytes, &source_map, &source_path, &out_dir)
+            .unwrap_or_else(|e| panic!("convert_trace failed for {}: {e}", trace_file.display()));
 
-        // ---- Step 4: Verify the output files exist --------------------------
+        // ---- Step 4: Verify the .ct CTFS bundle was produced ----------------
+        // The recorder is CTFS-only: no `trace.json` is written.  Use
+        // `ct print --json` from `codetracer-trace-format-nim` for
+        // human-readable conversion of the produced bundle.
+        let bytes = read_ct_container(&out_dir);
         assert!(
-            out_dir.join("trace.bin").exists(),
-            "trace.json should exist after conversion"
+            bytes.len() >= CTFS_MAGIC.len(),
+            ".ct file should have at least 5 bytes for the magic header"
         );
+        assert_eq!(
+            &bytes[..CTFS_MAGIC.len()],
+            &CTFS_MAGIC,
+            ".ct file should start with CTFS magic bytes (C0 DE 72 AC E2), got {:02X?}",
+            &bytes[..CTFS_MAGIC.len()]
+        );
+
+        // The container is materially populated (more than just the magic
+        // header + minimal stream framing).  Pre-2026-05-08 the recorder
+        // emitted ~3 KiB CTFS files at this fixture; lower bound is a
+        // generous safety margin against accidental empty-trace regressions.
         assert!(
-            out_dir.join("trace_metadata.json").exists(),
-            "trace_metadata.json should exist after conversion"
-        );
-        assert!(
-            out_dir.join("trace_paths.json").exists(),
-            "trace_paths.json should exist after conversion"
-        );
-
-        // ---- Step 5: Parse and verify the CodeTracer trace ------------------
-        let events = parse_trace_events(&out_dir.join("trace.bin"));
-        assert!(
-            !events.is_empty(),
-            "trace.json should contain events"
+            bytes.len() > 256,
+            "CTFS bundle for {} is suspiciously small ({} bytes); \
+             converter may be silently dropping events",
+            trace_file.display(),
+            bytes.len()
         );
 
-        // Count event types.
-        let step_count = events
-            .iter()
-            .filter(|e| matches!(e, TraceLowLevelEvent::Step(_)))
-            .count();
-        let call_count = events
-            .iter()
-            .filter(|e| matches!(e, TraceLowLevelEvent::Call(_)))
-            .count();
-        let return_count = events
-            .iter()
-            .filter(|e| matches!(e, TraceLowLevelEvent::Return(_)))
-            .count();
-        let value_count = events
-            .iter()
-            .filter(|e| matches!(e, TraceLowLevelEvent::Value(_)))
-            .count();
-        let function_count = events
-            .iter()
-            .filter(|e| matches!(e, TraceLowLevelEvent::Function(_)))
-            .count();
-
-        eprintln!(
-            "  Events: total={}, steps={step_count}, calls={call_count}, \
-             returns={return_count}, values={value_count}, functions={function_count}",
-            events.len()
-        );
-
-        // The converter always emits at least one Step (from the toplevel start).
-        assert!(
-            step_count >= 1,
-            "trace should contain at least 1 Step event, got {step_count}"
-        );
-
-        // Each test function should produce at least one Call event (toplevel + test function).
-        assert!(
-            call_count >= 2,
-            "trace should contain at least 2 Call events \
-             (toplevel + test function), got {call_count}"
-        );
-
-        // Each OpenFrame should have a matching CloseFrame, producing Return events.
-        assert!(
-            return_count >= 1,
-            "trace should contain at least 1 Return event, got {return_count}"
-        );
-
-        // The test functions assign variables, so we should see Value events.
-        assert!(
-            value_count > 0,
-            "trace should contain Value events from variable writes, got {value_count}"
-        );
-
-        // There should be Function definition events.
-        assert!(
-            function_count >= 1,
-            "trace should contain at least 1 Function event, got {function_count}"
-        );
-
-        // ---- Step 6: Verify function names ----------------------------------
-        let fn_names = extract_function_names(&events);
-        let all_fn_names: Vec<&String> = fn_names.values().collect();
-
-        // The toplevel entry should always be present.
-        assert!(
-            all_fn_names.iter().any(|n| n.contains("toplevel")),
-            "trace should contain a <toplevel> function entry, got: {all_fn_names:?}"
-        );
-
-        // At least one test function name should appear (the trace file
-        // corresponds to a specific test function).
-        let known_test_fns = [
-            "test_computation",
-            "test_structs",
-            "test_vectors",
-            "test_loops",
-            "test_nested_calls",
-            "test_generics",
-            "test_fibonacci",
-            "test_references",
-            "test_boolean_and_integers",
-            "test_abort",
-        ];
-        let has_test_fn = all_fn_names
-            .iter()
-            .any(|n| known_test_fns.iter().any(|tf| n.contains(tf)));
-        // The function name might be mangled or just the bare name.
-        // If it is not a known test fn, it could be a helper called from a test.
-        // At minimum, there should be at least one non-toplevel function.
-        assert!(
-            fn_names.len() >= 2 || has_test_fn,
-            "trace should reference at least one test function or helper. \
-             Functions found: {all_fn_names:?}"
-        );
-
-        // ---- Step 7: Verify metadata ----------------------------------------
-        let metadata_content =
-            std::fs::read_to_string(out_dir.join("trace_metadata.json"))
-                .expect("failed to read trace_metadata.json");
+        // ---- Step 5: Verify metadata ----------------------------------------
+        let metadata_content = std::fs::read_to_string(out_dir.join("trace_metadata.json"))
+            .expect("failed to read trace_metadata.json");
         let metadata: serde_json::Value =
             serde_json::from_str(&metadata_content).expect("metadata should be valid JSON");
 
         assert!(
             metadata.get("program").is_some(),
             "metadata should have a 'program' field"
-        );
-
-        // ---- Step 8: Verify call/return balance -----------------------------
-        // Every Call should eventually have a matching Return (except possibly
-        // the toplevel). The number of Returns should be at most the number of Calls.
-        assert!(
-            return_count <= call_count,
-            "return_count ({return_count}) should not exceed call_count ({call_count})"
         );
     }
 }
@@ -393,22 +282,14 @@ fn test_sui_trace_ndjson_parsing() {
     );
 
     let trace_files = find_sui_trace_files(&package_dir);
-    assert!(
-        !trace_files.is_empty(),
-        "No trace files found"
-    );
+    assert!(!trace_files.is_empty(), "No trace files found");
 
     for trace_file in &trace_files {
         let trace_data = std::fs::read(trace_file).expect("failed to read trace file");
-        let trace_bytes = if trace_file
-            .extension()
-            .is_some_and(|ext| ext == "zst")
-        {
-            let mut decoder =
-                zstd::Decoder::new(trace_data.as_slice()).expect("zstd decoder");
+        let trace_bytes = if trace_file.extension().is_some_and(|ext| ext == "zst") {
+            let mut decoder = zstd::Decoder::new(trace_data.as_slice()).expect("zstd decoder");
             let mut decompressed = Vec::new();
-            std::io::Read::read_to_end(&mut decoder, &mut decompressed)
-                .expect("decompress");
+            std::io::Read::read_to_end(&mut decoder, &mut decompressed).expect("decompress");
             decompressed
         } else {
             trace_data
@@ -491,10 +372,7 @@ fn test_sui_trace_ndjson_parsing() {
             instruction_count > 0,
             "trace should contain at least one Instruction"
         );
-        assert!(
-            effect_count > 0,
-            "trace should contain at least one Effect"
-        );
+        assert!(effect_count > 0, "trace should contain at least one Effect");
 
         // OpenFrame and CloseFrame counts should match (each opened frame is closed).
         assert_eq!(

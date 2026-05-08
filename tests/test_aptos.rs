@@ -5,12 +5,9 @@
 
 use std::path::Path;
 
-use codetracer_trace_writer_nim::TraceEventsFileFormat;
-
 use codetracer_move_recorder::aptos_adapter::{
-    self, AptosEnrichedEntry, AptosGasProfile, AptosRestConfig,
-    AptosTraceEntry, GasProfileNode, merge_trace_and_gas, parse_gas_profile_json,
-    parse_move_vm_trace_csv, parse_resources_response,
+    self, AptosEnrichedEntry, AptosGasProfile, AptosRestConfig, AptosTraceEntry, GasProfileNode,
+    merge_trace_and_gas, parse_gas_profile_json, parse_move_vm_trace_csv, parse_resources_response,
 };
 use codetracer_move_recorder::aptos_replay::{self, AptosReplayConfig};
 
@@ -198,13 +195,8 @@ fn test_aptos_trace_to_codetracer() {
     let out_dir = tmp.path().join("ct-out");
     let source_path = Path::new("transfer.move");
 
-    aptos_adapter::convert_aptos_trace(
-        &entries,
-        source_path,
-        &out_dir,
-        TraceEventsFileFormat::Binary,
-    )
-    .expect("convert_aptos_trace should succeed");
+    aptos_adapter::convert_aptos_trace(&entries, source_path, &out_dir)
+        .expect("convert_aptos_trace should succeed");
 
     // Verify .ct output with CTFS magic bytes.
     let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
@@ -213,10 +205,17 @@ fn test_aptos_trace_to_codetracer() {
         .map(|e| e.path())
         .filter(|p| p.extension().map_or(false, |ext| ext == "ct"))
         .collect();
-    assert!(!ct_files.is_empty(), "expected at least one .ct file in output dir");
+    assert!(
+        !ct_files.is_empty(),
+        "expected at least one .ct file in output dir"
+    );
     let content = std::fs::read(&ct_files[0]).expect("read .ct file");
     assert!(content.len() >= 5, ".ct file too small");
-    assert_eq!(&content[..5], &[0xC0, 0xDE, 0x72, 0xAC, 0xE2], "CTFS magic bytes mismatch");
+    assert_eq!(
+        &content[..5],
+        &[0xC0, 0xDE, 0x72, 0xAC, 0xE2],
+        "CTFS magic bytes mismatch"
+    );
 }
 
 #[test]
@@ -225,12 +224,7 @@ fn test_aptos_trace_to_codetracer_empty() {
     let out_dir = tmp.path().join("ct-out");
     let source_path = Path::new("empty.move");
 
-    let result = aptos_adapter::convert_aptos_trace(
-        &[],
-        source_path,
-        &out_dir,
-        TraceEventsFileFormat::Binary,
-    );
+    let result = aptos_adapter::convert_aptos_trace(&[], source_path, &out_dir);
 
     assert!(result.is_err(), "should fail with empty entries");
     let err_msg = result.unwrap_err().to_string();
@@ -299,10 +293,7 @@ fn test_aptos_rest_api_types() {
 
     // Verify Account resource.
     assert_eq!(resources[1].resource_type, "0x1::account::Account");
-    assert_eq!(
-        resources[1].data["sequence_number"].as_str().unwrap(),
-        "42"
-    );
+    assert_eq!(resources[1].data["sequence_number"].as_str().unwrap(), "42");
 }
 
 #[test]
@@ -352,10 +343,7 @@ fn test_historical_state_fetching() {
     // Local config.
     let local = AptosRestConfig::local();
     let url_local = local.resources_url("0x1", None);
-    assert_eq!(
-        url_local,
-        "http://localhost:8080/v1/accounts/0x1/resources"
-    );
+    assert_eq!(url_local, "http://localhost:8080/v1/accounts/0x1/resources");
 }
 
 // ---------------------------------------------------------------------------
@@ -417,16 +405,10 @@ fn test_aptos_vs_sui_limitations() {
 fn test_aptos_replay_config() {
     let config = AptosReplayConfig::new(123456789);
 
-    assert_eq!(
-        config.node_url,
-        "https://fullnode.mainnet.aptoslabs.com/v1"
-    );
+    assert_eq!(config.node_url, "https://fullnode.mainnet.aptoslabs.com/v1");
     assert_eq!(config.txn_version, 123456789);
     assert!(config.source_dir.is_none());
-    assert_eq!(
-        config.out_dir,
-        std::path::PathBuf::from("./ct-traces/")
-    );
+    assert_eq!(config.out_dir, std::path::PathBuf::from("./ct-traces/"));
     assert!(config.profile_gas, "profile_gas should default to true");
 }
 
@@ -437,7 +419,6 @@ fn test_aptos_replay_config_custom() {
         txn_version: 42,
         source_dir: Some(std::path::PathBuf::from("/tmp/sources")),
         out_dir: std::path::PathBuf::from("/tmp/output"),
-        format: TraceEventsFileFormat::Binary,
         profile_gas: false,
     };
 
@@ -508,7 +489,11 @@ fn test_aptos_merge_gas_and_trace() {
     };
 
     let enriched = merge_trace_and_gas(&trace_entries, Some(&gas_profile));
-    assert_eq!(enriched.len(), 6, "should produce one enriched entry per trace entry");
+    assert_eq!(
+        enriched.len(),
+        6,
+        "should produce one enriched entry per trace entry"
+    );
 
     // transfer entries should have gas data.
     assert_eq!(enriched[0].gas_cost, Some(5000));
@@ -530,12 +515,10 @@ fn test_aptos_merge_gas_and_trace() {
 
 #[test]
 fn test_aptos_merge_gas_and_trace_no_gas() {
-    let trace_entries = vec![
-        AptosTraceEntry {
-            function_name: "0x1::module::func".to_string(),
-            pc: 0,
-        },
-    ];
+    let trace_entries = vec![AptosTraceEntry {
+        function_name: "0x1::module::func".to_string(),
+        pc: 0,
+    }];
 
     // Merge without gas profile data.
     let enriched = merge_trace_and_gas(&trace_entries, None);
@@ -576,14 +559,8 @@ fn test_aptos_replay_from_existing_data() {
     let source_path = Path::new("aptos_module.move");
 
     // Test with gas data.
-    aptos_replay::aptos_replay_from_existing_data(
-        trace_csv,
-        Some(gas_json),
-        source_path,
-        &out_dir,
-        TraceEventsFileFormat::Binary,
-    )
-    .expect("aptos_replay_from_existing_data should succeed");
+    aptos_replay::aptos_replay_from_existing_data(trace_csv, Some(gas_json), source_path, &out_dir)
+        .expect("aptos_replay_from_existing_data should succeed");
 
     // Verify .ct output with CTFS magic bytes.
     let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
@@ -592,10 +569,17 @@ fn test_aptos_replay_from_existing_data() {
         .map(|e| e.path())
         .filter(|p| p.extension().map_or(false, |ext| ext == "ct"))
         .collect();
-    assert!(!ct_files.is_empty(), "expected at least one .ct file in output dir");
+    assert!(
+        !ct_files.is_empty(),
+        "expected at least one .ct file in output dir"
+    );
     let content = std::fs::read(&ct_files[0]).expect("read .ct file");
     assert!(content.len() >= 5, ".ct file too small");
-    assert_eq!(&content[..5], &[0xC0, 0xDE, 0x72, 0xAC, 0xE2], "CTFS magic bytes mismatch");
+    assert_eq!(
+        &content[..5],
+        &[0xC0, 0xDE, 0x72, 0xAC, 0xE2],
+        "CTFS magic bytes mismatch"
+    );
 }
 
 #[test]
@@ -607,14 +591,8 @@ fn test_aptos_replay_from_existing_data_no_gas() {
     let source_path = Path::new("simple.move");
 
     // Test without gas data.
-    aptos_replay::aptos_replay_from_existing_data(
-        trace_csv,
-        None,
-        source_path,
-        &out_dir,
-        TraceEventsFileFormat::Binary,
-    )
-    .expect("should succeed without gas data");
+    aptos_replay::aptos_replay_from_existing_data(trace_csv, None, source_path, &out_dir)
+        .expect("should succeed without gas data");
 
     let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
         .expect("read output dir")
@@ -622,10 +600,17 @@ fn test_aptos_replay_from_existing_data_no_gas() {
         .map(|e| e.path())
         .filter(|p| p.extension().map_or(false, |ext| ext == "ct"))
         .collect();
-    assert!(!ct_files.is_empty(), "expected at least one .ct file in output dir");
+    assert!(
+        !ct_files.is_empty(),
+        "expected at least one .ct file in output dir"
+    );
     let content = std::fs::read(&ct_files[0]).expect("read .ct file");
     assert!(content.len() >= 5, ".ct file too small");
-    assert_eq!(&content[..5], &[0xC0, 0xDE, 0x72, 0xAC, 0xE2], "CTFS magic bytes mismatch");
+    assert_eq!(
+        &content[..5],
+        &[0xC0, 0xDE, 0x72, 0xAC, 0xE2],
+        "CTFS magic bytes mismatch"
+    );
 }
 
 #[test]
@@ -634,13 +619,7 @@ fn test_aptos_replay_from_existing_data_empty_trace() {
     let out_dir = tmp.path().join("ct-out-empty");
     let source_path = Path::new("empty.move");
 
-    let result = aptos_replay::aptos_replay_from_existing_data(
-        "",
-        None,
-        source_path,
-        &out_dir,
-        TraceEventsFileFormat::Binary,
-    );
+    let result = aptos_replay::aptos_replay_from_existing_data("", None, source_path, &out_dir);
 
     assert!(result.is_err(), "should fail with empty trace");
     let err_msg = result.unwrap_err().to_string();

@@ -4,20 +4,24 @@ use std::fs;
 use std::io::Write;
 use std::path::PathBuf;
 
-use codetracer_trace_writer_nim::TraceEventsFileFormat;
-
 use codetracer_move_recorder::replay::{self, ReplayConfig};
 use codetracer_move_recorder::source_lookup::SourceLookup;
 
 /// Minimal valid NDJSON trace data for testing (Sui ≥1.68 format).
 fn minimal_trace_ndjson() -> &'static str {
     concat!(
-        r#"{"version":3}"#, "\n",
-        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"transfer","module":{"address":"0x2","name":"coin"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64","ref_type":null}],"is_native":false},"gas_left":1000000}}"#, "\n",
-        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999990,"instruction":"LdU64(100)"}}"#, "\n",
-        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":100}}}}}"#, "\n",
-        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":100}}}}}}"#, "\n",
-        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":100}}}],"gas_left":999900}}"#, "\n",
+        r#"{"version":3}"#,
+        "\n",
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"transfer","module":{"address":"0x2","name":"coin"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u64","ref_type":null}],"is_native":false},"gas_left":1000000}}"#,
+        "\n",
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999990,"instruction":"LdU64(100)"}}"#,
+        "\n",
+        r#"{"Effect":{"Push":{"RuntimeValue":{"value":{"type":"U64","value":100}}}}}"#,
+        "\n",
+        r#"{"Effect":{"Write":{"location":{"Local":[1,0]},"root_value_after_write":{"RuntimeValue":{"value":{"type":"U64","value":100}}}}}}"#,
+        "\n",
+        r#"{"CloseFrame":{"frame_id":1,"return_":[{"RuntimeValue":{"value":{"type":"U64","value":100}}}],"gas_left":999900}}"#,
+        "\n",
     )
 }
 
@@ -83,7 +87,10 @@ fn test_source_lookup_nested_dirs() {
 
     let lookup = SourceLookup::new(vec![tmp.path().to_path_buf()]);
     let resolved = lookup.resolve("token");
-    assert!(resolved.is_some(), "should find token.move in nested sources/");
+    assert!(
+        resolved.is_some(),
+        "should find token.move in nested sources/"
+    );
     assert_eq!(resolved.unwrap(), move_file);
 }
 
@@ -135,13 +142,8 @@ fn test_replay_end_to_end_with_existing_trace() {
     let out_dir = tmp.path().join("ct-traces");
 
     // Run the pipeline (skipping sui CLI).
-    replay::replay_from_existing_trace(
-        &zst_path,
-        &[tmp.path().to_path_buf()],
-        &out_dir,
-        TraceEventsFileFormat::Binary,
-    )
-    .expect("replay_from_existing_trace should succeed");
+    replay::replay_from_existing_trace(&zst_path, &[tmp.path().to_path_buf()], &out_dir)
+        .expect("replay_from_existing_trace should succeed");
 
     // Verify .ct output with CTFS magic bytes.
     let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
@@ -150,8 +152,15 @@ fn test_replay_end_to_end_with_existing_trace() {
         .map(|e| e.path())
         .filter(|p| p.extension().map_or(false, |ext| ext == "ct"))
         .collect();
-    assert!(!ct_files.is_empty(), "expected at least one .ct file in output dir");
+    assert!(
+        !ct_files.is_empty(),
+        "expected at least one .ct file in output dir"
+    );
     let content = std::fs::read(&ct_files[0]).expect("read .ct file");
     assert!(content.len() >= 5, ".ct file too small");
-    assert_eq!(&content[..5], &[0xC0, 0xDE, 0x72, 0xAC, 0xE2], "CTFS magic bytes mismatch");
+    assert_eq!(
+        &content[..5],
+        &[0xC0, 0xDE, 0x72, 0xAC, 0xE2],
+        "CTFS magic bytes mismatch"
+    );
 }

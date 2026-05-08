@@ -8,7 +8,6 @@ use std::path::Path;
 
 use codetracer_trace_types::TraceLowLevelEvent;
 use codetracer_trace_writer_nim::non_streaming_trace_writer::NonStreamingTraceWriter;
-use codetracer_trace_writer_nim::TraceEventsFileFormat;
 
 use codetracer_move_recorder::converter;
 use codetracer_move_recorder::move_types::{SerializableMoveValue, TraceEvent, TraceValue};
@@ -28,13 +27,8 @@ fn run_converter_events(
     let source_path = Path::new(source_name);
     let mut writer = NonStreamingTraceWriter::new(source_name, &[]);
 
-    converter::convert_trace_into_writer(
-        ndjson.as_bytes(),
-        source_map,
-        source_path,
-        &mut writer,
-    )
-    .expect("convert_trace_into_writer should succeed");
+    converter::convert_trace_into_writer(ndjson.as_bytes(), source_map, source_path, &mut writer)
+        .expect("convert_trace_into_writer should succeed");
 
     writer.events
 }
@@ -100,8 +94,7 @@ fn count_events(ndjson: &str) -> (usize, usize, usize, usize) {
 
 #[test]
 fn test_value_u8() {
-    let v: SerializableMoveValue =
-        serde_json::from_str(r#"{"type":"U8","value":255}"#).unwrap();
+    let v: SerializableMoveValue = serde_json::from_str(r#"{"type":"U8","value":255}"#).unwrap();
     match v {
         SerializableMoveValue::U8 { value } => assert_eq!(value, 255),
         _ => panic!("expected U8"),
@@ -110,8 +103,7 @@ fn test_value_u8() {
 
 #[test]
 fn test_value_u16() {
-    let v: SerializableMoveValue =
-        serde_json::from_str(r#"{"type":"U16","value":65535}"#).unwrap();
+    let v: SerializableMoveValue = serde_json::from_str(r#"{"type":"U16","value":65535}"#).unwrap();
     match v {
         SerializableMoveValue::U16 { value } => assert_eq!(value, 65535),
         _ => panic!("expected U16"),
@@ -142,9 +134,8 @@ fn test_value_u64() {
 fn test_value_u128() {
     // U128 deserialization now works via a custom deserializer that handles
     // the serde_json limitation with u128 in internally tagged enums.
-    let v: SerializableMoveValue =
-        serde_json::from_str(r#"{"type":"U128","value":42}"#)
-            .expect("U128 deserialization should succeed");
+    let v: SerializableMoveValue = serde_json::from_str(r#"{"type":"U128","value":42}"#)
+        .expect("U128 deserialization should succeed");
     match v {
         SerializableMoveValue::U128 { value } => assert_eq!(value, 42),
         _ => panic!("expected U128 variant"),
@@ -185,8 +176,7 @@ fn test_value_u256() {
 
 #[test]
 fn test_value_bool_true_false() {
-    let t: SerializableMoveValue =
-        serde_json::from_str(r#"{"type":"Bool","value":true}"#).unwrap();
+    let t: SerializableMoveValue = serde_json::from_str(r#"{"type":"Bool","value":true}"#).unwrap();
     let f: SerializableMoveValue =
         serde_json::from_str(r#"{"type":"Bool","value":false}"#).unwrap();
     match t {
@@ -222,7 +212,10 @@ fn test_value_struct_with_named_fields() {
     .unwrap();
     match v {
         SerializableMoveValue::Struct { value: content } => {
-            assert_eq!(content.type_.get("name").and_then(|v| v.as_str()), Some("0x2::coin::Coin"));
+            assert_eq!(
+                content.type_.get("name").and_then(|v| v.as_str()),
+                Some("0x2::coin::Coin")
+            );
             assert_eq!(content.fields.len(), 3);
             match &content.fields[0].1 {
                 SerializableMoveValue::U64 { value } => assert_eq!(*value, 100),
@@ -275,7 +268,10 @@ fn test_value_nested_vector_of_structs() {
             for elem in &elements {
                 match elem {
                     SerializableMoveValue::Struct { value: content } => {
-                        assert_eq!(content.type_.get("name").and_then(|v| v.as_str()), Some("Item"));
+                        assert_eq!(
+                            content.type_.get("name").and_then(|v| v.as_str()),
+                            Some("Item")
+                        );
                     }
                     _ => panic!("expected Struct inside Vector"),
                 }
@@ -391,8 +387,14 @@ fn test_simple_function_call() {
 
     let (calls, returns) = count_call_return(&events);
     // Toplevel call + simple_fn = 2 Calls, simple_fn close + toplevel close = 2 Returns
-    assert_eq!(calls, 2, "expected 2 Call events (toplevel + simple_fn), got {calls}");
-    assert_eq!(returns, 2, "expected 2 Return events (simple_fn + toplevel), got {returns}");
+    assert_eq!(
+        calls, 2,
+        "expected 2 Call events (toplevel + simple_fn), got {calls}"
+    );
+    assert_eq!(
+        returns, 2,
+        "expected 2 Return events (simple_fn + toplevel), got {returns}"
+    );
 }
 
 #[test]
@@ -431,7 +433,10 @@ fn test_nested_calls_a_calls_b_calls_c() {
 
     let (calls, returns) = count_call_return(&events);
     assert_eq!(calls, 4, "expected 4 Call events (toplevel + A + B + C)");
-    assert_eq!(returns, 4, "expected 4 Return events (C + B + A + toplevel)");
+    assert_eq!(
+        returns, 4,
+        "expected 4 Return events (C + B + A + toplevel)"
+    );
 }
 
 #[test]
@@ -451,7 +456,12 @@ fn test_generic_function_instantiation() {
     match event {
         TraceEvent::OpenFrame { frame, .. } => {
             assert_eq!(frame.type_instantiation.len(), 1);
-            assert!(frame.type_instantiation[0].as_str().unwrap_or("").contains("Coin"));
+            assert!(
+                frame.type_instantiation[0]
+                    .as_str()
+                    .unwrap_or("")
+                    .contains("Coin")
+            );
         }
         _ => panic!("expected OpenFrame"),
     }
@@ -462,8 +472,14 @@ fn test_generic_function_instantiation() {
     // Parse and verify the converter produced Call/Return events for the generic function.
 
     let (calls, returns) = count_call_return(&events);
-    assert!(calls >= 2, "expected at least 2 Call events (toplevel + transfer), got {calls}");
-    assert!(returns >= 1, "expected at least 1 Return event, got {returns}");
+    assert!(
+        calls >= 2,
+        "expected at least 2 Call events (toplevel + transfer), got {calls}"
+    );
+    assert!(
+        returns >= 1,
+        "expected at least 1 Return event, got {returns}"
+    );
 }
 
 #[test]
@@ -498,8 +514,14 @@ fn test_entry_function_with_parameters() {
     // Parse and verify Call events exist for the entry function with parameters.
 
     let (calls, returns) = count_call_return(&events);
-    assert!(calls >= 2, "expected at least 2 Call events (toplevel + entry_transfer), got {calls}");
-    assert!(returns >= 1, "expected at least 1 Return event, got {returns}");
+    assert!(
+        calls >= 2,
+        "expected at least 2 Call events (toplevel + entry_transfer), got {calls}"
+    );
+    assert!(
+        returns >= 1,
+        "expected at least 1 Return event, got {returns}"
+    );
 }
 
 #[test]
@@ -534,8 +556,14 @@ fn test_module_crossing_calls() {
     // coin::transfer + balance::withdraw + transfer::transfer_internal = 3 Returns
 
     let (calls, returns) = count_call_return(&events);
-    assert_eq!(calls, 4, "expected 4 Call events (toplevel + 3 functions), got {calls}");
-    assert_eq!(returns, 4, "expected 4 Return events (3 functions + toplevel), got {returns}");
+    assert_eq!(
+        calls, 4,
+        "expected 4 Call events (toplevel + 3 functions), got {calls}"
+    );
+    assert_eq!(
+        returns, 4,
+        "expected 4 Return events (3 functions + toplevel), got {returns}"
+    );
 }
 
 #[test]
@@ -580,8 +608,14 @@ fn test_recursive_function_calls() {
     // Expect 3 Return events: one per CloseFrame
 
     let (calls, returns) = count_call_return(&events);
-    assert_eq!(calls, 4, "expected 4 Call events (toplevel + 3 recursive), got {calls}");
-    assert_eq!(returns, 4, "expected 4 Return events (3 recursive + toplevel), got {returns}");
+    assert_eq!(
+        calls, 4,
+        "expected 4 Call events (toplevel + 3 recursive), got {calls}"
+    );
+    assert_eq!(
+        returns, 4,
+        "expected 4 Return events (3 recursive + toplevel), got {returns}"
+    );
 
     // Verify that Function events were emitted for "factorial"
     let function_names: Vec<&str> = events
@@ -630,7 +664,10 @@ fn test_effect_push_pop() {
 
     let (calls, returns) = count_call_return(&events);
     assert!(calls >= 1, "expected at least 1 Call event, got {calls}");
-    assert!(returns >= 1, "expected at least 1 Return event, got {returns}");
+    assert!(
+        returns >= 1,
+        "expected at least 1 Return event, got {returns}"
+    );
     // Note: Without a source map, instructions don't produce Step events.
 }
 
@@ -660,7 +697,6 @@ fn test_effect_read_write_locals() {
 
     // Parse and verify the read/write effects generated Value events.
     // The trace writes 42 to local_0, reads it, writes to local_1, reads it.
-
 
     // Should have Value events for the write effects
     let value_count = events
@@ -702,18 +738,16 @@ fn test_effect_mut_ref_tracking() {
     let event: TraceEvent = serde_json::from_str(push_line).unwrap();
     match event {
         TraceEvent::Effect(effect) => match effect {
-            codetracer_move_recorder::move_types::Effect::Push(value) => {
-                match &value {
-                    TraceValue::MutRef { location, snapshot } => {
-                        assert_eq!(location.local_index(), 0);
-                        match snapshot {
-                            SerializableMoveValue::U64 { value } => assert_eq!(*value, 10),
-                            _ => panic!("expected U64 snapshot"),
-                        }
+            codetracer_move_recorder::move_types::Effect::Push(value) => match &value {
+                TraceValue::MutRef { location, snapshot } => {
+                    assert_eq!(location.local_index(), 0);
+                    match snapshot {
+                        SerializableMoveValue::U64 { value } => assert_eq!(*value, 10),
+                        _ => panic!("expected U64 snapshot"),
                     }
-                    _ => panic!("expected MutRef"),
                 }
-            }
+                _ => panic!("expected MutRef"),
+            },
             _ => panic!("expected Push effect"),
         },
         _ => panic!("expected Effect event"),
@@ -748,18 +782,16 @@ fn test_effect_imm_ref_tracking() {
     let event: TraceEvent = serde_json::from_str(push_line).unwrap();
     match event {
         TraceEvent::Effect(effect) => match effect {
-            codetracer_move_recorder::move_types::Effect::Push(value) => {
-                match &value {
-                    TraceValue::ImmRef { location, snapshot } => {
-                        assert_eq!(location.local_index(), 0);
-                        match snapshot {
-                            SerializableMoveValue::U64 { value } => assert_eq!(*value, 77),
-                            _ => panic!("expected U64 snapshot"),
-                        }
+            codetracer_move_recorder::move_types::Effect::Push(value) => match &value {
+                TraceValue::ImmRef { location, snapshot } => {
+                    assert_eq!(location.local_index(), 0);
+                    match snapshot {
+                        SerializableMoveValue::U64 { value } => assert_eq!(*value, 77),
+                        _ => panic!("expected U64 snapshot"),
                     }
-                    _ => panic!("expected ImmRef"),
                 }
-            }
+                _ => panic!("expected ImmRef"),
+            },
             _ => panic!("expected Push effect"),
         },
         _ => panic!("expected Effect event"),
@@ -830,8 +862,8 @@ fn test_branch_pattern() {
     let source_map = SourceMapResolver::from_entries(vec![
         ("branch".to_string(), 0, "branch.move".to_string(), 3),
         ("branch".to_string(), 1, "branch.move".to_string(), 4),
-        ("branch".to_string(), 2, "branch.move".to_string(), 5),  // BrTrue
-        ("branch".to_string(), 5, "branch.move".to_string(), 8),  // else branch target
+        ("branch".to_string(), 2, "branch.move".to_string(), 5), // BrTrue
+        ("branch".to_string(), 5, "branch.move".to_string(), 8), // else branch target
         ("branch".to_string(), 6, "branch.move".to_string(), 9),
     ]);
 
@@ -885,11 +917,11 @@ fn test_loop_pattern() {
     let source_map = SourceMapResolver::from_entries(vec![
         ("loop_mod".to_string(), 0, "loop.move".to_string(), 3),
         ("loop_mod".to_string(), 1, "loop.move".to_string(), 4),
-        ("loop_mod".to_string(), 2, "loop.move".to_string(), 5),  // loop condition
-        ("loop_mod".to_string(), 3, "loop.move".to_string(), 6),  // loop body
-        ("loop_mod".to_string(), 4, "loop.move".to_string(), 7),  // increment
-        ("loop_mod".to_string(), 5, "loop.move".to_string(), 5),  // back to condition (same line)
-        ("loop_mod".to_string(), 6, "loop.move".to_string(), 9),  // after loop
+        ("loop_mod".to_string(), 2, "loop.move".to_string(), 5), // loop condition
+        ("loop_mod".to_string(), 3, "loop.move".to_string(), 6), // loop body
+        ("loop_mod".to_string(), 4, "loop.move".to_string(), 7), // increment
+        ("loop_mod".to_string(), 5, "loop.move".to_string(), 5), // back to condition (same line)
+        ("loop_mod".to_string(), 6, "loop.move".to_string(), 9), // after loop
     ]);
 
     let trace = vec![
@@ -936,7 +968,10 @@ fn test_loop_pattern() {
 
     // Verify event counts: should have repeated pc=2 four times (3 true + 1 false)
     let (_, _, instr, _) = count_events(&trace);
-    assert!(instr >= 10, "loop should produce many instruction events, got {instr}");
+    assert!(
+        instr >= 10,
+        "loop should produce many instruction events, got {instr}"
+    );
     let step_lines = extract_step_lines(&events);
 
     let instruction_step_lines: Vec<i64> = step_lines
@@ -1043,8 +1078,14 @@ fn test_scenario_token_transfer() {
     assert_eq!(open, 2, "outer transfer + inner split");
     assert_eq!(close, 2);
     let (calls, returns) = count_call_return(&events);
-    assert_eq!(calls, 3, "expected 3 Call events (toplevel + transfer + split), got {calls}");
-    assert_eq!(returns, 3, "expected 3 Return events (transfer + split + toplevel), got {returns}");
+    assert_eq!(
+        calls, 3,
+        "expected 3 Call events (toplevel + transfer + split), got {calls}"
+    );
+    assert_eq!(
+        returns, 3,
+        "expected 3 Return events (transfer + split + toplevel), got {returns}"
+    );
 
     // Verify Step events reference lines from the source map
     let step_lines = extract_step_lines(&events);
@@ -1079,7 +1120,10 @@ fn test_scenario_token_transfer() {
 
     assert_eq!(call_fn_names.len(), 3);
     assert_eq!(call_fn_names[0], "<toplevel>", "first call is toplevel");
-    assert_eq!(call_fn_names[1], "transfer", "second call is coin::transfer");
+    assert_eq!(
+        call_fn_names[1], "transfer",
+        "second call is coin::transfer"
+    );
     assert_eq!(call_fn_names[2], "split", "third call is balance::split");
 
     // Verify variable tracking: the converter should record Write effects as
@@ -1104,7 +1148,11 @@ fn test_scenario_token_transfer() {
             _ => None,
         })
         .collect();
-    assert_eq!(return_values.len(), 3, "expected 3 returns (split + transfer + toplevel)");
+    assert_eq!(
+        return_values.len(),
+        3,
+        "expected 3 returns (split + transfer + toplevel)"
+    );
     // The first return is from balance::split which returns a Balance struct.
     // It should be serialized as a String (struct rendering).
     match &return_values[0].return_value {
@@ -1199,7 +1247,6 @@ fn test_scenario_vector_manipulation() {
 
     // Parse and verify the vector operations generated Value events.
     // The trace has multiple Write effects (empty vec, [10], [10,20], [10,20,30], [10,20], popped=30).
-
 
     let value_count = events
         .iter()
@@ -1345,7 +1392,6 @@ fn test_wrong_version_rejected() {
         &SourceMapResolver::empty(),
         Path::new("test.move"),
         &out_dir,
-        TraceEventsFileFormat::Binary,
     );
     assert!(result.is_err());
     let err = result.unwrap_err().to_string();
@@ -1364,7 +1410,6 @@ fn test_empty_trace_data_rejected() {
         &SourceMapResolver::empty(),
         Path::new("test.move"),
         &out_dir,
-        TraceEventsFileFormat::Binary,
     );
     assert!(result.is_err());
 }
@@ -1378,13 +1423,22 @@ fn test_deeply_nested_struct() {
     .unwrap();
     match v {
         SerializableMoveValue::Struct { value: outer } => {
-            assert_eq!(outer.type_.get("name").and_then(|v| v.as_str()), Some("Outer"));
+            assert_eq!(
+                outer.type_.get("name").and_then(|v| v.as_str()),
+                Some("Outer")
+            );
             match &outer.fields[0].1 {
                 SerializableMoveValue::Struct { value: middle } => {
-                    assert_eq!(middle.type_.get("name").and_then(|v| v.as_str()), Some("Middle"));
+                    assert_eq!(
+                        middle.type_.get("name").and_then(|v| v.as_str()),
+                        Some("Middle")
+                    );
                     match &middle.fields[0].1 {
                         SerializableMoveValue::Struct { value: inner } => {
-                            assert_eq!(inner.type_.get("name").and_then(|v| v.as_str()), Some("Inner"));
+                            assert_eq!(
+                                inner.type_.get("name").and_then(|v| v.as_str()),
+                                Some("Inner")
+                            );
                             match &inner.fields[0].1 {
                                 SerializableMoveValue::U64 { value } => assert_eq!(*value, 42),
                                 _ => panic!("expected U64 at innermost level"),
@@ -1416,8 +1470,14 @@ fn test_deeply_nested_struct_through_converter() {
     // Parse and verify the deeply nested struct produced events.
 
     let (calls, returns) = count_call_return(&events);
-    assert!(calls >= 1, "expected at least 1 Call event (toplevel), got {calls}");
-    assert!(returns >= 1, "expected at least 1 Return event, got {returns}");
+    assert!(
+        calls >= 1,
+        "expected at least 1 Call event (toplevel), got {calls}"
+    );
+    assert!(
+        returns >= 1,
+        "expected at least 1 Return event, got {returns}"
+    );
 }
 
 #[test]
@@ -1426,10 +1486,7 @@ fn test_large_vector() {
     let elements: Vec<String> = (0..50)
         .map(|i| format!(r#"{{"type":"U8","value":{}}}"#, i % 256))
         .collect();
-    let json = format!(
-        r#"{{"type":"Vector","elements":[{}]}}"#,
-        elements.join(",")
-    );
+    let json = format!(r#"{{"type":"Vector","elements":[{}]}}"#, elements.join(","));
     let v: SerializableMoveValue = serde_json::from_str(&json).unwrap();
     match v {
         SerializableMoveValue::Vector { elements } => {
@@ -1490,9 +1547,9 @@ fn test_source_map_dedup_same_line_no_duplicate_steps() {
     // The converter checks prev_line != Some(line) before emitting a step.
     let source_map = SourceMapResolver::from_entries(vec![
         ("dedup".to_string(), 0, "dedup.move".to_string(), 5),
-        ("dedup".to_string(), 1, "dedup.move".to_string(), 5),  // same line
-        ("dedup".to_string(), 2, "dedup.move".to_string(), 5),  // same line
-        ("dedup".to_string(), 3, "dedup.move".to_string(), 6),  // different line
+        ("dedup".to_string(), 1, "dedup.move".to_string(), 5), // same line
+        ("dedup".to_string(), 2, "dedup.move".to_string(), 5), // same line
+        ("dedup".to_string(), 3, "dedup.move".to_string(), 6), // different line
     ]);
 
     let trace = vec![
@@ -1532,8 +1589,14 @@ fn test_source_map_dedup_same_line_no_duplicate_steps() {
         instruction_step_lines.len(),
         instruction_step_lines,
     );
-    assert_eq!(instruction_step_lines[0], 5, "first instruction step should be on line 5");
-    assert_eq!(instruction_step_lines[1], 6, "second instruction step should be on line 6");
+    assert_eq!(
+        instruction_step_lines[0], 5,
+        "first instruction step should be on line 5"
+    );
+    assert_eq!(
+        instruction_step_lines[1], 6,
+        "second instruction step should be on line 6"
+    );
 }
 
 #[test]
@@ -1618,8 +1681,14 @@ fn test_full_defi_swap_scenario() {
     // Verify Call/Return balance: toplevel + swap_exact_input + calculate_output = 3 Calls,
     // calculate_output + swap_exact_input + toplevel = 3 Returns
     let (calls, returns) = count_call_return(&events);
-    assert_eq!(calls, 3, "expected 3 Call events (toplevel + swap + calculate), got {calls}");
-    assert_eq!(returns, 3, "expected 3 Return events (swap + calculate + toplevel), got {returns}");
+    assert_eq!(
+        calls, 3,
+        "expected 3 Call events (toplevel + swap + calculate), got {calls}"
+    );
+    assert_eq!(
+        returns, 3,
+        "expected 3 Return events (swap + calculate + toplevel), got {returns}"
+    );
 
     // Verify Step events include lines from both dex.move (10-15) and pool.move (20-22)
     let step_lines = extract_step_lines(&events);
@@ -1663,12 +1732,16 @@ fn test_full_defi_swap_scenario() {
         })
         .collect();
     assert!(
-        function_names.iter().any(|n| n.contains("swap_exact_input")),
+        function_names
+            .iter()
+            .any(|n| n.contains("swap_exact_input")),
         "expected Function event for 'swap_exact_input', got: {:?}",
         function_names
     );
     assert!(
-        function_names.iter().any(|n| n.contains("calculate_output")),
+        function_names
+            .iter()
+            .any(|n| n.contains("calculate_output")),
         "expected Function event for 'calculate_output', got: {:?}",
         function_names
     );
@@ -1697,7 +1770,6 @@ fn test_struct_fields_correctly_converted_point_rectangle() {
     .join("\n");
 
     let events = run_converter_simple_events(&trace);
-
 
     // Extract all Value events (from Write effects).
     let value_events: Vec<&codetracer_trace_types::FullValueRecord> = events
@@ -1794,9 +1866,7 @@ fn test_struct_fields_correctly_converted_point_rectangle() {
     let main_return = return_values
         .iter()
         .find(|r| match &r.return_value {
-            codetracer_trace_types::ValueRecord::String { text, .. } => {
-                text.contains("Rectangle")
-            }
+            codetracer_trace_types::ValueRecord::String { text, .. } => text.contains("Rectangle"),
             _ => false,
         })
         .expect("should have a return value containing Rectangle");
@@ -1847,7 +1917,6 @@ fn test_vector_operations_produce_correct_element_values() {
 
     let events = run_converter_simple_events(&trace);
 
-
     // Extract all Value events and their string representations.
     let value_texts: Vec<String> = events
         .iter()
@@ -1897,7 +1966,10 @@ fn test_vector_operations_produce_correct_element_values() {
     // Verify vector after pop: back to "[100, 200]"
     // Count how many times "[100, 200]" appears — should be at least 2
     // (once after second push, once after pop).
-    let count_100_200 = value_texts.iter().filter(|t| t.as_str() == "[100, 200]").count();
+    let count_100_200 = value_texts
+        .iter()
+        .filter(|t| t.as_str() == "[100, 200]")
+        .count();
     assert!(
         count_100_200 >= 2,
         "expected '[100, 200]' at least twice (after push and after pop), found {} times in: {:?}",
@@ -1929,10 +2001,7 @@ fn test_vector_operations_produce_correct_element_values() {
                 "return value should be the final vector [100, 200], got: {text}"
             );
         }
-        other => panic!(
-            "expected String return value for vector, got: {:?}",
-            other
-        ),
+        other => panic!("expected String return value for vector, got: {:?}", other),
     }
 }
 
@@ -1976,7 +2045,6 @@ fn test_generic_function_instantiation_type_specific_values() {
 
     let events = run_converter_simple_events(&trace);
 
-
     // Verify we got Call events for all functions.
     let mut function_names_map: std::collections::HashMap<usize, String> =
         std::collections::HashMap::new();
@@ -1991,9 +2059,7 @@ fn test_generic_function_instantiation_type_specific_values() {
     let call_fn_names: Vec<String> = events
         .iter()
         .filter_map(|e| match e {
-            TraceLowLevelEvent::Call(call) => {
-                function_names_map.get(&call.function_id.0).cloned()
-            }
+            TraceLowLevelEvent::Call(call) => function_names_map.get(&call.function_id.0).cloned(),
             _ => None,
         })
         .collect();
@@ -2007,9 +2073,18 @@ fn test_generic_function_instantiation_type_specific_values() {
     );
     assert_eq!(call_fn_names[0], "<toplevel>");
     assert_eq!(call_fn_names[1], "test_generics");
-    assert_eq!(call_fn_names[2], "identity", "first generic call should be identity");
-    assert_eq!(call_fn_names[3], "identity", "second generic call should also be identity");
-    assert_eq!(call_fn_names[4], "wrap", "third generic call should be wrap");
+    assert_eq!(
+        call_fn_names[2], "identity",
+        "first generic call should be identity"
+    );
+    assert_eq!(
+        call_fn_names[3], "identity",
+        "second generic call should also be identity"
+    );
+    assert_eq!(
+        call_fn_names[4], "wrap",
+        "third generic call should be wrap"
+    );
 
     // Verify return values carry the correct type-specific data.
     let return_values: Vec<&codetracer_trace_types::ReturnRecord> = events
@@ -2033,10 +2108,7 @@ fn test_generic_function_instantiation_type_specific_values() {
         codetracer_trace_types::ValueRecord::Int { i, .. } => {
             assert_eq!(*i, 42, "identity<u64> should return 42, got {i}");
         }
-        other => panic!(
-            "expected Int return from identity<u64>, got: {:?}",
-            other
-        ),
+        other => panic!("expected Int return from identity<u64>, got: {:?}", other),
     }
 
     // Return from identity<bool>: should be Bool(true)
@@ -2044,10 +2116,7 @@ fn test_generic_function_instantiation_type_specific_values() {
         codetracer_trace_types::ValueRecord::Bool { b, .. } => {
             assert!(*b, "identity<bool> should return true");
         }
-        other => panic!(
-            "expected Bool return from identity<bool>, got: {:?}",
-            other
-        ),
+        other => panic!("expected Bool return from identity<bool>, got: {:?}", other),
     }
 
     // Return from wrap<Coin<SUI>>: should be a Wrapper struct containing a Coin struct.
@@ -2093,11 +2162,21 @@ fn test_generic_function_instantiation_type_specific_values() {
         "expected 3 frames with type_instantiation, got {}",
         type_instantiations.len()
     );
-    assert_eq!(type_instantiations[0], vec![serde_json::Value::String("u64".to_string())], "identity<u64>");
-    assert_eq!(type_instantiations[1], vec![serde_json::Value::String("bool".to_string())], "identity<bool>");
+    assert_eq!(
+        type_instantiations[0],
+        vec![serde_json::Value::String("u64".to_string())],
+        "identity<u64>"
+    );
+    assert_eq!(
+        type_instantiations[1],
+        vec![serde_json::Value::String("bool".to_string())],
+        "identity<bool>"
+    );
     assert_eq!(
         type_instantiations[2],
-        vec![serde_json::Value::String("0x2::coin::Coin<0x2::sui::SUI>".to_string())],
+        vec![serde_json::Value::String(
+            "0x2::coin::Coin<0x2::sui::SUI>".to_string()
+        )],
         "wrap<Coin<SUI>>"
     );
 }
