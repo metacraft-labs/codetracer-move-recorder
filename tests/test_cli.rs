@@ -161,23 +161,39 @@ fn record_creates_output_files() {
 // ===========================================================================
 
 /// Record the bundled `flow_test` Sui-format NDJSON fixture, then convert
-/// the produced `.ct` container to JSON via `ct-print --json` and assert
-/// on the textual representation.
+/// the produced `.ct` container to JSON via `ct-print` and assert on:
+///
+/// 1. **Structural anchors** (legacy layer): `ct-print --json` output
+///    contains the source filename and at least one Move function name
+///    somewhere in the textual rendering.
+/// 2. **Exact decoded values** (the layer enabled by `ct-print --full`):
+///    the `flow_test::test_computation` Move function executes the let
+///    bindings `a = 10`, `b = 32`, `sum_val = a + b = 42`,
+///    `doubled = sum_val * 2 = 84`, `final_result = doubled + a = 94`.
+///    The Move recorder surfaces locals via `Effect::Read`/`Effect::Write`
+///    using slot indices (`local_0`, `local_1`, `local_2`, …) and pushes
+///    every intermediate stack value as `stack_top` / `popped`.  Each
+///    binding must surface in the trace as a step variable with a
+///    decoded `Int` ValueRecord whose `i` field matches the literal
+///    value from the source program.
 ///
 /// Pre-2026-05-08 the recorder shipped a `--format json` mode and a
 /// trace.json file was written directly.  The convention now mandates
 /// CTFS-only output; `ct print` is the canonical conversion tool.  See
-/// `Recorder-CLI-Conventions.md` §4.
+/// `Recorder-CLI-Conventions.md` §4.  `ct-print --full` (added 2026-05
+/// in `codetracer-trace-format-nim`) is what enables the exact-value
+/// layer — its output is a deterministic JSON document with every CBOR
+/// `ValueRecord` decoded to a structured form like
+/// `{"kind":"Int","i":42,"type_id":N}`.
 ///
-/// The Move recorder's variable payload (typed values encoded as
-/// `ValueRecord::Int { i, type_id }` for u8/u16/u32/u64/u128 and
-/// `ValueRecord::String` for u256/address/struct/vector — see
-/// `converter::convert_move_value`) does not round-trip cleanly
-/// through `ct print --json` today (same pre-existing limitation as
-/// cardano / circom / flow / fuel / leo / miden), so this test asserts
-/// on **structural anchors** — the fixture's source path file name
-/// and at least one of the Move function names — rather than on
-/// integer/typed values.
+/// The Move recorder's note about `Variable` integer payloads not
+/// round-tripping through `ct-print --json` is empirically obsolete
+/// for `--full`: the `register_variable_with_full_value` path decodes
+/// back to `{"kind":"Int","i":<n>,"type_id":N}` with values intact.
+/// Variables not directly representable as small ints (e.g. booleans
+/// produced by comparison opcodes) surface as `{"kind":"Raw","r":"true"}`,
+/// which is why the strict layer below filters to `Int` payloads
+/// before doing arithmetic comparisons.
 #[test]
 fn test_recorded_trace_via_ct_print_json() {
     let ct_print = ct_print_path();
@@ -235,7 +251,11 @@ fn test_recorded_trace_via_ct_print_json() {
     );
     let ct_path = &ct_files[0];
 
-    // ct-print --json <file.ct>
+    // -----------------------------------------------------------------
+    // Layer 1 (legacy): ct-print --json — substring presence checks.
+    // Kept as a safety net so a regression in the textual rendering
+    // is caught even if --full's JSON shape evolves.
+    // -----------------------------------------------------------------
     let output = Command::new(&ct_print)
         .args(["--json"])
         .arg(ct_path)
@@ -244,19 +264,22 @@ fn test_recorded_trace_via_ct_print_json() {
 
     assert!(
         output.status.success(),
-        "ct-print should succeed; stderr: {}",
+        "ct-print --json should succeed; stderr: {}",
         String::from_utf8_lossy(&output.stderr)
     );
 
-    let stdout = String::from_utf8_lossy(&output.stdout);
-    assert!(!stdout.is_empty(), "ct-print --json produced empty output");
+    let stdout_json = String::from_utf8_lossy(&output.stdout);
+    assert!(
+        !stdout_json.is_empty(),
+        "ct-print --json produced empty output"
+    );
 
     // Structural anchor 1: the fixture source path name appears in the
     // path stream rendered by ct-print.
     assert!(
-        stdout.contains("flow_test.move"),
+        stdout_json.contains("flow_test.move"),
         "ct-print --json output should mention the fixture source path \
-         (flow_test.move); got:\n{stdout}"
+         (flow_test.move); got:\n{stdout_json}"
     );
 
     // Structural anchor 2: at least one of the Move function names from
@@ -265,12 +288,167 @@ fn test_recorded_trace_via_ct_print_json() {
     // synthetic `<toplevel>` frame that wraps every recording.
     let fn_anchor = ["test_computation", "toplevel"]
         .iter()
-        .any(|v| stdout.contains(v));
+        .any(|v| stdout_json.contains(v));
     assert!(
         fn_anchor,
         "ct-print --json output should mention at least one Move function \
-         name (test_computation/toplevel); got:\n{stdout}"
+         name (test_computation/toplevel); got:\n{stdout_json}"
     );
+
+    // -----------------------------------------------------------------
+    // Layer 2 (the upgrade): ct-print --full — exact decoded values.
+    // -----------------------------------------------------------------
+    let full_output = Command::new(&ct_print)
+        .args(["--full", "--strip-paths"])
+        .arg(ct_path)
+        .output()
+        .expect("failed to run ct-print --full");
+
+    assert!(
+        full_output.status.success(),
+        "ct-print --full should succeed; stderr: {}",
+        String::from_utf8_lossy(&full_output.stderr)
+    );
+
+    let doc: serde_json::Value = serde_json::from_slice(&full_output.stdout)
+        .expect("ct-print --full should emit valid JSON");
+
+    // ----- Function table: `test_computation` must appear -------------
+    // The Move recorder currently registers function names as bare
+    // identifiers (no module qualifier), but downstream tooling may add
+    // one (e.g. `flow_test::flow_test::test_computation`), so we use
+    // `ends_with` to stay robust against that.
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert!(
+        functions.iter().any(|f| f.ends_with("test_computation")),
+        "expected `test_computation` in functions table; got {:?}",
+        functions
+    );
+
+    // ----- Path table: the canonical fixture path must appear ---------
+    let paths: Vec<&str> = doc["paths"]
+        .as_array()
+        .expect("paths array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert!(
+        paths.iter().any(|p| p.ends_with("flow_test.move")),
+        "expected flow_test.move in paths table; got {:?}",
+        paths
+    );
+
+    // ----- Step / call counts ----------------------------------------
+    // The Move converter wraps the bytecode trace in exactly one
+    // `call_entry` for `test_computation`.  These are stable properties
+    // of the canonical fixture — if they change, that's a real
+    // regression to investigate, not a flake.
+    let counts = &doc["counts"];
+    assert_eq!(
+        counts["calls"].as_u64(),
+        Some(1),
+        "expected 1 call event (test_computation); counts={counts}",
+    );
+
+    let events = doc["events"].as_array().expect("events array");
+
+    // ----- Call sequence: only test_computation -----------------------
+    let call_sequence: Vec<&str> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .filter_map(|e| e["function"].as_str())
+        .collect();
+    assert_eq!(
+        call_sequence.len(),
+        1,
+        "expected exactly 1 call_entry event; got {:?}",
+        call_sequence
+    );
+    assert!(
+        call_sequence[0].ends_with("test_computation"),
+        "expected first call to be `test_computation`; got {:?}",
+        call_sequence
+    );
+
+    // ----- Exact decoded variable values ------------------------------
+    // Collect every (varname, i64) pair surfaced by step events whose
+    // value decoded as `Int`.  Move recorders also emit `Raw` payloads
+    // for booleans (e.g. comparison opcodes preceding asserts); those
+    // are ignored here because this fixture's checked values are all
+    // u64-typed integer payloads.
+    let observed_vars: Vec<(String, i64)> = events
+        .iter()
+        .filter(|e| e["kind"] == "step")
+        .flat_map(|e| {
+            e["vars"]
+                .as_array()
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+        })
+        .filter_map(|v| {
+            let name = v["varname"].as_str()?.to_string();
+            let value = v.get("value")?.clone();
+            let kind = value["kind"].as_str()?;
+            // Only consume Int payloads.  Booleans/structs use other
+            // ValueRecord variants and are not part of this fixture's
+            // verified set.
+            if kind != "Int" {
+                return None;
+            }
+            let i = value["i"].as_i64()?;
+            Some((name, i))
+        })
+        .collect();
+
+    // The Move VM stores let-bindings in numbered local slots (the
+    // recorder writes them as `local_0`, `local_1`, …).  For
+    // `test_computation`'s body the canonical assignments are:
+    //   slot 0 (`a`)        = 10
+    //   slot 2 (`sum_val`)  = 42
+    //   slot 1 (`doubled`)  = 84
+    // (`b = 32` is consumed before being stored back into a
+    //  long-lived slot, so it surfaces only via the stack stream below.
+    //  `final_result = 94` similarly is computed and immediately fed
+    //  into the assert, so it surfaces via the stack stream rather than
+    //  a dedicated local write.)
+    let expected_locals: &[(&str, i64)] = &[
+        ("local_0", 10),
+        ("local_2", 42),
+        ("local_1", 84),
+    ];
+    for (name, value) in expected_locals {
+        assert!(
+            observed_vars
+                .iter()
+                .any(|(n, v)| n == name && v == value),
+            "expected step variable `{name}` = {value} in --full output; \
+             observed = {observed_vars:?}"
+        );
+    }
+
+    // The full canonical value sequence (10, 32, 42, 84, 94) must
+    // surface across the stack-track variables.  This pins down the
+    // intermediate values that aren't bound to long-lived locals — in
+    // particular `b = 32` and `final_result = 94`.  We require each
+    // value to appear at least once in `stack_top` or `popped`.
+    let stack_values: Vec<i64> = observed_vars
+        .iter()
+        .filter(|(n, _)| n == "stack_top" || n == "popped")
+        .map(|(_, v)| *v)
+        .collect();
+    for expected in [10_i64, 32, 42, 84, 94] {
+        assert!(
+            stack_values.contains(&expected),
+            "expected canonical value {expected} to surface in \
+             stack_top/popped stream; observed stack values = {stack_values:?}"
+        );
+    }
 }
 
 // ===========================================================================
