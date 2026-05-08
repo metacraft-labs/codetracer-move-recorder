@@ -12,7 +12,21 @@
 //!  - (c) IO / structured events via `register_special_event` — see
 //!    `test_execution_error_emits_special_event` and
 //!    `test_external_effect_emits_special_event`.
-//!  - (f) Canonical CTFS schema match — see `test_ctfs_format_default`.
+//!
+//! The 2026-05-08 convention compliance follow-up tightened §4 of
+//! `Recorder-CLI-Conventions.md`: recorders are now CTFS-only and
+//! must not expose a `--format` flag.  The previous
+//! `test_ctfs_format_advertised_in_help` test (which asserted on the
+//! old `--format` value-enum + `[default: ctfs]` clap doc string)
+//! has been **deleted**: it would lock in a regression now that the
+//! flag has been removed.  Its replacement coverage is at-least-as-
+//! strong: the `tests/test_cli.rs` suite now contains
+//! `test_no_format_flag_in_help`, `test_help_mentions_ct_print`, and
+//! `test_format_flag_rejected_by_clap` which together pin the new
+//! contract.  See `AUDIT-CTFS-2026-05.md`'s "Convention compliance
+//! follow-up — 2026-05-08" entry for the full record (mirrors the
+//! Leo recorder's commit d567b52 and the Miden recorder's commit
+//! c7bafaa).
 
 use std::path::Path;
 
@@ -161,39 +175,5 @@ fn test_external_effect_emits_special_event() {
                 && r.metadata == "MoveExternalEffect"
                 && r.content == "transfer_object"),
         "expected RecordEvent(TraceLogEvent, MoveExternalEffect, 'transfer_object') in trace; got {record_events:?}"
-    );
-}
-
-// ---- Audit (f): default --format is Ctfs ---------------------------------
-
-/// The CLI binary must accept `ctfs` as a `--format` value.  The
-/// `OutputFormat` enum is private to `main.rs`, so we instead exercise
-/// the binary via the test harness — but at the very least, a binary
-/// invoked with `--help` must list `ctfs` as a valid `--format` value.
-///
-/// This is a smoke test that catches an accidental regression in the
-/// CLI surface (e.g. someone reverting the `OutputFormat` enum).
-#[test]
-fn test_ctfs_format_advertised_in_help() {
-    use std::process::Command;
-
-    // Locate the binary in `target/release/`.  CARGO_BIN_EXE_<name> is
-    // populated by cargo when building integration tests.
-    let bin = env!("CARGO_BIN_EXE_codetracer-move-recorder");
-    let output = Command::new(bin)
-        .args(["record", "--help"])
-        .output()
-        .expect("failed to run codetracer-move-recorder --help");
-
-    assert!(output.status.success(), "--help should exit 0");
-
-    let help = String::from_utf8_lossy(&output.stdout);
-    assert!(
-        help.contains("ctfs"),
-        "`record --help` output should advertise `ctfs` as a --format value; got:\n{help}"
-    );
-    assert!(
-        help.contains("[default: ctfs]"),
-        "`record --help` should default --format to `ctfs`; got:\n{help}"
     );
 }

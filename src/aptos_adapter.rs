@@ -27,6 +27,13 @@ use codetracer_trace_writer_nim::{TraceEventsFileFormat, create_trace_writer};
 use eyre::{Result, eyre};
 use serde::Deserialize;
 
+/// The on-disk container produced by the recorder is always the canonical
+/// multi-stream CTFS bundle.  Pre-2026-05-08 the recorder accepted a
+/// `TraceEventsFileFormat` parameter and the CLI exposed a `--format` flag;
+/// the convention now mandates CTFS-only output (see
+/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`).
+const TRACE_FORMAT: TraceEventsFileFormat = TraceEventsFileFormat::Ctfs;
+
 // ---------------------------------------------------------------------------
 // MOVE_VM_TRACE CSV parsing
 // ---------------------------------------------------------------------------
@@ -142,8 +149,7 @@ pub struct GasProfileMetadata {
 
 /// Parse `--profile-gas` JSON output into an `AptosGasProfile`.
 pub fn parse_gas_profile_json(json_data: &str) -> Result<AptosGasProfile> {
-    serde_json::from_str(json_data)
-        .map_err(|e| eyre!("failed to parse gas profile JSON: {e}"))
+    serde_json::from_str(json_data).map_err(|e| eyre!("failed to parse gas profile JSON: {e}"))
 }
 
 /// Flatten a gas profile call tree into a list of (function_name, gas_cost, total_gas) tuples.
@@ -288,7 +294,6 @@ pub fn convert_aptos_trace(
     entries: &[AptosEnrichedEntry],
     source_path: &Path,
     out_dir: &Path,
-    format: TraceEventsFileFormat,
 ) -> Result<()> {
     if entries.is_empty() {
         return Err(eyre!("no trace entries to convert"));
@@ -299,17 +304,15 @@ pub fn convert_aptos_trace(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "aptos_program".to_string());
 
-    let mut writer = create_trace_writer(&program_name, &[], format);
+    let mut writer = create_trace_writer(&program_name, &[], TRACE_FORMAT);
 
     // Set up output files.
-    std::fs::create_dir_all(out_dir)
-        .map_err(|e| eyre!("cannot create output dir: {e}"))?;
+    std::fs::create_dir_all(out_dir).map_err(|e| eyre!("cannot create output dir: {e}"))?;
 
-    let events_filename = match format {
-        TraceEventsFileFormat::Json => "trace.json",
-        TraceEventsFileFormat::Binary | TraceEventsFileFormat::BinaryV0 | TraceEventsFileFormat::Ctfs => "trace.bin",
-    };
-    let events_path = out_dir.join(events_filename);
+    // CTFS multi-stream container — `db-backend` infers the format
+    // from the `.bin` extension.  No JSON / legacy-binary alternative
+    // is exposed.
+    let events_path = out_dir.join("trace.bin");
     let metadata_path = out_dir.join("trace_metadata.json");
     let paths_path = out_dir.join("trace_paths.json");
 
@@ -317,8 +320,7 @@ pub fn convert_aptos_trace(
         .map_err(|e| eyre!("{e}"))?;
     TraceWriter::begin_writing_trace_metadata(&mut *writer, &metadata_path)
         .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::begin_writing_trace_paths(&mut *writer, &paths_path)
-        .map_err(|e| eyre!("{e}"))?;
+    TraceWriter::begin_writing_trace_paths(&mut *writer, &paths_path).map_err(|e| eyre!("{e}"))?;
 
     // Start the trace.
     TraceWriter::start(&mut *writer, source_path, Line(1));
@@ -341,12 +343,8 @@ pub fn convert_aptos_trace(
             }
 
             // Open new function.
-            let fn_id = TraceWriter::ensure_function_id(
-                &mut *writer,
-                func_name,
-                source_path,
-                Line(1),
-            );
+            let fn_id =
+                TraceWriter::ensure_function_id(&mut *writer, func_name, source_path, Line(1));
             TraceWriter::register_call(&mut *writer, fn_id, vec![]);
 
             // If gas data is available, emit it as an annotation variable.
@@ -385,12 +383,9 @@ pub fn convert_aptos_trace(
     }
 
     // Finish writing.
-    TraceWriter::finish_writing_trace_events(&mut *writer)
-        .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::finish_writing_trace_metadata(&mut *writer)
-        .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::finish_writing_trace_paths(&mut *writer)
-        .map_err(|e| eyre!("{e}"))?;
+    TraceWriter::finish_writing_trace_events(&mut *writer).map_err(|e| eyre!("{e}"))?;
+    TraceWriter::finish_writing_trace_metadata(&mut *writer).map_err(|e| eyre!("{e}"))?;
+    TraceWriter::finish_writing_trace_paths(&mut *writer).map_err(|e| eyre!("{e}"))?;
     writer.close().map_err(|e| eyre!("{e}"))?;
 
     Ok(())

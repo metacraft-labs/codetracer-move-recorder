@@ -8,13 +8,17 @@ use std::io::Read;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-use codetracer_trace_writer_nim::TraceEventsFileFormat;
 use eyre::{Result, WrapErr, bail, eyre};
 
 use crate::converter;
 use crate::source_lookup::SourceLookup;
 
 /// Configuration for replaying a transaction.
+///
+/// The output format is fixed to CTFS — see
+/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.  Use
+/// `ct print` (from `codetracer-trace-format-nim`) for human-readable
+/// conversion of the produced bundle.
 pub struct ReplayConfig {
     /// Sui RPC endpoint URL.
     pub rpc_url: String,
@@ -24,8 +28,6 @@ pub struct ReplayConfig {
     pub source_dir: Option<PathBuf>,
     /// Output directory for CodeTracer trace files.
     pub out_dir: PathBuf,
-    /// Output format (binary or json).
-    pub format: TraceEventsFileFormat,
 }
 
 impl ReplayConfig {
@@ -36,7 +38,6 @@ impl ReplayConfig {
             digest,
             source_dir: None,
             out_dir: PathBuf::from("./ct-traces/"),
-            format: TraceEventsFileFormat::Binary,
         }
     }
 }
@@ -61,29 +62,28 @@ pub fn replay_transaction(config: &ReplayConfig) -> Result<()> {
         None => vec![std::env::current_dir().unwrap_or_default()],
     };
 
-    replay_from_existing_trace(&trace_file, &search_dirs, &config.out_dir, config.format)
+    replay_from_existing_trace(&trace_file, &search_dirs, &config.out_dir)
 }
 
 /// Process an existing trace file through the replay pipeline.
 ///
 /// This skips the `sui replay` step and directly processes a trace file.
 /// Useful for testing and for cases where the trace file already exists.
+///
+/// The output format is fixed to CTFS — see
+/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.
 pub fn replay_from_existing_trace(
     trace_file: &Path,
     search_dirs: &[PathBuf],
     out_dir: &Path,
-    format: TraceEventsFileFormat,
 ) -> Result<()> {
     // Read and optionally decompress the trace file.
     let raw_bytes = fs::read(trace_file)
         .wrap_err_with(|| format!("Failed to read trace file: {}", trace_file.display()))?;
 
-    let trace_data = if trace_file
-        .extension()
-        .is_some_and(|ext| ext == "zst")
-    {
-        let mut decoder = zstd::Decoder::new(raw_bytes.as_slice())
-            .wrap_err("Failed to create zstd decoder")?;
+    let trace_data = if trace_file.extension().is_some_and(|ext| ext == "zst") {
+        let mut decoder =
+            zstd::Decoder::new(raw_bytes.as_slice()).wrap_err("Failed to create zstd decoder")?;
         let mut decompressed = Vec::new();
         decoder
             .read_to_end(&mut decompressed)
@@ -108,11 +108,7 @@ pub fn replay_from_existing_trace(
                     walkdir::WalkDir::new(dir)
                         .into_iter()
                         .filter_map(|e| e.ok())
-                        .find(|e| {
-                            e.path()
-                                .extension()
-                                .is_some_and(|ext| ext == "move")
-                        })
+                        .find(|e| e.path().extension().is_some_and(|ext| ext == "move"))
                         .map(|e| e.path().to_path_buf())
                 } else {
                     None
@@ -126,7 +122,7 @@ pub fn replay_from_existing_trace(
         .wrap_err_with(|| format!("Failed to create output directory: {}", out_dir.display()))?;
 
     // Convert the trace.
-    converter::convert_trace(&trace_data, &source_map, &source_path, out_dir, format)?;
+    converter::convert_trace(&trace_data, &source_map, &source_path, out_dir)?;
 
     eprintln!("Trace files written to {}", out_dir.display());
 
@@ -146,8 +142,7 @@ fn run_sui_replay(rpc_url: &str, digest: &str) -> Result<PathBuf> {
 
     // Create a temporary directory for replay output.
     let replay_dir = std::env::temp_dir().join(format!("sui-replay-{digest}"));
-    fs::create_dir_all(&replay_dir)
-        .wrap_err("Failed to create replay output directory")?;
+    fs::create_dir_all(&replay_dir).wrap_err("Failed to create replay output directory")?;
 
     let output = Command::new("sui")
         .args([

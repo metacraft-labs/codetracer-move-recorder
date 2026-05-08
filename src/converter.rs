@@ -5,7 +5,7 @@
 
 use std::path::Path;
 
-use codetracer_trace_types::{EventLogKind, Line, TypeKind, ValueRecord, NONE_VALUE};
+use codetracer_trace_types::{EventLogKind, Line, NONE_VALUE, TypeKind, ValueRecord};
 use codetracer_trace_writer_nim::trace_writer::TraceWriter;
 use codetracer_trace_writer_nim::{TraceEventsFileFormat, create_trace_writer};
 use eyre::{Result, eyre};
@@ -13,16 +13,27 @@ use eyre::{Result, eyre};
 use crate::move_types::{Effect, SerializableMoveValue, TraceEvent, VersionHeader};
 use crate::source_map::SourceMapResolver;
 
-/// Convert Move NDJSON trace data into CodeTracer trace files.
+/// The on-disk container produced by the recorder is always the canonical
+/// multi-stream CTFS bundle.  Pre-2026-05-08 the recorder accepted a
+/// `TraceEventsFileFormat` parameter and the CLI exposed a `--format` flag;
+/// the convention now mandates CTFS-only output (see
+/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`).
+const TRACE_FORMAT: TraceEventsFileFormat = TraceEventsFileFormat::Ctfs;
+
+/// Convert Move NDJSON trace data into a CodeTracer CTFS trace bundle.
 ///
 /// `trace_data` must be decompressed NDJSON (one JSON object per line).
 /// The first line must be a `{"version":3}` header.
+///
+/// The output format is fixed to CTFS — see
+/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.  Use
+/// `ct print` (from `codetracer-trace-format-nim`) for human-readable
+/// conversion of the produced bundle.
 pub fn convert_trace(
     trace_data: &[u8],
     source_map: &SourceMapResolver,
     source_path: &Path,
     out_dir: &Path,
-    format: TraceEventsFileFormat,
 ) -> Result<()> {
     // -- 1. Create trace writer ------------------------------------------------
     let program_name = source_path
@@ -30,17 +41,15 @@ pub fn convert_trace(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "move_program".to_string());
 
-    let mut writer = create_trace_writer(&program_name, &[], format);
+    let mut writer = create_trace_writer(&program_name, &[], TRACE_FORMAT);
 
     // -- 2. Set up output files ------------------------------------------------
-    std::fs::create_dir_all(out_dir)
-        .map_err(|e| eyre!("cannot create output dir: {e}"))?;
+    std::fs::create_dir_all(out_dir).map_err(|e| eyre!("cannot create output dir: {e}"))?;
 
-    let events_filename = match format {
-        TraceEventsFileFormat::Json => "trace.json",
-        TraceEventsFileFormat::Binary | TraceEventsFileFormat::BinaryV0 | TraceEventsFileFormat::Ctfs => "trace.bin",
-    };
-    let events_path = out_dir.join(events_filename);
+    // CTFS multi-stream container — `db-backend` infers the format
+    // from the `.bin` extension.  No JSON / legacy-binary alternative
+    // is exposed.
+    let events_path = out_dir.join("trace.bin");
     let metadata_path = out_dir.join("trace_metadata.json");
     let paths_path = out_dir.join("trace_paths.json");
 
@@ -48,19 +57,15 @@ pub fn convert_trace(
         .map_err(|e| eyre!("{e}"))?;
     TraceWriter::begin_writing_trace_metadata(&mut *writer, &metadata_path)
         .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::begin_writing_trace_paths(&mut *writer, &paths_path)
-        .map_err(|e| eyre!("{e}"))?;
+    TraceWriter::begin_writing_trace_paths(&mut *writer, &paths_path).map_err(|e| eyre!("{e}"))?;
 
     // -- 3. Convert events into writer ----------------------------------------
     convert_trace_into_writer(trace_data, source_map, source_path, &mut *writer)?;
 
     // -- 4. Finish writing ----------------------------------------------------
-    TraceWriter::finish_writing_trace_events(&mut *writer)
-        .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::finish_writing_trace_metadata(&mut *writer)
-        .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::finish_writing_trace_paths(&mut *writer)
-        .map_err(|e| eyre!("{e}"))?;
+    TraceWriter::finish_writing_trace_events(&mut *writer).map_err(|e| eyre!("{e}"))?;
+    TraceWriter::finish_writing_trace_metadata(&mut *writer).map_err(|e| eyre!("{e}"))?;
+    TraceWriter::finish_writing_trace_paths(&mut *writer).map_err(|e| eyre!("{e}"))?;
     writer.close().map_err(|e| eyre!("{e}"))?;
 
     Ok(())
@@ -77,8 +82,8 @@ pub fn convert_trace_into_writer(
     writer: &mut dyn TraceWriter,
 ) -> Result<()> {
     // -- 1. Parse NDJSON -------------------------------------------------------
-    let text = std::str::from_utf8(trace_data)
-        .map_err(|e| eyre!("trace data is not valid UTF-8: {e}"))?;
+    let text =
+        std::str::from_utf8(trace_data).map_err(|e| eyre!("trace data is not valid UTF-8: {e}"))?;
 
     let mut lines = text.lines();
 
@@ -147,10 +152,7 @@ pub fn convert_trace_into_writer(
                 TraceWriter::register_call(writer, fn_id, vec![]);
             }
 
-            TraceEvent::CloseFrame {
-                return_values,
-                ..
-            } => {
+            TraceEvent::CloseFrame { return_values, .. } => {
                 let ret_val = return_values
                     .first()
                     .map(|v| convert_move_value(v.inner_value(), &type_ids))
@@ -164,11 +166,7 @@ pub fn convert_trace_into_writer(
                 if let Some((_, line)) = source_map.lookup(module_name, *pc)
                     && prev_line != Some(line)
                 {
-                    TraceWriter::register_step(
-                        writer,
-                        source_path,
-                        Line(line as i64),
-                    );
+                    TraceWriter::register_step(writer, source_path, Line(line as i64));
                     prev_line = Some(line);
                 }
             }
@@ -179,15 +177,8 @@ pub fn convert_trace_into_writer(
                     root_value_after_write,
                 } => {
                     let name = format!("local_{}", location.local_index());
-                    let val = convert_move_value(
-                        root_value_after_write.inner_value(),
-                        &type_ids,
-                    );
-                    TraceWriter::register_variable_with_full_value(
-                        writer,
-                        &name,
-                        val,
-                    );
+                    let val = convert_move_value(root_value_after_write.inner_value(), &type_ids);
+                    TraceWriter::register_variable_with_full_value(writer, &name, val);
                 }
                 Effect::Read {
                     location,
@@ -195,31 +186,16 @@ pub fn convert_trace_into_writer(
                     ..
                 } => {
                     let name = format!("local_{}", location.local_index());
-                    let val = convert_move_value(
-                        root_value_read.inner_value(),
-                        &type_ids,
-                    );
-                    TraceWriter::register_variable_with_full_value(
-                        writer,
-                        &name,
-                        val,
-                    );
+                    let val = convert_move_value(root_value_read.inner_value(), &type_ids);
+                    TraceWriter::register_variable_with_full_value(writer, &name, val);
                 }
                 Effect::Push(value) => {
                     let val = convert_move_value(value.inner_value(), &type_ids);
-                    TraceWriter::register_variable_with_full_value(
-                        writer,
-                        "stack_top",
-                        val,
-                    );
+                    TraceWriter::register_variable_with_full_value(writer, "stack_top", val);
                 }
                 Effect::Pop(value) => {
                     let val = convert_move_value(value.inner_value(), &type_ids);
-                    TraceWriter::register_variable_with_full_value(
-                        writer,
-                        "popped",
-                        val,
-                    );
+                    TraceWriter::register_variable_with_full_value(writer, "popped", val);
                 }
                 Effect::ExecutionError(error) => {
                     // Surface execution errors as an Error special event so
@@ -300,10 +276,7 @@ impl TypeIds {
 }
 
 /// Convert a single `SerializableMoveValue` into a CodeTracer `ValueRecord`.
-pub fn convert_move_value(
-    value: &SerializableMoveValue,
-    type_ids: &TypeIds,
-) -> ValueRecord {
+pub fn convert_move_value(value: &SerializableMoveValue, type_ids: &TypeIds) -> ValueRecord {
     match value {
         SerializableMoveValue::U8 { value: v } => ValueRecord::Int {
             i: *v as i64,
@@ -375,11 +348,7 @@ pub fn convert_move_value(
                 type_id: type_ids.vector_id,
             }
         }
-        SerializableMoveValue::Variant {
-            tag,
-            fields,
-            type_,
-        } => {
+        SerializableMoveValue::Variant { tag, fields, type_ } => {
             let field_strs: Vec<String> = fields
                 .iter()
                 .map(|f| {
