@@ -40,7 +40,7 @@ fn test_find_trace_file_zst() {
 #[test]
 fn test_find_trace_file_json() {
     let tmp = tempfile::TempDir::new().unwrap();
-    let json_path = tmp.path().join("trace.bin");
+    let json_path = tmp.path().join("trace.json");
     fs::write(&json_path, b"fake json data").unwrap();
 
     let found = replay::find_trace_file(tmp.path()).unwrap();
