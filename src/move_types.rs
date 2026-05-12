@@ -150,17 +150,31 @@ pub enum TraceValue {
 #[derive(Deserialize, Debug, Clone)]
 #[serde(tag = "type")]
 pub enum SerializableMoveValue {
-    U8 { value: u8 },
-    U16 { value: u16 },
-    U32 { value: u32 },
-    U64 { value: u64 },
+    U8 {
+        value: u8,
+    },
+    U16 {
+        value: u16,
+    },
+    U32 {
+        value: u32,
+    },
+    U64 {
+        value: u64,
+    },
     U128 {
         #[serde(deserialize_with = "deserialize_u128_from_number")]
         value: u128,
     },
-    U256 { value: String },
-    Bool { value: bool },
-    Address { value: String },
+    U256 {
+        value: String,
+    },
+    Bool {
+        value: bool,
+    },
+    Address {
+        value: String,
+    },
     /// Struct values have a nested `value` containing `type_` and `fields`.
     ///
     /// JSON: `{"type": "Struct", "value": {"type_": {...}, "fields": [["x", {...}], ...]}}`

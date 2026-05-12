@@ -417,16 +417,10 @@ fn test_recorded_trace_via_ct_print_json() {
     //  `final_result = 94` similarly is computed and immediately fed
     //  into the assert, so it surfaces via the stack stream rather than
     //  a dedicated local write.)
-    let expected_locals: &[(&str, i64)] = &[
-        ("local_0", 10),
-        ("local_2", 42),
-        ("local_1", 84),
-    ];
+    let expected_locals: &[(&str, i64)] = &[("local_0", 10), ("local_2", 42), ("local_1", 84)];
     for (name, value) in expected_locals {
         assert!(
-            observed_vars
-                .iter()
-                .any(|(n, v)| n == name && v == value),
+            observed_vars.iter().any(|(n, v)| n == name && v == value),
             "expected step variable `{name}` = {value} in --full output; \
              observed = {observed_vars:?}"
         );
