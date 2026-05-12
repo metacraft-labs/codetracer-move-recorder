@@ -296,7 +296,7 @@ fn collect_step_vars(
 fn unique_int_pairs(doc: &serde_json::Value) -> Vec<(String, i64)> {
     let mut seen = std::collections::BTreeSet::new();
     let mut out = Vec::new();
-    for (name, value) in collect_step_vars(doc, &["Int", "Raw", "String"]) {
+    for (name, value) in collect_step_vars(doc, &["Bool", "Int", "Raw", "String"]) {
         if value["kind"] == "Int" {
             let i = value["i"].as_i64().expect("Int.i");
             if seen.insert((name.clone(), i)) {
@@ -307,16 +307,58 @@ fn unique_int_pairs(doc: &serde_json::Value) -> Vec<(String, i64)> {
     out
 }
 
-/// Returns the unique set of (varname, raw_repr) pairs for `Raw`-kind
-/// values in the merged step event.
+/// Returns the unique set of (varname, printed_repr) pairs for `Raw`-,
+/// `String`-, or `Bool`-kind values in the merged step event.
+///
+/// The Move recorder emits printed-form values in three shapes depending
+/// on the underlying VM value:
+///   * struct / address / vector text → `ValueRecord::String` (kind="String", text=...)
+///   * boolean predicates             → `ValueRecord::Bool`   (kind="Bool",   text="true"|"false")
+///   * pre-fix everything else        → `ValueRecord::Raw`    (kind="Raw",    r=...)
+///
+/// Prior to the `codetracer_trace_writer_nim::register_variable_with_full_value`
+/// fix the FFI wrapper flattened all three into `ValueRecord::Raw`, so
+/// pre-existing tests used `r` for everything. The recorder's *intent*
+/// (a printed scalar / boolean text) is unchanged, so this helper
+/// coalesces the variants — picking `text` from String/Bool and `r`
+/// from Raw. Per-test assertions now exercise the typed shape directly
+/// where possible (e.g. asserting `kind=="Bool"` and `b==true`).
 fn unique_raw_pairs(doc: &serde_json::Value) -> Vec<(String, String)> {
     let mut seen = std::collections::BTreeSet::new();
     let mut out = Vec::new();
-    for (name, value) in collect_step_vars(doc, &["Int", "Raw", "String"]) {
-        if value["kind"] == "Raw" {
-            let r = value["r"].as_str().expect("Raw.r").to_string();
+    for (name, value) in collect_step_vars(doc, &["Bool", "Int", "Raw", "String"]) {
+        let payload = match value["kind"].as_str() {
+            Some("Raw") => value["r"].as_str().map(|s| s.to_string()),
+            Some("String") => value["text"].as_str().map(|s| s.to_string()),
+            Some("Bool") => value["text"].as_str().map(|s| s.to_string()),
+            _ => None,
+        };
+        if let Some(r) = payload {
             if seen.insert((name.clone(), r.clone())) {
                 out.push((name, r));
+            }
+        }
+    }
+    out
+}
+
+/// Returns the unique set of (varname, bool_value) pairs for `Bool`-kind
+/// values in the merged step event. Allows asserting on the strongest
+/// typed shape — kind="Bool", b=true/false, text="true"/"false" — rather
+/// than the historical Raw-coerced stringification.
+fn unique_bool_pairs(doc: &serde_json::Value) -> Vec<(String, bool)> {
+    let mut seen = std::collections::BTreeSet::new();
+    let mut out = Vec::new();
+    for (name, value) in collect_step_vars(doc, &["Bool", "Int", "Raw", "String"]) {
+        if value["kind"] == "Bool" {
+            let b = value["b"].as_bool().expect("Bool.b");
+            // Spec invariant from streaming_value_encoder.writeBool: the
+            // text field is always the lower-case stringification.
+            let text = value["text"].as_str().expect("Bool.text");
+            assert_eq!(text, if b { "true" } else { "false" },
+                "Bool ValueRecord.text must mirror b; got value={value}");
+            if seen.insert((name.clone(), b)) {
+                out.push((name, b));
             }
         }
     }
@@ -422,16 +464,30 @@ fn test_loops_via_ct_print_full() {
 
     // ----- Boolean conditional branch outcomes -----------------------------
     // Every `if` / `while` predicate evaluation pushes a Move bool which
-    // the recorder serialises as `Raw {r: "true"}` / `Raw {r: "false"}`.
+    // the recorder now serialises as a typed `ValueRecord::Bool`
+    // (kind="Bool", b=true|false, text="true"|"false") — previously the
+    // FFI wrapper flattened these into Raw `"true"`/`"false"` strings.
+    // We keep a Raw/String/Bool-coalescing helper (`unique_raw_pairs`)
+    // for backward-compatible printed-form assertions and ALSO assert
+    // on the typed Bool shape directly so any future regression toward
+    // Raw is loud.
     let raws = unique_raw_pairs(&doc);
     assert!(
         raws.iter().any(|(_, r)| r == "true"),
-        "expected at least one `true` Raw value (loop predicates); got {raws:?}",
+        "expected at least one `true` printed-form value (loop predicates); got {raws:?}",
     );
-    // The loop terminates because the predicate becomes false.
     assert!(
         raws.iter().any(|(_, r)| r == "false"),
-        "expected at least one `false` Raw value (loop terminator); got {raws:?}",
+        "expected at least one `false` printed-form value (loop terminator); got {raws:?}",
+    );
+    let bools = unique_bool_pairs(&doc);
+    assert!(
+        bools.iter().any(|(_, b)| *b),
+        "expected at least one typed `Bool {{b:true,text:\"true\"}}` value (loop predicates); got {bools:?}",
+    );
+    assert!(
+        bools.iter().any(|(_, b)| !*b),
+        "expected at least one typed `Bool {{b:false,text:\"false\"}}` value (loop terminator); got {bools:?}",
     );
 }
 
@@ -805,14 +861,16 @@ fn test_structs_via_ct_print_full() {
         ]
     );
 
-    // ----- Return values: add_points -> Raw "Point {...}", area=40 -------
+    // ----- Return values: add_points -> String "Point {...}", area=40 -------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits[0].0, "add_points");
     // RECORDER BUG: should be a Struct ValueRecord; today it's the
-    // printed form as a Raw string.
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Raw"));
+    // printed form as a String (was previously surfaced as Raw before
+    // the FFI wrapper learned to preserve typed ValueRecord variants —
+    // the Move recorder builds `ValueRecord::String { text: ... }`).
+    assert_eq!(exits[0].1["kind"].as_str(), Some("String"));
     assert_eq!(
-        exits[0].1["r"].as_str(),
+        exits[0].1["text"].as_str(),
         Some("Point { x: 10, y: 10 }"),
         "add_points(p1, p2) == Point {{ x: 10, y: 10 }}",
     );
@@ -1278,12 +1336,17 @@ fn test_generics_via_ct_print_full() {
     );
 
     // ----- Per-type return values ----------------------------------------
+    // After the trace-writer-nim wrapper fix, the recorder's
+    // `ValueRecord::String` outputs surface as typed `kind:"String"`
+    // values with the printed form in `text`. Previously they were
+    // silently flattened into `kind:"Raw"` with the same payload under
+    // `r`. The Move recorder's *intent* (a printed scalar) is unchanged.
     let exits = observed_exit_sequence(&doc);
     // wrap_value<u64>(42, 1) -> Container { value: 42, label: 1 }
     assert_eq!(exits[0].0, "wrap_value");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Raw"));
+    assert_eq!(exits[0].1["kind"].as_str(), Some("String"));
     assert_eq!(
-        exits[0].1["r"].as_str(),
+        exits[0].1["text"].as_str(),
         Some("Container { value: 42, label: 1 }"),
     );
     // unwrap_value<u64>(c1) -> 42
@@ -1292,24 +1355,30 @@ fn test_generics_via_ct_print_full() {
     assert_eq!(exits[1].1["i"].as_i64(), Some(42));
     // wrap_value<bool>(true, 2) -> Container { value: true, label: 2 }
     assert_eq!(exits[2].0, "wrap_value");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("String"));
     assert_eq!(
-        exits[2].1["r"].as_str(),
+        exits[2].1["text"].as_str(),
         Some("Container { value: true, label: 2 }"),
     );
-    // unwrap_value<bool>(c2) -> true (Raw "true")
+    // unwrap_value<bool>(c2) -> true.  The recorder builds
+    // `ValueRecord::Bool` here, so this exit now surfaces with the
+    // typed Bool variant (kind=Bool, b=true, text="true") rather than
+    // the previous flattened Raw "true" string.
     assert_eq!(exits[3].0, "unwrap_value");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Raw"));
-    assert_eq!(exits[3].1["r"].as_str(), Some("true"));
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[3].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[3].1["text"].as_str(), Some("true"));
     // wrap_value<Point>(pt, 3) -> Container { value: Point {...}, label: 3 }
     assert_eq!(exits[4].0, "wrap_value");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("String"));
     assert_eq!(
-        exits[4].1["r"].as_str(),
+        exits[4].1["text"].as_str(),
         Some("Container { value: Point { x: 5, y: 10 }, label: 3 }"),
     );
     // unwrap_value<Point>(c3) -> Point { x: 5, y: 10 }
     assert_eq!(exits[5].0, "unwrap_value");
-    assert_eq!(exits[5].1["kind"].as_str(), Some("Raw"));
-    assert_eq!(exits[5].1["r"].as_str(), Some("Point { x: 5, y: 10 }"));
+    assert_eq!(exits[5].1["kind"].as_str(), Some("String"));
+    assert_eq!(exits[5].1["text"].as_str(), Some("Point { x: 5, y: 10 }"));
     // test_generics -> Void
     assert_eq!(exits[6].0, "test_generics");
     assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
@@ -1443,16 +1512,32 @@ fn test_boolean_and_integers_via_ct_print_full() {
          assertion to require them"
     );
 
-    // ----- Boolean Raw forms -----------------------------------------------
+    // ----- Boolean typed-Bool values --------------------------------------
+    // After the trace-writer-nim wrapper fix, Move bools surface as
+    // typed `ValueRecord::Bool` (kind="Bool", b=true|false, text=...)
+    // rather than the historical flattened-to-Raw `"true"`/`"false"`
+    // strings. We keep the printed-form coalescer (`unique_raw_pairs`)
+    // for the `t && f` derived bool textual checks AND assert on the
+    // typed Bool shape so any regression toward Raw is loud.
     let raw_set: std::collections::BTreeSet<String> =
         unique_raw_pairs(&doc).into_iter().map(|(_, r)| r).collect();
     assert!(
         raw_set.contains("true"),
-        "expected at least one `true` Raw value; got {raw_set:?}"
+        "expected at least one `true` printed-form value; got {raw_set:?}"
     );
     assert!(
         raw_set.contains("false"),
-        "expected at least one `false` Raw value (from t && f); got {raw_set:?}"
+        "expected at least one `false` printed-form value (from t && f); got {raw_set:?}"
+    );
+    let bool_set: std::collections::BTreeSet<bool> =
+        unique_bool_pairs(&doc).into_iter().map(|(_, b)| b).collect();
+    assert!(
+        bool_set.contains(&true),
+        "expected at least one typed `Bool {{b:true,text:\"true\"}}` value; got {bool_set:?}"
+    );
+    assert!(
+        bool_set.contains(&false),
+        "expected at least one typed `Bool {{b:false,text:\"false\"}}` value (from t && f); got {bool_set:?}"
     );
 }
 
