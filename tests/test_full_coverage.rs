@@ -1315,10 +1315,12 @@ fn test_generics_via_ct_print_full() {
     assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
 
     // ----- Generic argument decoding -------------------------------------
-    // RECORDER BUG: the `bool` argument to wrap_value<bool>(true, 2)
-    // surfaces with neither `i` nor `text` populated (the value
-    // encoding for booleans-as-generic-args isn't wired up).  This
-    // pins the present-day shape.
+    // After the bool-text decoding fix, the `bool` argument to
+    // wrap_value<bool>(true, 2) surfaces as a `Bool`-kind ValueRecord
+    // with the printed boolean in `text` (the streaming CBOR encoder
+    // for booleans now writes a 4-key map including `text: "true"|"false"`
+    // alongside `kind`, `b`, and `type_id`, mirroring how Int/Float
+    // populate `text` on the call-arg path).
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
@@ -1333,21 +1335,17 @@ fn test_generics_via_ct_print_full() {
     // wrap_value<bool>(true, 2)
     let wv_bool_args = entries[2]["args"].as_array().unwrap();
     assert_eq!(wv_bool_args[1]["value"]["i"].as_i64(), Some(2));
-    // The bool arg's value text is null today (RECORDER BUG below).
-    assert!(
-        wv_bool_args[0]["value"]["text"].is_null()
-            || wv_bool_args[0]["value"]["text"].as_str() == Some(""),
-        "RECORDER BUG pinned: bool generic arg should carry text=`true`; \
-         got value={}",
+    // The bool arg surfaces as a Bool with `text="true"`.
+    assert_eq!(wv_bool_args[0]["value"]["kind"].as_str(), Some("Bool"));
+    assert_eq!(
+        wv_bool_args[0]["value"]["text"].as_str(),
+        Some("true"),
+        "bool generic arg should carry text=`true`; got value={}",
         wv_bool_args[0]["value"],
     );
 }
 
 #[test]
-#[ignore = "RECORDER BUG: wrap_value<bool>(true, 2) decodes its `bool` \
-            generic arg with text=null instead of text=\"true\".  \
-            Spec-compliant output should populate the value.text \
-            field with the printed boolean."]
 fn test_generics_bool_arg_decodes_text() {
     let Some((doc, _)) =
         record_and_dump_full("test_generics_bool_arg_decodes_text", "test_generics")
