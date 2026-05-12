@@ -119,6 +119,18 @@ pub fn convert_trace_into_writer(
     // -- 3. Walk trace events --------------------------------------------------
     let mut prev_line: Option<u32> = None;
     let mut current_module: Option<String> = None;
+    // Track the most recently observed Move VM `Instruction` mnemonic and the
+    // value of the most recent `Effect::Pop`.  These two pieces of state are
+    // needed solely to recover the abort code on `Effect::ExecutionError`:
+    // the Move v3 trace format models an `abort` as the sequence
+    //   Instruction{ABORT}  ->  Effect::Pop(<code>)  ->  Effect::ExecutionError("ABORTED")
+    // i.e. the abort code arrives one event *before* the error marker, then
+    // the marker itself carries no code.  Without stitching the two together
+    // here, the io_event we emit for the abort would discard the code and
+    // every abort site would surface as the indistinguishable string
+    // "ABORTED" — see `tests/test_full_coverage.rs::test_abort_io_event_carries_abort_code`.
+    let mut prev_instruction: Option<String> = None;
+    let mut last_popped_value: Option<SerializableMoveValue> = None;
 
     for event in &events {
         match event {
@@ -161,7 +173,9 @@ pub fn convert_trace_into_writer(
                 TraceWriter::register_return(writer, ret_val);
             }
 
-            TraceEvent::Instruction { pc, .. } => {
+            TraceEvent::Instruction {
+                pc, instruction, ..
+            } => {
                 let module_name = current_module.as_deref().unwrap_or("");
                 if let Some((_, line)) = source_map.lookup(module_name, *pc)
                     && prev_line != Some(line)
@@ -169,6 +183,10 @@ pub fn convert_trace_into_writer(
                     TraceWriter::register_step(writer, source_path, Line(line as i64));
                     prev_line = Some(line);
                 }
+                // Remember the instruction so the upcoming `Effect::Pop` /
+                // `Effect::ExecutionError` pair can recognise an abort and
+                // recover the code (see `last_popped_value` below).
+                prev_instruction = Some(instruction.clone());
             }
 
             TraceEvent::Effect(effect) => match effect {
@@ -194,8 +212,13 @@ pub fn convert_trace_into_writer(
                     TraceWriter::register_variable_with_full_value(writer, "stack_top", val);
                 }
                 Effect::Pop(value) => {
-                    let val = convert_move_value(value.inner_value(), &type_ids);
+                    let inner = value.inner_value();
+                    let val = convert_move_value(inner, &type_ids);
                     TraceWriter::register_variable_with_full_value(writer, "popped", val);
+                    // Cache the popped value verbatim so an immediately-
+                    // following `Effect::ExecutionError("ABORTED")` can
+                    // stitch the abort code into the io_event payload.
+                    last_popped_value = Some(inner.clone());
                 }
                 Effect::ExecutionError(error) => {
                     // Surface execution errors as an Error special event so
@@ -203,11 +226,29 @@ pub fn convert_trace_into_writer(
                     // behaviour silently dropped the message via eprintln!.
                     // `metadata` carries a stable tag the frontend can key
                     // off; `content` is the human-readable message.
+                    //
+                    // The Move VM v3 trace format encodes a Move `abort` as
+                    //   Instruction{ABORT} -> Effect::Pop(<code>) -> Effect::ExecutionError("ABORTED")
+                    // and the `ExecutionError` payload itself carries the
+                    // bare marker `"ABORTED"` with no code.  Recover the
+                    // code from the immediately preceding `Pop` so that
+                    // distinct abort sites surface distinct io_event
+                    // payloads (e.g. `"ABORTED: code 42"` rather than the
+                    // ambiguous `"ABORTED"` shared by every abort).
+                    let content = if error == "ABORTED"
+                        && prev_instruction.as_deref() == Some("ABORT")
+                        && let Some(code) =
+                            last_popped_value.as_ref().and_then(abort_code_from_value)
+                    {
+                        format!("ABORTED: code {code}")
+                    } else {
+                        error.clone()
+                    };
                     TraceWriter::register_special_event(
                         writer,
                         EventLogKind::Error,
                         "MoveExecutionError",
-                        error,
+                        &content,
                     );
                 }
                 Effect::DataLoad { .. } => {
@@ -272,6 +313,23 @@ impl TypeIds {
             vector_id: TraceWriter::ensure_type_id(writer, TypeKind::Seq, "vector"),
             string_id: TraceWriter::ensure_type_id(writer, TypeKind::String, "string"),
         }
+    }
+}
+
+/// Render the abort code for the integer Move VM value popped immediately
+/// before an `Effect::ExecutionError("ABORTED")`.  Returns the canonical
+/// decimal representation Move source uses for `abort` codes (`u64`),
+/// or `None` if the popped value is not a numeric scalar — in which case
+/// the caller falls back to the bare `"ABORTED"` marker.
+fn abort_code_from_value(value: &SerializableMoveValue) -> Option<String> {
+    match value {
+        SerializableMoveValue::U8 { value } => Some(value.to_string()),
+        SerializableMoveValue::U16 { value } => Some(value.to_string()),
+        SerializableMoveValue::U32 { value } => Some(value.to_string()),
+        SerializableMoveValue::U64 { value } => Some(value.to_string()),
+        SerializableMoveValue::U128 { value } => Some(value.to_string()),
+        SerializableMoveValue::U256 { value } => Some(value.clone()),
+        _ => None,
     }
 }
 

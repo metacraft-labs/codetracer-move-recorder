@@ -121,10 +121,7 @@ fn read_decompressed_trace(zst_path: &Path) -> Vec<u8> {
 /// (decompression, conversion, ct-print non-zero exit, JSON parse
 /// failure) is a hard panic — it indicates a recorder regression, not
 /// a missing dependency.
-fn record_and_dump_full(
-    test_name: &str,
-    move_test: &str,
-) -> Option<(serde_json::Value, PathBuf)> {
+fn record_and_dump_full(test_name: &str, move_test: &str) -> Option<(serde_json::Value, PathBuf)> {
     let ct_print = ct_print_or_skip(test_name)?;
 
     let trace_zst = flow_test_trace_fixture(move_test);
@@ -166,8 +163,8 @@ fn record_and_dump_full(
         String::from_utf8_lossy(&output.stderr)
     );
 
-    let doc: serde_json::Value = serde_json::from_slice(&output.stdout)
-        .expect("ct-print --full should emit valid JSON");
+    let doc: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("ct-print --full should emit valid JSON");
 
     drop(tmp_dir);
     Some((doc, source_path))
@@ -449,10 +446,8 @@ fn test_loops_via_ct_print_full() {
             should emit one step event per source line, so a 10-iter \
             while loop produces ≥10 step events at the loop body line."]
 fn test_loops_one_step_per_source_line() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_loops_one_step_per_source_line",
-        "test_loops",
-    ) else {
+    let Some((doc, _)) = record_and_dump_full("test_loops_one_step_per_source_line", "test_loops")
+    else {
         return;
     };
     let counts = &doc["counts"];
@@ -478,10 +473,9 @@ fn test_loops_one_step_per_source_line() {
 /// outermost call appears first.
 #[test]
 fn test_nested_calls_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_nested_calls_via_ct_print_full",
-        "test_nested_calls",
-    ) else {
+    let Some((doc, _)) =
+        record_and_dump_full("test_nested_calls_via_ct_print_full", "test_nested_calls")
+    else {
         return;
     };
 
@@ -587,11 +581,19 @@ fn test_nested_calls_via_ct_print_full() {
             .map(|a| a["value"]["i"].as_i64().expect("arg Int.i"))
             .collect()
     };
-    assert_eq!(arg_ints(0), vec![12, 8], "max_u64(12,8) inside compute_triple");
+    assert_eq!(
+        arg_ints(0),
+        vec![12, 8],
+        "max_u64(12,8) inside compute_triple"
+    );
     assert_eq!(arg_ints(1), vec![12, 8], "compute_triple(12,8)");
     assert_eq!(arg_ints(2), vec![12, 8], "first min_u64(12,8)");
     assert_eq!(arg_ints(3), vec![15, 20], "second min_u64(15,20)");
-    assert_eq!(arg_ints(4), vec![8, 15], "outer max_u64(min_u64(12,8), min_u64(15,20))");
+    assert_eq!(
+        arg_ints(4),
+        vec![8, 15],
+        "outer max_u64(min_u64(12,8), min_u64(15,20))"
+    );
     assert!(
         entries[5]["args"].as_array().unwrap().is_empty(),
         "test_nested_calls itself takes no args"
@@ -651,10 +653,8 @@ fn test_nested_calls_tuple_return_decodes_full_tuple() {
 /// `test_vectors_uses_sequence_value_record` (currently `#[ignore]`d).
 #[test]
 fn test_vectors_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_vectors_via_ct_print_full",
-        "test_vectors",
-    ) else {
+    let Some((doc, _)) = record_and_dump_full("test_vectors_via_ct_print_full", "test_vectors")
+    else {
         return;
     };
 
@@ -695,8 +695,7 @@ fn test_vectors_via_ct_print_full() {
 
     // ----- Vector contents must surface as Raw printed forms ---------------
     let raws = unique_raw_pairs(&doc);
-    let raw_strs: std::collections::BTreeSet<&str> =
-        raws.iter().map(|(_, r)| r.as_str()).collect();
+    let raw_strs: std::collections::BTreeSet<&str> = raws.iter().map(|(_, r)| r.as_str()).collect();
     for want in [
         "[]",
         "[10]",
@@ -714,8 +713,7 @@ fn test_vectors_via_ct_print_full() {
     // ----- Scalar Move semantics: len==5, len-after-pop==4, sum==150 ------
     let int_set: std::collections::BTreeSet<(String, i64)> =
         unique_int_pairs(&doc).into_iter().collect();
-    let just_values: std::collections::BTreeSet<i64> =
-        int_set.iter().map(|(_, v)| *v).collect();
+    let just_values: std::collections::BTreeSet<i64> = int_set.iter().map(|(_, v)| *v).collect();
     for want in [4, 5, 10, 50, 150] {
         assert!(
             just_values.contains(&want),
@@ -732,10 +730,9 @@ fn test_vectors_via_ct_print_full() {
             with five Int children for `vector::push_back(&mut v, _)` \
             five times."]
 fn test_vectors_uses_sequence_value_record() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_vectors_uses_sequence_value_record",
-        "test_vectors",
-    ) else {
+    let Some((doc, _)) =
+        record_and_dump_full("test_vectors_uses_sequence_value_record", "test_vectors")
+    else {
         return;
     };
     let mut kinds = std::collections::BTreeSet::new();
@@ -770,10 +767,8 @@ fn test_vectors_uses_sequence_value_record() {
 /// `test_structs_uses_struct_value_record` (currently `#[ignore]`d).
 #[test]
 fn test_structs_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_structs_via_ct_print_full",
-        "test_structs",
-    ) else {
+    let Some((doc, _)) = record_and_dump_full("test_structs_via_ct_print_full", "test_structs")
+    else {
         return;
     };
 
@@ -829,8 +824,7 @@ fn test_structs_via_ct_print_full() {
 
     // ----- Struct printed forms must include every observed shape ---------
     let raws = unique_raw_pairs(&doc);
-    let raw_strs: std::collections::BTreeSet<&str> =
-        raws.iter().map(|(_, r)| r.as_str()).collect();
+    let raw_strs: std::collections::BTreeSet<&str> = raws.iter().map(|(_, r)| r.as_str()).collect();
     for want in [
         "Point { x: 3, y: 4 }",
         "Point { x: 7, y: 6 }",
@@ -845,10 +839,8 @@ fn test_structs_via_ct_print_full() {
     }
 
     // ----- Scalar field-access values (px=10, py=10, sum_coords=20, area=40)
-    let ints: std::collections::BTreeSet<i64> = unique_int_pairs(&doc)
-        .into_iter()
-        .map(|(_, v)| v)
-        .collect();
+    let ints: std::collections::BTreeSet<i64> =
+        unique_int_pairs(&doc).into_iter().map(|(_, v)| v).collect();
     for want in [10, 20, 40, 1000] {
         assert!(
             ints.contains(&want),
@@ -864,10 +856,9 @@ fn test_structs_via_ct_print_full() {
             output should emit Struct ValueRecord with two Int field \
             children for every Point construction."]
 fn test_structs_uses_struct_value_record() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_structs_uses_struct_value_record",
-        "test_structs",
-    ) else {
+    let Some((doc, _)) =
+        record_and_dump_full("test_structs_uses_struct_value_record", "test_structs")
+    else {
         return;
     };
     let mut kinds = std::collections::BTreeSet::new();
@@ -897,10 +888,9 @@ fn test_structs_uses_struct_value_record() {
 /// `&p` ref, then calls `scale_point(&mut p, 3)` to reach `Point { x: 30, y: 45 }`.
 #[test]
 fn test_references_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_references_via_ct_print_full",
-        "test_references",
-    ) else {
+    let Some((doc, _)) =
+        record_and_dump_full("test_references_via_ct_print_full", "test_references")
+    else {
         return;
     };
 
@@ -967,7 +957,10 @@ fn test_references_via_ct_print_full() {
         (kind0, text0, i1)
     };
     let (k0, t0, i0) = scale_args(0);
-    assert_eq!(k0, "String", "scale_point's &mut Point arg surfaces as String");
+    assert_eq!(
+        k0, "String",
+        "scale_point's &mut Point arg surfaces as String"
+    );
     assert_eq!(t0.as_deref(), Some("Point { x: 2, y: 3 }"));
     assert_eq!(i0, Some(5), "scale_point's factor arg = 5");
     let (k1, t1, i1) = scale_args(1);
@@ -977,8 +970,7 @@ fn test_references_via_ct_print_full() {
 
     // ----- All Point printed forms surface (incl. mutated copies) ---------
     let raws = unique_raw_pairs(&doc);
-    let raw_strs: std::collections::BTreeSet<&str> =
-        raws.iter().map(|(_, r)| r.as_str()).collect();
+    let raw_strs: std::collections::BTreeSet<&str> = raws.iter().map(|(_, r)| r.as_str()).collect();
     for want in [
         "Point { x: 2, y: 3 }",
         "Point { x: 10, y: 15 }",
@@ -991,10 +983,8 @@ fn test_references_via_ct_print_full() {
     }
 
     // ----- Scalar reads through `&p` (read_x=10, read_y=15, final=30/45) --
-    let ints: std::collections::BTreeSet<i64> = unique_int_pairs(&doc)
-        .into_iter()
-        .map(|(_, v)| v)
-        .collect();
+    let ints: std::collections::BTreeSet<i64> =
+        unique_int_pairs(&doc).into_iter().map(|(_, v)| v).collect();
     for want in [10, 15, 30, 45] {
         assert!(
             ints.contains(&want),
@@ -1045,10 +1035,7 @@ fn test_references_use_typed_reference_value_record() {
 /// the recorder spec's universal-checklist row.
 #[test]
 fn test_abort_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_abort_via_ct_print_full",
-        "test_abort",
-    ) else {
+    let Some((doc, _)) = record_and_dump_full("test_abort_via_ct_print_full", "test_abort") else {
         return;
     };
 
@@ -1077,38 +1064,42 @@ fn test_abort_via_ct_print_full() {
     assert_eq!(events.len(), 4, "events.len()");
     assert_step_indices_monotonic(&doc);
 
-    assert_eq!(
-        observed_call_sequence(&doc),
-        vec!["test_abort".to_string()]
-    );
+    assert_eq!(observed_call_sequence(&doc), vec!["test_abort".to_string()]);
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 1);
     assert_eq!(exits[0].0, "test_abort");
     assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
-    // ----- The `io` event: kind ioError, text "ABORTED" --------------------
+    // ----- The `io` event: kind ioError, text "ABORTED: code 42" ----------
+    // The Move v3 trace format models `abort 42` as the sequence
+    //   Instruction{ABORT} -> Effect::Pop(U64 42) -> Effect::ExecutionError("ABORTED")
+    // and the `ExecutionError` payload itself is just the bare marker
+    // `"ABORTED"`.  The recorder stitches the popped abort code back into
+    // the io_event content so distinct abort sites surface distinct
+    // payloads (see `test_abort_io_event_carries_abort_code`).
     let io = events
         .iter()
         .find(|e| e["kind"] == "io")
         .expect("expected one `io` event for the abort");
     assert_eq!(io["io_kind"].as_str(), Some("ioError"));
-    assert_eq!(io["text"].as_str(), Some("ABORTED"));
-    assert_eq!(io["bytes_len"].as_u64(), Some(7));
+    assert_eq!(io["text"].as_str(), Some("ABORTED: code 42"));
+    assert_eq!(io["bytes_len"].as_u64(), Some(16));
     assert_eq!(io["io_index"].as_u64(), Some(0));
     assert_eq!(io["step_id"].as_u64(), Some(0));
 
     // ----- The abort code 42 must surface in the merged step's vars -------
-    let int_set: std::collections::BTreeSet<i64> = unique_int_pairs(&doc)
-        .into_iter()
-        .map(|(_, v)| v)
-        .collect();
+    let int_set: std::collections::BTreeSet<i64> =
+        unique_int_pairs(&doc).into_iter().map(|(_, v)| v).collect();
     assert!(
         int_set.contains(&42),
         "expected abort code 42 (E_TEST_ABORT) in vars; got {int_set:?}"
     );
     // y = 0 surfaces (it's the operand of the `y == 0` predicate that
     // triggers the abort).
-    assert!(int_set.contains(&0), "expected y=0 in vars; got {int_set:?}");
+    assert!(
+        int_set.contains(&0),
+        "expected y=0 in vars; got {int_set:?}"
+    );
     // RECORDER BUG: the source-level binding `let x: u64 = 10;` does
     // NOT surface in the trace.  The Sui Move VM apparently elides
     // `x` because it is dead in the code path that executes (the
@@ -1124,16 +1115,10 @@ fn test_abort_via_ct_print_full() {
 }
 
 #[test]
-#[ignore = "RECORDER BUG: the abort `io_event` carries `text: \"ABORTED\"` \
-            but does NOT include the Move abort code (42) or the \
-            module/function context.  Spec-compliant output should \
-            embed at least the abort code so the trace can distinguish \
-            different abort sites."]
 fn test_abort_io_event_carries_abort_code() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_abort_io_event_carries_abort_code",
-        "test_abort",
-    ) else {
+    let Some((doc, _)) =
+        record_and_dump_full("test_abort_io_event_carries_abort_code", "test_abort")
+    else {
         return;
     };
     let io = doc["events"]
@@ -1159,10 +1144,8 @@ fn test_abort_io_event_carries_abort_code() {
 /// regression in argument decoding or return decoding is caught.
 #[test]
 fn test_fibonacci_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_fibonacci_via_ct_print_full",
-        "test_fibonacci",
-    ) else {
+    let Some((doc, _)) = record_and_dump_full("test_fibonacci_via_ct_print_full", "test_fibonacci")
+    else {
         return;
     };
 
@@ -1252,10 +1235,8 @@ fn test_fibonacci_via_ct_print_full() {
 /// of `"true"`.  Pinned below as the present-day shape.
 #[test]
 fn test_generics_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_generics_via_ct_print_full",
-        "test_generics",
-    ) else {
+    let Some((doc, _)) = record_and_dump_full("test_generics_via_ct_print_full", "test_generics")
+    else {
         return;
     };
 
@@ -1268,7 +1249,10 @@ fn test_generics_via_ct_print_full() {
         .iter()
         .filter_map(|v| v.as_str())
         .collect();
-    assert_eq!(functions, vec!["test_generics", "wrap_value", "unwrap_value"]);
+    assert_eq!(
+        functions,
+        vec!["test_generics", "wrap_value", "unwrap_value"]
+    );
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
@@ -1365,10 +1349,9 @@ fn test_generics_via_ct_print_full() {
             Spec-compliant output should populate the value.text \
             field with the printed boolean."]
 fn test_generics_bool_arg_decodes_text() {
-    let Some((doc, _)) = record_and_dump_full(
-        "test_generics_bool_arg_decodes_text",
-        "test_generics",
-    ) else {
+    let Some((doc, _)) =
+        record_and_dump_full("test_generics_bool_arg_decodes_text", "test_generics")
+    else {
         return;
     };
     let entries: Vec<&serde_json::Value> = doc["events"]
@@ -1452,10 +1435,8 @@ fn test_boolean_and_integers_via_ct_print_full() {
     // the present-day "only status survives" shape so any future
     // capture-of-dead-bindings shows up as a failure here and the
     // assertion below grows accordingly.
-    let int_set: std::collections::BTreeSet<i64> = unique_int_pairs(&doc)
-        .into_iter()
-        .map(|(_, v)| v)
-        .collect();
+    let int_set: std::collections::BTreeSet<i64> =
+        unique_int_pairs(&doc).into_iter().map(|(_, v)| v).collect();
     assert_eq!(
         int_set,
         std::collections::BTreeSet::from([1_i64]),
@@ -1465,10 +1446,8 @@ fn test_boolean_and_integers_via_ct_print_full() {
     );
 
     // ----- Boolean Raw forms -----------------------------------------------
-    let raw_set: std::collections::BTreeSet<String> = unique_raw_pairs(&doc)
-        .into_iter()
-        .map(|(_, r)| r)
-        .collect();
+    let raw_set: std::collections::BTreeSet<String> =
+        unique_raw_pairs(&doc).into_iter().map(|(_, r)| r).collect();
     assert!(
         raw_set.contains("true"),
         "expected at least one `true` Raw value; got {raw_set:?}"
