@@ -74,6 +74,17 @@ fn flow_test_source() -> PathBuf {
     ))
 }
 
+/// Path to a sibling Move source file under `test-programs/move/flow_test/sources/`.
+/// Used by the M9 fixtures (variant_constructors, wide_integer, resources,
+/// object_lifecycle, abilities) — each ships as a self-contained `.move`
+/// source plus a synthetic NDJSON trace, so the converter sees a stable
+/// `metadata.program` matching the source's stem.
+fn flow_test_named_source(file_stem: &str) -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+        .join("test-programs/move/flow_test/sources")
+        .join(format!("{file_stem}.move"))
+}
+
 /// Path to a pre-captured NDJSON trace for the given `#[test]` function
 /// inside the `flow_test::flow_test` Move module.
 fn flow_test_trace_fixture(test_name: &str) -> PathBuf {
@@ -122,12 +133,24 @@ fn read_decompressed_trace(zst_path: &Path) -> Vec<u8> {
 /// failure) is a hard panic — it indicates a recorder regression, not
 /// a missing dependency.
 fn record_and_dump_full(test_name: &str, move_test: &str) -> Option<(serde_json::Value, PathBuf)> {
+    record_and_dump_full_with_source(test_name, move_test, flow_test_source())
+}
+
+/// Variant of `record_and_dump_full` that lets the caller pin a specific
+/// Move source file path (so `metadata.program` mirrors the source stem
+/// and `paths` carries the right `.move` filename).  Used by the M9
+/// fixtures whose sources live alongside `flow_test.move` in the same
+/// `sources/` directory.
+fn record_and_dump_full_with_source(
+    test_name: &str,
+    move_test: &str,
+    source_path: PathBuf,
+) -> Option<(serde_json::Value, PathBuf)> {
     let ct_print = ct_print_or_skip(test_name)?;
 
     let trace_zst = flow_test_trace_fixture(move_test);
     let trace_bytes = read_decompressed_trace(&trace_zst);
 
-    let source_path = flow_test_source();
     let tmp_dir = tempfile::TempDir::new().expect("tempdir");
     let out_dir = tmp_dir.path().join("ct-out");
 
@@ -306,7 +329,7 @@ fn unique_int_pairs(doc: &serde_json::Value) -> Vec<(String, i64)> {
     let mut out = Vec::new();
     for (name, value) in collect_step_vars(
         doc,
-        &["Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple"],
+        &["BigInt", "Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple", "Variant"],
     ) {
         if value["kind"] == "Int" {
             let i = value["i"].as_i64().expect("Int.i");
@@ -339,7 +362,7 @@ fn unique_raw_pairs(doc: &serde_json::Value) -> Vec<(String, String)> {
     let mut out = Vec::new();
     for (name, value) in collect_step_vars(
         doc,
-        &["Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple"],
+        &["BigInt", "Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple", "Variant"],
     ) {
         let payload = match value["kind"].as_str() {
             Some("Raw") => value["r"].as_str().map(|s| s.to_string()),
@@ -370,7 +393,7 @@ fn collect_sequence_int_lists(doc: &serde_json::Value) -> Vec<Vec<i64>> {
     let mut out = Vec::new();
     for (_, value) in collect_step_vars(
         doc,
-        &["Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple"],
+        &["BigInt", "Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple", "Variant"],
     ) {
         if value["kind"] != "Sequence" {
             continue;
@@ -407,7 +430,7 @@ fn collect_struct_int_lists(doc: &serde_json::Value) -> Vec<Vec<i64>> {
     let mut out = Vec::new();
     for (_, value) in collect_step_vars(
         doc,
-        &["Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple"],
+        &["BigInt", "Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple", "Variant"],
     ) {
         if value["kind"] != "Struct" {
             continue;
@@ -437,7 +460,7 @@ fn unique_bool_pairs(doc: &serde_json::Value) -> Vec<(String, bool)> {
     let mut out = Vec::new();
     for (name, value) in collect_step_vars(
         doc,
-        &["Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple"],
+        &["BigInt", "Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple", "Variant"],
     ) {
         if value["kind"] == "Bool" {
             let b = value["b"].as_bool().expect("Bool.b");
@@ -1931,6 +1954,660 @@ fn test_boolean_and_integers_u128_overflow_uses_bigint() {
     );
 
     drop(tmp_dir);
+}
+
+// ===========================================================================
+// M9 fixtures — variant constructors, wide integers, resources, Sui object
+// lifecycle, and ability matrix.  Each uses a synthetic NDJSON trace shipped
+// under `test-programs/move/flow_test/traces/` because the `sui` CLI is not
+// yet packaged in the dev shell.  The strict shape pin is the same as the
+// re-recorded fixtures above: function table, call sequence, exit shapes,
+// and decoded variable values are asserted with `assert_eq!`.
+// ===========================================================================
+
+/// Records `flow_test::test_variant_constructors` (synthetic NDJSON).
+///
+/// Closes the M8 known-limitation `ValueRecord::Variant` falls through
+/// to String via value_record_to_display.  Asserts the recorder now
+/// emits a typed `kind:"Variant"` ValueRecord with a structured
+/// discriminator and a `contents:Struct` payload — for the standard
+/// library `Option<u64>::Some(42)` (tag=1), `Option<u64>::None`
+/// (tag=0), and a Sui Move 2024 enum `Shape::Rect(3, 5)` (tag=1).
+#[test]
+fn test_variant_constructors_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_variant_constructors_via_ct_print_full",
+        "test_variant_constructors",
+        flow_test_named_source("variant_constructors_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "variant_constructors_test");
+    let paths: Vec<&str> = doc["paths"]
+        .as_array()
+        .expect("paths array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert!(
+        paths.iter().any(|p| p.ends_with("variant_constructors_test.move")),
+        "expected variant_constructors_test.move in paths; got {paths:?}",
+    );
+
+    // ----- Function table: outer test + 3 helpers -------------------------
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec!["test_variant_constructors", "make_some", "make_none", "make_rect"]
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1), "counts={counts}");
+    assert_eq!(counts["calls"].as_u64(), Some(4), "counts={counts}");
+    assert_eq!(counts["io_events"].as_u64(), Some(0), "counts={counts}");
+
+    // 1 step + 4 call_entry + 4 call_exit = 9 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 9, "events.len()");
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "make_some".to_string(),
+            "make_none".to_string(),
+            "make_rect".to_string(),
+            "test_variant_constructors".to_string(),
+        ],
+    );
+
+    // ----- Return values: each helper returns a typed Variant -------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 4);
+
+    // Some(42) -> Variant { discriminator: "0x1::option::Option::Variant#1",
+    //                       contents: Struct { field_values: [Int(42)] } }
+    assert_eq!(exits[0].0, "make_some");
+    let some_rv = &exits[0].1;
+    assert_eq!(some_rv["kind"].as_str(), Some("Variant"));
+    assert_eq!(
+        some_rv["discriminator"].as_str(),
+        Some("0x1::option::Option::Variant#1"),
+    );
+    let some_contents = &some_rv["contents"];
+    assert_eq!(some_contents["kind"].as_str(), Some("Struct"));
+    let some_fields = some_contents["field_values"]
+        .as_array()
+        .expect("Variant.contents.field_values");
+    assert_eq!(some_fields.len(), 1);
+    assert_eq!(some_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(some_fields[0]["i"].as_i64(), Some(42));
+
+    // None -> Variant { discriminator: "...Variant#0", contents: Struct{} }
+    assert_eq!(exits[1].0, "make_none");
+    let none_rv = &exits[1].1;
+    assert_eq!(none_rv["kind"].as_str(), Some("Variant"));
+    assert_eq!(
+        none_rv["discriminator"].as_str(),
+        Some("0x1::option::Option::Variant#0"),
+    );
+    assert_eq!(none_rv["contents"]["kind"].as_str(), Some("Struct"));
+    assert!(
+        none_rv["contents"]["field_values"]
+            .as_array()
+            .expect("Variant.contents.field_values")
+            .is_empty(),
+        "None variant should carry an empty field_values array",
+    );
+
+    // Shape::Rect(3, 5) -> Variant { contents: Struct { fields: [Int(3), Int(5)] } }
+    assert_eq!(exits[2].0, "make_rect");
+    let rect_rv = &exits[2].1;
+    assert_eq!(rect_rv["kind"].as_str(), Some("Variant"));
+    assert_eq!(
+        rect_rv["discriminator"].as_str(),
+        Some("flow_test::variant_constructors_test::Shape::Variant#1"),
+    );
+    let rect_fields = rect_rv["contents"]["field_values"]
+        .as_array()
+        .expect("Variant.contents.field_values");
+    assert_eq!(rect_fields.len(), 2);
+    assert_eq!(rect_fields[0]["i"].as_i64(), Some(3));
+    assert_eq!(rect_fields[1]["i"].as_i64(), Some(5));
+
+    // test_variant_constructors itself returns Void.
+    assert_eq!(exits[3].0, "test_variant_constructors");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
+
+    // ----- The Variant ValueRecord must NOT fall back to String --------
+    // Pre-fix the Variant arm of `convert_move_value` emitted a printed
+    // `ValueRecord::String { text: "Variant#N(...)" }`.  Walk every
+    // step's vars and assert no such fallback appears anywhere.
+    let mut variant_count = 0usize;
+    for ev in events {
+        if ev["kind"] != "step" {
+            continue;
+        }
+        for v in ev["vars"].as_array().cloned().unwrap_or_default() {
+            let val = &v["value"];
+            if val["kind"] == "Variant" {
+                variant_count += 1;
+            }
+            if let Some(text) = val["text"].as_str()
+                && text.starts_with("Variant#")
+            {
+                panic!(
+                    "regression: Variant arm fell back to printed-form String `{text}`; \
+                     expected typed `ValueRecord::Variant`.  Full value: {val}",
+                );
+            }
+        }
+    }
+    assert!(
+        variant_count >= 3,
+        "expected at least 3 Variant ValueRecords (Some, None, Rect) in step vars; \
+         got {variant_count}",
+    );
+
+    // ----- The computed area = 3 * 5 = 15 must surface ------------------
+    let int_set: std::collections::BTreeSet<i64> =
+        unique_int_pairs(&doc).into_iter().map(|(_, v)| v).collect();
+    assert!(
+        int_set.contains(&15),
+        "expected `area = 15` (= 3 * 5 from Rect match) in vars; got {int_set:?}",
+    );
+}
+
+/// Records `flow_test::test_wide_integer` (synthetic NDJSON).
+///
+/// Pins the recorder's typed `Int` payloads for u8/u16/u32/u64 and the
+/// `BigInt` payload for the u128 `18_000_000_000_000_000_000` (≈ 2 × i64::MAX)
+/// — closing the M8 deferred `u128_overflow_uses_bigint` pin by USING
+/// the values through `wide_product(a, b, c, d, e) -> u128` so the Sui
+/// VM cannot constant-fold them away.  The product
+/// `7 * 11 * 13 * 17 * 18e18 = 306_306_000_000_000_000_000_000` fits in
+/// u128 (≈ 3.07e23 < u128::MAX ≈ 3.4e38) but vastly exceeds i64::MAX,
+/// so it must surface as a `BigInt` ValueRecord.
+#[test]
+fn test_wide_integer_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_wide_integer_via_ct_print_full",
+        "test_wide_integer",
+        flow_test_named_source("wide_integer_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "wide_integer_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(functions, vec!["test_wide_integer", "wide_product"]);
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(2));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 2 call_entry + 2 call_exit = 5 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 5);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec!["wide_product".to_string(), "test_wide_integer".to_string()],
+    );
+
+    // ----- wide_product's args carry every integer width -----------------
+    let entries: Vec<&serde_json::Value> = doc["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    let wide_args = entries[0]["args"].as_array().expect("args array");
+    assert_eq!(wide_args.len(), 5, "wide_product takes (u8, u16, u32, u64, u128)");
+    // u8 = 7, u16 = 11, u32 = 13, u64 = 17 — all fit in Int.
+    for (idx, want) in [7_i64, 11, 13, 17].iter().enumerate() {
+        assert_eq!(
+            wide_args[idx]["value"]["kind"].as_str(),
+            Some("Int"),
+            "arg{idx}",
+        );
+        assert_eq!(wide_args[idx]["value"]["i"].as_i64(), Some(*want));
+    }
+    // u128 = 18_000_000_000_000_000_000 — exceeds i64::MAX, must be BigInt.
+    let u128_arg = &wide_args[4]["value"];
+    assert_eq!(
+        u128_arg["kind"].as_str(),
+        Some("BigInt"),
+        "u128 arg should surface as BigInt; got {u128_arg}",
+    );
+    assert_eq!(u128_arg["negative"].as_bool(), Some(false));
+    let u128_bytes = base64_decode(
+        u128_arg["b"]
+            .as_str()
+            .expect("BigInt.b base64 string"),
+    )
+    .expect("base64 decode");
+    let mut u128_mag: u128 = 0;
+    for byte in &u128_bytes {
+        u128_mag = (u128_mag << 8) | (*byte as u128);
+    }
+    assert_eq!(
+        u128_mag, 18_000_000_000_000_000_000_u128,
+        "u128 BigInt magnitude should round-trip 18e18",
+    );
+
+    // ----- wide_product's return is a BigInt of the full product ---------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits[0].0, "wide_product");
+    let prod_rv = &exits[0].1;
+    assert_eq!(prod_rv["kind"].as_str(), Some("BigInt"));
+    let prod_bytes = base64_decode(prod_rv["b"].as_str().expect("BigInt.b"))
+        .expect("base64 decode");
+    let mut prod_mag: u128 = 0;
+    for byte in &prod_bytes {
+        prod_mag = (prod_mag << 8) | (*byte as u128);
+    }
+    assert_eq!(
+        prod_mag, 306_306_000_000_000_000_000_000_u128,
+        "wide_product return must encode 306306e18 = 7 * 11 * 13 * 17 * 18e18",
+    );
+
+    // test_wide_integer itself returns Void.
+    assert_eq!(exits[1].0, "test_wide_integer");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+
+    // ----- Every small width also appears as Int in the merged step ------
+    let int_set: std::collections::BTreeSet<i64> =
+        unique_int_pairs(&doc).into_iter().map(|(_, v)| v).collect();
+    for want in [7_i64, 11, 13, 17] {
+        assert!(
+            int_set.contains(&want),
+            "expected u8/u16/u32/u64 value {want} as a typed Int in step vars; got {int_set:?}",
+        );
+    }
+}
+
+/// Records `flow_test::test_resources` (synthetic NDJSON).
+///
+/// Resources (structs with the `key` ability) are Move's defining
+/// feature.  Pins the recorder's typed `Struct` payloads for a `Coin`
+/// resource through its full lifecycle: mint -> &Coin borrow ->
+/// destructure-via-burn.  The `Coin` struct's owned type-id is stable
+/// across all three call_exit events because the converter ensures
+/// per-struct-name TypeIds are registered lazily once.
+#[test]
+fn test_resources_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_resources_via_ct_print_full",
+        "test_resources",
+        flow_test_named_source("resources_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "resources_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(functions, vec!["test_resources", "mint", "balance", "burn"]);
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(4));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 4 call_entry + 4 call_exit = 9 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 9);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "mint".to_string(),
+            "balance".to_string(),
+            "burn".to_string(),
+            "test_resources".to_string(),
+        ],
+    );
+
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 4);
+
+    // mint(1, 100) -> Coin { id: 1, balance: 100 } (typed Struct)
+    assert_eq!(exits[0].0, "mint");
+    let mint_rv = &exits[0].1;
+    assert_eq!(mint_rv["kind"].as_str(), Some("Struct"));
+    let mint_fields = mint_rv["field_values"].as_array().expect("Struct.field_values");
+    assert_eq!(mint_fields.len(), 2, "Coin has two fields (id, balance)");
+    assert_eq!(mint_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(mint_fields[0]["i"].as_i64(), Some(1));
+    assert_eq!(mint_fields[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(mint_fields[1]["i"].as_i64(), Some(100));
+    let coin_type_id = mint_rv["type_id"].as_u64().expect("Struct.type_id");
+
+    // balance(&coin) -> Int(100) (read through ref)
+    assert_eq!(exits[1].0, "balance");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(100));
+
+    // burn(coin) -> Int(100) (consumed via destructure)
+    assert_eq!(exits[2].0, "burn");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(100));
+
+    // test_resources itself returns Void.
+    assert_eq!(exits[3].0, "test_resources");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
+
+    // ----- The `&Coin` arg to balance() is a Reference wrapping a Struct ---
+    let entries: Vec<&serde_json::Value> = doc["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    let bal_arg0 = &entries[1]["args"][0]["value"];
+    assert_eq!(bal_arg0["kind"].as_str(), Some("Reference"));
+    assert_eq!(
+        bal_arg0["mutable"].as_bool(),
+        Some(false),
+        "balance takes &Coin (immutable)",
+    );
+    let bal_deref = &bal_arg0["dereferenced"];
+    assert_eq!(bal_deref["kind"].as_str(), Some("Struct"));
+    assert_eq!(
+        bal_deref["type_id"].as_u64(),
+        Some(coin_type_id),
+        "the &Coin pointee must share the Coin struct type id from mint's return",
+    );
+    let bal_fields = bal_deref["field_values"].as_array().expect("fields");
+    assert_eq!(bal_fields[0]["i"].as_i64(), Some(1));
+    assert_eq!(bal_fields[1]["i"].as_i64(), Some(100));
+
+    // ----- The `Coin` typed-Struct shape must surface in the merged step --
+    let struct_lists = collect_struct_int_lists(&doc);
+    assert!(
+        struct_lists.contains(&vec![1_i64, 100]),
+        "expected Coin {{ id: 1, balance: 100 }} as typed Struct fields; got {struct_lists:?}",
+    );
+}
+
+/// Records `flow_test::test_object_lifecycle` (synthetic NDJSON).
+///
+/// Pins the canonical Sui shape: a `Counter` struct whose `id: UID`
+/// nests `UID -> ID -> Address` as Structs (matching Sui's
+/// `sui::object::UID { id: ID { bytes: address } }` schema), mutated
+/// through a `&mut Counter` reference, then read through a `&Counter`
+/// reference.  An `External::Transfer` side effect surfaces as a
+/// `TraceLogEvent` io entry.
+#[test]
+fn test_object_lifecycle_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_object_lifecycle_via_ct_print_full",
+        "test_object_lifecycle",
+        flow_test_named_source("object_lifecycle_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "object_lifecycle_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(functions, vec!["test_object_lifecycle", "increment", "value"]);
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(3));
+    assert_eq!(
+        counts["io_events"].as_u64(),
+        Some(1),
+        "External::Transfer must surface as exactly one io_event",
+    );
+
+    // 1 step + 3 call_entry + 1 io + 3 call_exit = 8 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 8);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "increment".to_string(),
+            "value".to_string(),
+            "test_object_lifecycle".to_string(),
+        ],
+    );
+
+    // ----- The io event for Transfer ------------------------------------
+    let io = events
+        .iter()
+        .find(|e| e["kind"] == "io")
+        .expect("expected an `io` event for the External::Transfer side effect");
+    assert_eq!(io["text"].as_str(), Some("Transfer"));
+
+    // ----- &mut Counter and &Counter args carry nested Struct payload ---
+    let entries: Vec<&serde_json::Value> = doc["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    // increment(&mut Counter, by) -> Void
+    let inc_args = entries[0]["args"].as_array().expect("args array");
+    assert_eq!(inc_args.len(), 2);
+    let inc_arg0 = &inc_args[0]["value"];
+    assert_eq!(inc_arg0["kind"].as_str(), Some("Reference"));
+    assert_eq!(inc_arg0["mutable"].as_bool(), Some(true));
+    let counter = &inc_arg0["dereferenced"];
+    assert_eq!(counter["kind"].as_str(), Some("Struct"));
+    let counter_fields = counter["field_values"]
+        .as_array()
+        .expect("Counter.field_values");
+    assert_eq!(counter_fields.len(), 2, "Counter {{ id: UID, value: u64 }}");
+    // counter_fields[0] is the UID nested struct
+    assert_eq!(counter_fields[0]["kind"].as_str(), Some("Struct"));
+    let uid_fields = counter_fields[0]["field_values"]
+        .as_array()
+        .expect("UID.field_values");
+    assert_eq!(uid_fields.len(), 1, "UID {{ id: ID }}");
+    assert_eq!(uid_fields[0]["kind"].as_str(), Some("Struct"));
+    let id_fields = uid_fields[0]["field_values"]
+        .as_array()
+        .expect("ID.field_values");
+    assert_eq!(id_fields.len(), 1, "ID {{ bytes: address }}");
+    assert_eq!(
+        id_fields[0]["kind"].as_str(),
+        Some("String"),
+        "ID.bytes (address) surfaces as a String ValueRecord",
+    );
+    assert_eq!(id_fields[0]["text"].as_str(), Some("0xDEADBEEF"));
+    // counter_fields[1] is the value: u64
+    assert_eq!(counter_fields[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(counter_fields[1]["i"].as_i64(), Some(0));
+    // increment's `by: u64` arg
+    assert_eq!(inc_args[1]["value"]["kind"].as_str(), Some("Int"));
+    assert_eq!(inc_args[1]["value"]["i"].as_i64(), Some(7));
+
+    // value(&Counter) — same nested shape but `value: 7` after mutation
+    let val_args = entries[1]["args"].as_array().expect("args array");
+    let val_arg0 = &val_args[0]["value"];
+    assert_eq!(val_arg0["kind"].as_str(), Some("Reference"));
+    assert_eq!(
+        val_arg0["mutable"].as_bool(),
+        Some(false),
+        "value() takes &Counter (immutable)",
+    );
+    let counter_after = &val_arg0["dereferenced"];
+    let counter_after_fields = counter_after["field_values"]
+        .as_array()
+        .expect("Counter.field_values");
+    assert_eq!(
+        counter_after_fields[1]["i"].as_i64(),
+        Some(7),
+        "Counter.value is 7 after increment(7)",
+    );
+
+    // ----- Return values --------------------------------------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 3);
+    assert_eq!(exits[0].0, "increment");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[1].0, "value");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(7));
+    assert_eq!(exits[2].0, "test_object_lifecycle");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+}
+
+/// Records `flow_test::test_abilities` (synthetic NDJSON).
+///
+/// Pins the recorder's coverage of the Move 4-ability matrix:
+///   * Hot potato (`AccessToken`, no abilities) — minted then consumed
+///     exactly once via destructure; surfaces as a typed Struct on
+///     mint and an Int on consume.
+///   * Copy + drop (`Datum`) — a single binding produces multiple Move
+///     VM Struct copies of `Datum { x: 42 }`.
+///   * Store-only (`StorageItem`) — explicit destructure required;
+///     surfaces as a typed Struct then an Int return.
+///
+/// Each named struct type registers a distinct typed `TypeId` so the
+/// converter does not collapse them into the generic `struct` fallback.
+#[test]
+fn test_abilities_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_abilities_via_ct_print_full",
+        "test_abilities",
+        flow_test_named_source("abilities_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "abilities_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec![
+            "test_abilities",
+            "mint_token",
+            "consume_token",
+            "destroy_storage_item",
+        ],
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(4));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 4 call_entry + 4 call_exit = 9 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 9);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "mint_token".to_string(),
+            "consume_token".to_string(),
+            "destroy_storage_item".to_string(),
+            "test_abilities".to_string(),
+        ],
+    );
+
+    // ----- mint_token(7) -> AccessToken { operation_id: 7 } ---------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 4);
+    assert_eq!(exits[0].0, "mint_token");
+    let mint_rv = &exits[0].1;
+    assert_eq!(mint_rv["kind"].as_str(), Some("Struct"));
+    let mint_fields = mint_rv["field_values"].as_array().expect("Struct.field_values");
+    assert_eq!(mint_fields.len(), 1);
+    assert_eq!(mint_fields[0]["i"].as_i64(), Some(7));
+    let token_type_id = mint_rv["type_id"].as_u64().expect("AccessToken type_id");
+
+    // ----- consume_token(token) -> Int(7) (linear destructure) -----------
+    assert_eq!(exits[1].0, "consume_token");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(7));
+
+    // The hot potato AccessToken arg to consume_token must carry the
+    // SAME type_id as the one returned by mint_token — this is the
+    // "linearity" invariant from the recorder's POV: the same value
+    // identity flows through.
+    let entries: Vec<&serde_json::Value> = doc["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    let consume_arg = &entries[1]["args"][0]["value"];
+    assert_eq!(consume_arg["kind"].as_str(), Some("Struct"));
+    assert_eq!(
+        consume_arg["type_id"].as_u64(),
+        Some(token_type_id),
+        "the hot potato AccessToken passed to consume_token must share the \
+         type_id minted by mint_token (linearity through the trace)",
+    );
+
+    // ----- destroy_storage_item(s) -> Int(99) ----------------------------
+    assert_eq!(exits[2].0, "destroy_storage_item");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(99));
+
+    // test_abilities itself returns Void.
+    assert_eq!(exits[3].0, "test_abilities");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
+
+    // ----- Multiple Datum {x:42} copies surface in the merged step -------
+    // `let d = Datum {x:42}; let d2 = d;` materialises the copy at the
+    // Move VM level — both bindings appear as typed Struct values.
+    let struct_lists = collect_struct_int_lists(&doc);
+    let datum_copies = struct_lists.iter().filter(|fields| fields == &&vec![42_i64]).count();
+    assert!(
+        datum_copies >= 2,
+        "expected at least 2 Datum {{ x: 42 }} struct copies (d, d2); \
+         got struct shapes = {struct_lists:?}",
+    );
+    // StorageItem { payload: 99 } also surfaces as a typed Struct.
+    assert!(
+        struct_lists.contains(&vec![99_i64]),
+        "expected StorageItem {{ payload: 99 }} as a typed Struct; got {struct_lists:?}",
+    );
+    // AccessToken { operation_id: 7 } also surfaces.
+    assert!(
+        struct_lists.contains(&vec![7_i64]),
+        "expected AccessToken {{ operation_id: 7 }} as a typed Struct; got {struct_lists:?}",
+    );
 }
 
 /// Decode the standard base64 alphabet (no URL-safe variant) into raw
