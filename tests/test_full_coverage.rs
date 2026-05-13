@@ -293,10 +293,21 @@ fn collect_step_vars(
 /// in the merged step event (deduplicated, order-preserving).  Useful
 /// for asserting "this Int value, attached to this name, was observed
 /// at least once during the function".
+///
+/// Note: as the converter learned to emit typed compound values
+/// (`Sequence` / `Struct` / `Tuple` for Move vectors / structs / tuple
+/// returns) we expanded the allowed-kinds list passed to
+/// [`collect_step_vars`] so nested compound payloads do not trip the
+/// "unexpected ValueRecord kind" hard error.  This helper still only
+/// returns scalar `Int` leaves — compound walks belong to the test
+/// using them.
 fn unique_int_pairs(doc: &serde_json::Value) -> Vec<(String, i64)> {
     let mut seen = std::collections::BTreeSet::new();
     let mut out = Vec::new();
-    for (name, value) in collect_step_vars(doc, &["Bool", "Int", "Raw", "String"]) {
+    for (name, value) in collect_step_vars(
+        doc,
+        &["Bool", "Int", "Raw", "String", "Sequence", "Struct", "Tuple"],
+    ) {
         if value["kind"] == "Int" {
             let i = value["i"].as_i64().expect("Int.i");
             if seen.insert((name.clone(), i)) {
@@ -326,7 +337,10 @@ fn unique_int_pairs(doc: &serde_json::Value) -> Vec<(String, i64)> {
 fn unique_raw_pairs(doc: &serde_json::Value) -> Vec<(String, String)> {
     let mut seen = std::collections::BTreeSet::new();
     let mut out = Vec::new();
-    for (name, value) in collect_step_vars(doc, &["Bool", "Int", "Raw", "String"]) {
+    for (name, value) in collect_step_vars(
+        doc,
+        &["Bool", "Int", "Raw", "String", "Sequence", "Struct", "Tuple"],
+    ) {
         let payload = match value["kind"].as_str() {
             Some("Raw") => value["r"].as_str().map(|s| s.to_string()),
             Some("String") => value["text"].as_str().map(|s| s.to_string()),
@@ -346,10 +360,85 @@ fn unique_raw_pairs(doc: &serde_json::Value) -> Vec<(String, String)> {
 /// values in the merged step event. Allows asserting on the strongest
 /// typed shape — kind="Bool", b=true/false, text="true"/"false" — rather
 /// than the historical Raw-coerced stringification.
+/// Collect every `kind:"Sequence"` value's element-int list (only
+/// pulling sequences whose elements are all `Int` leaves) from the
+/// merged step's vars.  Used by `test_vectors_*` to assert that each
+/// successive `vector::push_back(_, N)` shape surfaces as a typed
+/// Sequence carrying the expected children, rather than as a printed
+/// `Raw` / `String` payload.
+fn collect_sequence_int_lists(doc: &serde_json::Value) -> Vec<Vec<i64>> {
+    let mut out = Vec::new();
+    for (_, value) in collect_step_vars(
+        doc,
+        &["Bool", "Int", "Raw", "String", "Sequence", "Struct", "Tuple"],
+    ) {
+        if value["kind"] != "Sequence" {
+            continue;
+        }
+        let Some(elems) = value["elements"].as_array() else {
+            continue;
+        };
+        let mut ints = Vec::with_capacity(elems.len());
+        let mut all_ints = true;
+        for e in elems {
+            if e["kind"] == "Int" {
+                ints.push(e["i"].as_i64().expect("Int.i"));
+            } else {
+                all_ints = false;
+                break;
+            }
+        }
+        if all_ints {
+            out.push(ints);
+        }
+    }
+    out
+}
+
+/// Collect every `kind:"Struct"` value's field-Int list (only pulling
+/// structs whose fields are all `Int` leaves) from the merged step's
+/// vars.  Used by `test_structs_*` to assert that each successive
+/// `Point { x, y }` / `Wallet { balance, id }` shape surfaces as a
+/// typed Struct carrying the expected children, rather than as a
+/// printed `Raw` / `String` payload.  Nested structs (Rectangle whose
+/// first field is a Point) are skipped — the test asserts on the
+/// inner Point and Wallet shapes directly.
+fn collect_struct_int_lists(doc: &serde_json::Value) -> Vec<Vec<i64>> {
+    let mut out = Vec::new();
+    for (_, value) in collect_step_vars(
+        doc,
+        &["Bool", "Int", "Raw", "String", "Sequence", "Struct", "Tuple"],
+    ) {
+        if value["kind"] != "Struct" {
+            continue;
+        }
+        let Some(fields) = value["field_values"].as_array() else {
+            continue;
+        };
+        let mut ints = Vec::with_capacity(fields.len());
+        let mut all_ints = true;
+        for f in fields {
+            if f["kind"] == "Int" {
+                ints.push(f["i"].as_i64().expect("Int.i"));
+            } else {
+                all_ints = false;
+                break;
+            }
+        }
+        if all_ints {
+            out.push(ints);
+        }
+    }
+    out
+}
+
 fn unique_bool_pairs(doc: &serde_json::Value) -> Vec<(String, bool)> {
     let mut seen = std::collections::BTreeSet::new();
     let mut out = Vec::new();
-    for (name, value) in collect_step_vars(doc, &["Bool", "Int", "Raw", "String"]) {
+    for (name, value) in collect_step_vars(
+        doc,
+        &["Bool", "Int", "Raw", "String", "Sequence", "Struct", "Tuple"],
+    ) {
         if value["kind"] == "Bool" {
             let b = value["b"].as_bool().expect("Bool.b");
             // Spec invariant from streaming_value_encoder.writeBool: the
@@ -588,7 +677,13 @@ fn test_nested_calls_via_ct_print_full() {
         "call_entry sequence pins the recorder's close-frame ordering"
     );
 
-    // ----- Return values (Int + Void) -------------------------------------
+    // ----- Return values (Int + Tuple + Void) -----------------------------
+    // `compute_triple` returns the tuple `(20, 96, 12)` — three u64
+    // values.  The recorder now surfaces the *full* tuple as a typed
+    // `ValueRecord::Tuple` carrying three `Int` elements, rather than
+    // silently truncating to the first element.  See
+    // `test_nested_calls_tuple_return_decodes_full_tuple` for the
+    // dedicated typed-shape pin.
     let exits = observed_exit_sequence(&doc);
     let exit_pairs: Vec<(String, Option<i64>)> = exits
         .iter()
@@ -606,19 +701,32 @@ fn test_nested_calls_via_ct_print_full() {
         exit_pairs,
         vec![
             ("max_u64".to_string(), Some(12)),
-            // RECORDER BUG: compute_triple returns the tuple
-            // `(20, 96, 12)` — three u64 values.  The recorder only
-            // surfaces the *first* element of the tuple as the
-            // call_exit return_value (it treats tuples as a single
-            // top-of-stack scalar).  See
-            // `test_nested_calls_tuple_return_decodes_full_tuple` below.
-            ("compute_triple".to_string(), Some(20)),
+            // compute_triple's return is a Tuple (not an Int), so the
+            // shorthand `Option<i64>` projector reports `None` here —
+            // the full Tuple shape is asserted explicitly below.
+            ("compute_triple".to_string(), None),
             ("min_u64".to_string(), Some(8)),
             ("min_u64".to_string(), Some(15)),
             ("max_u64".to_string(), Some(15)),
             ("test_nested_calls".to_string(), None), // Void
         ]
     );
+
+    // Strict tuple-shape assertion: kind=Tuple, three Int elements
+    // [20, 96, 12].  Pinned exactly so any future regression toward
+    // truncation / re-shaping shows up here.
+    let compute_triple_rv = &exits[1].1;
+    assert_eq!(compute_triple_rv["kind"].as_str(), Some("Tuple"));
+    let tuple_elems = compute_triple_rv["elements"]
+        .as_array()
+        .expect("Tuple.elements");
+    assert_eq!(tuple_elems.len(), 3);
+    assert_eq!(tuple_elems[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(tuple_elems[0]["i"].as_i64(), Some(20));
+    assert_eq!(tuple_elems[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(tuple_elems[1]["i"].as_i64(), Some(96));
+    assert_eq!(tuple_elems[2]["kind"].as_str(), Some("Int"));
+    assert_eq!(tuple_elems[2]["i"].as_i64(), Some(12));
 
     // ----- Argument decoding on call_entry --------------------------------
     // The recorder is supposed to decode each call's args.  Pin the
@@ -666,11 +774,6 @@ fn test_nested_calls_via_ct_print_full() {
 }
 
 #[test]
-#[ignore = "RECORDER BUG: tuple returns surface only their first element \
-            on call_exit.return_value.  compute_triple returns \
-            (20, 96, 12) but the recorder reports `Int 20`.  Spec-compliant \
-            output should encode the full tuple as a typed ValueRecord \
-            (e.g. Tuple/Sequence variant)."]
 fn test_nested_calls_tuple_return_decodes_full_tuple() {
     let Some((doc, _)) = record_and_dump_full(
         "test_nested_calls_tuple_return_decodes_full_tuple",
@@ -683,14 +786,28 @@ fn test_nested_calls_tuple_return_decodes_full_tuple() {
         .iter()
         .find(|(f, _)| f == "compute_triple")
         .expect("compute_triple should appear in exit sequence");
-    // Spec-correct: the tuple should decode as a Tuple/Sequence with
-    // three Int elements [20, 96, 12].
+    // Spec-correct: the tuple decodes as a Tuple ValueRecord with three
+    // Int elements [20, 96, 12].  Sequence is also accepted because a
+    // future converter could reasonably model variadic returns as a
+    // typed sequence — both shapes preserve all three elements.
     let kind = compute_triple.1["kind"].as_str().unwrap_or("");
     assert!(
         kind == "Tuple" || kind == "Sequence",
         "expected Tuple/Sequence ValueRecord for compute_triple's tuple \
          return; got kind={kind} (full = {})",
         compute_triple.1
+    );
+    let elems = compute_triple.1["elements"]
+        .as_array()
+        .expect("Tuple/Sequence.elements");
+    let ints: Vec<i64> = elems
+        .iter()
+        .map(|e| e["i"].as_i64().expect("element Int.i"))
+        .collect();
+    assert_eq!(
+        ints,
+        vec![20, 96, 12],
+        "compute_triple's full tuple return must surface as [20, 96, 12]"
     );
 }
 
@@ -703,10 +820,12 @@ fn test_nested_calls_tuple_return_decodes_full_tuple() {
 /// `vector::borrow` at indices 0 and 4 (10, 50), calls
 /// `vector_sum` (150), pops 50, and verifies new length is 4.
 ///
-/// RECORDER BUG: vector values surface as `Raw {r: "[10, 20, 30, 40, 50]"}`
-/// (a printed string) rather than a typed `ValueRecord::Sequence`
-/// containing five `Int` elements.  See
-/// `test_vectors_uses_sequence_value_record` (currently `#[ignore]`d).
+/// Vector values surface as typed `ValueRecord::Sequence` payloads
+/// carrying recursively-converted children — the test pins each
+/// expected element list shape so any future regression toward
+/// printed-form `Raw`/`String` (the historical fallback) is caught.
+/// See also `test_vectors_uses_sequence_value_record` for the dedicated
+/// kind-presence pin.
 #[test]
 fn test_vectors_via_ct_print_full() {
     let Some((doc, _)) = record_and_dump_full("test_vectors_via_ct_print_full", "test_vectors")
@@ -749,20 +868,23 @@ fn test_vectors_via_ct_print_full() {
     assert_eq!(exits[1].0, "test_vectors");
     assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
 
-    // ----- Vector contents must surface as Raw printed forms ---------------
-    let raws = unique_raw_pairs(&doc);
-    let raw_strs: std::collections::BTreeSet<&str> = raws.iter().map(|(_, r)| r.as_str()).collect();
+    // ----- Vector contents must surface as typed Sequence values ----------
+    // Walk the merged step's vars and collect each Sequence's element-int
+    // list.  We expect every vector growth shape to appear as a typed
+    // `kind:"Sequence"` payload with `Int`-leaf elements.
+    let seq_int_lists = collect_sequence_int_lists(&doc);
     for want in [
-        "[]",
-        "[10]",
-        "[10, 20]",
-        "[10, 20, 30]",
-        "[10, 20, 30, 40]",
-        "[10, 20, 30, 40, 50]",
+        Vec::<i64>::new(),
+        vec![10],
+        vec![10, 20],
+        vec![10, 20, 30],
+        vec![10, 20, 30, 40],
+        vec![10, 20, 30, 40, 50],
     ] {
         assert!(
-            raw_strs.contains(want),
-            "expected vector printed form `{want}` in Raw values; got {raw_strs:?}"
+            seq_int_lists.contains(&want),
+            "expected vector contents `{want:?}` as a typed Sequence ValueRecord; \
+             got Sequence shapes = {seq_int_lists:?}"
         );
     }
 
@@ -779,12 +901,6 @@ fn test_vectors_via_ct_print_full() {
 }
 
 #[test]
-#[ignore = "RECORDER BUG: Move vectors surface as `Raw {r: \"[1, 2, 3, ...]\"}` \
-            stringified printed forms instead of typed \
-            `ValueRecord::Sequence` arrays carrying typed elements.  \
-            Spec-compliant output should emit a Sequence ValueRecord \
-            with five Int children for `vector::push_back(&mut v, _)` \
-            five times."]
 fn test_vectors_uses_sequence_value_record() {
     let Some((doc, _)) =
         record_and_dump_full("test_vectors_uses_sequence_value_record", "test_vectors")
@@ -806,6 +922,14 @@ fn test_vectors_uses_sequence_value_record() {
         kinds.contains("Sequence"),
         "expected Sequence ValueRecord for vector contents; got {kinds:?}"
     );
+    // Strict shape check: at least one Sequence whose elements are the
+    // canonical [10, 20, 30, 40, 50] list pushed by `test_vectors`.
+    let seq_lists = collect_sequence_int_lists(&doc);
+    assert!(
+        seq_lists.contains(&vec![10, 20, 30, 40, 50]),
+        "expected the [10, 20, 30, 40, 50] vector contents as a typed \
+         Sequence; got Sequence shapes = {seq_lists:?}"
+    );
 }
 
 // ===========================================================================
@@ -817,10 +941,12 @@ fn test_vectors_uses_sequence_value_record() {
 /// `Point { x: 10, y: 10 }`), builds a `Rectangle`, computes its area
 /// (40), destructures the sum into `(px, py)`, builds a `Wallet`.
 ///
-/// RECORDER BUG: struct values surface as
-/// `Raw {r: "Point { x: 3, y: 4 }"}` strings rather than typed
-/// `ValueRecord::Struct` carrying named fields.  See
-/// `test_structs_uses_struct_value_record` (currently `#[ignore]`d).
+/// Struct values surface as typed `ValueRecord::Struct` payloads
+/// carrying recursively-converted field children — the test pins the
+/// observed Point shapes so any future regression toward the
+/// historical `Raw`/`String` printed-form fallback is caught.  See
+/// also `test_structs_uses_struct_value_record` for the dedicated
+/// kind-presence pin.
 #[test]
 fn test_structs_via_ct_print_full() {
     let Some((doc, _)) = record_and_dump_full("test_structs_via_ct_print_full", "test_structs")
@@ -861,38 +987,41 @@ fn test_structs_via_ct_print_full() {
         ]
     );
 
-    // ----- Return values: add_points -> String "Point {...}", area=40 -------
+    // ----- Return values: add_points -> Struct(Point), area=40 -----------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits[0].0, "add_points");
-    // RECORDER BUG: should be a Struct ValueRecord; today it's the
-    // printed form as a String (was previously surfaced as Raw before
-    // the FFI wrapper learned to preserve typed ValueRecord variants —
-    // the Move recorder builds `ValueRecord::String { text: ... }`).
-    assert_eq!(exits[0].1["kind"].as_str(), Some("String"));
-    assert_eq!(
-        exits[0].1["text"].as_str(),
-        Some("Point { x: 10, y: 10 }"),
-        "add_points(p1, p2) == Point {{ x: 10, y: 10 }}",
-    );
+    // The Point struct return now surfaces as a typed
+    // `ValueRecord::Struct` carrying two `Int` fields [x=10, y=10].
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Struct"));
+    let p_fields = exits[0].1["field_values"]
+        .as_array()
+        .expect("Struct.field_values");
+    assert_eq!(p_fields.len(), 2, "Point has two fields (x, y)");
+    assert_eq!(p_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(p_fields[0]["i"].as_i64(), Some(10), "Point.x == 10");
+    assert_eq!(p_fields[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(p_fields[1]["i"].as_i64(), Some(10), "Point.y == 10");
     assert_eq!(exits[1].0, "rectangle_area");
     assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
     assert_eq!(exits[1].1["i"].as_i64(), Some(40));
     assert_eq!(exits[2].0, "test_structs");
     assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 
-    // ----- Struct printed forms must include every observed shape ---------
-    let raws = unique_raw_pairs(&doc);
-    let raw_strs: std::collections::BTreeSet<&str> = raws.iter().map(|(_, r)| r.as_str()).collect();
+    // ----- Every observed Point/Wallet shape surfaces as Struct -----------
+    // Walk the merged step's vars and collect each Struct's flattened
+    // Int-field list.  The test pins the canonical (x, y) Point shapes
+    // built by the source program plus the Wallet (balance, id) shape.
+    let struct_int_lists = collect_struct_int_lists(&doc);
     for want in [
-        "Point { x: 3, y: 4 }",
-        "Point { x: 7, y: 6 }",
-        "Point { x: 10, y: 10 }",
-        "Rectangle { origin: Point { x: 3, y: 4 }, width: 5, height: 8 }",
-        "Wallet { balance: 1000, id: 1 }",
+        vec![3_i64, 4],
+        vec![7, 6],
+        vec![10, 10],
+        // Wallet { balance: 1000, id: 1 }
+        vec![1000, 1],
     ] {
         assert!(
-            raw_strs.contains(want),
-            "expected struct printed form `{want}` in Raw values; got {raw_strs:?}"
+            struct_int_lists.contains(&want),
+            "expected Struct field-Int shape `{want:?}` in vars; got Struct shapes = {struct_int_lists:?}"
         );
     }
 
@@ -908,11 +1037,6 @@ fn test_structs_via_ct_print_full() {
 }
 
 #[test]
-#[ignore = "RECORDER BUG: struct values surface as `Raw {r: \"Point { x: 3, y: 4 }\"}` \
-            stringified printed forms instead of typed \
-            `ValueRecord::Struct` carrying named fields.  Spec-compliant \
-            output should emit Struct ValueRecord with two Int field \
-            children for every Point construction."]
 fn test_structs_uses_struct_value_record() {
     let Some((doc, _)) =
         record_and_dump_full("test_structs_uses_struct_value_record", "test_structs")
@@ -933,6 +1057,14 @@ fn test_structs_uses_struct_value_record() {
     assert!(
         kinds.contains("Struct"),
         "expected Struct ValueRecord for Point/Rectangle/Wallet construction; got {kinds:?}"
+    );
+    // Strict shape check: at least one Struct whose fields are the
+    // canonical Point { x: 3, y: 4 } shape.
+    let struct_lists = collect_struct_int_lists(&doc);
+    assert!(
+        struct_lists.contains(&vec![3, 4]),
+        "expected Point {{ x: 3, y: 4 }} as a typed Struct with Int field \
+         values; got Struct shapes = {struct_lists:?}"
     );
 }
 
@@ -991,52 +1123,66 @@ fn test_references_via_ct_print_full() {
     assert_eq!(exits[2].0, "test_references");
     assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 
-    // ----- &mut Point arg: surfaces as a String-kind printed-form ref -----
+    // ----- &mut Point arg: surfaces as a typed Struct snapshot ------------
     // RECORDER BUG: a Move `&mut Point` reference comes through the
-    // converter as `ValueRecord::String { text: "Point { x: 2, y: 3 }" }`
-    // — i.e. it leaks the implementation detail that the recorder
-    // stringifies references rather than emitting a typed Reference
-    // / Pointer ValueRecord.  Pin the present-day behaviour so any
-    // reshape (towards a real Reference variant) shows up here.
+    // converter as the *snapshot* of the underlying Point — currently a
+    // typed `ValueRecord::Struct { field_values: [Int x, Int y] }` —
+    // rather than a typed `ValueRecord::Reference` carrying the pointee
+    // type and a back-pointer.  Pin the present-day Struct snapshot
+    // shape so any future reshape (towards a real Reference variant)
+    // shows up here.  See `test_references_use_typed_reference_value_record`
+    // (currently `#[ignore]`d) for the spec-correct expectation.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let scale_args = |idx: usize| -> (String, Option<String>, Option<i64>) {
+    let scale_args = |idx: usize| -> (String, Option<Vec<i64>>, Option<i64>) {
         let args = entries[idx]["args"].as_array().expect("args array");
         assert_eq!(args.len(), 2, "scale_point takes (&mut Point, u64)");
         let arg0 = &args[0]["value"];
         let arg1 = &args[1]["value"];
         let kind0 = arg0["kind"].as_str().expect("kind").to_string();
-        let text0 = arg0["text"].as_str().map(|s| s.to_string());
+        let xy0 = arg0["field_values"].as_array().map(|fields| {
+            fields
+                .iter()
+                .map(|f| f["i"].as_i64().expect("Int.i"))
+                .collect::<Vec<_>>()
+        });
         let i1 = arg1["i"].as_i64();
-        (kind0, text0, i1)
+        (kind0, xy0, i1)
     };
-    let (k0, t0, i0) = scale_args(0);
+    let (k0, xy0, i0) = scale_args(0);
     assert_eq!(
-        k0, "String",
-        "scale_point's &mut Point arg surfaces as String"
+        k0, "Struct",
+        "scale_point's &mut Point arg surfaces as a typed Struct snapshot"
     );
-    assert_eq!(t0.as_deref(), Some("Point { x: 2, y: 3 }"));
+    assert_eq!(xy0.as_deref(), Some(&[2_i64, 3][..]), "Point {{ x: 2, y: 3 }}");
     assert_eq!(i0, Some(5), "scale_point's factor arg = 5");
-    let (k1, t1, i1) = scale_args(1);
-    assert_eq!(k1, "String");
-    assert_eq!(t1.as_deref(), Some("Point { x: 10, y: 15 }"));
+    let (k1, xy1, i1) = scale_args(1);
+    assert_eq!(k1, "Struct");
+    assert_eq!(
+        xy1.as_deref(),
+        Some(&[10_i64, 15][..]),
+        "Point {{ x: 10, y: 15 }} after first scale_point"
+    );
     assert_eq!(i1, Some(3), "scale_point's second factor arg = 3");
 
-    // ----- All Point printed forms surface (incl. mutated copies) ---------
-    let raws = unique_raw_pairs(&doc);
-    let raw_strs: std::collections::BTreeSet<&str> = raws.iter().map(|(_, r)| r.as_str()).collect();
+    // ----- All Point shapes surface as typed Structs (incl. mutated copies)
+    // The Move source threads a single Point through `scale_point(&mut, _)`
+    // so we should observe `(2, 3)`, `(10, 15)`, and `(30, 45)` Struct
+    // shapes among the merged step's vars.
+    let struct_lists = collect_struct_int_lists(&doc);
     for want in [
-        "Point { x: 2, y: 3 }",
-        "Point { x: 10, y: 15 }",
-        "Point { x: 30, y: 45 }",
+        vec![2_i64, 3],
+        vec![10, 15],
+        vec![30, 45],
     ] {
         assert!(
-            raw_strs.contains(want),
-            "expected Point printed form `{want}` after mutation; got {raw_strs:?}"
+            struct_lists.contains(&want),
+            "expected Point shape `{want:?}` as a typed Struct after mutation; \
+             got Struct shapes = {struct_lists:?}"
         );
     }
 
@@ -1336,30 +1482,41 @@ fn test_generics_via_ct_print_full() {
     );
 
     // ----- Per-type return values ----------------------------------------
-    // After the trace-writer-nim wrapper fix, the recorder's
-    // `ValueRecord::String` outputs surface as typed `kind:"String"`
-    // values with the printed form in `text`. Previously they were
-    // silently flattened into `kind:"Raw"` with the same payload under
-    // `r`. The Move recorder's *intent* (a printed scalar) is unchanged.
+    // The Move recorder now emits typed `ValueRecord::Struct` payloads
+    // for Move struct returns (Container<T>) — `kind:"Struct"` with a
+    // `field_values` array carrying the recursively-converted children.
+    // Previously these surfaced as printed-form `String` values; the
+    // typed shape lets the frontend object inspector walk fields
+    // instead of re-parsing the rendered text.
     let exits = observed_exit_sequence(&doc);
     // wrap_value<u64>(42, 1) -> Container { value: 42, label: 1 }
+    //   field_values = [Int(42), Int(1)]
     assert_eq!(exits[0].0, "wrap_value");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("String"));
-    assert_eq!(
-        exits[0].1["text"].as_str(),
-        Some("Container { value: 42, label: 1 }"),
-    );
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Struct"));
+    let c1_fields = exits[0].1["field_values"]
+        .as_array()
+        .expect("Struct.field_values");
+    assert_eq!(c1_fields.len(), 2, "Container has two fields");
+    assert_eq!(c1_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(c1_fields[0]["i"].as_i64(), Some(42));
+    assert_eq!(c1_fields[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(c1_fields[1]["i"].as_i64(), Some(1));
     // unwrap_value<u64>(c1) -> 42
     assert_eq!(exits[1].0, "unwrap_value");
     assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
     assert_eq!(exits[1].1["i"].as_i64(), Some(42));
     // wrap_value<bool>(true, 2) -> Container { value: true, label: 2 }
+    //   field_values = [Bool(true), Int(2)]
     assert_eq!(exits[2].0, "wrap_value");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("String"));
-    assert_eq!(
-        exits[2].1["text"].as_str(),
-        Some("Container { value: true, label: 2 }"),
-    );
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Struct"));
+    let c2_fields = exits[2].1["field_values"]
+        .as_array()
+        .expect("Struct.field_values");
+    assert_eq!(c2_fields.len(), 2);
+    assert_eq!(c2_fields[0]["kind"].as_str(), Some("Bool"));
+    assert_eq!(c2_fields[0]["b"].as_bool(), Some(true));
+    assert_eq!(c2_fields[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(c2_fields[1]["i"].as_i64(), Some(2));
     // unwrap_value<bool>(c2) -> true.  The recorder builds
     // `ValueRecord::Bool` here, so this exit now surfaces with the
     // typed Bool variant (kind=Bool, b=true, text="true") rather than
@@ -1369,16 +1526,33 @@ fn test_generics_via_ct_print_full() {
     assert_eq!(exits[3].1["b"].as_bool(), Some(true));
     assert_eq!(exits[3].1["text"].as_str(), Some("true"));
     // wrap_value<Point>(pt, 3) -> Container { value: Point {...}, label: 3 }
+    //   field_values = [Struct(Point{Int(5), Int(10)}), Int(3)]
     assert_eq!(exits[4].0, "wrap_value");
-    assert_eq!(exits[4].1["kind"].as_str(), Some("String"));
-    assert_eq!(
-        exits[4].1["text"].as_str(),
-        Some("Container { value: Point { x: 5, y: 10 }, label: 3 }"),
-    );
-    // unwrap_value<Point>(c3) -> Point { x: 5, y: 10 }
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Struct"));
+    let c3_fields = exits[4].1["field_values"]
+        .as_array()
+        .expect("Struct.field_values");
+    assert_eq!(c3_fields.len(), 2);
+    assert_eq!(c3_fields[0]["kind"].as_str(), Some("Struct"));
+    let pt_fields = c3_fields[0]["field_values"]
+        .as_array()
+        .expect("nested Point Struct.field_values");
+    assert_eq!(pt_fields.len(), 2);
+    assert_eq!(pt_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(pt_fields[0]["i"].as_i64(), Some(5));
+    assert_eq!(pt_fields[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(pt_fields[1]["i"].as_i64(), Some(10));
+    assert_eq!(c3_fields[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(c3_fields[1]["i"].as_i64(), Some(3));
+    // unwrap_value<Point>(c3) -> Point { x: 5, y: 10 } (typed Struct)
     assert_eq!(exits[5].0, "unwrap_value");
-    assert_eq!(exits[5].1["kind"].as_str(), Some("String"));
-    assert_eq!(exits[5].1["text"].as_str(), Some("Point { x: 5, y: 10 }"));
+    assert_eq!(exits[5].1["kind"].as_str(), Some("Struct"));
+    let pt5_fields = exits[5].1["field_values"]
+        .as_array()
+        .expect("Point Struct.field_values");
+    assert_eq!(pt5_fields.len(), 2);
+    assert_eq!(pt5_fields[0]["i"].as_i64(), Some(5));
+    assert_eq!(pt5_fields[1]["i"].as_i64(), Some(10));
     // test_generics -> Void
     assert_eq!(exits[6].0, "test_generics");
     assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));

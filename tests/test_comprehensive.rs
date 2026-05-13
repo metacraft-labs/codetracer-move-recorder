@@ -1154,16 +1154,30 @@ fn test_scenario_token_transfer() {
         "expected 3 returns (split + transfer + toplevel)"
     );
     // The first return is from balance::split which returns a Balance struct.
-    // It should be serialized as a String (struct rendering).
+    // It now surfaces as a typed `ValueRecord::Struct` carrying the
+    // `Int(500)` field (the recorder no longer flattens struct returns
+    // into a printed-form String — see
+    // `codetracer-move-recorder/src/converter.rs::convert_move_value`
+    // and `tests/test_full_coverage.rs::test_structs_uses_struct_value_record`).
     match &return_values[0].return_value {
-        codetracer_trace_types::ValueRecord::String { text, .. } => {
-            assert!(
-                text.contains("500"),
-                "split return value should contain 500, got: {text}"
+        codetracer_trace_types::ValueRecord::Struct { field_values, .. } => {
+            assert_eq!(
+                field_values.len(),
+                1,
+                "Balance has one field; got {field_values:?}"
             );
+            match &field_values[0] {
+                codetracer_trace_types::ValueRecord::Int { i, .. } => {
+                    assert_eq!(*i, 500, "Balance.field_0 should be 500");
+                }
+                other => panic!(
+                    "expected Int Balance.field_0; got: {:?}",
+                    other
+                ),
+            }
         }
         other => panic!(
-            "expected String value for struct return from split, got: {:?}",
+            "expected Struct value for struct return from split, got: {:?}",
             other
         ),
     }
@@ -1786,71 +1800,114 @@ fn test_struct_fields_correctly_converted_point_rectangle() {
         value_events.len()
     );
 
-    // Find the Point value: should contain "0x1::geometry::Point { field_0: 42, field_1: 99 }"
+    // Find the Point value: now a typed `ValueRecord::Struct` carrying
+    // two `Int` fields [42, 99] (the recorder no longer flattens Move
+    // structs into printed-form strings — see
+    // `codetracer-move-recorder/src/converter.rs::convert_move_value`).
     let point_value = value_events
         .iter()
         .find(|v| match &v.value {
-            codetracer_trace_types::ValueRecord::String { text, .. } => {
-                text.contains("Point") && text.contains("42") && text.contains("99")
+            codetracer_trace_types::ValueRecord::Struct { field_values, .. } => {
+                field_values.len() == 2
+                    && matches!(
+                        &field_values[0],
+                        codetracer_trace_types::ValueRecord::Int { i: 42, .. }
+                    )
+                    && matches!(
+                        &field_values[1],
+                        codetracer_trace_types::ValueRecord::Int { i: 99, .. }
+                    )
             }
             _ => false,
         })
-        .expect("should have a Value event for Point struct");
+        .expect("should have a typed Struct Value event for Point with [42, 99] fields");
 
     match &point_value.value {
-        codetracer_trace_types::ValueRecord::String { text, .. } => {
-            assert!(
-                text.contains("0x1::geometry::Point"),
-                "Point value should include type name, got: {text}"
+        codetracer_trace_types::ValueRecord::Struct { field_values, .. } => {
+            assert_eq!(
+                field_values.len(),
+                2,
+                "Point has two fields (x, y); got {field_values:?}"
             );
-            assert!(
-                text.contains("field_0: 42"),
-                "Point.x (field_0) should be 42, got: {text}"
-            );
-            assert!(
-                text.contains("field_1: 99"),
-                "Point.y (field_1) should be 99, got: {text}"
-            );
+            match &field_values[0] {
+                codetracer_trace_types::ValueRecord::Int { i, .. } => {
+                    assert_eq!(*i, 42, "Point.x (field_0) should be 42")
+                }
+                other => panic!("expected Int Point.x; got: {:?}", other),
+            }
+            match &field_values[1] {
+                codetracer_trace_types::ValueRecord::Int { i, .. } => {
+                    assert_eq!(*i, 99, "Point.y (field_1) should be 99")
+                }
+                other => panic!("expected Int Point.y; got: {:?}", other),
+            }
         }
-        other => panic!("expected String ValueRecord for Point, got: {:?}", other),
+        other => panic!("expected Struct ValueRecord for Point, got: {:?}", other),
     }
 
-    // Find the Rectangle value: should contain nested Point and dimensions.
+    // Find the Rectangle value: typed `ValueRecord::Struct` with three
+    // fields — a nested Point Struct, plus width=100 and height=200.
     let rect_value = value_events
         .iter()
         .find(|v| match &v.value {
-            codetracer_trace_types::ValueRecord::String { text, .. } => {
-                text.contains("Rectangle") && text.contains("100") && text.contains("200")
+            codetracer_trace_types::ValueRecord::Struct { field_values, .. } => {
+                field_values.len() == 3
+                    && matches!(
+                        &field_values[0],
+                        codetracer_trace_types::ValueRecord::Struct { .. }
+                    )
+                    && matches!(
+                        &field_values[1],
+                        codetracer_trace_types::ValueRecord::Int { i: 100, .. }
+                    )
+                    && matches!(
+                        &field_values[2],
+                        codetracer_trace_types::ValueRecord::Int { i: 200, .. }
+                    )
             }
             _ => false,
         })
-        .expect("should have a Value event for Rectangle struct");
+        .expect("should have a typed Struct Value event for Rectangle with [Point, 100, 200]");
 
     match &rect_value.value {
-        codetracer_trace_types::ValueRecord::String { text, .. } => {
-            assert!(
-                text.contains("0x1::geometry::Rectangle"),
-                "Rectangle value should include type name, got: {text}"
-            );
-            // field_0 is the nested Point struct, rendered inline
-            assert!(
-                text.contains("field_0: 0x1::geometry::Point"),
-                "Rectangle.origin (field_0) should be a nested Point, got: {text}"
-            );
-            // field_1 is width=100, field_2 is height=200
-            assert!(
-                text.contains("field_1: 100"),
-                "Rectangle.width (field_1) should be 100, got: {text}"
-            );
-            assert!(
-                text.contains("field_2: 200"),
-                "Rectangle.height (field_2) should be 200, got: {text}"
-            );
+        codetracer_trace_types::ValueRecord::Struct { field_values, .. } => {
+            // field_0 is the nested origin Point with x=10, y=20.
+            match &field_values[0] {
+                codetracer_trace_types::ValueRecord::Struct {
+                    field_values: pt_fields,
+                    ..
+                } => {
+                    assert_eq!(pt_fields.len(), 2);
+                    match &pt_fields[0] {
+                        codetracer_trace_types::ValueRecord::Int { i, .. } => {
+                            assert_eq!(*i, 10, "origin.x should be 10")
+                        }
+                        other => panic!("expected Int origin.x; got: {:?}", other),
+                    }
+                    match &pt_fields[1] {
+                        codetracer_trace_types::ValueRecord::Int { i, .. } => {
+                            assert_eq!(*i, 20, "origin.y should be 20")
+                        }
+                        other => panic!("expected Int origin.y; got: {:?}", other),
+                    }
+                }
+                other => panic!("expected nested Struct Point at field_0; got: {:?}", other),
+            }
+            // field_1 = width = 100, field_2 = height = 200
+            match &field_values[1] {
+                codetracer_trace_types::ValueRecord::Int { i, .. } => {
+                    assert_eq!(*i, 100, "Rectangle.width (field_1) should be 100")
+                }
+                other => panic!("expected Int Rectangle.width; got: {:?}", other),
+            }
+            match &field_values[2] {
+                codetracer_trace_types::ValueRecord::Int { i, .. } => {
+                    assert_eq!(*i, 200, "Rectangle.height (field_2) should be 200")
+                }
+                other => panic!("expected Int Rectangle.height; got: {:?}", other),
+            }
         }
-        other => panic!(
-            "expected String ValueRecord for Rectangle, got: {:?}",
-            other
-        ),
+        other => panic!("expected Struct ValueRecord for Rectangle, got: {:?}", other),
     }
 
     // Also verify the return value from CloseFrame carries the Rectangle struct.
@@ -1862,24 +1919,32 @@ fn test_struct_fields_correctly_converted_point_rectangle() {
         })
         .collect();
 
-    // Last return is from the main frame, should be the Rectangle.
+    // Last return is from the main frame, should be the Rectangle Struct
+    // with the same [Point, 100, 200] shape.
     let main_return = return_values
         .iter()
         .find(|r| match &r.return_value {
-            codetracer_trace_types::ValueRecord::String { text, .. } => text.contains("Rectangle"),
+            codetracer_trace_types::ValueRecord::Struct { field_values, .. } => {
+                field_values.len() == 3
+                    && matches!(
+                        &field_values[1],
+                        codetracer_trace_types::ValueRecord::Int { i: 100, .. }
+                    )
+                    && matches!(
+                        &field_values[2],
+                        codetracer_trace_types::ValueRecord::Int { i: 200, .. }
+                    )
+            }
             _ => false,
         })
-        .expect("should have a return value containing Rectangle");
+        .expect("should have a Struct return value containing Rectangle");
 
     match &main_return.return_value {
-        codetracer_trace_types::ValueRecord::String { text, .. } => {
-            assert!(
-                text.contains("100") && text.contains("200"),
-                "Rectangle return should contain width=100 and height=200, got: {text}"
-            );
+        codetracer_trace_types::ValueRecord::Struct { field_values, .. } => {
+            assert_eq!(field_values.len(), 3);
         }
         other => panic!(
-            "expected String return value for Rectangle, got: {:?}",
+            "expected Struct return value for Rectangle, got: {:?}",
             other
         ),
     }
@@ -1917,12 +1982,26 @@ fn test_vector_operations_produce_correct_element_values() {
 
     let events = run_converter_simple_events(&trace);
 
-    // Extract all Value events and their string representations.
-    let value_texts: Vec<String> = events
+    // Extract every typed `ValueRecord::Sequence` value emitted from Write
+    // effects, flattened into the element-Int list it carries.  The
+    // recorder now emits Sequence ValueRecords for Move vectors rather
+    // than printed-form strings — see
+    // `codetracer-move-recorder/src/converter.rs::convert_move_value`.
+    let value_seqs: Vec<Vec<i64>> = events
         .iter()
         .filter_map(|e| match e {
             TraceLowLevelEvent::Value(val) => match &val.value {
-                codetracer_trace_types::ValueRecord::String { text, .. } => Some(text.clone()),
+                codetracer_trace_types::ValueRecord::Sequence { elements, .. } => {
+                    let mut ints = Vec::with_capacity(elements.len());
+                    for e in elements {
+                        if let codetracer_trace_types::ValueRecord::Int { i, .. } = e {
+                            ints.push(*i);
+                        } else {
+                            return None;
+                        }
+                    }
+                    Some(ints)
+                }
                 _ => None,
             },
             _ => None,
@@ -1930,51 +2009,48 @@ fn test_vector_operations_produce_correct_element_values() {
         .collect();
 
     assert!(
-        value_texts.len() >= 5,
-        "expected at least 5 Value events (empty + 3 pushes + 1 pop), got {}",
-        value_texts.len()
+        value_seqs.len() >= 5,
+        "expected at least 5 typed Sequence Value events (empty + 3 pushes + 1 pop), got {}",
+        value_seqs.len()
     );
 
-    // Verify the empty vector: "[]"
+    // Verify the empty vector: []
     assert!(
-        value_texts.iter().any(|t| t == "[]"),
-        "should have an empty vector '[]', got values: {:?}",
-        value_texts
+        value_seqs.iter().any(|v| v.is_empty()),
+        "should have an empty Sequence value, got Sequence shapes: {:?}",
+        value_seqs
     );
 
-    // Verify vector after first push: "[100]"
+    // Verify vector after first push: [100]
     assert!(
-        value_texts.iter().any(|t| t == "[100]"),
-        "should have '[100]' after first push_back, got values: {:?}",
-        value_texts
+        value_seqs.iter().any(|v| v == &[100]),
+        "should have Sequence [100] after first push_back, got: {:?}",
+        value_seqs
     );
 
-    // Verify vector after second push: "[100, 200]"
+    // Verify vector after second push: [100, 200]
     assert!(
-        value_texts.iter().any(|t| t == "[100, 200]"),
-        "should have '[100, 200]' after second push_back, got values: {:?}",
-        value_texts
+        value_seqs.iter().any(|v| v == &[100, 200]),
+        "should have Sequence [100, 200] after second push_back, got: {:?}",
+        value_seqs
     );
 
-    // Verify vector after third push: "[100, 200, 300]"
+    // Verify vector after third push: [100, 200, 300]
     assert!(
-        value_texts.iter().any(|t| t == "[100, 200, 300]"),
-        "should have '[100, 200, 300]' after third push_back, got values: {:?}",
-        value_texts
+        value_seqs.iter().any(|v| v == &[100, 200, 300]),
+        "should have Sequence [100, 200, 300] after third push_back, got: {:?}",
+        value_seqs
     );
 
-    // Verify vector after pop: back to "[100, 200]"
-    // Count how many times "[100, 200]" appears — should be at least 2
-    // (once after second push, once after pop).
-    let count_100_200 = value_texts
-        .iter()
-        .filter(|t| t.as_str() == "[100, 200]")
-        .count();
+    // Verify vector after pop: back to [100, 200] (so [100, 200] appears
+    // at least twice — once after the second push, once after the pop).
+    let count_100_200 = value_seqs.iter().filter(|v| v.as_slice() == [100, 200]).count();
     assert!(
         count_100_200 >= 2,
-        "expected '[100, 200]' at least twice (after push and after pop), found {} times in: {:?}",
+        "expected Sequence [100, 200] at least twice (after push and after pop), \
+         found {} times in: {:?}",
         count_100_200,
-        value_texts
+        value_seqs
     );
 
     // Verify the return value is also the final vector state.
@@ -1989,19 +2065,29 @@ fn test_vector_operations_produce_correct_element_values() {
     let vec_return = return_records
         .iter()
         .find(|r| match &r.return_value {
-            codetracer_trace_types::ValueRecord::String { text, .. } => text.contains("100"),
+            codetracer_trace_types::ValueRecord::Sequence { elements, .. } => {
+                elements.len() == 2
+            }
             _ => false,
         })
-        .expect("should have a return value for the vector");
+        .expect("should have a Sequence return value for the vector");
 
     match &vec_return.return_value {
-        codetracer_trace_types::ValueRecord::String { text, .. } => {
-            assert_eq!(
-                text, "[100, 200]",
-                "return value should be the final vector [100, 200], got: {text}"
-            );
+        codetracer_trace_types::ValueRecord::Sequence { elements, .. } => {
+            assert_eq!(elements.len(), 2, "final vector has two elements");
+            for (idx, want) in [100_i64, 200].iter().enumerate() {
+                match &elements[idx] {
+                    codetracer_trace_types::ValueRecord::Int { i, .. } => {
+                        assert_eq!(*i, *want, "element[{idx}] should be {want}");
+                    }
+                    other => panic!(
+                        "expected Int element[{idx}] in final vector, got: {:?}",
+                        other
+                    ),
+                }
+            }
         }
-        other => panic!("expected String return value for vector, got: {:?}", other),
+        other => panic!("expected Sequence return value for vector, got: {:?}", other),
     }
 }
 
@@ -2119,24 +2205,39 @@ fn test_generic_function_instantiation_type_specific_values() {
         other => panic!("expected Bool return from identity<bool>, got: {:?}", other),
     }
 
-    // Return from wrap<Coin<SUI>>: should be a Wrapper struct containing a Coin struct.
+    // Return from wrap<Coin<SUI>>: typed `ValueRecord::Struct`
+    // (Wrapper) carrying a single nested Struct field (Coin) which in
+    // turn carries a single Int field with the coin value 1000.  The
+    // recorder no longer flattens generic struct returns into a
+    // printed-form String.
     match &return_values[2].return_value {
-        codetracer_trace_types::ValueRecord::String { text, .. } => {
-            assert!(
-                text.contains("Wrapper"),
-                "wrap return should contain 'Wrapper', got: {text}"
+        codetracer_trace_types::ValueRecord::Struct { field_values, .. } => {
+            assert_eq!(
+                field_values.len(),
+                1,
+                "Wrapper has one field (the inner Coin); got {field_values:?}"
             );
-            assert!(
-                text.contains("Coin"),
-                "wrap return should contain nested 'Coin', got: {text}"
-            );
-            assert!(
-                text.contains("1000"),
-                "wrap return should contain coin value 1000, got: {text}"
-            );
+            match &field_values[0] {
+                codetracer_trace_types::ValueRecord::Struct {
+                    field_values: coin_fields,
+                    ..
+                } => {
+                    assert_eq!(coin_fields.len(), 1, "Coin has one field (value)");
+                    match &coin_fields[0] {
+                        codetracer_trace_types::ValueRecord::Int { i, .. } => {
+                            assert_eq!(*i, 1000, "Coin.value should be 1000")
+                        }
+                        other => panic!("expected Int Coin.value; got: {:?}", other),
+                    }
+                }
+                other => panic!(
+                    "expected nested Struct (Coin) inside Wrapper; got: {:?}",
+                    other
+                ),
+            }
         }
         other => panic!(
-            "expected String return from wrap<Coin<SUI>>, got: {:?}",
+            "expected Struct return from wrap<Coin<SUI>>, got: {:?}",
             other
         ),
     }
