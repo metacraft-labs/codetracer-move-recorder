@@ -656,34 +656,45 @@ pub fn convert_move_value(
             }
         }
         SerializableMoveValue::Variant { tag, fields, type_ } => {
-            let field_strs: Vec<String> = fields
-                .iter()
-                .map(|f| {
-                    let val = convert_move_value(f, type_ids, writer);
-                    value_record_to_display(&val)
-                })
-                .collect();
-            let display = if type_.is_empty() {
-                format!("Variant#{tag}({})", field_strs.join(", "))
+            // Emit a typed `ValueRecord::Variant { discriminator, contents,
+            // type_id }` so downstream consumers (ct-print --full, frontend
+            // object inspector) can walk the variant's payload structurally
+            // instead of re-parsing the historical printed-form fallback
+            // (`"Variant#1(42)"`).  The discriminator is the tag's decimal
+            // string — prepending the `type_` (e.g.
+            // `0x1::option::Option::Variant#1`) when it is non-empty so the
+            // surface name is human-meaningful for Move 2024 enums and
+            // `Option<T>`/`Result<T,E>` shapes.
+            //
+            // Contents are wrapped in a `ValueRecord::Struct` whose
+            // `field_values` carry the recursively-converted variant
+            // payload — Move variants are positional tuples in the trace
+            // format (no field names), so we surface them as a Struct
+            // with the variant's owned `type_id` so the variant *and*
+            // its contents share the same type identity in the type
+            // table.  This matches `ValueRecord::Variant`'s documented
+            // shape ("contents: usually a Struct or a Tuple") and keeps
+            // typed walks through `value["contents"]["field_values"]`
+            // cheap for ct-print consumers.
+            let discriminator = if type_.is_empty() {
+                format!("Variant#{tag}")
             } else {
-                format!("{type_}::Variant#{tag}({})", field_strs.join(", "))
+                format!("{type_}::Variant#{tag}")
             };
-            ValueRecord::String {
-                text: display,
-                type_id: type_ids.string_id,
+            let variant_type_id = type_ids.ensure_struct(writer, type_);
+            let field_values: Vec<ValueRecord> = fields
+                .iter()
+                .map(|f| convert_move_value(f, type_ids, writer))
+                .collect();
+            let contents = ValueRecord::Struct {
+                field_values,
+                type_id: variant_type_id,
+            };
+            ValueRecord::Variant {
+                discriminator,
+                contents: Box::new(contents),
+                type_id: variant_type_id,
             }
         }
-    }
-}
-
-/// Simple display helper for ValueRecord (used in variant rendering — the
-/// last surviving printed-form path now that struct/vector emit typed
-/// `ValueRecord::Struct` / `ValueRecord::Sequence`).
-fn value_record_to_display(val: &ValueRecord) -> String {
-    match val {
-        ValueRecord::Int { i, .. } => i.to_string(),
-        ValueRecord::Bool { b, .. } => b.to_string(),
-        ValueRecord::String { text, .. } => text.clone(),
-        _ => "<complex>".to_string(),
     }
 }
