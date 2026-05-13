@@ -11,7 +11,7 @@ use codetracer_trace_writer_nim::trace_writer::TraceWriter;
 use codetracer_trace_writer_nim::{TraceEventsFileFormat, create_trace_writer};
 use eyre::{Result, eyre};
 
-use crate::move_types::{Effect, SerializableMoveValue, TraceEvent, VersionHeader};
+use crate::move_types::{Effect, Location, SerializableMoveValue, TraceEvent, TraceValue, VersionHeader};
 use crate::source_map::SourceMapResolver;
 
 /// The on-disk container produced by the recorder is always the canonical
@@ -158,7 +158,7 @@ pub fn convert_trace_into_writer(
                 // Higher-fidelity names would require parsing the
                 // function's source-map (.mvsm) — tracked as a follow-up.
                 for (idx, param) in frame.parameters.iter().enumerate() {
-                    let value = convert_move_value(param.inner_value(), &mut type_ids, writer);
+                    let value = convert_trace_value(param, &mut type_ids, writer);
                     let _ = TraceWriter::arg(writer, &format!("arg{idx}"), value);
                 }
 
@@ -333,6 +333,19 @@ pub struct TypeIds {
     pub vector_id: TypeId,
     pub tuple_id: TypeId,
     pub string_id: TypeId,
+    /// Type id used for `&T` immutable references — registered with
+    /// `TypeKind::Ref` so downstream consumers can distinguish a
+    /// borrowed reference from an owned printed-form payload.  Move
+    /// has no per-pointee reference type registry today, so all
+    /// `&T` / `&mut T` parameters share this generic id (the
+    /// pointee carries its own typed `TypeId` on the `dereferenced`
+    /// child).
+    pub ref_id: TypeId,
+    /// Type id used for `&mut T` mutable references — registered as
+    /// `TypeKind::Ref` with the lang-name `"&mut"` so the Reference
+    /// payload's mutability is reflected in the registered type as
+    /// well as the `mutable` flag on the value record.
+    pub mut_ref_id: TypeId,
     /// Lazily registered per-struct-name `TypeKind::Struct` ids so that
     /// `ValueRecord::Struct { type_id, .. }` carries a stable, named
     /// type for downstream consumers (ct-print, frontend) instead of
@@ -355,6 +368,8 @@ impl TypeIds {
             vector_id: TraceWriter::ensure_type_id(writer, TypeKind::Seq, "vector"),
             tuple_id: TraceWriter::ensure_type_id(writer, TypeKind::Tuple, "tuple"),
             string_id: TraceWriter::ensure_type_id(writer, TypeKind::String, "string"),
+            ref_id: TraceWriter::ensure_type_id(writer, TypeKind::Ref, "&"),
+            mut_ref_id: TraceWriter::ensure_type_id(writer, TypeKind::Ref, "&mut"),
             structs: HashMap::new(),
         }
     }
@@ -390,6 +405,69 @@ fn abort_code_from_value(value: &SerializableMoveValue) -> Option<String> {
         SerializableMoveValue::U128 { value } => Some(value.to_string()),
         SerializableMoveValue::U256 { value } => Some(value.clone()),
         _ => None,
+    }
+}
+
+/// Convert a `TraceValue` (the outer wrapper that distinguishes owned
+/// runtime values from `&T` / `&mut T` borrows) into a CodeTracer
+/// `ValueRecord`.
+///
+/// `TraceValue::RuntimeValue` unwraps to the underlying owned value via
+/// [`convert_move_value`].  `TraceValue::ImmRef` / `TraceValue::MutRef`
+/// surface as a typed `ValueRecord::Reference` carrying the pointee
+/// (`dereferenced`) and a synthetic `address` derived from the borrow
+/// `Location` so reference identity survives a round-trip through the
+/// trace — the previous behaviour stripped the borrow wrapper via
+/// `inner_value()` and the call_entry args silently rendered as the
+/// pointee's printed snapshot, indistinguishable from owned values
+/// (see `tests/test_full_coverage.rs::test_references_use_typed_reference_value_record`).
+pub fn convert_trace_value(
+    value: &TraceValue,
+    type_ids: &mut TypeIds,
+    writer: &mut dyn TraceWriter,
+) -> ValueRecord {
+    match value {
+        TraceValue::RuntimeValue { value } => convert_move_value(value, type_ids, writer),
+        TraceValue::ImmRef { location, snapshot } => {
+            let dereferenced = convert_move_value(snapshot, type_ids, writer);
+            ValueRecord::Reference {
+                dereferenced: Box::new(dereferenced),
+                address: synthetic_ref_address(location),
+                mutable: false,
+                type_id: type_ids.ref_id,
+            }
+        }
+        TraceValue::MutRef { location, snapshot } => {
+            let dereferenced = convert_move_value(snapshot, type_ids, writer);
+            ValueRecord::Reference {
+                dereferenced: Box::new(dereferenced),
+                address: synthetic_ref_address(location),
+                mutable: true,
+                type_id: type_ids.mut_ref_id,
+            }
+        }
+    }
+}
+
+/// Derive a stable synthetic `u64` address for a reference borrowed
+/// from a Move stack location.  The Move VM v3 trace format does not
+/// expose raw runtime addresses, but every borrow points to a
+/// `Location` that uniquely identifies the storage cell within the
+/// invocation: a `(frame_id, local_index)` pair, optionally indexed
+/// into a struct field.  We pack `frame_id` into the high 32 bits and
+/// `local_index` into the low 32 bits so two borrows of the same local
+/// surface the same `address`, while borrows of different locals (or
+/// the same local across frames) get distinct values.  Indexed
+/// borrows fold the field index into the low half via XOR — coarse
+/// but sufficient to keep field-level borrows distinct from the
+/// surrounding struct borrow without inventing addresses out of thin
+/// air.
+fn synthetic_ref_address(location: &Location) -> u64 {
+    match location {
+        Location::Local(frame_id, local_index) => (*frame_id << 32) | (*local_index & 0xffff_ffff),
+        Location::Indexed(inner, field_index) => {
+            synthetic_ref_address(inner) ^ ((*field_index & 0xffff_ffff) << 16)
+        }
     }
 }
 

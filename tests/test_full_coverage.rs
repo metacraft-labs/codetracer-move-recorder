@@ -306,7 +306,7 @@ fn unique_int_pairs(doc: &serde_json::Value) -> Vec<(String, i64)> {
     let mut out = Vec::new();
     for (name, value) in collect_step_vars(
         doc,
-        &["Bool", "Int", "Raw", "String", "Sequence", "Struct", "Tuple"],
+        &["Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple"],
     ) {
         if value["kind"] == "Int" {
             let i = value["i"].as_i64().expect("Int.i");
@@ -339,7 +339,7 @@ fn unique_raw_pairs(doc: &serde_json::Value) -> Vec<(String, String)> {
     let mut out = Vec::new();
     for (name, value) in collect_step_vars(
         doc,
-        &["Bool", "Int", "Raw", "String", "Sequence", "Struct", "Tuple"],
+        &["Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple"],
     ) {
         let payload = match value["kind"].as_str() {
             Some("Raw") => value["r"].as_str().map(|s| s.to_string()),
@@ -370,7 +370,7 @@ fn collect_sequence_int_lists(doc: &serde_json::Value) -> Vec<Vec<i64>> {
     let mut out = Vec::new();
     for (_, value) in collect_step_vars(
         doc,
-        &["Bool", "Int", "Raw", "String", "Sequence", "Struct", "Tuple"],
+        &["Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple"],
     ) {
         if value["kind"] != "Sequence" {
             continue;
@@ -407,7 +407,7 @@ fn collect_struct_int_lists(doc: &serde_json::Value) -> Vec<Vec<i64>> {
     let mut out = Vec::new();
     for (_, value) in collect_step_vars(
         doc,
-        &["Bool", "Int", "Raw", "String", "Sequence", "Struct", "Tuple"],
+        &["Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple"],
     ) {
         if value["kind"] != "Struct" {
             continue;
@@ -437,7 +437,7 @@ fn unique_bool_pairs(doc: &serde_json::Value) -> Vec<(String, bool)> {
     let mut out = Vec::new();
     for (name, value) in collect_step_vars(
         doc,
-        &["Bool", "Int", "Raw", "String", "Sequence", "Struct", "Tuple"],
+        &["Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple"],
     ) {
         if value["kind"] == "Bool" {
             let b = value["b"].as_bool().expect("Bool.b");
@@ -1123,51 +1123,67 @@ fn test_references_via_ct_print_full() {
     assert_eq!(exits[2].0, "test_references");
     assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 
-    // ----- &mut Point arg: surfaces as a typed Struct snapshot ------------
-    // RECORDER BUG: a Move `&mut Point` reference comes through the
-    // converter as the *snapshot* of the underlying Point — currently a
-    // typed `ValueRecord::Struct { field_values: [Int x, Int y] }` —
-    // rather than a typed `ValueRecord::Reference` carrying the pointee
-    // type and a back-pointer.  Pin the present-day Struct snapshot
-    // shape so any future reshape (towards a real Reference variant)
-    // shows up here.  See `test_references_use_typed_reference_value_record`
-    // (currently `#[ignore]`d) for the spec-correct expectation.
+    // ----- &mut Point arg: surfaces as a typed Reference wrapping a Struct
+    // The Move recorder now preserves the borrow wrapper around `&mut T`
+    // / `&T` parameters, surfacing them as `ValueRecord::Reference` with
+    // a `mutable` flag and a `dereferenced` Struct payload carrying the
+    // pointee shape.  Both calls to `scale_point(&mut p, _)` borrow the
+    // same `p` (frame-local index 0 in `test_references`'s frame), so
+    // `address` is stable across the two calls and `mutable == true`.
+    // See `test_references_use_typed_reference_value_record` for the
+    // dedicated kind-presence pin.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let scale_args = |idx: usize| -> (String, Option<Vec<i64>>, Option<i64>) {
+    let scale_args = |idx: usize| -> (String, bool, Option<Vec<i64>>, Option<i64>) {
         let args = entries[idx]["args"].as_array().expect("args array");
         assert_eq!(args.len(), 2, "scale_point takes (&mut Point, u64)");
         let arg0 = &args[0]["value"];
         let arg1 = &args[1]["value"];
         let kind0 = arg0["kind"].as_str().expect("kind").to_string();
-        let xy0 = arg0["field_values"].as_array().map(|fields| {
+        let mutable0 = arg0["mutable"].as_bool().unwrap_or(false);
+        let deref0 = &arg0["dereferenced"];
+        let xy0 = deref0["field_values"].as_array().map(|fields| {
             fields
                 .iter()
                 .map(|f| f["i"].as_i64().expect("Int.i"))
                 .collect::<Vec<_>>()
         });
         let i1 = arg1["i"].as_i64();
-        (kind0, xy0, i1)
+        (kind0, mutable0, xy0, i1)
     };
-    let (k0, xy0, i0) = scale_args(0);
+    let (k0, m0, xy0, i0) = scale_args(0);
     assert_eq!(
-        k0, "Struct",
-        "scale_point's &mut Point arg surfaces as a typed Struct snapshot"
+        k0, "Reference",
+        "scale_point's &mut Point arg surfaces as a typed Reference wrapper"
     );
+    assert!(m0, "scale_point's first arg is `&mut Point`, not `&Point`");
     assert_eq!(xy0.as_deref(), Some(&[2_i64, 3][..]), "Point {{ x: 2, y: 3 }}");
     assert_eq!(i0, Some(5), "scale_point's factor arg = 5");
-    let (k1, xy1, i1) = scale_args(1);
-    assert_eq!(k1, "Struct");
+    let (k1, m1, xy1, i1) = scale_args(1);
+    assert_eq!(k1, "Reference");
+    assert!(m1);
     assert_eq!(
         xy1.as_deref(),
         Some(&[10_i64, 15][..]),
         "Point {{ x: 10, y: 15 }} after first scale_point"
     );
     assert_eq!(i1, Some(3), "scale_point's second factor arg = 3");
+
+    // Both `scale_point(&mut mut_point, _)` calls borrow the same Move
+    // local, so the synthesised reference address must be stable across
+    // call_entry events — verify so a future reshape that loses
+    // borrow-identity (e.g. zeroing the address) is caught here.
+    let address0 = entries[0]["args"][0]["value"]["address"].as_u64();
+    let address1 = entries[1]["args"][0]["value"]["address"].as_u64();
+    assert!(address0.is_some(), "Reference must carry a synthetic address");
+    assert_eq!(
+        address0, address1,
+        "both scale_point calls borrow the same `mut_point`; addresses should match"
+    );
 
     // ----- All Point shapes surface as typed Structs (incl. mutated copies)
     // The Move source threads a single Point through `scale_point(&mut, _)`
@@ -1198,12 +1214,6 @@ fn test_references_via_ct_print_full() {
 }
 
 #[test]
-#[ignore = "RECORDER BUG: Move `&mut T` / `&T` references surface as \
-            `String {text: <printed>}` instead of a typed \
-            `ValueRecord::Reference` (or similar) carrying the pointee \
-            type and a back-pointer.  Spec-compliant output should \
-            distinguish a borrowed reference from an owned printed-form \
-            string."]
 fn test_references_use_typed_reference_value_record() {
     let Some((doc, _)) = record_and_dump_full(
         "test_references_use_typed_reference_value_record",
