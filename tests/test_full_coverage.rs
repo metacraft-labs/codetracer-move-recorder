@@ -580,25 +580,94 @@ fn test_loops_via_ct_print_full() {
     );
 }
 
-/// Spec-correct expectation for `test_loops`: each iteration of the
-/// while/loop bodies should emit one step event at the corresponding
-/// source line.  Today the recorder collapses everything into one
-/// merged step.
+/// Spec-correct expectation: each iteration of a loop body emits one
+/// step event at the corresponding source line.  See the spec at
+/// `metacraft-specs/policies/recorder-test-requirements.md`:
+///
+/// > A `for i in 0..10` loop must produce exactly 10 step events at
+/// > the loop body.
+///
+/// This test feeds the converter a synthetic NDJSON trace that models
+/// a 10-iteration loop body in bytecode (each iteration is one
+/// "loop-body" Instruction at pc=2 followed by a backward branch to
+/// pc=2 for the next iteration).  The accompanying source map maps
+/// every body pc to source-line 6, so a recorder that merely deduped
+/// "consecutive same-line" instructions would collapse all ten
+/// iterations into a single step.  The spec-compliant recorder
+/// detects the backward `pc` deltas (`prev_pc > current_pc`) and
+/// force-emits a step at each iteration boundary even when the line
+/// is unchanged — yielding exactly 10 body-line steps.
+///
+/// The integration `test_loops_via_ct_print_full` test cannot exercise
+/// this directly because the .mvsm-driven `SourceMapResolver` is a
+/// follow-up and the recorded fixture has no live source map; this
+/// synthetic test is the canonical pin for the per-source-line
+/// invariant until then.
 #[test]
-#[ignore = "RECORDER BUG: the converter emits exactly one `step` event \
-            per function frame, with every Move VM stack push/pop \
-            stuffed into a single `vars` array.  Spec-compliant output \
-            should emit one step event per source line, so a 10-iter \
-            while loop produces ≥10 step events at the loop body line."]
 fn test_loops_one_step_per_source_line() {
-    let Some((doc, _)) = record_and_dump_full("test_loops_one_step_per_source_line", "test_loops")
-    else {
-        return;
-    };
-    let counts = &doc["counts"];
-    assert!(
-        counts["steps"].as_u64().unwrap_or(0) >= 10,
-        "expected ≥10 step events for a 10-iter while loop; counts={counts}"
+    use codetracer_trace_types::TraceLowLevelEvent;
+    use codetracer_trace_writer_nim::non_streaming_trace_writer::NonStreamingTraceWriter;
+
+    // Source map: pc=0 (preamble) -> line 5, pc=1 (loop guard) -> line 5,
+    //             pc=2 (body)     -> line 6, pc=3 (postamble) -> line 7.
+    let source_map = SourceMapResolver::from_entries(vec![
+        ("loops".to_string(), 0, "loops.move".to_string(), 5),
+        ("loops".to_string(), 1, "loops.move".to_string(), 5),
+        ("loops".to_string(), 2, "loops.move".to_string(), 6),
+        ("loops".to_string(), 3, "loops.move".to_string(), 7),
+    ]);
+
+    // Build a 10-iter loop:
+    //   pc=0 (preamble), pc=1 (guard), { pc=2 (body), pc=1 (guard) }*10, pc=3 (postamble)
+    // The pc=1 guard re-entries are backward jumps relative to the
+    // immediately-preceding pc=2 body instruction, and likewise pc=2
+    // body re-entries are forward but follow a pc=1 guard which sits
+    // on the same source line as pc=0 — so without backward-jump
+    // detection the body line would dedup to a single step.
+    let mut lines: Vec<String> = vec![
+        r#"{"version":3}"#.to_string(),
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"ten_iter_loop","module":{"address":"0x0","name":"loops"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[],"is_native":false},"gas_left":1000000}}"#.to_string(),
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999999,"instruction":"Nop"}}"#.to_string(),
+    ];
+    for i in 0..10 {
+        let g = 999_998 - 2 * i;
+        let b = g - 1;
+        lines.push(format!(
+            r#"{{"Instruction":{{"type_parameters":[],"pc":1,"gas_left":{g},"instruction":"Lt"}}}}"#
+        ));
+        lines.push(format!(
+            r#"{{"Instruction":{{"type_parameters":[],"pc":2,"gas_left":{b},"instruction":"Nop"}}}}"#
+        ));
+    }
+    lines.push(
+        r#"{"Instruction":{"type_parameters":[],"pc":3,"gas_left":999000,"instruction":"Ret"}}"#
+            .to_string(),
+    );
+    lines.push(r#"{"CloseFrame":{"frame_id":1,"return_":[],"gas_left":998999}}"#.to_string());
+    let ndjson = lines.join("\n");
+
+    let source_path = std::path::Path::new("loops.move");
+    let mut writer = NonStreamingTraceWriter::new("loops.move", &[]);
+    converter::convert_trace_into_writer(
+        ndjson.as_bytes(),
+        &source_map,
+        source_path,
+        &mut writer,
+    )
+    .expect("convert_trace_into_writer should succeed");
+
+    let body_steps = writer
+        .events
+        .iter()
+        .filter(|e| matches!(e, TraceLowLevelEvent::Step(s) if s.line.0 == 6))
+        .count();
+    assert_eq!(
+        body_steps, 10,
+        "expected exactly 10 step events on the loop body line (line 6); \
+         backward-jump detection must force-emit a step at every loop \
+         iteration boundary even when the resolved source line matches \
+         the previous step.  observed body_steps={body_steps}; events={:?}",
+        writer.events
     );
 }
 
@@ -1633,7 +1702,9 @@ fn test_generics_bool_arg_decodes_text() {
 /// truly out-of-i64-range u128 would force the recorder into a
 /// `BigInt` ValueRecord variant; the current fixture cannot exercise
 /// that path.  See `test_boolean_and_integers_u128_overflow_uses_bigint`
-/// (currently `#[ignore]`d).
+/// for the dedicated u128 spec pin (which feeds the converter a
+/// synthetic NDJSON trace so it does not depend on a re-recorded
+/// fixture).
 #[test]
 fn test_boolean_and_integers_via_ct_print_full() {
     let Some((doc, _)) = record_and_dump_full(
@@ -1725,22 +1796,173 @@ fn test_boolean_and_integers_via_ct_print_full() {
     );
 }
 
+/// Spec pin for u128 values that exceed `i64::MAX`: the recorder must
+/// emit a `ValueRecord::BigInt` rather than truncating into an
+/// `i64`-typed `ValueRecord::Int` (which would silently flip the sign
+/// and lose the high bits).
+///
+/// The pre-recorded `flow_test::test_boolean_and_integers` fixture
+/// shipped under `test-programs/move/flow_test/traces/` has the Sui
+/// Move VM constant-folding the source's `let big_a/big_b/big_sum`
+/// bindings before they reach the trace, and regenerating the
+/// .json.zst requires the un-Nix-packaged `sui` CLI.  Until that
+/// re-recording happens, this test feeds the converter a synthetic v3
+/// NDJSON trace with a `U128` value of `18_000_000_000_000_000_000`
+/// (≈ 2 × i64::MAX) and asserts the resulting CTFS bundle carries a
+/// `BigInt`-kind ValueRecord with the full 128-bit big-endian
+/// magnitude.
 #[test]
-#[ignore = "RECORDER BUG / fixture limitation: the Sui Move VM \
-            constant-folds dead let-bindings before producing the \
-            trace, so the small_a/small_b/small_sum (u8) and \
-            big_a/big_b/big_sum (u128) values from the source program \
-            never reach the converter.  A spec-compliant pipeline \
-            would either preserve dead bindings in the VM trace or \
-            have the converter synthesise step events from the source \
-            map; without one of those, no u8 / u128 value can surface. \
-            Once dead-binding preservation lands (or a u128>i64::MAX \
-            fixture is added), assert here that the recorder emits a \
-            `BigInt`-kind ValueRecord with the full 128-bit payload."]
 fn test_boolean_and_integers_u128_overflow_uses_bigint() {
-    // No live fixture exposes a u128 path today; the assertion in
-    // `test_boolean_and_integers_via_ct_print_full` already pins the
-    // current shape (`int_set == {1}`) so a regression that *adds*
-    // u128 values is detected as a failure to extend the matrix.
-    panic!("no fixture: see ignore reason above");
+    let Some(ct_print) =
+        ct_print_or_skip("test_boolean_and_integers_u128_overflow_uses_bigint")
+    else {
+        return;
+    };
+
+    // Synthetic v3 NDJSON: open a `test_u128` frame, push a U128 value
+    // exceeding i64::MAX, write it into a local, then close the frame.
+    // This is the exact shape Sui's `--trace-execution` would emit if
+    // the constant-folder did not elide the `let big_sum: u128 = ...`
+    // binding.
+    //
+    //   2^63 - 1  =  9_223_372_036_854_775_807   (= i64::MAX)
+    //   18 * 1e18 = 18_000_000_000_000_000_000   (overflow, fits in u128)
+    let big: u128 = 18_000_000_000_000_000_000u128;
+    // Build the U128 Write effect by string-concatenation so the JSON
+    // braces don't have to be escaped through `format!`'s grammar.
+    let write_event = format!(
+        r#"{{"Effect":{{"Write":{{"location":{{"Local":[1,0]}},"root_value_after_write":{{"RuntimeValue":{{"value":{{"type":"U128","value":{}}}}}}}}}}}}}"#,
+        big
+    );
+    let ndjson = [
+        r#"{"version":3}"#,
+        r#"{"OpenFrame":{"frame":{"frame_id":1,"function_name":"test_u128","module":{"address":"0x0","name":"flow_test"},"type_instantiation":[],"parameters":[],"return_types":[],"locals_types":[{"type_":"u128"}],"is_native":false},"gas_left":1000000}}"#,
+        r#"{"Instruction":{"type_parameters":[],"pc":0,"gas_left":999990,"instruction":"LdU128"}}"#,
+        write_event.as_str(),
+        r#"{"CloseFrame":{"frame_id":1,"return_":[],"gas_left":999980}}"#,
+    ]
+    .join("\n");
+
+    let source_path = flow_test_source();
+    let tmp_dir = tempfile::TempDir::new().expect("tempdir");
+    let out_dir = tmp_dir.path().join("ct-out");
+
+    converter::convert_trace(
+        ndjson.as_bytes(),
+        &SourceMapResolver::empty(),
+        &source_path,
+        &out_dir,
+    )
+    .expect("convert_trace should succeed for synthetic u128 NDJSON");
+
+    let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
+        .expect("read out_dir")
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x == "ct"))
+        .collect();
+    assert!(
+        !ct_files.is_empty(),
+        "expected a .ct container in {}",
+        out_dir.display()
+    );
+
+    let output = Command::new(&ct_print)
+        .args(["--full", "--strip-paths"])
+        .arg(&ct_files[0])
+        .output()
+        .expect("failed to spawn ct-print");
+    assert!(
+        output.status.success(),
+        "ct-print --full should succeed; stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    let doc: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("ct-print --full should emit valid JSON");
+
+    // Walk every step event's `vars` array and look for a BigInt-kind
+    // value whose decoded magnitude matches `big`.  ct-print's `--full`
+    // pretty-printer emits `BigInt` payloads as
+    //   { "kind": "BigInt", "b": "<base64 BE>", "negative": <bool>, "type_id": <u32> }
+    let mut found = false;
+    for ev in doc["events"].as_array().expect("events array") {
+        if ev["kind"] != "step" {
+            continue;
+        }
+        for v in ev["vars"].as_array().cloned().unwrap_or_default() {
+            let value = &v["value"];
+            if value["kind"].as_str() != Some("BigInt") {
+                continue;
+            }
+            assert_eq!(
+                value["negative"].as_bool(),
+                Some(false),
+                "u128 BigInt must be non-negative; got {value}"
+            );
+            let b64 = value["b"].as_str().expect("BigInt.b must be a base64 string");
+            let bytes = base64_decode(b64).expect("BigInt.b must decode as base64");
+            assert!(
+                !bytes.is_empty(),
+                "BigInt.b must carry at least one byte for non-zero magnitudes"
+            );
+            // Reconstruct the magnitude as u128 from big-endian bytes.
+            let mut magnitude: u128 = 0;
+            for byte in &bytes {
+                magnitude = (magnitude << 8) | (*byte as u128);
+            }
+            assert_eq!(
+                magnitude, big,
+                "BigInt.b must encode the full u128 magnitude {big} (got {magnitude} from \
+                 bytes={bytes:?})"
+            );
+            found = true;
+            break;
+        }
+        if found {
+            break;
+        }
+    }
+    assert!(
+        found,
+        "expected a `ValueRecord::BigInt` in the step vars carrying {big}; \
+         got events={}",
+        serde_json::to_string_pretty(&doc["events"]).unwrap_or_default()
+    );
+
+    drop(tmp_dir);
+}
+
+/// Decode the standard base64 alphabet (no URL-safe variant) into raw
+/// bytes.  We open-code this rather than pulling in the `base64`
+/// crate because the test only needs to round-trip a single field
+/// emitted by ct-print's `--full` pretty-printer.
+fn base64_decode(s: &str) -> Option<Vec<u8>> {
+    fn val(c: u8) -> Option<u8> {
+        match c {
+            b'A'..=b'Z' => Some(c - b'A'),
+            b'a'..=b'z' => Some(c - b'a' + 26),
+            b'0'..=b'9' => Some(c - b'0' + 52),
+            b'+' => Some(62),
+            b'/' => Some(63),
+            _ => None,
+        }
+    }
+    let bytes = s.as_bytes();
+    let mut out = Vec::with_capacity(bytes.len() * 3 / 4);
+    let mut buf: u32 = 0;
+    let mut bits: u32 = 0;
+    for &c in bytes {
+        if c == b'=' || c.is_ascii_whitespace() {
+            continue;
+        }
+        let v = val(c)?;
+        buf = (buf << 6) | v as u32;
+        bits += 6;
+        if bits >= 8 {
+            bits -= 8;
+            out.push(((buf >> bits) & 0xff) as u8);
+        }
+    }
+    Some(out)
 }

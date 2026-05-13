@@ -118,7 +118,29 @@ pub fn convert_trace_into_writer(
     let mut type_ids = TypeIds::register(writer);
 
     // -- 3. Walk trace events --------------------------------------------------
+    // Per-source-line stepping requires us to track:
+    //   * `prev_line`: the source line of the last emitted step, so a run of
+    //     same-line bytecode instructions collapses to a single step (basic
+    //     dedup invariant — see
+    //     `tests/test_comprehensive.rs::test_source_map_dedup_same_line_no_duplicate_steps`).
+    //   * `prev_pc`:   the bytecode `pc` of the previously processed
+    //     `Instruction` event.  When the next `pc` is *less than* `prev_pc`
+    //     (a backward branch in the bytecode stream) we are re-entering the
+    //     loop body for another iteration; force-emit a step at that point
+    //     even when the resolved source line is unchanged so a `for i in
+    //     0..N { body }` loop produces N step events at the body line, not
+    //     just one — see
+    //     `tests/test_full_coverage.rs::test_loops_one_step_per_source_line`
+    //     and the spec at `metacraft-specs/policies/recorder-test-requirements.md`
+    //     ("a `for i in 0..10` loop must produce exactly 10 step events at
+    //     the loop body").
+    //
+    // Both pieces of state belong to the *current execution context*; they
+    // are reset to `None` whenever a frame is opened or closed so that
+    // crossing a call boundary does not spuriously fire (or suppress) a
+    // backward-jump step in the caller.
     let mut prev_line: Option<u32> = None;
+    let mut prev_pc: Option<u64> = None;
     let mut current_module: Option<String> = None;
     // Track the most recently observed Move VM `Instruction` mnemonic and the
     // value of the most recent `Effect::Pop`.  These two pieces of state are
@@ -137,6 +159,12 @@ pub fn convert_trace_into_writer(
         match event {
             TraceEvent::OpenFrame { frame, .. } => {
                 current_module = Some(frame.module.name.clone());
+                // Reset per-frame step bookkeeping: a backward-pc relative
+                // to the *caller's* last instruction is meaningless for the
+                // callee, and the callee's first instruction must always
+                // get a step.  See the `prev_line`/`prev_pc` notes above.
+                prev_line = None;
+                prev_pc = None;
 
                 let fn_id = TraceWriter::ensure_function_id(
                     writer,
@@ -197,18 +225,51 @@ pub fn convert_trace_into_writer(
                 };
 
                 TraceWriter::register_return(writer, ret_val);
+                // Reset per-frame step bookkeeping on close as well so the
+                // caller's next instruction (which resumes after the call)
+                // is judged against the caller's own prior pc/line, not a
+                // stale value carried over from the callee.
+                prev_line = None;
+                prev_pc = None;
             }
 
             TraceEvent::Instruction {
                 pc, instruction, ..
             } => {
+                // Emit a CodeTracer `step` event when the source map
+                // resolves the current `(module, pc)` AND EITHER:
+                //   (a) the resolved source line differs from `prev_line`
+                //       (we crossed a source-line boundary), OR
+                //   (b) `prev_pc` is set and `*pc < prev_pc` (the Move VM
+                //       took a backward branch — i.e. another iteration of
+                //       a loop body re-entered the same source line).
+                //
+                // The (b) clause is what makes a `for i in 0..N { body }`
+                // loop surface N step events at the body line rather than
+                // just one — without it the dedup in (a) would collapse
+                // every iteration into a single step and the recorder would
+                // not satisfy the spec at
+                // `metacraft-specs/policies/recorder-test-requirements.md`
+                // ("a `for i in 0..10` loop must produce exactly 10 step
+                // events at the loop body").
+                //
+                // When the source map has no entry for `(module, pc)` we
+                // emit nothing; the .mvsm parser is a follow-up so today
+                // the integration fixtures use `SourceMapResolver::empty()`
+                // and only the implicit `start()` step surfaces at the
+                // function level (the per-source-line behaviour is
+                // exercised by the synthetic-source-map unit tests in
+                // `tests/test_comprehensive.rs`).
                 let module_name = current_module.as_deref().unwrap_or("");
-                if let Some((_, line)) = source_map.lookup(module_name, *pc)
-                    && prev_line != Some(line)
-                {
-                    TraceWriter::register_step(writer, source_path, Line(line as i64));
-                    prev_line = Some(line);
+                if let Some((_, line)) = source_map.lookup(module_name, *pc) {
+                    let line_changed = prev_line != Some(line);
+                    let backward_jump = prev_pc.is_some_and(|p| *pc < p);
+                    if line_changed || backward_jump {
+                        TraceWriter::register_step(writer, source_path, Line(line as i64));
+                        prev_line = Some(line);
+                    }
                 }
+                prev_pc = Some(*pc);
                 // Remember the instruction so the upcoming `Effect::Pop` /
                 // `Effect::ExecutionError` pair can recognise an abort and
                 // recover the code (see `last_popped_value` below).
@@ -391,6 +452,18 @@ impl TypeIds {
     }
 }
 
+/// Encode a `u128` as its minimal big-endian unsigned-integer byte
+/// representation — the canonical payload shape for
+/// `ValueRecord::BigInt { b, negative: false, .. }`.  Leading zero
+/// bytes are stripped so a small value packs to a few bytes; the
+/// special case `0` returns a single `0` byte rather than an empty
+/// slice so the magnitude survives a round trip.
+fn u128_be_bytes_trimmed(v: u128) -> Vec<u8> {
+    let bytes = v.to_be_bytes();
+    let first_nonzero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
+    bytes[first_nonzero..].to_vec()
+}
+
 /// Render the abort code for the integer Move VM value popped immediately
 /// before an `Effect::ExecutionError("ABORTED")`.  Returns the canonical
 /// decimal representation Move source uses for `abort` codes (`u64`),
@@ -500,14 +573,44 @@ pub fn convert_move_value(
             i: *v as i64,
             type_id: type_ids.u32_id,
         },
-        SerializableMoveValue::U64 { value: v } => ValueRecord::Int {
-            i: *v as i64,
-            type_id: type_ids.u64_id,
-        },
-        SerializableMoveValue::U128 { value: v } => ValueRecord::Int {
-            i: *v as i64,
-            type_id: type_ids.u128_id,
-        },
+        SerializableMoveValue::U64 { value: v } => {
+            // u64 values up to i64::MAX fit in `ValueRecord::Int { i: i64 }`;
+            // anything larger would silently wrap to a negative i64, so we
+            // surface those as a BigInt with the canonical big-endian
+            // unsigned-integer payload.  See
+            // `tests/test_full_coverage.rs::test_boolean_and_integers_u128_overflow_uses_bigint`.
+            if *v <= i64::MAX as u64 {
+                ValueRecord::Int {
+                    i: *v as i64,
+                    type_id: type_ids.u64_id,
+                }
+            } else {
+                ValueRecord::BigInt {
+                    b: u128_be_bytes_trimmed(*v as u128),
+                    negative: false,
+                    type_id: type_ids.u64_id,
+                }
+            }
+        }
+        SerializableMoveValue::U128 { value: v } => {
+            // u128 values up to i64::MAX fit in `ValueRecord::Int`; anything
+            // larger MUST surface as a `BigInt` so downstream consumers see
+            // the full magnitude.  Truncating to i64 silently loses the
+            // high 64 bits and (for values > i64::MAX) flips the sign — see
+            // `tests/test_full_coverage.rs::test_boolean_and_integers_u128_overflow_uses_bigint`.
+            if *v <= i64::MAX as u128 {
+                ValueRecord::Int {
+                    i: *v as i64,
+                    type_id: type_ids.u128_id,
+                }
+            } else {
+                ValueRecord::BigInt {
+                    b: u128_be_bytes_trimmed(*v),
+                    negative: false,
+                    type_id: type_ids.u128_id,
+                }
+            }
+        }
         SerializableMoveValue::U256 { value: v } => ValueRecord::String {
             text: v.clone(),
             type_id: type_ids.u256_id,
