@@ -3,9 +3,10 @@
 //! Reads NDJSON trace data (version 3), walks the trace events, and
 //! emits CodeTracer steps, calls, returns, and variable records.
 
+use std::collections::HashMap;
 use std::path::Path;
 
-use codetracer_trace_types::{EventLogKind, Line, NONE_VALUE, TypeKind, ValueRecord};
+use codetracer_trace_types::{EventLogKind, Line, NONE_VALUE, TypeId, TypeKind, ValueRecord};
 use codetracer_trace_writer_nim::trace_writer::TraceWriter;
 use codetracer_trace_writer_nim::{TraceEventsFileFormat, create_trace_writer};
 use eyre::{Result, eyre};
@@ -114,7 +115,7 @@ pub fn convert_trace_into_writer(
     TraceWriter::start(writer, source_path, Line(1));
 
     // Register common Move types.
-    let type_ids = TypeIds::register(writer);
+    let mut type_ids = TypeIds::register(writer);
 
     // -- 3. Walk trace events --------------------------------------------------
     let mut prev_line: Option<u32> = None;
@@ -157,7 +158,7 @@ pub fn convert_trace_into_writer(
                 // Higher-fidelity names would require parsing the
                 // function's source-map (.mvsm) — tracked as a follow-up.
                 for (idx, param) in frame.parameters.iter().enumerate() {
-                    let value = convert_move_value(param.inner_value(), &type_ids);
+                    let value = convert_move_value(param.inner_value(), &mut type_ids, writer);
                     let _ = TraceWriter::arg(writer, &format!("arg{idx}"), value);
                 }
 
@@ -165,10 +166,35 @@ pub fn convert_trace_into_writer(
             }
 
             TraceEvent::CloseFrame { return_values, .. } => {
-                let ret_val = return_values
-                    .first()
-                    .map(|v| convert_move_value(v.inner_value(), &type_ids))
-                    .unwrap_or(NONE_VALUE);
+                // Move functions can return zero, one, or multiple values
+                // (tuple returns, e.g. `fun compute_triple(...): (u64, u64, u64)`).
+                // The Move VM v3 trace format encodes the *full* tuple as
+                // distinct elements in the `return_` array.  Prior behaviour
+                // surfaced only `return_[0]`, silently truncating the tuple
+                // and leaving consumers no way to recover the trailing
+                // elements (see
+                // `tests/test_full_coverage.rs::test_nested_calls_tuple_return_decodes_full_tuple`).
+                // We now wrap >=2 return values in a typed
+                // `ValueRecord::Tuple`; single-value and void returns are
+                // unchanged so the existing scalar-return tests stay intact.
+                let ret_val = match return_values.len() {
+                    0 => NONE_VALUE,
+                    1 => convert_move_value(
+                        return_values[0].inner_value(),
+                        &mut type_ids,
+                        writer,
+                    ),
+                    _ => {
+                        let elements: Vec<ValueRecord> = return_values
+                            .iter()
+                            .map(|v| convert_move_value(v.inner_value(), &mut type_ids, writer))
+                            .collect();
+                        ValueRecord::Tuple {
+                            elements,
+                            type_id: type_ids.tuple_id,
+                        }
+                    }
+                };
 
                 TraceWriter::register_return(writer, ret_val);
             }
@@ -195,7 +221,11 @@ pub fn convert_trace_into_writer(
                     root_value_after_write,
                 } => {
                     let name = format!("local_{}", location.local_index());
-                    let val = convert_move_value(root_value_after_write.inner_value(), &type_ids);
+                    let val = convert_move_value(
+                        root_value_after_write.inner_value(),
+                        &mut type_ids,
+                        writer,
+                    );
                     TraceWriter::register_variable_with_full_value(writer, &name, val);
                 }
                 Effect::Read {
@@ -204,16 +234,17 @@ pub fn convert_trace_into_writer(
                     ..
                 } => {
                     let name = format!("local_{}", location.local_index());
-                    let val = convert_move_value(root_value_read.inner_value(), &type_ids);
+                    let val =
+                        convert_move_value(root_value_read.inner_value(), &mut type_ids, writer);
                     TraceWriter::register_variable_with_full_value(writer, &name, val);
                 }
                 Effect::Push(value) => {
-                    let val = convert_move_value(value.inner_value(), &type_ids);
+                    let val = convert_move_value(value.inner_value(), &mut type_ids, writer);
                     TraceWriter::register_variable_with_full_value(writer, "stack_top", val);
                 }
                 Effect::Pop(value) => {
                     let inner = value.inner_value();
-                    let val = convert_move_value(inner, &type_ids);
+                    let val = convert_move_value(inner, &mut type_ids, writer);
                     TraceWriter::register_variable_with_full_value(writer, "popped", val);
                     // Cache the popped value verbatim so an immediately-
                     // following `Effect::ExecutionError("ABORTED")` can
@@ -284,18 +315,29 @@ pub fn convert_trace_into_writer(
 }
 
 /// Holds pre-registered CodeTracer type IDs for Move types.
+///
+/// Per-struct `TypeId`s for named Move structs are populated lazily via
+/// [`TypeIds::ensure_struct`] as the converter encounters them — the
+/// generic `struct_id` (registered with the bare `"struct"` lang-name)
+/// remains as the fallback for anonymous / un-named struct payloads.
 pub struct TypeIds {
-    pub u8_id: codetracer_trace_types::TypeId,
-    pub u16_id: codetracer_trace_types::TypeId,
-    pub u32_id: codetracer_trace_types::TypeId,
-    pub u64_id: codetracer_trace_types::TypeId,
-    pub u128_id: codetracer_trace_types::TypeId,
-    pub u256_id: codetracer_trace_types::TypeId,
-    pub bool_id: codetracer_trace_types::TypeId,
-    pub address_id: codetracer_trace_types::TypeId,
-    pub struct_id: codetracer_trace_types::TypeId,
-    pub vector_id: codetracer_trace_types::TypeId,
-    pub string_id: codetracer_trace_types::TypeId,
+    pub u8_id: TypeId,
+    pub u16_id: TypeId,
+    pub u32_id: TypeId,
+    pub u64_id: TypeId,
+    pub u128_id: TypeId,
+    pub u256_id: TypeId,
+    pub bool_id: TypeId,
+    pub address_id: TypeId,
+    pub struct_id: TypeId,
+    pub vector_id: TypeId,
+    pub tuple_id: TypeId,
+    pub string_id: TypeId,
+    /// Lazily registered per-struct-name `TypeKind::Struct` ids so that
+    /// `ValueRecord::Struct { type_id, .. }` carries a stable, named
+    /// type for downstream consumers (ct-print, frontend) instead of
+    /// the generic `struct_id` fallback.
+    structs: HashMap<String, TypeId>,
 }
 
 impl TypeIds {
@@ -311,8 +353,26 @@ impl TypeIds {
             address_id: TraceWriter::ensure_type_id(writer, TypeKind::String, "address"),
             struct_id: TraceWriter::ensure_type_id(writer, TypeKind::Struct, "struct"),
             vector_id: TraceWriter::ensure_type_id(writer, TypeKind::Seq, "vector"),
+            tuple_id: TraceWriter::ensure_type_id(writer, TypeKind::Tuple, "tuple"),
             string_id: TraceWriter::ensure_type_id(writer, TypeKind::String, "string"),
+            structs: HashMap::new(),
         }
+    }
+
+    /// Resolve (and lazily register) a `TypeKind::Struct` `TypeId` for the
+    /// given Move struct name.  An empty `name` falls back to the
+    /// generic `struct_id` so anonymous structs still get a typed
+    /// `ValueRecord::Struct` payload.
+    fn ensure_struct(&mut self, writer: &mut dyn TraceWriter, name: &str) -> TypeId {
+        if name.is_empty() {
+            return self.struct_id;
+        }
+        if let Some(id) = self.structs.get(name) {
+            return *id;
+        }
+        let id = TraceWriter::ensure_type_id(writer, TypeKind::Struct, name);
+        self.structs.insert(name.to_string(), id);
+        id
     }
 }
 
@@ -334,7 +394,21 @@ fn abort_code_from_value(value: &SerializableMoveValue) -> Option<String> {
 }
 
 /// Convert a single `SerializableMoveValue` into a CodeTracer `ValueRecord`.
-pub fn convert_move_value(value: &SerializableMoveValue, type_ids: &TypeIds) -> ValueRecord {
+///
+/// Compound Move values (`Struct`, `Vector`) emit typed
+/// `ValueRecord::Struct` / `ValueRecord::Sequence` payloads carrying
+/// recursively-converted children, so downstream consumers (ct-print,
+/// frontend object inspector) can walk fields/elements rather than
+/// re-parsing the historical printed-form fallback.  `&mut TypeIds` is
+/// taken so per-struct-name `TypeId`s can be lazily registered against
+/// `writer` as the converter discovers them — the `writer` argument is
+/// required because `ensure_type_id` is the canonical FFI entry point
+/// for type registration.
+pub fn convert_move_value(
+    value: &SerializableMoveValue,
+    type_ids: &mut TypeIds,
+    writer: &mut dyn TraceWriter,
+) -> ValueRecord {
     match value {
         SerializableMoveValue::U8 { value: v } => ValueRecord::Int {
             i: *v as i64,
@@ -369,40 +443,34 @@ pub fn convert_move_value(value: &SerializableMoveValue, type_ids: &TypeIds) -> 
             type_id: type_ids.address_id,
         },
         SerializableMoveValue::Struct { value: content } => {
-            let field_strs: Vec<String> = content
-                .fields
-                .iter()
-                .map(|(name, val)| {
-                    let converted = convert_move_value(val, type_ids);
-                    format!("{name}: {}", value_record_to_display(&converted))
-                })
-                .collect();
-            // Extract the struct type name from the JSON value if present.
+            // Extract the struct type name from the JSON value if present;
+            // an empty name falls back to the generic `struct_id` so the
+            // payload still surfaces as a typed `ValueRecord::Struct`.
             let type_name = content
                 .type_
                 .get("name")
                 .and_then(|v| v.as_str())
-                .unwrap_or("");
-            let display = if type_name.is_empty() {
-                format!("{{ {} }}", field_strs.join(", "))
-            } else {
-                format!("{type_name} {{ {} }}", field_strs.join(", "))
-            };
-            ValueRecord::String {
-                text: display,
-                type_id: type_ids.struct_id,
+                .unwrap_or("")
+                .to_string();
+            let type_id = type_ids.ensure_struct(writer, &type_name);
+            let field_values: Vec<ValueRecord> = content
+                .fields
+                .iter()
+                .map(|(_, val)| convert_move_value(val, type_ids, writer))
+                .collect();
+            ValueRecord::Struct {
+                field_values,
+                type_id,
             }
         }
         SerializableMoveValue::Vector { elements } => {
-            let elem_strs: Vec<String> = elements
+            let elements: Vec<ValueRecord> = elements
                 .iter()
-                .map(|e| {
-                    let val = convert_move_value(e, type_ids);
-                    value_record_to_display(&val)
-                })
+                .map(|e| convert_move_value(e, type_ids, writer))
                 .collect();
-            ValueRecord::String {
-                text: format!("[{}]", elem_strs.join(", ")),
+            ValueRecord::Sequence {
+                elements,
+                is_slice: false,
                 type_id: type_ids.vector_id,
             }
         }
@@ -410,7 +478,7 @@ pub fn convert_move_value(value: &SerializableMoveValue, type_ids: &TypeIds) -> 
             let field_strs: Vec<String> = fields
                 .iter()
                 .map(|f| {
-                    let val = convert_move_value(f, type_ids);
+                    let val = convert_move_value(f, type_ids, writer);
                     value_record_to_display(&val)
                 })
                 .collect();
@@ -427,7 +495,9 @@ pub fn convert_move_value(value: &SerializableMoveValue, type_ids: &TypeIds) -> 
     }
 }
 
-/// Simple display helper for ValueRecord (used in struct/vector rendering).
+/// Simple display helper for ValueRecord (used in variant rendering — the
+/// last surviving printed-form path now that struct/vector emit typed
+/// `ValueRecord::Struct` / `ValueRecord::Sequence`).
 fn value_record_to_display(val: &ValueRecord) -> String {
     match val {
         ValueRecord::Int { i, .. } => i.to_string(),
