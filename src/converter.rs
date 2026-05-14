@@ -144,6 +144,16 @@ pub fn convert_trace_into_writer(
     let mut prev_line: Option<u32> = None;
     let mut prev_pc: Option<u64> = None;
     let mut current_module: Option<String> = None;
+    // The module of the outer (toplevel) frame.  When a callee runs in
+    // a *different* user-code module (`address == 0x0`) than this
+    // outer module, the recorder qualifies the function-table entry
+    // as `module::name` so cross-module calls across a `friend`
+    // boundary surface with their owning module preserved.  Stdlib
+    // calls (`0x1::*`, `0x2::*`, ...) keep their bare name to stay
+    // compatible with the pre-existing function-table conventions
+    // exercised by the M5–M8 fixtures.  See
+    // `tests/test_full_coverage.rs::test_friend_visibility_test_via_ct_print_full`.
+    let mut outer_module: Option<String> = None;
     // Track the most recently observed Move VM `Instruction` mnemonic and the
     // value of the most recent `Effect::Pop`.  These two pieces of state are
     // needed solely to recover the abort code on `Effect::ExecutionError`:
@@ -191,12 +201,16 @@ pub fn convert_trace_into_writer(
                     );
                 }
 
-                let fn_id = TraceWriter::ensure_function_id(
-                    writer,
+                if outer_module.is_none() {
+                    outer_module = Some(frame.module.name.clone());
+                }
+                let display_name = qualified_function_name(
+                    outer_module.as_deref(),
+                    &frame.module,
                     &frame.function_name,
-                    source_path,
-                    Line(1),
                 );
+                let fn_id =
+                    TraceWriter::ensure_function_id(writer, &display_name, source_path, Line(1));
 
                 // Stage each formal parameter as a call arg via the
                 // canonical TraceWriter::arg(name, value) entry point so
@@ -461,16 +475,74 @@ impl TypeIds {
     /// generic `struct_id` so anonymous structs still get a typed
     /// `ValueRecord::Struct` payload.
     fn ensure_struct(&mut self, writer: &mut dyn TraceWriter, name: &str) -> TypeId {
-        if name.is_empty() {
+        self.ensure_parameterised_struct(writer, name, &[])
+    }
+
+    /// Resolve (and lazily register) a `TypeKind::Struct` `TypeId` keyed
+    /// by `(name, type_args)`.  Phantom-type instantiations of the same
+    /// underlying struct (e.g. `TypedCoin<USD>` vs `TypedCoin<EUR>`) share
+    /// runtime layout but must surface as distinct `TypeId`s so downstream
+    /// consumers can tell them apart in the type table.  When `type_args`
+    /// is empty we register the struct under its bare `name` (preserving
+    /// pre-2026-05 behaviour); when present, we register under the
+    /// canonical `name<arg0,arg1,...>` form using each arg's `name`
+    /// extracted from the trace JSON (e.g. `TypedCoin<USD>`).  See
+    /// `tests/test_full_coverage.rs::test_phantom_types_test_via_ct_print_full`.
+    fn ensure_parameterised_struct(
+        &mut self,
+        writer: &mut dyn TraceWriter,
+        name: &str,
+        type_args: &[serde_json::Value],
+    ) -> TypeId {
+        if name.is_empty() && type_args.is_empty() {
             return self.struct_id;
         }
-        if let Some(id) = self.structs.get(name) {
+        let key = parameterised_struct_key(name, type_args);
+        if key.is_empty() {
+            return self.struct_id;
+        }
+        if let Some(id) = self.structs.get(&key) {
             return *id;
         }
-        let id = TraceWriter::ensure_type_id(writer, TypeKind::Struct, name);
-        self.structs.insert(name.to_string(), id);
+        let id = TraceWriter::ensure_type_id(writer, TypeKind::Struct, &key);
+        self.structs.insert(key, id);
         id
     }
+}
+
+/// Build a canonical type-table key for a (potentially generic) Move
+/// struct.  Empty `type_args` returns the bare `name`; non-empty
+/// arguments format as `name<arg0,arg1,...>` where each `argN` is the
+/// recursively-formatted struct/primitive name from the trace JSON.
+/// Unknown arg shapes fall back to the JSON's debug rendering so the
+/// key remains stable and unique.
+fn parameterised_struct_key(name: &str, type_args: &[serde_json::Value]) -> String {
+    if type_args.is_empty() {
+        return name.to_string();
+    }
+    let parts: Vec<String> = type_args.iter().map(format_type_arg).collect();
+    format!("{name}<{}>", parts.join(","))
+}
+
+fn format_type_arg(arg: &serde_json::Value) -> String {
+    if let Some(s) = arg.as_str() {
+        return s.to_string();
+    }
+    if let Some(obj) = arg.as_object()
+        && let Some(struct_obj) = obj.get("struct").and_then(|v| v.as_object())
+    {
+        let inner_name = struct_obj
+            .get("name")
+            .and_then(|v| v.as_str())
+            .unwrap_or("");
+        let inner_args: Vec<serde_json::Value> = struct_obj
+            .get("type_args")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default();
+        return parameterised_struct_key(inner_name, &inner_args);
+    }
+    arg.to_string()
 }
 
 /// Encode a `u128` as its minimal big-endian unsigned-integer byte
@@ -486,6 +558,34 @@ fn u128_be_bytes_trimmed(v: u128) -> Vec<u8> {
         .position(|&b| b != 0)
         .unwrap_or(bytes.len() - 1);
     bytes[first_nonzero..].to_vec()
+}
+
+/// Compute the display name to register in the function table for a
+/// frame.  Cross-module calls *within user code* (i.e. callee module
+/// at address `0x0` whose name differs from the outer/toplevel
+/// frame's module) qualify as `module::function_name` so a
+/// `public(friend)` callee surfaces with its owning module preserved
+/// across the boundary.  All other frames (toplevel, same-module
+/// helpers, stdlib `0x1`/`0x2`/... natives) keep their bare
+/// `function_name` to remain compatible with the M5–M8 fixtures'
+/// function-table assertions.  See
+/// `tests/test_full_coverage.rs::test_friend_visibility_test_via_ct_print_full`.
+fn qualified_function_name(
+    outer_module: Option<&str>,
+    module: &crate::move_types::ModuleId,
+    function_name: &str,
+) -> String {
+    let user_code_address = matches!(
+        module.address.as_str(),
+        "0x0" | "0x00" | "0000000000000000000000000000000000000000000000000000000000000000",
+    );
+    let cross_user_module = user_code_address
+        && outer_module.is_some_and(|outer| outer != module.name && !module.name.is_empty());
+    if cross_user_module {
+        format!("{}::{}", module.name, function_name)
+    } else {
+        function_name.to_string()
+    }
 }
 
 /// True when a `(module_name, module_address)` pair points at the Sui
@@ -753,13 +853,23 @@ pub fn convert_move_value(
             // Extract the struct type name from the JSON value if present;
             // an empty name falls back to the generic `struct_id` so the
             // payload still surfaces as a typed `ValueRecord::Struct`.
+            // Also pull `type_args` so phantom-type instantiations of the
+            // same underlying struct (e.g. `TypedCoin<USD>` vs
+            // `TypedCoin<EUR>`) register as distinct `TypeId`s — see
+            // `TypeIds::ensure_parameterised_struct`.
             let type_name = content
                 .type_
                 .get("name")
                 .and_then(|v| v.as_str())
                 .unwrap_or("")
                 .to_string();
-            let type_id = type_ids.ensure_struct(writer, &type_name);
+            let type_args: Vec<serde_json::Value> = content
+                .type_
+                .get("type_args")
+                .and_then(|v| v.as_array())
+                .cloned()
+                .unwrap_or_default();
+            let type_id = type_ids.ensure_parameterised_struct(writer, &type_name, &type_args);
             let field_values: Vec<ValueRecord> = content
                 .fields
                 .iter()

@@ -3553,3 +3553,682 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
     }
     Some(out)
 }
+
+// ===========================================================================
+// test_phantom_types — phantom type parameters surface as distinct TypeIds
+// ===========================================================================
+
+/// Records `flow_test::test_phantom_types` (synthetic NDJSON).
+///
+/// Pins that two `TypedCoin<phantom T>` instantiations with the *same*
+/// runtime layout (`u64` payload of `100`) but distinct phantom tags
+/// (`USD`, `EUR`) register two distinguishable `TypeKind::Struct`
+/// `TypeId`s in the type table — the recorder must key the type-table
+/// entry by `(struct_name, type_args)` rather than by the bare struct
+/// name, otherwise the phantom currency tag is lost when the value
+/// flows through `mint`/`value`/`burn`.  Also pins that the
+/// `TypeId`s for the bare `USD` and `EUR` phantom-tag structs (no
+/// fields, no arguments) are themselves distinct from each other and
+/// from the parameterised coin types.
+#[test]
+fn test_phantom_types_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_phantom_types_test_via_ct_print_full",
+        "test_phantom_types",
+        flow_test_named_source("phantom_types_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "phantom_types_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec!["test_phantom_types", "mint", "value", "burn"],
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(7));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 7 call_entry + 7 call_exit = 15 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 15);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "mint".to_string(),
+            "mint".to_string(),
+            "value".to_string(),
+            "value".to_string(),
+            "burn".to_string(),
+            "burn".to_string(),
+            "test_phantom_types".to_string(),
+        ],
+    );
+
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 7);
+
+    // ----- mint<USD>(100) -> TypedCoin<USD> { value: 100 } ---------------
+    assert_eq!(exits[0].0, "mint");
+    let usd_coin = &exits[0].1;
+    assert_eq!(usd_coin["kind"].as_str(), Some("Struct"));
+    let usd_fields = usd_coin["field_values"]
+        .as_array()
+        .expect("Struct.field_values");
+    assert_eq!(usd_fields.len(), 1);
+    assert_eq!(usd_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(usd_fields[0]["i"].as_i64(), Some(100));
+    let usd_coin_type_id = usd_coin["type_id"].as_u64().expect("Struct.type_id");
+
+    // ----- mint<EUR>(100) -> TypedCoin<EUR> { value: 100 } ---------------
+    assert_eq!(exits[1].0, "mint");
+    let eur_coin = &exits[1].1;
+    assert_eq!(eur_coin["kind"].as_str(), Some("Struct"));
+    let eur_fields = eur_coin["field_values"]
+        .as_array()
+        .expect("Struct.field_values");
+    assert_eq!(eur_fields.len(), 1);
+    assert_eq!(eur_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(eur_fields[0]["i"].as_i64(), Some(100));
+    let eur_coin_type_id = eur_coin["type_id"].as_u64().expect("Struct.type_id");
+
+    // The phantom-tag-aware key must produce DISTINCT type ids for
+    // TypedCoin<USD> and TypedCoin<EUR> even though their runtime
+    // layouts are identical (both pack a single `u64` field).
+    assert_ne!(
+        usd_coin_type_id, eur_coin_type_id,
+        "TypedCoin<USD> and TypedCoin<EUR> must register as distinct \
+         TypeKind::Struct ids — phantom-tag distinctness is the whole \
+         point of this fixture",
+    );
+
+    // ----- value<USD>(&usd_coin) and value<EUR>(&eur_coin) ---------------
+    assert_eq!(exits[2].0, "value");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(100));
+    assert_eq!(exits[3].0, "value");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[3].1["i"].as_i64(), Some(100));
+
+    // ----- burn<USD>(usd_coin) -> 100, burn<EUR>(eur_coin) -> 100 -------
+    assert_eq!(exits[4].0, "burn");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[4].1["i"].as_i64(), Some(100));
+    assert_eq!(exits[5].0, "burn");
+    assert_eq!(exits[5].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[5].1["i"].as_i64(), Some(100));
+    assert_eq!(exits[6].0, "test_phantom_types");
+    assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
+
+    // ----- value<USD>'s &TypedCoin<USD> arg keeps the phantom-tagged id -
+    let entries: Vec<&serde_json::Value> = doc["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    let usd_value_arg = &entries[2]["args"][0]["value"];
+    assert_eq!(usd_value_arg["kind"].as_str(), Some("Reference"));
+    assert_eq!(usd_value_arg["mutable"].as_bool(), Some(false));
+    let usd_pointee = &usd_value_arg["dereferenced"];
+    assert_eq!(usd_pointee["kind"].as_str(), Some("Struct"));
+    assert_eq!(
+        usd_pointee["type_id"].as_u64(),
+        Some(usd_coin_type_id),
+        "the &TypedCoin<USD> pointee must carry the same TypedCoin<USD> \
+         type id minted by mint<USD>",
+    );
+
+    let eur_value_arg = &entries[3]["args"][0]["value"];
+    assert_eq!(eur_value_arg["kind"].as_str(), Some("Reference"));
+    let eur_pointee = &eur_value_arg["dereferenced"];
+    assert_eq!(
+        eur_pointee["type_id"].as_u64(),
+        Some(eur_coin_type_id),
+        "the &TypedCoin<EUR> pointee must carry the same TypedCoin<EUR> \
+         type id minted by mint<EUR>",
+    );
+
+    // ----- burn's owned TypedCoin<T> args also keep their phantom ids ---
+    let burn_usd_arg = &entries[4]["args"][0]["value"];
+    assert_eq!(burn_usd_arg["kind"].as_str(), Some("Struct"));
+    assert_eq!(
+        burn_usd_arg["type_id"].as_u64(),
+        Some(usd_coin_type_id),
+        "burn<USD>'s owned arg must carry the TypedCoin<USD> type id",
+    );
+    let burn_eur_arg = &entries[5]["args"][0]["value"];
+    assert_eq!(burn_eur_arg["kind"].as_str(), Some("Struct"));
+    assert_eq!(
+        burn_eur_arg["type_id"].as_u64(),
+        Some(eur_coin_type_id),
+        "burn<EUR>'s owned arg must carry the TypedCoin<EUR> type id",
+    );
+
+    // ----- The two TypedCoin<T> typed-Struct shapes surface in step ----
+    let struct_lists = collect_struct_int_lists(&doc);
+    let coin_field_count = struct_lists
+        .iter()
+        .filter(|fields| fields == &&vec![100_i64])
+        .count();
+    // The mint/burn/value frames each surface a TypedCoin<T> { value: 100 }
+    // shape in their merged step vars.  With six total Move-call frames
+    // (two mint, two value, two burn) the recorder collects exactly six
+    // copies of the typed Struct payload — pin the full set so any drift
+    // in step-vars merging surfaces immediately.
+    assert_eq!(struct_lists, vec![vec![100_i64]; 6]);
+    assert_eq!(coin_field_count, 6);
+}
+
+// ===========================================================================
+// test_signer — &signer permission-checking shape (Aptos)
+// ===========================================================================
+
+/// Records `flow_test::test_signer` (synthetic NDJSON).
+///
+/// Pins the recorder's surface for the canonical Aptos access-check
+/// pattern: `authorize(admin: &signer, target: address): bool` calls
+/// `signer::address_of(admin)` and compares the result against a
+/// hard-coded admin constant.  The `&signer` parameter must surface as
+/// a typed `ValueRecord::Reference { mutable: false, .. }` whose
+/// dereferenced pointee is a typed `Signer` `ValueRecord::Struct`
+/// carrying a single `address` field, the address-of native return
+/// must surface as a typed `ValueRecord::String` (the recorder's
+/// canonical address shape), and the boolean comparison verdict must
+/// surface as a typed `ValueRecord::Bool`.
+#[test]
+fn test_signer_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_signer_test_via_ct_print_full",
+        "test_signer",
+        flow_test_named_source("signer_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "signer_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(functions, vec!["authorize", "address_of"]);
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(2));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 2 call_entry + 2 call_exit = 5 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 5);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec!["address_of".to_string(), "authorize".to_string()],
+    );
+
+    // ----- authorize takes (admin: &signer, target: address) -------------
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    // CloseFrame ordering: entries[0]=address_of, entries[1]=authorize.
+    let authorize_args = entries[1]["args"].as_array().expect("authorize args");
+    assert_eq!(
+        authorize_args.len(),
+        2,
+        "authorize takes (&signer, address)"
+    );
+
+    // arg0: &signer -> Reference (immutable) wrapping a typed Signer struct.
+    let signer_arg = &authorize_args[0]["value"];
+    assert_eq!(signer_arg["kind"].as_str(), Some("Reference"));
+    assert_eq!(signer_arg["mutable"].as_bool(), Some(false));
+    let signer_pointee = &signer_arg["dereferenced"];
+    assert_eq!(
+        signer_pointee["kind"].as_str(),
+        Some("Struct"),
+        "&signer's dereferenced pointee must be a typed Signer Struct",
+    );
+    let signer_fields = signer_pointee["field_values"]
+        .as_array()
+        .expect("Signer.field_values");
+    assert_eq!(
+        signer_fields.len(),
+        1,
+        "Signer carries a single address field"
+    );
+    assert_eq!(signer_fields[0]["kind"].as_str(), Some("String"));
+    assert_eq!(signer_fields[0]["text"].as_str(), Some("0xA11CE"));
+
+    // arg1: address `target` -> typed String (the recorder's address shape).
+    let target_arg = &authorize_args[1]["value"];
+    assert_eq!(target_arg["kind"].as_str(), Some("String"));
+    assert_eq!(target_arg["text"].as_str(), Some("0xBEEF"));
+
+    // ----- address_of(admin) takes the same &signer pointee ------------
+    let address_of_args = entries[0]["args"].as_array().expect("address_of args");
+    assert_eq!(address_of_args.len(), 1);
+    let inner_signer = &address_of_args[0]["value"];
+    assert_eq!(inner_signer["kind"].as_str(), Some("Reference"));
+    assert_eq!(inner_signer["mutable"].as_bool(), Some(false));
+    assert_eq!(
+        inner_signer["dereferenced"]["field_values"][0]["text"].as_str(),
+        Some("0xA11CE"),
+    );
+
+    // ----- Return values --------------------------------------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 2);
+
+    // address_of returns the admin address as a typed String.
+    assert_eq!(exits[0].0, "address_of");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("String"));
+    assert_eq!(exits[0].1["text"].as_str(), Some("0xA11CE"));
+
+    // authorize returns the boolean comparison verdict — true.
+    assert_eq!(exits[1].0, "authorize");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[1].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[1].1["text"].as_str(), Some("true"));
+
+    // ----- The boolean verdict also surfaces in the merged step ---------
+    // The comparison `signer::address_of(admin) == @0xA11CE` produces the
+    // verdict `true` which the recorder surfaces both as `stack_top`
+    // (Move VM stack) and as `local_3` (the named comparison result),
+    // each registered as a typed `ValueRecord::Bool`.
+    let bools = unique_bool_pairs(&doc);
+    assert_eq!(
+        bools,
+        vec![
+            ("stack_top".to_string(), true),
+            ("local_3".to_string(), true),
+        ],
+    );
+}
+
+// ===========================================================================
+// test_tx_context — Sui's `&mut TxContext` shape
+// ===========================================================================
+
+/// Records `flow_test::test_tx_context` (synthetic NDJSON).
+///
+/// Pins the recorder's surface for the canonical Sui entry-function
+/// shape: `mint(ctx: &mut TxContext): Token` calls
+/// `tx_context::sender(ctx)` to recover the transaction sender and
+/// `object::new(ctx)` to derive a fresh UID for the new resource.
+/// The `&mut TxContext` parameter must surface as a typed
+/// `ValueRecord::Reference { mutable: true, .. }`; the recovered
+/// sender as a typed address-shaped `ValueRecord::String`; and the
+/// minted `UID` as a typed `ValueRecord::Struct` whose nested
+/// `ID { bytes: address }` payload preserves the byte-vector identity.
+#[test]
+fn test_tx_context_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_tx_context_test_via_ct_print_full",
+        "test_tx_context",
+        flow_test_named_source("tx_context_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "tx_context_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(functions, vec!["mint", "sender", "new"]);
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(3));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 3 call_entry + 3 call_exit = 7 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 7);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec!["sender".to_string(), "new".to_string(), "mint".to_string(),],
+    );
+
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+
+    // ----- mint(ctx: &mut TxContext) — the &mut TxContext arg shape -----
+    // CloseFrame ordering: entries[0]=sender, entries[1]=new, entries[2]=mint.
+    let mint_args = entries[2]["args"].as_array().expect("mint args");
+    assert_eq!(mint_args.len(), 1, "mint takes a single &mut TxContext arg");
+    let ctx_arg = &mint_args[0]["value"];
+    assert_eq!(ctx_arg["kind"].as_str(), Some("Reference"));
+    assert_eq!(
+        ctx_arg["mutable"].as_bool(),
+        Some(true),
+        "&mut TxContext must surface with mutable=true",
+    );
+    let ctx_pointee = &ctx_arg["dereferenced"];
+    assert_eq!(ctx_pointee["kind"].as_str(), Some("Struct"));
+    let ctx_fields = ctx_pointee["field_values"]
+        .as_array()
+        .expect("TxContext.field_values");
+    assert_eq!(
+        ctx_fields.len(),
+        5,
+        "TxContext fields: sender, tx_hash, epoch, epoch_timestamp_ms, ids_created",
+    );
+    // sender field is the typed address String.
+    assert_eq!(ctx_fields[0]["kind"].as_str(), Some("String"));
+    assert_eq!(ctx_fields[0]["text"].as_str(), Some("0xCAFE"));
+
+    // tx_context::sender(ctx) takes the same &mut TxContext.
+    let sender_args = entries[0]["args"].as_array().expect("sender args");
+    assert_eq!(sender_args.len(), 1);
+    assert_eq!(sender_args[0]["value"]["kind"].as_str(), Some("Reference"));
+    assert_eq!(sender_args[0]["value"]["mutable"].as_bool(), Some(true));
+
+    // object::new(ctx) takes the same &mut TxContext.
+    let new_args = entries[1]["args"].as_array().expect("new args");
+    assert_eq!(new_args.len(), 1);
+    assert_eq!(new_args[0]["value"]["kind"].as_str(), Some("Reference"));
+    assert_eq!(new_args[0]["value"]["mutable"].as_bool(), Some(true));
+
+    // ----- Return values --------------------------------------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 3);
+
+    // tx_context::sender returns the sender address as a typed String.
+    assert_eq!(exits[0].0, "sender");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("String"));
+    assert_eq!(exits[0].1["text"].as_str(), Some("0xCAFE"));
+
+    // object::new returns a fresh UID as a typed Struct whose inner
+    // ID { bytes: address } preserves the byte-vector identity.
+    assert_eq!(exits[1].0, "new");
+    let uid_rv = &exits[1].1;
+    assert_eq!(uid_rv["kind"].as_str(), Some("Struct"));
+    let uid_fields = uid_rv["field_values"].as_array().expect("UID.field_values");
+    assert_eq!(uid_fields.len(), 1, "UID {{ id: ID }}");
+    assert_eq!(uid_fields[0]["kind"].as_str(), Some("Struct"));
+    let id_fields = uid_fields[0]["field_values"]
+        .as_array()
+        .expect("ID.field_values");
+    assert_eq!(id_fields.len(), 1, "ID {{ bytes: address }}");
+    assert_eq!(id_fields[0]["kind"].as_str(), Some("String"));
+    assert_eq!(id_fields[0]["text"].as_str(), Some("0xFEED"));
+    let uid_type_id = uid_rv["type_id"].as_u64().expect("UID.type_id");
+
+    // mint returns Token { id: UID } — nested struct shape.
+    assert_eq!(exits[2].0, "mint");
+    let token_rv = &exits[2].1;
+    assert_eq!(token_rv["kind"].as_str(), Some("Struct"));
+    let token_fields = token_rv["field_values"]
+        .as_array()
+        .expect("Token.field_values");
+    assert_eq!(token_fields.len(), 1);
+    assert_eq!(token_fields[0]["kind"].as_str(), Some("Struct"));
+    assert_eq!(
+        token_fields[0]["type_id"].as_u64(),
+        Some(uid_type_id),
+        "Token.id must share the UID type id minted by object::new",
+    );
+    let inner_id_fields = token_fields[0]["field_values"]
+        .as_array()
+        .expect("nested UID.field_values");
+    assert_eq!(
+        inner_id_fields[0]["field_values"][0]["text"].as_str(),
+        Some("0xFEED"),
+    );
+}
+
+// ===========================================================================
+// test_friend_visibility — `friend` declaration + `public(friend) fun`
+// ===========================================================================
+
+/// Records `flow_test::test_friend_visibility` (synthetic NDJSON).
+///
+/// Pins that a cross-module call from a friend caller (`auth::query`)
+/// to a `public(friend)` callee (`secrets::reveal`) surfaces as a
+/// normal Call/Return pair across the friend boundary, and that the
+/// `reveal` function appears in the function table with its full
+/// module-qualified name (`secrets::reveal`) — preserving the owning
+/// module across a cross-user-code call.  Same-module helpers
+/// (`auth::query` from the toplevel `auth::test_friend_visibility`)
+/// retain their bare names so the existing M5–M8 function-table
+/// conventions stay intact.
+#[test]
+fn test_friend_visibility_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_friend_visibility_test_via_ct_print_full",
+        "test_friend_visibility",
+        flow_test_named_source("friend_visibility_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "friend_visibility_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec!["test_friend_visibility", "query", "secrets::reveal"],
+        "secrets::reveal must surface with its module-qualified name \
+         because it crosses a friend boundary into a different user-code \
+         module than the toplevel `auth` frame",
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(3));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 3 call_entry + 3 call_exit = 7 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 7);
+    assert_step_indices_monotonic(&doc);
+
+    // CloseFrame ordering is LIFO — innermost first.  reveal is the
+    // innermost frame, then query, then the toplevel test frame.
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "secrets::reveal".to_string(),
+            "query".to_string(),
+            "test_friend_visibility".to_string(),
+        ],
+    );
+
+    // ----- The Call/Return pair across the friend boundary --------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 3);
+
+    // secrets::reveal returns the canonical 42.
+    assert_eq!(exits[0].0, "secrets::reveal");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(42));
+
+    // query() forwards the value through the friend boundary.
+    assert_eq!(exits[1].0, "query");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(42));
+
+    // The outer test frame returns Void.
+    assert_eq!(exits[2].0, "test_friend_visibility");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+
+    // ----- The reveal call_entry has zero positional args ---------------
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    let reveal_entry = entries[0];
+    assert_eq!(
+        reveal_entry["function"].as_str(),
+        Some("secrets::reveal"),
+        "the friend-callee call_entry must use the qualified function name",
+    );
+    let reveal_args = reveal_entry["args"].as_array().expect("reveal args");
+    assert_eq!(reveal_args.len(), 0, "secrets::reveal takes no parameters");
+
+    // The query call_entry also has zero positional args.
+    let query_args = entries[1]["args"].as_array().expect("query args");
+    assert_eq!(query_args.len(), 0);
+
+    // ----- The 42 surfaces in the merged step's vars --------------------
+    // The canonical secret value `42` returned by `secrets::reveal` flows
+    // back through `auth::query` and surfaces both as `stack_top` (Move
+    // VM stack) and as `local_0` (the named return-value local) in the
+    // merged step event.  Pin the full set to lock the cross-friend-call
+    // dataflow.
+    let ints = unique_int_pairs(&doc);
+    assert_eq!(
+        ints,
+        vec![
+            ("stack_top".to_string(), 42),
+            ("local_0".to_string(), 42),
+        ],
+    );
+}
+
+// ===========================================================================
+// test_native_fun — `native fun` declarations: Call/Return brackets zero steps
+// ===========================================================================
+
+/// Records `flow_test::test_native_fun` (synthetic NDJSON).
+///
+/// Pins that a Move stdlib `native fun` call (`vector::length`)
+/// surfaces as a Call/Return pair that brackets *zero* `step` events
+/// between its `call_entry` and `call_exit`.  This is the recorder's
+/// canonical surface for "native fn body has no Move source" — there
+/// is nothing to step through, so the recorder emits no `step` event
+/// inside the native frame.  The function table also lists the native
+/// by name (unqualified, matching the M5–M8 stdlib convention) so
+/// downstream consumers can pair the call against the stdlib's known
+/// native registry.  The native's return value (`u64` length of the
+/// 5-byte input vector) surfaces as a typed `ValueRecord::Int`.
+#[test]
+fn test_native_fun_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_native_fun_test_via_ct_print_full",
+        "test_native_fun",
+        flow_test_named_source("native_fun_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "native_fun_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(functions, vec!["test_native_fun", "length"]);
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(2));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 2 call_entry + 2 call_exit = 5 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 5);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec!["length".to_string(), "test_native_fun".to_string()],
+    );
+
+    // ----- The native call_entry/call_exit pair brackets ZERO steps -----
+    // This is the recorder's canonical surface for "native fn body has
+    // no Move source": the Move VM emits no `Instruction` events between
+    // the native's OpenFrame and CloseFrame, so the recorder records no
+    // `entry_step`/`exit_step` advancement across the native frame —
+    // both step indices on the call_entry are equal because no step
+    // fired between OpenFrame and CloseFrame for the native body.
+    let length_entry = events
+        .iter()
+        .find(|e| e["kind"] == "call_entry" && e["function"] == "length")
+        .expect("length call_entry");
+    assert_eq!(
+        length_entry["entry_step"].as_u64(),
+        length_entry["exit_step"].as_u64(),
+        "native fn `length` must register entry_step == exit_step \
+         on its call_entry — no step event fired between its \
+         OpenFrame and CloseFrame because its body has no Move source \
+         to step through",
+    );
+    // The native call's depth is 1 (called from depth 0 toplevel).
+    assert_eq!(length_entry["depth"].as_u64(), Some(1));
+
+    // ----- The native call's argument is &vector<u8> --------------------
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    let length_args = entries[0]["args"].as_array().expect("length args");
+    assert_eq!(length_args.len(), 1, "vector::length takes one &vector arg");
+    let v_arg = &length_args[0]["value"];
+    assert_eq!(v_arg["kind"].as_str(), Some("Reference"));
+    assert_eq!(v_arg["mutable"].as_bool(), Some(false));
+    let v_pointee = &v_arg["dereferenced"];
+    assert_eq!(v_pointee["kind"].as_str(), Some("Sequence"));
+    let v_elements = v_pointee["elements"].as_array().expect("Sequence.elements");
+    assert_eq!(v_elements.len(), 5, "b\"abcde\" is 5 bytes");
+    let bytes: Vec<i64> = v_elements
+        .iter()
+        .map(|e| {
+            assert_eq!(e["kind"].as_str(), Some("Int"));
+            e["i"].as_i64().expect("Int.i")
+        })
+        .collect();
+    assert_eq!(bytes, vec![97_i64, 98, 99, 100, 101]);
+
+    // ----- Return values --------------------------------------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 2);
+
+    // vector::length returns the byte count as a typed Int.
+    assert_eq!(exits[0].0, "length");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(5));
+
+    assert_eq!(exits[1].0, "test_native_fun");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+
+    // ----- The 5-byte length surfaces in the merged step's vars ---------
+    // The native `vector::length` returns `5` (the size of the input
+    // bytes), which the recorder binds to the named `local_1` slot.
+    // The caller is a single-frame native bracket so no `stack_top`
+    // appears — pin the full set to confirm both shape and absence.
+    let ints = unique_int_pairs(&doc);
+    assert_eq!(ints, vec![("local_1".to_string(), 5)]);
+}
