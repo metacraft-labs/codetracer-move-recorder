@@ -329,7 +329,18 @@ fn unique_int_pairs(doc: &serde_json::Value) -> Vec<(String, i64)> {
     let mut out = Vec::new();
     for (name, value) in collect_step_vars(
         doc,
-        &["BigInt", "Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple", "Variant"],
+        &[
+            "BigInt",
+            "Bool",
+            "Int",
+            "Raw",
+            "Reference",
+            "String",
+            "Sequence",
+            "Struct",
+            "Tuple",
+            "Variant",
+        ],
     ) {
         if value["kind"] == "Int" {
             let i = value["i"].as_i64().expect("Int.i");
@@ -362,7 +373,18 @@ fn unique_raw_pairs(doc: &serde_json::Value) -> Vec<(String, String)> {
     let mut out = Vec::new();
     for (name, value) in collect_step_vars(
         doc,
-        &["BigInt", "Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple", "Variant"],
+        &[
+            "BigInt",
+            "Bool",
+            "Int",
+            "Raw",
+            "Reference",
+            "String",
+            "Sequence",
+            "Struct",
+            "Tuple",
+            "Variant",
+        ],
     ) {
         let payload = match value["kind"].as_str() {
             Some("Raw") => value["r"].as_str().map(|s| s.to_string()),
@@ -393,7 +415,18 @@ fn collect_sequence_int_lists(doc: &serde_json::Value) -> Vec<Vec<i64>> {
     let mut out = Vec::new();
     for (_, value) in collect_step_vars(
         doc,
-        &["BigInt", "Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple", "Variant"],
+        &[
+            "BigInt",
+            "Bool",
+            "Int",
+            "Raw",
+            "Reference",
+            "String",
+            "Sequence",
+            "Struct",
+            "Tuple",
+            "Variant",
+        ],
     ) {
         if value["kind"] != "Sequence" {
             continue;
@@ -430,7 +463,18 @@ fn collect_struct_int_lists(doc: &serde_json::Value) -> Vec<Vec<i64>> {
     let mut out = Vec::new();
     for (_, value) in collect_step_vars(
         doc,
-        &["BigInt", "Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple", "Variant"],
+        &[
+            "BigInt",
+            "Bool",
+            "Int",
+            "Raw",
+            "Reference",
+            "String",
+            "Sequence",
+            "Struct",
+            "Tuple",
+            "Variant",
+        ],
     ) {
         if value["kind"] != "Struct" {
             continue;
@@ -460,15 +504,29 @@ fn unique_bool_pairs(doc: &serde_json::Value) -> Vec<(String, bool)> {
     let mut out = Vec::new();
     for (name, value) in collect_step_vars(
         doc,
-        &["BigInt", "Bool", "Int", "Raw", "Reference", "String", "Sequence", "Struct", "Tuple", "Variant"],
+        &[
+            "BigInt",
+            "Bool",
+            "Int",
+            "Raw",
+            "Reference",
+            "String",
+            "Sequence",
+            "Struct",
+            "Tuple",
+            "Variant",
+        ],
     ) {
         if value["kind"] == "Bool" {
             let b = value["b"].as_bool().expect("Bool.b");
             // Spec invariant from streaming_value_encoder.writeBool: the
             // text field is always the lower-case stringification.
             let text = value["text"].as_str().expect("Bool.text");
-            assert_eq!(text, if b { "true" } else { "false" },
-                "Bool ValueRecord.text must mirror b; got value={value}");
+            assert_eq!(
+                text,
+                if b { "true" } else { "false" },
+                "Bool ValueRecord.text must mirror b; got value={value}"
+            );
             if seen.insert((name.clone(), b)) {
                 out.push((name, b));
             }
@@ -671,13 +729,8 @@ fn test_loops_one_step_per_source_line() {
 
     let source_path = std::path::Path::new("loops.move");
     let mut writer = NonStreamingTraceWriter::new("loops.move", &[]);
-    converter::convert_trace_into_writer(
-        ndjson.as_bytes(),
-        &source_map,
-        source_path,
-        &mut writer,
-    )
-    .expect("convert_trace_into_writer should succeed");
+    converter::convert_trace_into_writer(ndjson.as_bytes(), &source_map, source_path, &mut writer)
+        .expect("convert_trace_into_writer should succeed");
 
     let body_steps = writer
         .events
@@ -1253,7 +1306,11 @@ fn test_references_via_ct_print_full() {
         "scale_point's &mut Point arg surfaces as a typed Reference wrapper"
     );
     assert!(m0, "scale_point's first arg is `&mut Point`, not `&Point`");
-    assert_eq!(xy0.as_deref(), Some(&[2_i64, 3][..]), "Point {{ x: 2, y: 3 }}");
+    assert_eq!(
+        xy0.as_deref(),
+        Some(&[2_i64, 3][..]),
+        "Point {{ x: 2, y: 3 }}"
+    );
     assert_eq!(i0, Some(5), "scale_point's factor arg = 5");
     let (k1, m1, xy1, i1) = scale_args(1);
     assert_eq!(k1, "Reference");
@@ -1271,7 +1328,10 @@ fn test_references_via_ct_print_full() {
     // borrow-identity (e.g. zeroing the address) is caught here.
     let address0 = entries[0]["args"][0]["value"]["address"].as_u64();
     let address1 = entries[1]["args"][0]["value"]["address"].as_u64();
-    assert!(address0.is_some(), "Reference must carry a synthetic address");
+    assert!(
+        address0.is_some(),
+        "Reference must carry a synthetic address"
+    );
     assert_eq!(
         address0, address1,
         "both scale_point calls borrow the same `mut_point`; addresses should match"
@@ -1282,11 +1342,7 @@ fn test_references_via_ct_print_full() {
     // so we should observe `(2, 3)`, `(10, 15)`, and `(30, 45)` Struct
     // shapes among the merged step's vars.
     let struct_lists = collect_struct_int_lists(&doc);
-    for want in [
-        vec![2_i64, 3],
-        vec![10, 15],
-        vec![30, 45],
-    ] {
+    for want in [vec![2_i64, 3], vec![10, 15], vec![30, 45]] {
         assert!(
             struct_lists.contains(&want),
             "expected Point shape `{want:?}` as a typed Struct after mutation; \
@@ -1807,8 +1863,10 @@ fn test_boolean_and_integers_via_ct_print_full() {
         raw_set.contains("false"),
         "expected at least one `false` printed-form value (from t && f); got {raw_set:?}"
     );
-    let bool_set: std::collections::BTreeSet<bool> =
-        unique_bool_pairs(&doc).into_iter().map(|(_, b)| b).collect();
+    let bool_set: std::collections::BTreeSet<bool> = unique_bool_pairs(&doc)
+        .into_iter()
+        .map(|(_, b)| b)
+        .collect();
     assert!(
         bool_set.contains(&true),
         "expected at least one typed `Bool {{b:true,text:\"true\"}}` value; got {bool_set:?}"
@@ -1836,8 +1894,7 @@ fn test_boolean_and_integers_via_ct_print_full() {
 /// magnitude.
 #[test]
 fn test_boolean_and_integers_u128_overflow_uses_bigint() {
-    let Some(ct_print) =
-        ct_print_or_skip("test_boolean_and_integers_u128_overflow_uses_bigint")
+    let Some(ct_print) = ct_print_or_skip("test_boolean_and_integers_u128_overflow_uses_bigint")
     else {
         return;
     };
@@ -1923,7 +1980,9 @@ fn test_boolean_and_integers_u128_overflow_uses_bigint() {
                 Some(false),
                 "u128 BigInt must be non-negative; got {value}"
             );
-            let b64 = value["b"].as_str().expect("BigInt.b must be a base64 string");
+            let b64 = value["b"]
+                .as_str()
+                .expect("BigInt.b must be a base64 string");
             let bytes = base64_decode(b64).expect("BigInt.b must decode as base64");
             assert!(
                 !bytes.is_empty(),
@@ -1991,7 +2050,9 @@ fn test_variant_constructors_via_ct_print_full() {
         .filter_map(|v| v.as_str())
         .collect();
     assert!(
-        paths.iter().any(|p| p.ends_with("variant_constructors_test.move")),
+        paths
+            .iter()
+            .any(|p| p.ends_with("variant_constructors_test.move")),
         "expected variant_constructors_test.move in paths; got {paths:?}",
     );
 
@@ -2004,7 +2065,12 @@ fn test_variant_constructors_via_ct_print_full() {
         .collect();
     assert_eq!(
         functions,
-        vec!["test_variant_constructors", "make_some", "make_none", "make_rect"]
+        vec![
+            "test_variant_constructors",
+            "make_some",
+            "make_none",
+            "make_rect"
+        ]
     );
 
     let counts = &doc["counts"];
@@ -2177,7 +2243,11 @@ fn test_wide_integer_via_ct_print_full() {
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     let wide_args = entries[0]["args"].as_array().expect("args array");
-    assert_eq!(wide_args.len(), 5, "wide_product takes (u8, u16, u32, u64, u128)");
+    assert_eq!(
+        wide_args.len(),
+        5,
+        "wide_product takes (u8, u16, u32, u64, u128)"
+    );
     // u8 = 7, u16 = 11, u32 = 13, u64 = 17 — all fit in Int.
     for (idx, want) in [7_i64, 11, 13, 17].iter().enumerate() {
         assert_eq!(
@@ -2195,12 +2265,8 @@ fn test_wide_integer_via_ct_print_full() {
         "u128 arg should surface as BigInt; got {u128_arg}",
     );
     assert_eq!(u128_arg["negative"].as_bool(), Some(false));
-    let u128_bytes = base64_decode(
-        u128_arg["b"]
-            .as_str()
-            .expect("BigInt.b base64 string"),
-    )
-    .expect("base64 decode");
+    let u128_bytes = base64_decode(u128_arg["b"].as_str().expect("BigInt.b base64 string"))
+        .expect("base64 decode");
     let mut u128_mag: u128 = 0;
     for byte in &u128_bytes {
         u128_mag = (u128_mag << 8) | (*byte as u128);
@@ -2215,8 +2281,8 @@ fn test_wide_integer_via_ct_print_full() {
     assert_eq!(exits[0].0, "wide_product");
     let prod_rv = &exits[0].1;
     assert_eq!(prod_rv["kind"].as_str(), Some("BigInt"));
-    let prod_bytes = base64_decode(prod_rv["b"].as_str().expect("BigInt.b"))
-        .expect("base64 decode");
+    let prod_bytes =
+        base64_decode(prod_rv["b"].as_str().expect("BigInt.b")).expect("base64 decode");
     let mut prod_mag: u128 = 0;
     for byte in &prod_bytes {
         prod_mag = (prod_mag << 8) | (*byte as u128);
@@ -2296,7 +2362,9 @@ fn test_resources_via_ct_print_full() {
     assert_eq!(exits[0].0, "mint");
     let mint_rv = &exits[0].1;
     assert_eq!(mint_rv["kind"].as_str(), Some("Struct"));
-    let mint_fields = mint_rv["field_values"].as_array().expect("Struct.field_values");
+    let mint_fields = mint_rv["field_values"]
+        .as_array()
+        .expect("Struct.field_values");
     assert_eq!(mint_fields.len(), 2, "Coin has two fields (id, balance)");
     assert_eq!(mint_fields[0]["kind"].as_str(), Some("Int"));
     assert_eq!(mint_fields[0]["i"].as_i64(), Some(1));
@@ -2377,7 +2445,10 @@ fn test_object_lifecycle_via_ct_print_full() {
         .iter()
         .filter_map(|v| v.as_str())
         .collect();
-    assert_eq!(functions, vec!["test_object_lifecycle", "increment", "value"]);
+    assert_eq!(
+        functions,
+        vec!["test_object_lifecycle", "increment", "value"]
+    );
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
@@ -2550,7 +2621,9 @@ fn test_abilities_via_ct_print_full() {
     assert_eq!(exits[0].0, "mint_token");
     let mint_rv = &exits[0].1;
     assert_eq!(mint_rv["kind"].as_str(), Some("Struct"));
-    let mint_fields = mint_rv["field_values"].as_array().expect("Struct.field_values");
+    let mint_fields = mint_rv["field_values"]
+        .as_array()
+        .expect("Struct.field_values");
     assert_eq!(mint_fields.len(), 1);
     assert_eq!(mint_fields[0]["i"].as_i64(), Some(7));
     let token_type_id = mint_rv["type_id"].as_u64().expect("AccessToken type_id");
@@ -2592,7 +2665,10 @@ fn test_abilities_via_ct_print_full() {
     // `let d = Datum {x:42}; let d2 = d;` materialises the copy at the
     // Move VM level — both bindings appear as typed Struct values.
     let struct_lists = collect_struct_int_lists(&doc);
-    let datum_copies = struct_lists.iter().filter(|fields| fields == &&vec![42_i64]).count();
+    let datum_copies = struct_lists
+        .iter()
+        .filter(|fields| fields == &&vec![42_i64])
+        .count();
     assert!(
         datum_copies >= 2,
         "expected at least 2 Datum {{ x: 42 }} struct copies (d, d2); \
@@ -2608,6 +2684,840 @@ fn test_abilities_via_ct_print_full() {
         struct_lists.contains(&vec![7_i64]),
         "expected AccessToken {{ operation_id: 7 }} as a typed Struct; got {struct_lists:?}",
     );
+}
+
+/// Records `flow_test::test_option` (synthetic NDJSON).
+///
+/// Pins the recorder's `std::option::Option<T>` shape: `option::some(42)`
+/// surfaces as a typed `ValueRecord::Variant` with discriminator
+/// `0x1::option::Option::Variant#1` (Some) carrying an inner `Int(42)`,
+/// `option::none<u64>()` surfaces as `Variant#0` (None) with an empty
+/// payload, and `option::borrow(&Some(42))` returns a typed
+/// `ValueRecord::Reference` whose pointee is the borrowed `u64`.
+#[test]
+fn test_option_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_option_test_via_ct_print_full",
+        "test_option",
+        flow_test_named_source("option_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "option_test");
+    let paths: Vec<&str> = doc["paths"]
+        .as_array()
+        .expect("paths array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert!(
+        paths.iter().any(|p| p.ends_with("option_test.move")),
+        "expected option_test.move in paths; got {paths:?}",
+    );
+
+    // ----- Function table: outer test + 7 helpers ------------------------
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec![
+            "test_option",
+            "some",
+            "none",
+            "is_some",
+            "is_none",
+            "borrow_inner",
+            "borrow",
+            "extract",
+        ],
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1), "counts={counts}");
+    assert_eq!(counts["calls"].as_u64(), Some(8), "counts={counts}");
+    assert_eq!(counts["io_events"].as_u64(), Some(0), "counts={counts}");
+
+    // 1 step + 8 call_entry + 8 call_exit = 17 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 17, "events.len()");
+    assert_step_indices_monotonic(&doc);
+
+    // CloseFrame ordering (LIFO — see observed_call_sequence comment).
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "some".to_string(),
+            "none".to_string(),
+            "is_some".to_string(),
+            "is_none".to_string(),
+            "borrow".to_string(),
+            "borrow_inner".to_string(),
+            "extract".to_string(),
+            "test_option".to_string(),
+        ],
+    );
+
+    // ----- Return values pinned exactly ----------------------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 8);
+
+    // Some(42) -> Variant { discriminator: "0x1::option::Option::Variant#1",
+    //                       contents: Struct { field_values: [Int(42)] } }
+    assert_eq!(exits[0].0, "some");
+    let some_rv = &exits[0].1;
+    assert_eq!(some_rv["kind"].as_str(), Some("Variant"));
+    assert_eq!(
+        some_rv["discriminator"].as_str(),
+        Some("0x1::option::Option::Variant#1"),
+    );
+    assert_eq!(some_rv["contents"]["kind"].as_str(), Some("Struct"));
+    let some_fields = some_rv["contents"]["field_values"]
+        .as_array()
+        .expect("Variant.contents.field_values");
+    assert_eq!(some_fields.len(), 1);
+    assert_eq!(some_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(some_fields[0]["i"].as_i64(), Some(42));
+    let option_type_id = some_rv["type_id"].as_u64().expect("Variant.type_id");
+
+    // None -> Variant#0 with empty payload.
+    assert_eq!(exits[1].0, "none");
+    let none_rv = &exits[1].1;
+    assert_eq!(none_rv["kind"].as_str(), Some("Variant"));
+    assert_eq!(
+        none_rv["discriminator"].as_str(),
+        Some("0x1::option::Option::Variant#0"),
+    );
+    assert_eq!(none_rv["contents"]["kind"].as_str(), Some("Struct"));
+    assert!(
+        none_rv["contents"]["field_values"]
+            .as_array()
+            .expect("Variant.contents.field_values")
+            .is_empty(),
+        "None must carry an empty field_values array",
+    );
+    assert_eq!(
+        none_rv["type_id"].as_u64(),
+        Some(option_type_id),
+        "Some and None must share the Option<T> type_id",
+    );
+
+    // is_some / is_none -> Bool(true)
+    assert_eq!(exits[2].0, "is_some");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[2].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[2].1["text"].as_str(), Some("true"));
+
+    assert_eq!(exits[3].0, "is_none");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[3].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[3].1["text"].as_str(), Some("true"));
+
+    // option::borrow(&Some(42)) -> &u64 — typed ValueRecord::Reference
+    assert_eq!(exits[4].0, "borrow");
+    let borrow_rv = &exits[4].1;
+    assert_eq!(borrow_rv["kind"].as_str(), Some("Reference"));
+    assert_eq!(borrow_rv["mutable"].as_bool(), Some(false));
+    assert_eq!(borrow_rv["dereferenced"]["kind"].as_str(), Some("Int"));
+    assert_eq!(borrow_rv["dereferenced"]["i"].as_i64(), Some(42));
+
+    // borrow_inner / extract / test_option scalar returns.
+    assert_eq!(exits[5].0, "borrow_inner");
+    assert_eq!(exits[5].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[5].1["i"].as_i64(), Some(42));
+    assert_eq!(exits[6].0, "extract");
+    assert_eq!(exits[6].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[6].1["i"].as_i64(), Some(42));
+    assert_eq!(exits[7].0, "test_option");
+    assert_eq!(exits[7].1["kind"].as_str(), Some("Void"));
+
+    // ----- Reference-typed call args carry the typed Variant pointee -----
+    let entries: Vec<&serde_json::Value> = doc["events"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    // is_some takes &Option<u64> wrapping the Some(42) variant.
+    let is_some_arg = &entries[2]["args"][0]["value"];
+    assert_eq!(is_some_arg["kind"].as_str(), Some("Reference"));
+    assert_eq!(is_some_arg["mutable"].as_bool(), Some(false));
+    let is_some_pointee = &is_some_arg["dereferenced"];
+    assert_eq!(is_some_pointee["kind"].as_str(), Some("Variant"));
+    assert_eq!(
+        is_some_pointee["discriminator"].as_str(),
+        Some("0x1::option::Option::Variant#1"),
+    );
+    // is_none takes &Option<u64> wrapping the None variant.
+    let is_none_arg = &entries[3]["args"][0]["value"];
+    assert_eq!(is_none_arg["kind"].as_str(), Some("Reference"));
+    assert_eq!(is_none_arg["mutable"].as_bool(), Some(false));
+    let is_none_pointee = &is_none_arg["dereferenced"];
+    assert_eq!(is_none_pointee["kind"].as_str(), Some("Variant"));
+    assert_eq!(
+        is_none_pointee["discriminator"].as_str(),
+        Some("0x1::option::Option::Variant#0"),
+    );
+    // extract takes &mut Option<u64>.
+    let extract_arg = &entries[6]["args"][0]["value"];
+    assert_eq!(extract_arg["kind"].as_str(), Some("Reference"));
+    assert_eq!(extract_arg["mutable"].as_bool(), Some(true));
+
+    // ----- The post-extract write surfaces None -------------------------
+    // After option::extract(&mut some_val) consumes the Some payload, the
+    // converter emits a Write of the now-empty Option (Variant#0) to
+    // local_0.  Walk the merged step's vars and assert the None shape
+    // appears bound to local_0.
+    let mut saw_none_at_local_0 = false;
+    for (name, value) in collect_step_vars(
+        &doc,
+        &[
+            "BigInt",
+            "Bool",
+            "Int",
+            "Raw",
+            "Reference",
+            "String",
+            "Sequence",
+            "Struct",
+            "Tuple",
+            "Variant",
+        ],
+    ) {
+        if name == "local_0"
+            && value["kind"] == "Variant"
+            && value["discriminator"] == "0x1::option::Option::Variant#0"
+        {
+            saw_none_at_local_0 = true;
+        }
+    }
+    assert!(
+        saw_none_at_local_0,
+        "expected local_0 to surface as None (Variant#0) after extract consumes Some(42)",
+    );
+}
+
+/// Records `flow_test::test_event_emit` (synthetic NDJSON).
+///
+/// Pins that a `sui::event::emit(MyEvent { sender, amount })` call
+/// surfaces as exactly one structured `io` event tagged `MoveEvent`
+/// whose `text` carries the typed event payload as a JSON object
+/// (`{"fields": {...}, "struct": "MyEvent"}`) — alongside (not
+/// replacing) the call_entry/call_exit pair for the `event::emit`
+/// native frame.
+#[test]
+fn test_event_emit_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_event_emit_test_via_ct_print_full",
+        "test_event_emit",
+        flow_test_named_source("event_emit_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "event_emit_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(functions, vec!["test_event_emit", "fire", "emit"]);
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(3));
+    assert_eq!(
+        counts["io_events"].as_u64(),
+        Some(1),
+        "exactly one MoveEvent io_event must surface for sui::event::emit",
+    );
+
+    // 1 step + 3 call_entry + 1 io + 3 call_exit = 8 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 8, "events.len()");
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "emit".to_string(),
+            "fire".to_string(),
+            "test_event_emit".to_string(),
+        ],
+    );
+
+    // ----- The structured MoveEvent io_event ----------------------------
+    let io = events
+        .iter()
+        .find(|e| e["kind"] == "io")
+        .expect("expected exactly one io event for sui::event::emit");
+    let io_text = io["text"]
+        .as_str()
+        .expect("io.text str — MoveEvent payload as JSON");
+    let payload: serde_json::Value = serde_json::from_str(io_text)
+        .unwrap_or_else(|e| panic!("MoveEvent payload must be valid JSON ({e}); got {io_text}"));
+    assert_eq!(
+        payload,
+        serde_json::json!({
+            "struct": "MyEvent",
+            "fields": {
+                "sender": "0xCAFE",
+                "amount": 1000_u64,
+            },
+        }),
+        "MoveEvent payload mismatch",
+    );
+
+    // ----- The event::emit native call carries the typed Struct arg -----
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    let emit_args = entries[0]["args"].as_array().expect("emit args");
+    assert_eq!(emit_args.len(), 1, "emit takes one event payload");
+    let emit_arg0 = &emit_args[0]["value"];
+    assert_eq!(emit_arg0["kind"].as_str(), Some("Struct"));
+    let emit_fields = emit_arg0["field_values"]
+        .as_array()
+        .expect("Struct.field_values");
+    assert_eq!(emit_fields.len(), 2, "MyEvent has two fields");
+    assert_eq!(emit_fields[0]["kind"].as_str(), Some("String"));
+    assert_eq!(emit_fields[0]["text"].as_str(), Some("0xCAFE"));
+    assert_eq!(emit_fields[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(emit_fields[1]["i"].as_i64(), Some(1000));
+
+    // ----- Return values --------------------------------------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 3);
+    assert_eq!(exits[0].0, "emit");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[1].0, "fire");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[2].0, "test_event_emit");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+}
+
+/// Records `flow_test::test_hash_builtins` (synthetic NDJSON).
+///
+/// Pins that `bcs::to_bytes(&Point { x: 3, y: 4 })`, `hash::sha2_256`,
+/// and `hash::sha3_256` each round-trip their full byte-vector argument
+/// and 32-byte digest as typed `ValueRecord::Sequence<u8>` payloads —
+/// no truncation, no printed-form fallback.  The exact digest bytes are
+/// pinned so any future native-call short-circuit (truncation, printed
+/// form, base64 wrap, etc.) regresses the test.
+#[test]
+fn test_hash_builtins_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_hash_builtins_test_via_ct_print_full",
+        "test_hash_builtins",
+        flow_test_named_source("hash_builtins_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "hash_builtins_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec![
+            "test_hash_builtins",
+            "to_bytes",
+            "sha2_256",
+            "sha3_256",
+            "length",
+        ],
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(7));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 7 call_entry + 7 call_exit = 15 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 15);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "to_bytes".to_string(),
+            "sha2_256".to_string(),
+            "to_bytes".to_string(),
+            "sha3_256".to_string(),
+            "length".to_string(),
+            "length".to_string(),
+            "test_hash_builtins".to_string(),
+        ],
+    );
+
+    // ----- Each native return surfaces as Sequence<u8> with exact bytes --
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 7);
+
+    // bcs::to_bytes(&Point { x: 3, y: 4 }) -> [3,0,0,0,0,0,0,0, 4,0,0,0,0,0,0,0]
+    let bcs_bytes_want: Vec<i64> = vec![3, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0];
+    for idx in [0_usize, 2] {
+        assert_eq!(exits[idx].0, "to_bytes");
+        let rv = &exits[idx].1;
+        assert_eq!(rv["kind"].as_str(), Some("Sequence"));
+        assert_eq!(rv["is_slice"].as_bool(), Some(false));
+        let elements = rv["elements"]
+            .as_array()
+            .expect("to_bytes return Sequence.elements");
+        let got: Vec<i64> = elements
+            .iter()
+            .map(|e| {
+                assert_eq!(e["kind"].as_str(), Some("Int"));
+                e["i"].as_i64().expect("Int.i")
+            })
+            .collect();
+        assert_eq!(
+            got, bcs_bytes_want,
+            "bcs::to_bytes byte-vector mismatch at exit {idx}",
+        );
+    }
+
+    // sha2_256 / sha3_256 outputs (precomputed against [3,0,..,4,0,..]).
+    let sha2_want: Vec<i64> = vec![
+        253, 34, 59, 133, 244, 220, 32, 24, 63, 213, 149, 249, 15, 196, 132, 214, 122, 34, 66, 169,
+        222, 88, 9, 205, 62, 132, 79, 169, 89, 84, 252, 74,
+    ];
+    let sha3_want: Vec<i64> = vec![
+        112, 102, 84, 234, 114, 231, 158, 13, 163, 210, 222, 207, 68, 89, 105, 163, 135, 247, 104,
+        70, 133, 32, 76, 213, 41, 140, 245, 208, 218, 15, 231, 23,
+    ];
+    let check_digest = |which: usize, name: &str, want: &[i64]| {
+        assert_eq!(exits[which].0, name);
+        let rv = &exits[which].1;
+        assert_eq!(rv["kind"].as_str(), Some("Sequence"));
+        let elements = rv["elements"]
+            .as_array()
+            .unwrap_or_else(|| panic!("{name} return Sequence.elements"));
+        assert_eq!(elements.len(), 32, "{name} digest must be 32 bytes");
+        let got: Vec<i64> = elements
+            .iter()
+            .map(|e| {
+                assert_eq!(e["kind"].as_str(), Some("Int"));
+                e["i"].as_i64().expect("Int.i")
+            })
+            .collect();
+        assert_eq!(got, want.to_vec(), "{name} digest bytes mismatch");
+    };
+    check_digest(1, "sha2_256", &sha2_want);
+    check_digest(3, "sha3_256", &sha3_want);
+
+    // length(&digest) -> 32 (twice)
+    for idx in [4_usize, 5] {
+        assert_eq!(exits[idx].0, "length");
+        assert_eq!(exits[idx].1["kind"].as_str(), Some("Int"));
+        assert_eq!(exits[idx].1["i"].as_i64(), Some(32));
+    }
+    assert_eq!(exits[6].0, "test_hash_builtins");
+    assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
+
+    // ----- The hash arg also surfaces as the same Sequence<u8> ----------
+    // CloseFrame ordering: entries[0]=to_bytes(1), [1]=sha2_256, [2]=to_bytes(2),
+    // [3]=sha3_256, [4]=length, [5]=length, [6]=test_hash_builtins.
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    // sha2_256(bytes) — the bytes arg is the bcs output (entries[1]).
+    let sha2_arg0 = &entries[1]["args"][0]["value"];
+    assert_eq!(sha2_arg0["kind"].as_str(), Some("Sequence"));
+    let sha2_arg_elems = sha2_arg0["elements"]
+        .as_array()
+        .expect("sha2_256 arg Sequence.elements");
+    let got_in: Vec<i64> = sha2_arg_elems
+        .iter()
+        .map(|e| e["i"].as_i64().expect("Int.i"))
+        .collect();
+    assert_eq!(
+        got_in, bcs_bytes_want,
+        "sha2_256's input byte-vector must match bcs::to_bytes output exactly",
+    );
+    // sha3_256(bytes2) — entries[3], same payload.
+    let sha3_arg0 = &entries[3]["args"][0]["value"];
+    assert_eq!(sha3_arg0["kind"].as_str(), Some("Sequence"));
+    let sha3_arg_elems = sha3_arg0["elements"]
+        .as_array()
+        .expect("sha3_256 arg Sequence.elements");
+    let got_in3: Vec<i64> = sha3_arg_elems
+        .iter()
+        .map(|e| e["i"].as_i64().expect("Int.i"))
+        .collect();
+    assert_eq!(
+        got_in3, bcs_bytes_want,
+        "sha3_256's input byte-vector must match bcs::to_bytes output exactly",
+    );
+
+    // ----- bcs::to_bytes(&p) takes a Reference<Point> ---------------------
+    let bcs_arg0 = &entries[0]["args"][0]["value"];
+    assert_eq!(bcs_arg0["kind"].as_str(), Some("Reference"));
+    assert_eq!(bcs_arg0["mutable"].as_bool(), Some(false));
+    let point = &bcs_arg0["dereferenced"];
+    assert_eq!(point["kind"].as_str(), Some("Struct"));
+    let point_fields = point["field_values"]
+        .as_array()
+        .expect("Point.field_values");
+    assert_eq!(point_fields.len(), 2);
+    assert_eq!(point_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(point_fields[0]["i"].as_i64(), Some(3));
+    assert_eq!(point_fields[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(point_fields[1]["i"].as_i64(), Some(4));
+}
+
+/// Records `flow_test::test_string` (synthetic NDJSON).
+///
+/// Pins that `std::string::String` flowing through `string::utf8`,
+/// `string::append`, `string::sub_string`, `string::length` surfaces as
+/// a typed `ValueRecord::Struct` whose single `bytes: vector<u8>` field
+/// is a typed `ValueRecord::Sequence<u8>` from which the printable text
+/// is recoverable byte-for-byte.
+#[test]
+fn test_string_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_string_test_via_ct_print_full",
+        "test_string",
+        flow_test_named_source("string_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "string_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec!["test_string", "utf8", "append", "sub_string", "length"],
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(7));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 7 call_entry + 7 call_exit = 15 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 15);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "utf8".to_string(),
+            "utf8".to_string(),
+            "append".to_string(),
+            "sub_string".to_string(),
+            "length".to_string(),
+            "length".to_string(),
+            "test_string".to_string(),
+        ],
+    );
+
+    // Helper: extract the printable text from a String ValueRecord.
+    fn string_struct_text(v: &serde_json::Value) -> String {
+        assert_eq!(
+            v["kind"].as_str(),
+            Some("Struct"),
+            "expected Struct; got {v}"
+        );
+        let fields = v["field_values"].as_array().expect("String.field_values");
+        assert_eq!(fields.len(), 1, "String has a single bytes field");
+        let bytes_field = &fields[0];
+        assert_eq!(
+            bytes_field["kind"].as_str(),
+            Some("Sequence"),
+            "String.bytes must be a typed Sequence; got {bytes_field}",
+        );
+        let elements = bytes_field["elements"]
+            .as_array()
+            .expect("String.bytes Sequence.elements");
+        let raw: Vec<u8> = elements
+            .iter()
+            .map(|e| {
+                assert_eq!(e["kind"].as_str(), Some("Int"));
+                let i = e["i"].as_i64().expect("Int.i");
+                assert!((0..=255).contains(&i), "byte out of range: {i}");
+                i as u8
+            })
+            .collect();
+        String::from_utf8(raw).expect("String bytes must round-trip as UTF-8")
+    }
+
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 7);
+
+    // utf8(b"hello") -> "hello", utf8(b" world") -> " world"
+    assert_eq!(exits[0].0, "utf8");
+    assert_eq!(string_struct_text(&exits[0].1), "hello");
+    assert_eq!(exits[1].0, "utf8");
+    assert_eq!(string_struct_text(&exits[1].1), " world");
+
+    // append(&mut s, suffix) -> Void
+    assert_eq!(exits[2].0, "append");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+
+    // sub_string(&s, 0, 5) -> "hello"
+    assert_eq!(exits[3].0, "sub_string");
+    assert_eq!(string_struct_text(&exits[3].1), "hello");
+
+    // length(&s) -> 11, length(&head_bytes) -> 5
+    assert_eq!(exits[4].0, "length");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[4].1["i"].as_i64(), Some(11));
+    assert_eq!(exits[5].0, "length");
+    assert_eq!(exits[5].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[5].1["i"].as_i64(), Some(5));
+
+    assert_eq!(exits[6].0, "test_string");
+    assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
+
+    // ----- After append, the &mut s arg snapshot is "hello world" -------
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    // sub_string(&s, 0, 5) — its first arg is a Reference whose pointee
+    // String must spell out "hello world" after the in-place append.
+    let sub_arg0 = &entries[3]["args"][0]["value"];
+    assert_eq!(sub_arg0["kind"].as_str(), Some("Reference"));
+    assert_eq!(sub_arg0["mutable"].as_bool(), Some(false));
+    assert_eq!(string_struct_text(&sub_arg0["dereferenced"]), "hello world");
+    // length(&s) — same shape.
+    let len_arg0 = &entries[4]["args"][0]["value"];
+    assert_eq!(len_arg0["kind"].as_str(), Some("Reference"));
+    assert_eq!(string_struct_text(&len_arg0["dereferenced"]), "hello world");
+}
+
+/// Records `flow_test::test_vector_operations` (synthetic NDJSON).
+///
+/// Pins that each mutating + observational vector op surfaces with its
+/// runtime side-effect on the contents.  The contents snapshot before
+/// and after each `swap_remove`, `pop_back`, `reverse`, `append`, and
+/// `borrow_mut`-then-write step is a typed `ValueRecord::Sequence` with
+/// exact element values; `index_of` returns its `(found, idx)` shape as
+/// a typed `ValueRecord::Tuple`; `borrow` and `borrow_mut` return typed
+/// `ValueRecord::Reference`s.
+#[test]
+fn test_vector_operations_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_vector_operations_test_via_ct_print_full",
+        "test_vector_operations",
+        flow_test_named_source("vector_operations_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "vector_operations_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec![
+            "test_vector_operations",
+            "swap_remove",
+            "pop_back",
+            "contains",
+            "reverse",
+            "append",
+            "index_of",
+            "borrow_mut",
+            "borrow",
+        ],
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(10));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 10 call_entry + 10 call_exit = 21 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 21);
+    assert_step_indices_monotonic(&doc);
+
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "swap_remove".to_string(),
+            "pop_back".to_string(),
+            "contains".to_string(),
+            "contains".to_string(),
+            "reverse".to_string(),
+            "append".to_string(),
+            "index_of".to_string(),
+            "borrow_mut".to_string(),
+            "borrow".to_string(),
+            "test_vector_operations".to_string(),
+        ],
+    );
+
+    // ----- Return values pinned exactly ----------------------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 10);
+
+    // swap_remove(v, 1) -> 20
+    assert_eq!(exits[0].0, "swap_remove");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(20));
+    // pop_back(v) -> 30
+    assert_eq!(exits[1].0, "pop_back");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(30));
+    // contains(v, 40) -> true
+    assert_eq!(exits[2].0, "contains");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[2].1["b"].as_bool(), Some(true));
+    // contains(v, 99) -> false
+    assert_eq!(exits[3].0, "contains");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[3].1["b"].as_bool(), Some(false));
+    // reverse(v) -> Void
+    assert_eq!(exits[4].0, "reverse");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Void"));
+    // append(v, other) -> Void
+    assert_eq!(exits[5].0, "append");
+    assert_eq!(exits[5].1["kind"].as_str(), Some("Void"));
+    // index_of(v, &7) -> (true, 2) — Tuple
+    assert_eq!(exits[6].0, "index_of");
+    let idx_rv = &exits[6].1;
+    assert_eq!(idx_rv["kind"].as_str(), Some("Tuple"));
+    let idx_elems = idx_rv["elements"].as_array().expect("Tuple.elements");
+    assert_eq!(idx_elems.len(), 2);
+    assert_eq!(idx_elems[0]["kind"].as_str(), Some("Bool"));
+    assert_eq!(idx_elems[0]["b"].as_bool(), Some(true));
+    assert_eq!(idx_elems[1]["kind"].as_str(), Some("Int"));
+    assert_eq!(idx_elems[1]["i"].as_i64(), Some(2));
+    // borrow_mut(v, 0) -> &mut u64 (Reference, mutable=true, pointee=40)
+    assert_eq!(exits[7].0, "borrow_mut");
+    let bm_rv = &exits[7].1;
+    assert_eq!(bm_rv["kind"].as_str(), Some("Reference"));
+    assert_eq!(bm_rv["mutable"].as_bool(), Some(true));
+    assert_eq!(bm_rv["dereferenced"]["kind"].as_str(), Some("Int"));
+    assert_eq!(bm_rv["dereferenced"]["i"].as_i64(), Some(40));
+    // borrow(v, 0) -> &u64 (Reference, mutable=false, pointee=100 after *r=100)
+    assert_eq!(exits[8].0, "borrow");
+    let b_rv = &exits[8].1;
+    assert_eq!(b_rv["kind"].as_str(), Some("Reference"));
+    assert_eq!(b_rv["mutable"].as_bool(), Some(false));
+    assert_eq!(b_rv["dereferenced"]["kind"].as_str(), Some("Int"));
+    assert_eq!(b_rv["dereferenced"]["i"].as_i64(), Some(100));
+    assert_eq!(exits[9].0, "test_vector_operations");
+    assert_eq!(exits[9].1["kind"].as_str(), Some("Void"));
+
+    // ----- Reference args carry the contents snapshot at call time ------
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    let extract_seq = |arg: &serde_json::Value| -> Vec<i64> {
+        let v = if arg["kind"] == "Reference" {
+            &arg["dereferenced"]
+        } else {
+            arg
+        };
+        assert_eq!(
+            v["kind"].as_str(),
+            Some("Sequence"),
+            "expected Sequence; got {v}"
+        );
+        v["elements"]
+            .as_array()
+            .expect("Sequence.elements")
+            .iter()
+            .map(|e| {
+                assert_eq!(e["kind"].as_str(), Some("Int"));
+                e["i"].as_i64().expect("Int.i")
+            })
+            .collect()
+    };
+    // swap_remove sees v = [10, 20, 30, 40] (initial)
+    assert_eq!(
+        extract_seq(&entries[0]["args"][0]["value"]),
+        vec![10_i64, 20, 30, 40],
+    );
+    // pop_back sees v = [10, 40, 30] (after swap_remove)
+    assert_eq!(
+        extract_seq(&entries[1]["args"][0]["value"]),
+        vec![10_i64, 40, 30],
+    );
+    // contains(_, 40) sees v = [10, 40] (after pop_back)
+    assert_eq!(
+        extract_seq(&entries[2]["args"][0]["value"]),
+        vec![10_i64, 40],
+    );
+    // contains(_, 99) sees the same v = [10, 40]
+    assert_eq!(
+        extract_seq(&entries[3]["args"][0]["value"]),
+        vec![10_i64, 40],
+    );
+    // reverse sees v = [10, 40]
+    assert_eq!(
+        extract_seq(&entries[4]["args"][0]["value"]),
+        vec![10_i64, 40],
+    );
+    // append sees v = [40, 10] (after reverse) and other = [7, 8]
+    assert_eq!(
+        extract_seq(&entries[5]["args"][0]["value"]),
+        vec![40_i64, 10],
+    );
+    assert_eq!(extract_seq(&entries[5]["args"][1]["value"]), vec![7_i64, 8],);
+    // index_of sees v = [40, 10, 7, 8] (after append)
+    assert_eq!(
+        extract_seq(&entries[6]["args"][0]["value"]),
+        vec![40_i64, 10, 7, 8],
+    );
+    // borrow_mut sees the same v
+    assert_eq!(
+        extract_seq(&entries[7]["args"][0]["value"]),
+        vec![40_i64, 10, 7, 8],
+    );
+    // borrow (final readback) sees v = [100, 10, 7, 8] (after *r = 100)
+    assert_eq!(
+        extract_seq(&entries[8]["args"][0]["value"]),
+        vec![100_i64, 10, 7, 8],
+    );
+
+    // ----- The contents snapshots also surface as typed Sequences in the
+    //       merged step's vars (one Sequence per Effect::Write to local_0).
+    let seq_lists = collect_sequence_int_lists(&doc);
+    for snapshot in [
+        vec![10_i64, 20, 30, 40],
+        vec![10_i64, 40, 30],
+        vec![10_i64, 40],
+        vec![40_i64, 10],
+        vec![40_i64, 10, 7, 8],
+        vec![100_i64, 10, 7, 8],
+    ] {
+        assert!(
+            seq_lists.contains(&snapshot),
+            "expected v snapshot {snapshot:?} as a typed Sequence in step vars; got {seq_lists:?}",
+        );
+    }
 }
 
 /// Decode the standard base64 alphabet (no URL-safe variant) into raw
