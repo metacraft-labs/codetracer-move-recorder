@@ -11,7 +11,9 @@ use codetracer_trace_writer_nim::trace_writer::TraceWriter;
 use codetracer_trace_writer_nim::{TraceEventsFileFormat, create_trace_writer};
 use eyre::{Result, eyre};
 
-use crate::move_types::{Effect, Location, SerializableMoveValue, TraceEvent, TraceValue, VersionHeader};
+use crate::move_types::{
+    Effect, Location, SerializableMoveValue, TraceEvent, TraceValue, VersionHeader,
+};
 use crate::source_map::SourceMapResolver;
 
 /// The on-disk container produced by the recorder is always the canonical
@@ -166,6 +168,29 @@ pub fn convert_trace_into_writer(
                 prev_line = None;
                 prev_pc = None;
 
+                // Detect `sui::event::emit<T>(payload)` — the canonical
+                // Sui native used to publish a typed event from a Move
+                // module.  When the OpenFrame names the `event::emit`
+                // native at address `0x2`, surface a structured
+                // `EventLogKind::TraceLogEvent` ahead of the call_entry
+                // so downstream consumers can recover the typed payload
+                // (struct name, field map) without re-parsing the
+                // printed form.  See
+                // `tests/test_full_coverage.rs::test_event_emit_test_via_ct_print_full`
+                // for the strict shape pin.
+                if is_sui_event_emit(&frame.module.name, &frame.module.address)
+                    && frame.function_name == "emit"
+                    && let Some(param) = frame.parameters.first()
+                {
+                    let payload_text = render_move_event_payload(param.inner_value());
+                    TraceWriter::register_special_event(
+                        writer,
+                        EventLogKind::TraceLogEvent,
+                        "MoveEvent",
+                        &payload_text,
+                    );
+                }
+
                 let fn_id = TraceWriter::ensure_function_id(
                     writer,
                     &frame.function_name,
@@ -207,15 +232,11 @@ pub fn convert_trace_into_writer(
                 // unchanged so the existing scalar-return tests stay intact.
                 let ret_val = match return_values.len() {
                     0 => NONE_VALUE,
-                    1 => convert_move_value(
-                        return_values[0].inner_value(),
-                        &mut type_ids,
-                        writer,
-                    ),
+                    1 => convert_trace_value(&return_values[0], &mut type_ids, writer),
                     _ => {
                         let elements: Vec<ValueRecord> = return_values
                             .iter()
-                            .map(|v| convert_move_value(v.inner_value(), &mut type_ids, writer))
+                            .map(|v| convert_trace_value(v, &mut type_ids, writer))
                             .collect();
                         ValueRecord::Tuple {
                             elements,
@@ -460,8 +481,113 @@ impl TypeIds {
 /// slice so the magnitude survives a round trip.
 fn u128_be_bytes_trimmed(v: u128) -> Vec<u8> {
     let bytes = v.to_be_bytes();
-    let first_nonzero = bytes.iter().position(|&b| b != 0).unwrap_or(bytes.len() - 1);
+    let first_nonzero = bytes
+        .iter()
+        .position(|&b| b != 0)
+        .unwrap_or(bytes.len() - 1);
     bytes[first_nonzero..].to_vec()
+}
+
+/// True when a `(module_name, module_address)` pair points at the Sui
+/// `0x2::event` module — the home of `sui::event::emit`.  Sui's address
+/// renders both as the short `"0x2"` (synthetic / hand-crafted traces)
+/// and as the 64-hex-digit zero-padded form (`"0000…0002"`) that the
+/// real Sui binary emits, so we accept either.
+fn is_sui_event_emit(module_name: &str, module_address: &str) -> bool {
+    if module_name != "event" {
+        return false;
+    }
+    matches!(
+        module_address,
+        "0x2" | "0x02" | "0000000000000000000000000000000000000000000000000000000000000002"
+    )
+}
+
+/// Render the typed payload of a `sui::event::emit<T>(payload)` call
+/// into a single JSON-string snippet that ct-print --full surfaces in
+/// the `text` field of the resulting `TraceLogEvent`.  The output is
+/// shaped as `{"struct":"<name>","fields":{<name>:<value>,...}}` so
+/// downstream consumers can recover the event's struct name + field
+/// map without re-parsing a printed form.  Non-struct payloads (the
+/// type system forbids them today, but we are defensive) surface as a
+/// bare `{"payload":"<debug>"}` object.
+fn render_move_event_payload(value: &SerializableMoveValue) -> String {
+    match value {
+        SerializableMoveValue::Struct { value: content } => {
+            let struct_name = content
+                .type_
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string();
+            let mut fields = serde_json::Map::new();
+            for (fname, fval) in &content.fields {
+                fields.insert(fname.clone(), move_value_to_json(fval));
+            }
+            let mut root = serde_json::Map::new();
+            root.insert("struct".to_string(), serde_json::Value::String(struct_name));
+            root.insert("fields".to_string(), serde_json::Value::Object(fields));
+            serde_json::Value::Object(root).to_string()
+        }
+        other => {
+            let mut root = serde_json::Map::new();
+            root.insert("payload".to_string(), move_value_to_json(other));
+            serde_json::Value::Object(root).to_string()
+        }
+    }
+}
+
+/// Project a `SerializableMoveValue` into a `serde_json::Value` for the
+/// `MoveEvent` TraceLogEvent metadata payload.  Strings/addresses/bools
+/// surface as their JSON-native shape; numeric values surface as JSON
+/// numbers (u64 stays as a number; u128 falls back to a string when it
+/// exceeds the JSON safe-integer range).  Compound values recurse.
+fn move_value_to_json(value: &SerializableMoveValue) -> serde_json::Value {
+    use serde_json::Value as J;
+    match value {
+        SerializableMoveValue::U8 { value: v } => J::from(*v),
+        SerializableMoveValue::U16 { value: v } => J::from(*v),
+        SerializableMoveValue::U32 { value: v } => J::from(*v),
+        SerializableMoveValue::U64 { value: v } => J::from(*v),
+        SerializableMoveValue::U128 { value: v } => {
+            if *v <= u64::MAX as u128 {
+                J::from(*v as u64)
+            } else {
+                J::String(v.to_string())
+            }
+        }
+        SerializableMoveValue::U256 { value: v } => J::String(v.clone()),
+        SerializableMoveValue::Bool { value: v } => J::from(*v),
+        SerializableMoveValue::Address { value: v } => J::String(v.clone()),
+        SerializableMoveValue::Struct { value: content } => {
+            let mut fields = serde_json::Map::new();
+            for (fname, fval) in &content.fields {
+                fields.insert(fname.clone(), move_value_to_json(fval));
+            }
+            let struct_name = content
+                .type_
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("");
+            let mut obj = serde_json::Map::new();
+            obj.insert("struct".to_string(), J::String(struct_name.to_string()));
+            obj.insert("fields".to_string(), J::Object(fields));
+            J::Object(obj)
+        }
+        SerializableMoveValue::Vector { elements } => {
+            J::Array(elements.iter().map(move_value_to_json).collect())
+        }
+        SerializableMoveValue::Variant { tag, fields, type_ } => {
+            let mut obj = serde_json::Map::new();
+            obj.insert("variant_type".to_string(), J::String(type_.clone()));
+            obj.insert("tag".to_string(), J::from(*tag));
+            obj.insert(
+                "fields".to_string(),
+                J::Array(fields.iter().map(move_value_to_json).collect()),
+            );
+            J::Object(obj)
+        }
+    }
 }
 
 /// Render the abort code for the integer Move VM value popped immediately
