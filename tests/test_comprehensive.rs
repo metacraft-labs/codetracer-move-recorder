@@ -1170,10 +1170,7 @@ fn test_scenario_token_transfer() {
                 codetracer_trace_types::ValueRecord::Int { i, .. } => {
                     assert_eq!(*i, 500, "Balance.field_0 should be 500");
                 }
-                other => panic!(
-                    "expected Int Balance.field_0; got: {:?}",
-                    other
-                ),
+                other => panic!("expected Int Balance.field_0; got: {:?}", other),
             }
         }
         other => panic!(
@@ -1907,7 +1904,10 @@ fn test_struct_fields_correctly_converted_point_rectangle() {
                 other => panic!("expected Int Rectangle.height; got: {:?}", other),
             }
         }
-        other => panic!("expected Struct ValueRecord for Rectangle, got: {:?}", other),
+        other => panic!(
+            "expected Struct ValueRecord for Rectangle, got: {:?}",
+            other
+        ),
     }
 
     // Also verify the return value from CloseFrame carries the Rectangle struct.
@@ -2044,7 +2044,10 @@ fn test_vector_operations_produce_correct_element_values() {
 
     // Verify vector after pop: back to [100, 200] (so [100, 200] appears
     // at least twice — once after the second push, once after the pop).
-    let count_100_200 = value_seqs.iter().filter(|v| v.as_slice() == [100, 200]).count();
+    let count_100_200 = value_seqs
+        .iter()
+        .filter(|v| v.as_slice() == [100, 200])
+        .count();
     assert!(
         count_100_200 >= 2,
         "expected Sequence [100, 200] at least twice (after push and after pop), \
@@ -2065,9 +2068,7 @@ fn test_vector_operations_produce_correct_element_values() {
     let vec_return = return_records
         .iter()
         .find(|r| match &r.return_value {
-            codetracer_trace_types::ValueRecord::Sequence { elements, .. } => {
-                elements.len() == 2
-            }
+            codetracer_trace_types::ValueRecord::Sequence { elements, .. } => elements.len() == 2,
             _ => false,
         })
         .expect("should have a Sequence return value for the vector");
@@ -2087,7 +2088,10 @@ fn test_vector_operations_produce_correct_element_values() {
                 }
             }
         }
-        other => panic!("expected Sequence return value for vector, got: {:?}", other),
+        other => panic!(
+            "expected Sequence return value for vector, got: {:?}",
+            other
+        ),
     }
 }
 
