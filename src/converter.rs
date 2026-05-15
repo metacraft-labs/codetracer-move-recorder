@@ -201,6 +201,27 @@ pub fn convert_trace_into_writer(
                     );
                 }
 
+                // Surface a per-frame visibility tag (Move 2024
+                // `public(package)`, the legacy `public(friend)`, the
+                // Sui one-time `init` entry, etc.) as a structured
+                // `MoveCallVisibility` `TraceLogEvent` immediately
+                // preceding the `call_entry`.  Sui's real v3 trace
+                // format does not emit visibility today, so this fires
+                // only for synthetic NDJSON that carries a non-empty
+                // `frame.visibility`.  Pinned by:
+                //   * `tests/test_full_coverage.rs::test_public_package_test_via_ct_print_full`
+                //   * `tests/test_full_coverage.rs::test_module_init_test_via_ct_print_full`
+                if let Some(visibility) = frame.visibility.as_deref()
+                    && !visibility.is_empty()
+                {
+                    TraceWriter::register_special_event(
+                        writer,
+                        EventLogKind::TraceLogEvent,
+                        "MoveCallVisibility",
+                        visibility,
+                    );
+                }
+
                 if outer_module.is_none() {
                     outer_module = Some(frame.module.name.clone());
                 }

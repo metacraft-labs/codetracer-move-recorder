@@ -60,6 +60,25 @@ pub struct Frame {
     pub locals_types: Vec<LocalType>,
     #[serde(default)]
     pub is_native: bool,
+    /// Optional visibility tag carried per-frame.  Sui's real v3 trace
+    /// format does not emit visibility today, so this field defaults
+    /// to `None` and the M5–M8 fixtures that omit it stay
+    /// byte-for-byte compatible.  Synthetic fixtures (notably the M9
+    /// `public_package_test` and `module_init_test` fixtures) populate
+    /// it with the canonical visibility-class string the bytecode
+    /// preserves at compile time:
+    ///   * `"public"`             — `public fun`
+    ///   * `"public(package)"`    — Move 2024 `public(package) fun`
+    ///   * `"public(friend)"`     — pre-2024 `public(friend) fun`
+    ///   * `"friend"`             — `friend fun` (legacy)
+    ///   * `"init"`               — Sui's one-time module-init entry
+    ///                              (`fun init(ctx: &mut TxContext)`)
+    /// When present and non-empty, the recorder surfaces it as a
+    /// `MoveCallVisibility` `TraceLogEvent` immediately preceding the
+    /// frame's `call_entry` so downstream consumers can recover the
+    /// visibility-class metadata without re-parsing the source.
+    #[serde(default)]
+    pub visibility: Option<String>,
 }
 
 /// Identifies a Move module.
