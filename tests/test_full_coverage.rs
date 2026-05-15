@@ -21,13 +21,19 @@
 //! a hard error message asking the test author to extend the test
 //! rather than weaken the assertion.
 //!
-//! Where the recorder's current behaviour deviates from what the
-//! Move semantics dictate (single merged step event for the whole
-//! function body; struct/vector values surface as `Raw` strings rather
-//! than typed `Struct`/`Sequence` `ValueRecord` variants; etc.), the
-//! deviation is documented inline as `RECORDER BUG: ...` and a parallel
-//! `#[ignore]`-d assertion captures the spec-correct expectation so it
-//! surfaces the moment the recorder catches up.
+//! Historical note: where the recorder's behaviour previously deviated
+//! from what the Move semantics dictate (single merged step event for
+//! the whole function body; struct/vector values surfacing as `Raw`
+//! strings rather than typed `Struct`/`Sequence` `ValueRecord` variants;
+//! `call_entry` events emitted in close-frame order; etc.), the
+//! deviation used to be documented inline as `RECORDER BUG: ...` and
+//! captured with a parallel pin.  The recorder + trace writer have
+//! since been brought into spec alignment for the call-entry ordering,
+//! the typed compound `ValueRecord` variants, and the BigInt-for-u128
+//! path; the few remaining limitations (synthetic `local_<N>` names,
+//! Sui VM constant-folding eliding dead let-bindings) are recorder /
+//! upstream-VM constraints that require a Move source parser or a
+//! re-recording with a different VM, both tracked separately.
 //!
 //! Coverage matrix (universal checklist):
 //!
@@ -196,12 +202,11 @@ fn record_and_dump_full_with_source(
 /// Decode the `call_entry` sequence as a vector of function names, in
 /// emission order.
 ///
-/// NOTE: the Move recorder emits `call_entry` events at `CloseFrame`
-/// time (i.e. when the frame finishes), so the sequence is effectively
-/// LIFO — innermost (first to close) first.  This is itself a recorder
-/// oddity vs. spec ("entry_step" semantics imply call-time ordering),
-/// but it is the present-day stable behaviour and the tests pin it
-/// exactly so any future re-ordering is caught.
+/// The Move recorder emits `register_call` at `OpenFrame` time and the
+/// CTFS multi-stream writer materialises records in `call_key` (entry)
+/// order, so the resulting `call_entry` sequence is the spec-correct
+/// entry order — outermost (first opened) first, matching every other
+/// recorder in the workspace.  Tests pin this entry order exactly.
 fn observed_call_sequence(doc: &serde_json::Value) -> Vec<String> {
     doc["events"]
         .as_array()
@@ -543,12 +548,12 @@ fn unique_bool_pairs(doc: &serde_json::Value) -> Vec<(String, bool)> {
 /// canonical loop terminal values (`counter==10`, `accumulator==55`,
 /// `power==128`, `iterations==7`, `grade==1`).
 ///
-/// RECORDER BUG: the converter merges every Move VM stack push/pop
-/// into a single `step` event with hundreds of `vars` entries, so we
-/// can only assert "value V was observed for varname N at least once
-/// during the function" rather than the spec-required "value V was
-/// the binding for N at line L".  See `test_loops_one_step_per_source_line`
-/// for the spec-correct pin (currently `#[ignore]`d).
+/// Note: the recorded fixture has no source map, so all of the
+/// function body collapses into a single merged `step` event with the
+/// full `vars` snapshot — the spec-correct per-source-line stepping
+/// invariant (one `step` per loop iteration) is exercised by the
+/// synthetic-source-map sibling `test_loops_one_step_per_source_line`
+/// (which now passes against the recorder's backward-jump detection).
 #[test]
 fn test_loops_via_ct_print_full() {
     let Some((doc, _)) = record_and_dump_full("test_loops_via_ct_print_full", "test_loops") else {
@@ -609,10 +614,16 @@ fn test_loops_via_ct_print_full() {
     //   local_3 -> iterations      (reaches 7)
     //   local_4 -> power           (reaches 128)
     //
-    // RECORDER BUG: those synthetic `local_<N>` names are opaque to a
-    // human reader of the trace.  Spec-compliant output should resolve
-    // them to source-level identifiers (`counter`, `accumulator`,
-    // `power`, `iterations`, `grade`) using the Move debug info.
+    // Limitation: the Sui Move v3 trace format carries only `locals_types`
+    // (per-slot type tags) — no source-level identifiers — so resolving
+    // these `local_<N>` slots back to the source's `counter`/`accumulator`/
+    // `power`/`iterations`/`grade` names requires either a Move source
+    // parser AND a faithful reproduction of the compiler's slot-allocation
+    // algorithm (it does NOT match source declaration order — `grade`
+    // declared last lands in slot 0, `counter` declared first lands in
+    // slot 2), or a `.mvsm` debug-info reader.  Both are tracked as
+    // follow-ups; the synthetic names below are the current spec-pinned
+    // surface.
     let must_observe: &[(&str, i64)] = &[
         // grade = 1
         ("local_0", 1),
@@ -756,11 +767,12 @@ fn test_loops_one_step_per_source_line() {
 /// then `min_u64` twice and `max_u64` once more on the result.  Five
 /// helper-function invocations plus the test entry = 6 frames.
 ///
-/// RECORDER BUG: `call_entry` events appear in *close-frame* order
-/// (innermost / first-to-close first), not call order.  This pins the
-/// present-day order so any future re-ordering is caught.  A spec-
-/// correct recorder would emit `call_entry` at OpenFrame time so the
-/// outermost call appears first.
+/// `call_entry` events now appear in spec-correct entry order
+/// (outermost / first-opened first) — the CTFS multi-stream writer
+/// allocates `call_key` at OpenFrame and serialises records in
+/// `call_key` order via `flushCompletedCalls`, mirroring every other
+/// recorder in the workspace.  Tests below pin that entry order
+/// exactly so any future regression toward close-frame LIFO is caught.
 #[test]
 fn test_nested_calls_via_ct_print_full() {
     let Some((doc, _)) =
@@ -773,7 +785,11 @@ fn test_nested_calls_via_ct_print_full() {
     assert_paths_contains_flow_test(&doc);
 
     // ----- Function table — order is writer-assignment order --------------
-    // The recorder registers function names in close-frame order.
+    // The recorder registers function names at OpenFrame time, so the
+    // table order is entry order: outermost test entry first, then each
+    // distinct callee in first-call order (compute_triple, max_u64
+    // inside compute_triple, then min_u64 from the outer max_u64
+    // expression).
     let functions: Vec<&str> = doc["functions"]
         .as_array()
         .expect("functions array")
@@ -802,24 +818,24 @@ fn test_nested_calls_via_ct_print_full() {
     assert_eq!(events.len(), 13, "events.len()");
     assert_step_indices_monotonic(&doc);
 
-    // ----- Call-entry sequence (close-frame order) ------------------------
+    // ----- Call-entry sequence (entry order) ------------------------------
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            // test_nested_calls itself (the outer test entry)
+            "test_nested_calls".to_string(),
+            // compute_triple(12, 8)
+            "compute_triple".to_string(),
             // max_u64(12, 8) inside compute_triple
             "max_u64".to_string(),
-            // compute_triple(12, 8) closes after its inner max_u64
-            "compute_triple".to_string(),
             // min_u64(x, y) = min_u64(12, 8)
             "min_u64".to_string(),
             // min_u64(15, 20)
             "min_u64".to_string(),
             // outer max_u64 over the two mins
             "max_u64".to_string(),
-            // test_nested_calls itself
-            "test_nested_calls".to_string(),
         ],
-        "call_entry sequence pins the recorder's close-frame ordering"
+        "call_entry sequence pins the spec-correct entry order"
     );
 
     // ----- Return values (Int + Tuple + Void) -----------------------------
@@ -828,7 +844,8 @@ fn test_nested_calls_via_ct_print_full() {
     // `ValueRecord::Tuple` carrying three `Int` elements, rather than
     // silently truncating to the first element.  See
     // `test_nested_calls_tuple_return_decodes_full_tuple` for the
-    // dedicated typed-shape pin.
+    // dedicated typed-shape pin.  Exits are emitted in the same entry
+    // order as call_entries (CTFS-M-CallKeyOrder).
     let exits = observed_exit_sequence(&doc);
     let exit_pairs: Vec<(String, Option<i64>)> = exits
         .iter()
@@ -845,15 +862,15 @@ fn test_nested_calls_via_ct_print_full() {
     assert_eq!(
         exit_pairs,
         vec![
-            ("max_u64".to_string(), Some(12)),
+            ("test_nested_calls".to_string(), None), // Void
             // compute_triple's return is a Tuple (not an Int), so the
             // shorthand `Option<i64>` projector reports `None` here —
             // the full Tuple shape is asserted explicitly below.
             ("compute_triple".to_string(), None),
+            ("max_u64".to_string(), Some(12)),
             ("min_u64".to_string(), Some(8)),
             ("min_u64".to_string(), Some(15)),
             ("max_u64".to_string(), Some(15)),
-            ("test_nested_calls".to_string(), None), // Void
         ]
     );
 
@@ -875,7 +892,10 @@ fn test_nested_calls_via_ct_print_full() {
 
     // ----- Argument decoding on call_entry --------------------------------
     // The recorder is supposed to decode each call's args.  Pin the
-    // arg values for every helper invocation in order.
+    // arg values for every helper invocation in entry order.  Indexing
+    // mirrors `observed_call_sequence` above: 0=test_nested_calls,
+    // 1=compute_triple, 2=inner max_u64, 3=first min_u64, 4=second
+    // min_u64, 5=outer max_u64.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
@@ -890,22 +910,22 @@ fn test_nested_calls_via_ct_print_full() {
             .map(|a| a["value"]["i"].as_i64().expect("arg Int.i"))
             .collect()
     };
+    assert!(
+        entries[0]["args"].as_array().unwrap().is_empty(),
+        "test_nested_calls itself takes no args"
+    );
+    assert_eq!(arg_ints(1), vec![12, 8], "compute_triple(12,8)");
     assert_eq!(
-        arg_ints(0),
+        arg_ints(2),
         vec![12, 8],
         "max_u64(12,8) inside compute_triple"
     );
-    assert_eq!(arg_ints(1), vec![12, 8], "compute_triple(12,8)");
-    assert_eq!(arg_ints(2), vec![12, 8], "first min_u64(12,8)");
-    assert_eq!(arg_ints(3), vec![15, 20], "second min_u64(15,20)");
+    assert_eq!(arg_ints(3), vec![12, 8], "first min_u64(12,8)");
+    assert_eq!(arg_ints(4), vec![15, 20], "second min_u64(15,20)");
     assert_eq!(
-        arg_ints(4),
+        arg_ints(5),
         vec![8, 15],
         "outer max_u64(min_u64(12,8), min_u64(15,20))"
-    );
-    assert!(
-        entries[5]["args"].as_array().unwrap().is_empty(),
-        "test_nested_calls itself takes no args"
     );
 
     // ----- The scaled product == 9600 must surface ------------------------
@@ -1001,17 +1021,17 @@ fn test_vectors_via_ct_print_full() {
 
     assert_eq!(
         observed_call_sequence(&doc),
-        vec!["vector_sum".to_string(), "test_vectors".to_string()]
+        vec!["test_vectors".to_string(), "vector_sum".to_string()]
     );
 
     // ----- Return values --------------------------------------------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 2);
-    assert_eq!(exits[0].0, "vector_sum");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[0].1["i"].as_i64(), Some(150), "vector_sum(v) == 150");
-    assert_eq!(exits[1].0, "test_vectors");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[0].0, "test_vectors");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[1].0, "vector_sum");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(150), "vector_sum(v) == 150");
 
     // ----- Vector contents must surface as typed Sequence values ----------
     // Walk the merged step's vars and collect each Sequence's element-int
@@ -1126,19 +1146,22 @@ fn test_structs_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_structs".to_string(),
             "add_points".to_string(),
             "rectangle_area".to_string(),
-            "test_structs".to_string(),
         ]
     );
 
     // ----- Return values: add_points -> Struct(Point), area=40 -----------
+    // Exits emitted in the same entry order as call_entries.
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits[0].0, "add_points");
+    assert_eq!(exits[0].0, "test_structs");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[1].0, "add_points");
     // The Point struct return now surfaces as a typed
     // `ValueRecord::Struct` carrying two `Int` fields [x=10, y=10].
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Struct"));
-    let p_fields = exits[0].1["field_values"]
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Struct"));
+    let p_fields = exits[1].1["field_values"]
         .as_array()
         .expect("Struct.field_values");
     assert_eq!(p_fields.len(), 2, "Point has two fields (x, y)");
@@ -1146,11 +1169,10 @@ fn test_structs_via_ct_print_full() {
     assert_eq!(p_fields[0]["i"].as_i64(), Some(10), "Point.x == 10");
     assert_eq!(p_fields[1]["kind"].as_str(), Some("Int"));
     assert_eq!(p_fields[1]["i"].as_i64(), Some(10), "Point.y == 10");
-    assert_eq!(exits[1].0, "rectangle_area");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(40));
-    assert_eq!(exits[2].0, "test_structs");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[2].0, "rectangle_area");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(40));
+    // exits[0] (test_structs) was already asserted as Void above.
 
     // ----- Every observed Point/Wallet shape surfaces as Struct -----------
     // Walk the merged step's vars and collect each Struct's flattened
@@ -1253,19 +1275,20 @@ fn test_references_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
-            "scale_point".to_string(),
-            "scale_point".to_string(),
             "test_references".to_string(),
+            "scale_point".to_string(),
+            "scale_point".to_string(),
         ]
     );
 
     let exits = observed_exit_sequence(&doc);
-    // Both scale_point calls return Void (mutate-through-ref).
-    assert_eq!(exits[0].0, "scale_point");
+    // Exits in entry order: outer test_references, then both scale_point
+    // calls (each returning Void since they mutate-through-ref).
+    assert_eq!(exits[0].0, "test_references");
     assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
     assert_eq!(exits[1].0, "scale_point");
     assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
-    assert_eq!(exits[2].0, "test_references");
+    assert_eq!(exits[2].0, "scale_point");
     assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 
     // ----- &mut Point arg: surfaces as a typed Reference wrapping a Struct
@@ -1300,7 +1323,14 @@ fn test_references_via_ct_print_full() {
         let i1 = arg1["i"].as_i64();
         (kind0, mutable0, xy0, i1)
     };
-    let (k0, m0, xy0, i0) = scale_args(0);
+    // entries[0] is the outer `test_references` entry (no args); the two
+    // `scale_point(&mut mut_point, _)` calls land at entries[1] and
+    // entries[2] in entry order.
+    assert!(
+        entries[0]["args"].as_array().unwrap().is_empty(),
+        "test_references itself takes no args"
+    );
+    let (k0, m0, xy0, i0) = scale_args(1);
     assert_eq!(
         k0, "Reference",
         "scale_point's &mut Point arg surfaces as a typed Reference wrapper"
@@ -1312,7 +1342,7 @@ fn test_references_via_ct_print_full() {
         "Point {{ x: 2, y: 3 }}"
     );
     assert_eq!(i0, Some(5), "scale_point's factor arg = 5");
-    let (k1, m1, xy1, i1) = scale_args(1);
+    let (k1, m1, xy1, i1) = scale_args(2);
     assert_eq!(k1, "Reference");
     assert!(m1);
     assert_eq!(
@@ -1326,8 +1356,8 @@ fn test_references_via_ct_print_full() {
     // local, so the synthesised reference address must be stable across
     // call_entry events — verify so a future reshape that loses
     // borrow-identity (e.g. zeroing the address) is caught here.
-    let address0 = entries[0]["args"][0]["value"]["address"].as_u64();
-    let address1 = entries[1]["args"][0]["value"]["address"].as_u64();
+    let address0 = entries[1]["args"][0]["value"]["address"].as_u64();
+    let address1 = entries[2]["args"][0]["value"]["address"].as_u64();
     assert!(
         address0.is_some(),
         "Reference must carry a synthetic address"
@@ -1462,17 +1492,22 @@ fn test_abort_via_ct_print_full() {
         int_set.contains(&0),
         "expected y=0 in vars; got {int_set:?}"
     );
-    // RECORDER BUG: the source-level binding `let x: u64 = 10;` does
-    // NOT surface in the trace.  The Sui Move VM apparently elides
-    // `x` because it is dead in the code path that executes (the
-    // abort branch never reads `x`).  A spec-compliant trace would
-    // record every let-binding regardless of dead-code analysis;
-    // pin the present-day shape here so any change is caught.
+    // Limitation (upstream Sui VM, not the recorder): the source-level
+    // binding `let x: u64 = 10;` does NOT surface in the trace because
+    // the Sui Move compiler elides `x` (dead in the code path that
+    // executes — the abort branch never reads `x`, so no `LD_U64 10`
+    // instruction is emitted).  The recorder cannot synthesise values
+    // that aren't in the trace it consumes.  Recovering `x = 10` would
+    // require either re-recording with a non-constant-folding Sui CLI
+    // build or augmenting the recorder to parse the .move source for
+    // declared let-bindings — both are outside the recorder's current
+    // contract.  Pin the present-day shape here so any unexpected
+    // appearance of `10` is caught.
     assert!(
         !int_set.contains(&10),
-        "RECORDER BUG pinned: x=10 unexpectedly surfaced in test_abort vars; \
-         if the recorder now captures dead let-bindings, extend the \
-         assertion above to require it.  Got {int_set:?}"
+        "x=10 unexpectedly surfaced in test_abort vars — the upstream \
+         Sui VM appears to no longer elide the dead `let x: u64 = 10;` \
+         binding; extend the assertion above to require it.  Got {int_set:?}"
     );
 }
 
@@ -1532,52 +1567,55 @@ fn test_fibonacci_via_ct_print_full() {
     assert_eq!(events.len(), 13);
     assert_step_indices_monotonic(&doc);
 
-    // ----- Call sequence: five fibonacci calls + the test entry ----------
+    // ----- Call sequence: outer test entry + five fibonacci calls --------
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
-            "fibonacci".to_string(),
-            "fibonacci".to_string(),
-            "fibonacci".to_string(),
-            "fibonacci".to_string(),
-            "fibonacci".to_string(),
             "test_fibonacci".to_string(),
+            "fibonacci".to_string(),
+            "fibonacci".to_string(),
+            "fibonacci".to_string(),
+            "fibonacci".to_string(),
+            "fibonacci".to_string(),
         ]
     );
 
     // ----- Argument decoding: fibonacci(0,1,5,10,15) ----------------------
+    // entries[0] is the outer `test_fibonacci` (no args); the five
+    // fibonacci(n) calls land at entries[1..6] in entry order.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
+    assert!(
+        entries[0]["args"].as_array().unwrap().is_empty(),
+        "test_fibonacci itself takes no args"
+    );
     let fib_arg = |idx: usize| -> i64 {
         let args = entries[idx]["args"].as_array().expect("args array");
         assert_eq!(args.len(), 1, "fibonacci takes one u64 arg");
         args[0]["value"]["i"].as_i64().expect("arg Int.i")
     };
-    assert_eq!(fib_arg(0), 0);
-    assert_eq!(fib_arg(1), 1);
-    assert_eq!(fib_arg(2), 5);
-    assert_eq!(fib_arg(3), 10);
-    assert_eq!(fib_arg(4), 15);
-    assert!(
-        entries[5]["args"].as_array().unwrap().is_empty(),
-        "test_fibonacci itself takes no args"
-    );
+    assert_eq!(fib_arg(1), 0);
+    assert_eq!(fib_arg(2), 1);
+    assert_eq!(fib_arg(3), 5);
+    assert_eq!(fib_arg(4), 10);
+    assert_eq!(fib_arg(5), 15);
 
     // ----- Return values: F(n) for n in [0,1,5,10,15] = [0,1,5,55,610] ---
+    // Exits emitted in entry order to match call_entries.
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits[0].0, "fibonacci");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[0].1["i"].as_i64(), Some(0));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(1));
-    assert_eq!(exits[2].1["i"].as_i64(), Some(5));
-    assert_eq!(exits[3].1["i"].as_i64(), Some(55));
-    assert_eq!(exits[4].1["i"].as_i64(), Some(610));
-    assert_eq!(exits[5].0, "test_fibonacci");
-    assert_eq!(exits[5].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[0].0, "test_fibonacci");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[1].0, "fibonacci");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(0));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(1));
+    assert_eq!(exits[3].1["i"].as_i64(), Some(5));
+    assert_eq!(exits[4].1["i"].as_i64(), Some(55));
+    assert_eq!(exits[5].1["i"].as_i64(), Some(610));
 }
 
 // ===========================================================================
@@ -1589,12 +1627,11 @@ fn test_fibonacci_via_ct_print_full() {
 /// `wrap_value<T>` / `unwrap_value<T>`.  Pins the printed form of the
 /// `Container { value: ..., label: N }` per concrete `T`.
 ///
-/// RECORDER BUG: the `bool` case surfaces `arg0` for `wrap_value<bool>(true, 2)`
-/// as a JSON `null` in the call_entry args — Move's `bool` type encodes
-/// to the `String` ValueRecord variant and the converter currently
-/// drops it when consumed as a generic argument.  The first arg of
-/// the second `wrap_value` invocation has `value.text == null` instead
-/// of `"true"`.  Pinned below as the present-day shape.
+/// The `bool` arg of `wrap_value<bool>(true, 2)` now decodes through
+/// the typed `ValueRecord::Bool` path (kind="Bool", b=true, text="true"),
+/// the same shape every other Move bool flows through.  Pinned exactly
+/// below; previously the streaming CBOR encoder for booleans omitted
+/// the `text` field and the call-arg path surfaced `value.text == null`.
 #[test]
 fn test_generics_via_ct_print_full() {
     let Some((doc, _)) = record_and_dump_full("test_generics_via_ct_print_full", "test_generics")
@@ -1629,13 +1666,13 @@ fn test_generics_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
-            "wrap_value".to_string(),
-            "unwrap_value".to_string(),
-            "wrap_value".to_string(),
-            "unwrap_value".to_string(),
-            "wrap_value".to_string(),
-            "unwrap_value".to_string(),
             "test_generics".to_string(),
+            "wrap_value".to_string(),
+            "unwrap_value".to_string(),
+            "wrap_value".to_string(),
+            "unwrap_value".to_string(),
+            "wrap_value".to_string(),
+            "unwrap_value".to_string(),
         ]
     );
 
@@ -1647,11 +1684,16 @@ fn test_generics_via_ct_print_full() {
     // typed shape lets the frontend object inspector walk fields
     // instead of re-parsing the rendered text.
     let exits = observed_exit_sequence(&doc);
+    // Exits in entry order — outer test entry first, then each helper
+    // in call order.
+    // test_generics -> Void
+    assert_eq!(exits[0].0, "test_generics");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
     // wrap_value<u64>(42, 1) -> Container { value: 42, label: 1 }
     //   field_values = [Int(42), Int(1)]
-    assert_eq!(exits[0].0, "wrap_value");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Struct"));
-    let c1_fields = exits[0].1["field_values"]
+    assert_eq!(exits[1].0, "wrap_value");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Struct"));
+    let c1_fields = exits[1].1["field_values"]
         .as_array()
         .expect("Struct.field_values");
     assert_eq!(c1_fields.len(), 2, "Container has two fields");
@@ -1660,14 +1702,14 @@ fn test_generics_via_ct_print_full() {
     assert_eq!(c1_fields[1]["kind"].as_str(), Some("Int"));
     assert_eq!(c1_fields[1]["i"].as_i64(), Some(1));
     // unwrap_value<u64>(c1) -> 42
-    assert_eq!(exits[1].0, "unwrap_value");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(42));
+    assert_eq!(exits[2].0, "unwrap_value");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(42));
     // wrap_value<bool>(true, 2) -> Container { value: true, label: 2 }
     //   field_values = [Bool(true), Int(2)]
-    assert_eq!(exits[2].0, "wrap_value");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Struct"));
-    let c2_fields = exits[2].1["field_values"]
+    assert_eq!(exits[3].0, "wrap_value");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Struct"));
+    let c2_fields = exits[3].1["field_values"]
         .as_array()
         .expect("Struct.field_values");
     assert_eq!(c2_fields.len(), 2);
@@ -1679,15 +1721,15 @@ fn test_generics_via_ct_print_full() {
     // `ValueRecord::Bool` here, so this exit now surfaces with the
     // typed Bool variant (kind=Bool, b=true, text="true") rather than
     // the previous flattened Raw "true" string.
-    assert_eq!(exits[3].0, "unwrap_value");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[3].1["b"].as_bool(), Some(true));
-    assert_eq!(exits[3].1["text"].as_str(), Some("true"));
+    assert_eq!(exits[4].0, "unwrap_value");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[4].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[4].1["text"].as_str(), Some("true"));
     // wrap_value<Point>(pt, 3) -> Container { value: Point {...}, label: 3 }
     //   field_values = [Struct(Point{Int(5), Int(10)}), Int(3)]
-    assert_eq!(exits[4].0, "wrap_value");
-    assert_eq!(exits[4].1["kind"].as_str(), Some("Struct"));
-    let c3_fields = exits[4].1["field_values"]
+    assert_eq!(exits[5].0, "wrap_value");
+    assert_eq!(exits[5].1["kind"].as_str(), Some("Struct"));
+    let c3_fields = exits[5].1["field_values"]
         .as_array()
         .expect("Struct.field_values");
     assert_eq!(c3_fields.len(), 2);
@@ -1703,17 +1745,14 @@ fn test_generics_via_ct_print_full() {
     assert_eq!(c3_fields[1]["kind"].as_str(), Some("Int"));
     assert_eq!(c3_fields[1]["i"].as_i64(), Some(3));
     // unwrap_value<Point>(c3) -> Point { x: 5, y: 10 } (typed Struct)
-    assert_eq!(exits[5].0, "unwrap_value");
-    assert_eq!(exits[5].1["kind"].as_str(), Some("Struct"));
-    let pt5_fields = exits[5].1["field_values"]
+    assert_eq!(exits[6].0, "unwrap_value");
+    assert_eq!(exits[6].1["kind"].as_str(), Some("Struct"));
+    let pt5_fields = exits[6].1["field_values"]
         .as_array()
         .expect("Point Struct.field_values");
     assert_eq!(pt5_fields.len(), 2);
     assert_eq!(pt5_fields[0]["i"].as_i64(), Some(5));
     assert_eq!(pt5_fields[1]["i"].as_i64(), Some(10));
-    // test_generics -> Void
-    assert_eq!(exits[6].0, "test_generics");
-    assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
 
     // ----- Generic argument decoding -------------------------------------
     // After the bool-text decoding fix, the `bool` argument to
@@ -1728,13 +1767,19 @@ fn test_generics_via_ct_print_full() {
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
+    // entries[0] = test_generics (no args); entries[1..] = each helper
+    // call in entry order.
+    assert!(
+        entries[0]["args"].as_array().unwrap().is_empty(),
+        "test_generics itself takes no args"
+    );
     // wrap_value<u64>(42, 1)
-    let wv_u64_args = entries[0]["args"].as_array().unwrap();
+    let wv_u64_args = entries[1]["args"].as_array().unwrap();
     assert_eq!(wv_u64_args[0]["value"]["kind"].as_str(), Some("Int"));
     assert_eq!(wv_u64_args[0]["value"]["i"].as_i64(), Some(42));
     assert_eq!(wv_u64_args[1]["value"]["i"].as_i64(), Some(1));
     // wrap_value<bool>(true, 2)
-    let wv_bool_args = entries[2]["args"].as_array().unwrap();
+    let wv_bool_args = entries[3]["args"].as_array().unwrap();
     assert_eq!(wv_bool_args[1]["value"]["i"].as_i64(), Some(2));
     // The bool arg surfaces as a Bool with `text="true"`.
     assert_eq!(wv_bool_args[0]["value"]["kind"].as_str(), Some("Bool"));
@@ -1753,13 +1798,16 @@ fn test_generics_bool_arg_decodes_text() {
     else {
         return;
     };
+    // call_entry events appear in entry order: 0=test_generics,
+    // 1=wrap_value<u64>, 2=unwrap_value<u64>, 3=wrap_value<bool>.  The
+    // bool generic arg lives on the second wrap_value invocation.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let wv_bool_args = entries[2]["args"].as_array().unwrap();
+    let wv_bool_args = entries[3]["args"].as_array().unwrap();
     assert_eq!(
         wv_bool_args[0]["value"]["text"].as_str(),
         Some("true"),
@@ -1776,14 +1824,14 @@ fn test_generics_bool_arg_decodes_text() {
 /// (`1_000_000_000_000 + 2_000_000_000_000 = 3_000_000_000_000`), and
 /// a boolean conditional yielding `status = 1`.
 ///
-/// RECORDER BUG: the u128 sum `3_000_000_000_000` *does* fit in i64
-/// (max i64 ≈ 9.2e18), so it surfaces as a plain `Int { i: ... }`.  A
-/// truly out-of-i64-range u128 would force the recorder into a
-/// `BigInt` ValueRecord variant; the current fixture cannot exercise
-/// that path.  See `test_boolean_and_integers_u128_overflow_uses_bigint`
-/// for the dedicated u128 spec pin (which feeds the converter a
-/// synthetic NDJSON trace so it does not depend on a re-recorded
-/// fixture).
+/// Note: the u128 sum `3_000_000_000_000` fits in i64 (max i64 ≈ 9.2e18),
+/// so it would surface as a plain `Int { i: ... }` if the trace
+/// preserved the binding.  In practice the Sui VM constant-folds the
+/// u128 arithmetic away (see `int_set` assertion below).  The dedicated
+/// `test_boolean_and_integers_u128_overflow_uses_bigint` sibling
+/// exercises the spec-correct BigInt path on a synthetic NDJSON trace
+/// where the u128 magnitude exceeds i64::MAX, confirming the recorder
+/// emits `ValueRecord::BigInt` rather than truncating into `i64`.
 #[test]
 fn test_boolean_and_integers_via_ct_print_full() {
     let Some((doc, _)) = record_and_dump_full(
@@ -1823,27 +1871,25 @@ fn test_boolean_and_integers_via_ct_print_full() {
     assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
     // ----- All canonical integer values must surface in vars -------------
-    // RECORDER BUG: the Sui Move VM trace for `test_boolean_and_integers`
+    // Limitation (upstream Sui VM, not the recorder): the captured trace
     // (`flow_test__flow_test__test_boolean_and_integers.json.zst`) does
-    // NOT contain any `U8` or `U128` values — the compiler appears to
-    // have constant-folded the small_a/small_b/small_sum and big_a/
-    // big_b/big_sum let-bindings, since their results are only used by
-    // dead `assert!` calls.  The only Int that surfaces is the final
-    // `status: u64 = 1`.
-    //
-    // A spec-compliant trace would preserve every let-binding so a
-    // user-visible value at line N can be inspected; the test pins
-    // the present-day "only status survives" shape so any future
-    // capture-of-dead-bindings shows up as a failure here and the
-    // assertion below grows accordingly.
+    // NOT contain any `U8` or `U128` values — the Sui Move compiler
+    // constant-folds the small_a/small_b/small_sum and big_a/big_b/big_sum
+    // let-bindings since their results only feed dead `assert!` calls.
+    // The only Int that survives is the final `status: u64 = 1`.  The
+    // recorder cannot synthesise values that aren't in the trace; the
+    // dedicated `test_boolean_and_integers_u128_overflow_uses_bigint`
+    // sibling feeds a synthetic NDJSON to confirm the BigInt path
+    // independently of this re-recording limitation.  Pin the shape so
+    // any future capture-of-dead-bindings shows up here.
     let int_set: std::collections::BTreeSet<i64> =
         unique_int_pairs(&doc).into_iter().map(|(_, v)| v).collect();
     assert_eq!(
         int_set,
         std::collections::BTreeSet::from([1_i64]),
-        "RECORDER BUG pinned: today only status=1 survives the Sui VM \
-         constant-folding; if more Int values now appear, extend this \
-         assertion to require them"
+        "Only status=1 survives the Sui VM constant-folding for this \
+         fixture; if more Int values now appear, extend this assertion \
+         to require them"
     );
 
     // ----- Boolean typed-Bool values --------------------------------------
@@ -2086,21 +2132,26 @@ fn test_variant_constructors_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_variant_constructors".to_string(),
             "make_some".to_string(),
             "make_none".to_string(),
             "make_rect".to_string(),
-            "test_variant_constructors".to_string(),
         ],
     );
 
     // ----- Return values: each helper returns a typed Variant -------------
+    // Exits in entry order — outer test first, then each helper.
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 4);
 
+    // test_variant_constructors itself returns Void.
+    assert_eq!(exits[0].0, "test_variant_constructors");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+
     // Some(42) -> Variant { discriminator: "0x1::option::Option::Variant#1",
     //                       contents: Struct { field_values: [Int(42)] } }
-    assert_eq!(exits[0].0, "make_some");
-    let some_rv = &exits[0].1;
+    assert_eq!(exits[1].0, "make_some");
+    let some_rv = &exits[1].1;
     assert_eq!(some_rv["kind"].as_str(), Some("Variant"));
     assert_eq!(
         some_rv["discriminator"].as_str(),
@@ -2116,8 +2167,8 @@ fn test_variant_constructors_via_ct_print_full() {
     assert_eq!(some_fields[0]["i"].as_i64(), Some(42));
 
     // None -> Variant { discriminator: "...Variant#0", contents: Struct{} }
-    assert_eq!(exits[1].0, "make_none");
-    let none_rv = &exits[1].1;
+    assert_eq!(exits[2].0, "make_none");
+    let none_rv = &exits[2].1;
     assert_eq!(none_rv["kind"].as_str(), Some("Variant"));
     assert_eq!(
         none_rv["discriminator"].as_str(),
@@ -2133,8 +2184,8 @@ fn test_variant_constructors_via_ct_print_full() {
     );
 
     // Shape::Rect(3, 5) -> Variant { contents: Struct { fields: [Int(3), Int(5)] } }
-    assert_eq!(exits[2].0, "make_rect");
-    let rect_rv = &exits[2].1;
+    assert_eq!(exits[3].0, "make_rect");
+    let rect_rv = &exits[3].1;
     assert_eq!(rect_rv["kind"].as_str(), Some("Variant"));
     assert_eq!(
         rect_rv["discriminator"].as_str(),
@@ -2146,10 +2197,6 @@ fn test_variant_constructors_via_ct_print_full() {
     assert_eq!(rect_fields.len(), 2);
     assert_eq!(rect_fields[0]["i"].as_i64(), Some(3));
     assert_eq!(rect_fields[1]["i"].as_i64(), Some(5));
-
-    // test_variant_constructors itself returns Void.
-    assert_eq!(exits[3].0, "test_variant_constructors");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
 
     // ----- The Variant ValueRecord must NOT fall back to String --------
     // Pre-fix the Variant arm of `convert_move_value` emitted a printed
@@ -2232,17 +2279,19 @@ fn test_wide_integer_via_ct_print_full() {
 
     assert_eq!(
         observed_call_sequence(&doc),
-        vec!["wide_product".to_string(), "test_wide_integer".to_string()],
+        vec!["test_wide_integer".to_string(), "wide_product".to_string()],
     );
 
     // ----- wide_product's args carry every integer width -----------------
+    // entries[0] is the outer test entry (no args); wide_product is at
+    // entries[1].
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let wide_args = entries[0]["args"].as_array().expect("args array");
+    let wide_args = entries[1]["args"].as_array().expect("args array");
     assert_eq!(
         wide_args.len(),
         5,
@@ -2277,9 +2326,12 @@ fn test_wide_integer_via_ct_print_full() {
     );
 
     // ----- wide_product's return is a BigInt of the full product ---------
+    // Exits in entry order: outer test entry first, then wide_product.
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits[0].0, "wide_product");
-    let prod_rv = &exits[0].1;
+    assert_eq!(exits[0].0, "test_wide_integer");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[1].0, "wide_product");
+    let prod_rv = &exits[1].1;
     assert_eq!(prod_rv["kind"].as_str(), Some("BigInt"));
     let prod_bytes =
         base64_decode(prod_rv["b"].as_str().expect("BigInt.b")).expect("base64 decode");
@@ -2291,10 +2343,6 @@ fn test_wide_integer_via_ct_print_full() {
         prod_mag, 306_306_000_000_000_000_000_000_u128,
         "wide_product return must encode 306306e18 = 7 * 11 * 13 * 17 * 18e18",
     );
-
-    // test_wide_integer itself returns Void.
-    assert_eq!(exits[1].0, "test_wide_integer");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
 
     // ----- Every small width also appears as Int in the merged step ------
     let int_set: std::collections::BTreeSet<i64> =
@@ -2348,19 +2396,23 @@ fn test_resources_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_resources".to_string(),
             "mint".to_string(),
             "balance".to_string(),
             "burn".to_string(),
-            "test_resources".to_string(),
         ],
     );
 
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 4);
 
+    // Outer test_resources first (Void), then each helper in entry order.
+    assert_eq!(exits[0].0, "test_resources");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+
     // mint(1, 100) -> Coin { id: 1, balance: 100 } (typed Struct)
-    assert_eq!(exits[0].0, "mint");
-    let mint_rv = &exits[0].1;
+    assert_eq!(exits[1].0, "mint");
+    let mint_rv = &exits[1].1;
     assert_eq!(mint_rv["kind"].as_str(), Some("Struct"));
     let mint_fields = mint_rv["field_values"]
         .as_array()
@@ -2373,27 +2425,25 @@ fn test_resources_via_ct_print_full() {
     let coin_type_id = mint_rv["type_id"].as_u64().expect("Struct.type_id");
 
     // balance(&coin) -> Int(100) (read through ref)
-    assert_eq!(exits[1].0, "balance");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(100));
-
-    // burn(coin) -> Int(100) (consumed via destructure)
-    assert_eq!(exits[2].0, "burn");
+    assert_eq!(exits[2].0, "balance");
     assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
     assert_eq!(exits[2].1["i"].as_i64(), Some(100));
 
-    // test_resources itself returns Void.
-    assert_eq!(exits[3].0, "test_resources");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
+    // burn(coin) -> Int(100) (consumed via destructure)
+    assert_eq!(exits[3].0, "burn");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[3].1["i"].as_i64(), Some(100));
 
     // ----- The `&Coin` arg to balance() is a Reference wrapping a Struct ---
+    // entries[0]=test_resources, entries[1]=mint, entries[2]=balance,
+    // entries[3]=burn (entry order).
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let bal_arg0 = &entries[1]["args"][0]["value"];
+    let bal_arg0 = &entries[2]["args"][0]["value"];
     assert_eq!(bal_arg0["kind"].as_str(), Some("Reference"));
     assert_eq!(
         bal_arg0["mutable"].as_bool(),
@@ -2467,9 +2517,9 @@ fn test_object_lifecycle_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_object_lifecycle".to_string(),
             "increment".to_string(),
             "value".to_string(),
-            "test_object_lifecycle".to_string(),
         ],
     );
 
@@ -2481,6 +2531,8 @@ fn test_object_lifecycle_via_ct_print_full() {
     assert_eq!(io["text"].as_str(), Some("Transfer"));
 
     // ----- &mut Counter and &Counter args carry nested Struct payload ---
+    // entries[0]=test_object_lifecycle (no args), entries[1]=increment,
+    // entries[2]=value (entry order).
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
@@ -2488,7 +2540,7 @@ fn test_object_lifecycle_via_ct_print_full() {
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     // increment(&mut Counter, by) -> Void
-    let inc_args = entries[0]["args"].as_array().expect("args array");
+    let inc_args = entries[1]["args"].as_array().expect("args array");
     assert_eq!(inc_args.len(), 2);
     let inc_arg0 = &inc_args[0]["value"];
     assert_eq!(inc_arg0["kind"].as_str(), Some("Reference"));
@@ -2524,7 +2576,7 @@ fn test_object_lifecycle_via_ct_print_full() {
     assert_eq!(inc_args[1]["value"]["i"].as_i64(), Some(7));
 
     // value(&Counter) — same nested shape but `value: 7` after mutation
-    let val_args = entries[1]["args"].as_array().expect("args array");
+    let val_args = entries[2]["args"].as_array().expect("args array");
     let val_arg0 = &val_args[0]["value"];
     assert_eq!(val_arg0["kind"].as_str(), Some("Reference"));
     assert_eq!(
@@ -2542,16 +2594,16 @@ fn test_object_lifecycle_via_ct_print_full() {
         "Counter.value is 7 after increment(7)",
     );
 
-    // ----- Return values --------------------------------------------------
+    // ----- Return values (entry order) -----------------------------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 3);
-    assert_eq!(exits[0].0, "increment");
+    assert_eq!(exits[0].0, "test_object_lifecycle");
     assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
-    assert_eq!(exits[1].0, "value");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(7));
-    assert_eq!(exits[2].0, "test_object_lifecycle");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[1].0, "increment");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[2].0, "value");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(7));
 }
 
 /// Records `flow_test::test_abilities` (synthetic NDJSON).
@@ -2608,18 +2660,21 @@ fn test_abilities_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_abilities".to_string(),
             "mint_token".to_string(),
             "consume_token".to_string(),
             "destroy_storage_item".to_string(),
-            "test_abilities".to_string(),
         ],
     );
 
     // ----- mint_token(7) -> AccessToken { operation_id: 7 } ---------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 4);
-    assert_eq!(exits[0].0, "mint_token");
-    let mint_rv = &exits[0].1;
+    // Outer test_abilities first (Void), then each helper in entry order.
+    assert_eq!(exits[0].0, "test_abilities");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[1].0, "mint_token");
+    let mint_rv = &exits[1].1;
     assert_eq!(mint_rv["kind"].as_str(), Some("Struct"));
     let mint_fields = mint_rv["field_values"]
         .as_array()
@@ -2629,21 +2684,22 @@ fn test_abilities_via_ct_print_full() {
     let token_type_id = mint_rv["type_id"].as_u64().expect("AccessToken type_id");
 
     // ----- consume_token(token) -> Int(7) (linear destructure) -----------
-    assert_eq!(exits[1].0, "consume_token");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(7));
+    assert_eq!(exits[2].0, "consume_token");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(7));
 
     // The hot potato AccessToken arg to consume_token must carry the
     // SAME type_id as the one returned by mint_token — this is the
     // "linearity" invariant from the recorder's POV: the same value
-    // identity flows through.
+    // identity flows through.  In entry order: entries[0]=test_abilities,
+    // [1]=mint_token, [2]=consume_token, [3]=destroy_storage_item.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let consume_arg = &entries[1]["args"][0]["value"];
+    let consume_arg = &entries[2]["args"][0]["value"];
     assert_eq!(consume_arg["kind"].as_str(), Some("Struct"));
     assert_eq!(
         consume_arg["type_id"].as_u64(),
@@ -2653,13 +2709,9 @@ fn test_abilities_via_ct_print_full() {
     );
 
     // ----- destroy_storage_item(s) -> Int(99) ----------------------------
-    assert_eq!(exits[2].0, "destroy_storage_item");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[2].1["i"].as_i64(), Some(99));
-
-    // test_abilities itself returns Void.
-    assert_eq!(exits[3].0, "test_abilities");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[3].0, "destroy_storage_item");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[3].1["i"].as_i64(), Some(99));
 
     // ----- Multiple Datum {x:42} copies surface in the merged step -------
     // `let d = Datum {x:42}; let d2 = d;` materialises the copy at the
@@ -2747,29 +2799,35 @@ fn test_option_test_via_ct_print_full() {
     assert_eq!(events.len(), 17, "events.len()");
     assert_step_indices_monotonic(&doc);
 
-    // CloseFrame ordering (LIFO — see observed_call_sequence comment).
+    // Entry-order call sequence.  borrow_inner is called *before*
+    // option::borrow inside the test source (the inner helper invokes
+    // option::borrow internally, but its OpenFrame fires first).
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_option".to_string(),
             "some".to_string(),
             "none".to_string(),
             "is_some".to_string(),
             "is_none".to_string(),
-            "borrow".to_string(),
             "borrow_inner".to_string(),
+            "borrow".to_string(),
             "extract".to_string(),
-            "test_option".to_string(),
         ],
     );
 
-    // ----- Return values pinned exactly ----------------------------------
+    // ----- Return values pinned exactly (entry order) --------------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 8);
 
+    // Outer test_option first (Void).
+    assert_eq!(exits[0].0, "test_option");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+
     // Some(42) -> Variant { discriminator: "0x1::option::Option::Variant#1",
     //                       contents: Struct { field_values: [Int(42)] } }
-    assert_eq!(exits[0].0, "some");
-    let some_rv = &exits[0].1;
+    assert_eq!(exits[1].0, "some");
+    let some_rv = &exits[1].1;
     assert_eq!(some_rv["kind"].as_str(), Some("Variant"));
     assert_eq!(
         some_rv["discriminator"].as_str(),
@@ -2785,8 +2843,8 @@ fn test_option_test_via_ct_print_full() {
     let option_type_id = some_rv["type_id"].as_u64().expect("Variant.type_id");
 
     // None -> Variant#0 with empty payload.
-    assert_eq!(exits[1].0, "none");
-    let none_rv = &exits[1].1;
+    assert_eq!(exits[2].0, "none");
+    let none_rv = &exits[2].1;
     assert_eq!(none_rv["kind"].as_str(), Some("Variant"));
     assert_eq!(
         none_rv["discriminator"].as_str(),
@@ -2807,35 +2865,38 @@ fn test_option_test_via_ct_print_full() {
     );
 
     // is_some / is_none -> Bool(true)
-    assert_eq!(exits[2].0, "is_some");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[2].1["b"].as_bool(), Some(true));
-    assert_eq!(exits[2].1["text"].as_str(), Some("true"));
-
-    assert_eq!(exits[3].0, "is_none");
+    assert_eq!(exits[3].0, "is_some");
     assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
     assert_eq!(exits[3].1["b"].as_bool(), Some(true));
     assert_eq!(exits[3].1["text"].as_str(), Some("true"));
 
+    assert_eq!(exits[4].0, "is_none");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[4].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[4].1["text"].as_str(), Some("true"));
+
+    // borrow_inner is the outer helper: returns Int(42).
+    assert_eq!(exits[5].0, "borrow_inner");
+    assert_eq!(exits[5].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[5].1["i"].as_i64(), Some(42));
+
     // option::borrow(&Some(42)) -> &u64 — typed ValueRecord::Reference
-    assert_eq!(exits[4].0, "borrow");
-    let borrow_rv = &exits[4].1;
+    assert_eq!(exits[6].0, "borrow");
+    let borrow_rv = &exits[6].1;
     assert_eq!(borrow_rv["kind"].as_str(), Some("Reference"));
     assert_eq!(borrow_rv["mutable"].as_bool(), Some(false));
     assert_eq!(borrow_rv["dereferenced"]["kind"].as_str(), Some("Int"));
     assert_eq!(borrow_rv["dereferenced"]["i"].as_i64(), Some(42));
 
-    // borrow_inner / extract / test_option scalar returns.
-    assert_eq!(exits[5].0, "borrow_inner");
-    assert_eq!(exits[5].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[5].1["i"].as_i64(), Some(42));
-    assert_eq!(exits[6].0, "extract");
-    assert_eq!(exits[6].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[6].1["i"].as_i64(), Some(42));
-    assert_eq!(exits[7].0, "test_option");
-    assert_eq!(exits[7].1["kind"].as_str(), Some("Void"));
+    // extract -> Int(42)
+    assert_eq!(exits[7].0, "extract");
+    assert_eq!(exits[7].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[7].1["i"].as_i64(), Some(42));
 
     // ----- Reference-typed call args carry the typed Variant pointee -----
+    // entries[0]=test_option (no args); helpers at entries[1..] in entry
+    // order: 1=some, 2=none, 3=is_some, 4=is_none, 5=borrow, 6=borrow_inner,
+    // 7=extract.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
@@ -2843,7 +2904,7 @@ fn test_option_test_via_ct_print_full() {
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     // is_some takes &Option<u64> wrapping the Some(42) variant.
-    let is_some_arg = &entries[2]["args"][0]["value"];
+    let is_some_arg = &entries[3]["args"][0]["value"];
     assert_eq!(is_some_arg["kind"].as_str(), Some("Reference"));
     assert_eq!(is_some_arg["mutable"].as_bool(), Some(false));
     let is_some_pointee = &is_some_arg["dereferenced"];
@@ -2853,7 +2914,7 @@ fn test_option_test_via_ct_print_full() {
         Some("0x1::option::Option::Variant#1"),
     );
     // is_none takes &Option<u64> wrapping the None variant.
-    let is_none_arg = &entries[3]["args"][0]["value"];
+    let is_none_arg = &entries[4]["args"][0]["value"];
     assert_eq!(is_none_arg["kind"].as_str(), Some("Reference"));
     assert_eq!(is_none_arg["mutable"].as_bool(), Some(false));
     let is_none_pointee = &is_none_arg["dereferenced"];
@@ -2863,7 +2924,7 @@ fn test_option_test_via_ct_print_full() {
         Some("0x1::option::Option::Variant#0"),
     );
     // extract takes &mut Option<u64>.
-    let extract_arg = &entries[6]["args"][0]["value"];
+    let extract_arg = &entries[7]["args"][0]["value"];
     assert_eq!(extract_arg["kind"].as_str(), Some("Reference"));
     assert_eq!(extract_arg["mutable"].as_bool(), Some(true));
 
@@ -2946,9 +3007,9 @@ fn test_event_emit_test_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
-            "emit".to_string(),
-            "fire".to_string(),
             "test_event_emit".to_string(),
+            "fire".to_string(),
+            "emit".to_string(),
         ],
     );
 
@@ -2975,11 +3036,12 @@ fn test_event_emit_test_via_ct_print_full() {
     );
 
     // ----- The event::emit native call carries the typed Struct arg -----
+    // entries[0]=test_event_emit, [1]=fire, [2]=emit (entry order).
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let emit_args = entries[0]["args"].as_array().expect("emit args");
+    let emit_args = entries[2]["args"].as_array().expect("emit args");
     assert_eq!(emit_args.len(), 1, "emit takes one event payload");
     let emit_arg0 = &emit_args[0]["value"];
     assert_eq!(emit_arg0["kind"].as_str(), Some("Struct"));
@@ -2992,14 +3054,14 @@ fn test_event_emit_test_via_ct_print_full() {
     assert_eq!(emit_fields[1]["kind"].as_str(), Some("Int"));
     assert_eq!(emit_fields[1]["i"].as_i64(), Some(1000));
 
-    // ----- Return values --------------------------------------------------
+    // ----- Return values (entry order) -----------------------------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 3);
-    assert_eq!(exits[0].0, "emit");
+    assert_eq!(exits[0].0, "test_event_emit");
     assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
     assert_eq!(exits[1].0, "fire");
     assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
-    assert_eq!(exits[2].0, "test_event_emit");
+    assert_eq!(exits[2].0, "emit");
     assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 }
 
@@ -3053,23 +3115,28 @@ fn test_hash_builtins_test_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_hash_builtins".to_string(),
             "to_bytes".to_string(),
             "sha2_256".to_string(),
             "to_bytes".to_string(),
             "sha3_256".to_string(),
             "length".to_string(),
             "length".to_string(),
-            "test_hash_builtins".to_string(),
         ],
     );
 
     // ----- Each native return surfaces as Sequence<u8> with exact bytes --
+    // Exits in entry order: index 0 = test_hash_builtins (Void), then each
+    // helper in entry order: 1=to_bytes, 2=sha2_256, 3=to_bytes, 4=sha3_256,
+    // 5=length, 6=length.
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 7);
+    assert_eq!(exits[0].0, "test_hash_builtins");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
     // bcs::to_bytes(&Point { x: 3, y: 4 }) -> [3,0,0,0,0,0,0,0, 4,0,0,0,0,0,0,0]
     let bcs_bytes_want: Vec<i64> = vec![3, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0];
-    for idx in [0_usize, 2] {
+    for idx in [1_usize, 3] {
         assert_eq!(exits[idx].0, "to_bytes");
         let rv = &exits[idx].1;
         assert_eq!(rv["kind"].as_str(), Some("Sequence"));
@@ -3116,27 +3183,25 @@ fn test_hash_builtins_test_via_ct_print_full() {
             .collect();
         assert_eq!(got, want.to_vec(), "{name} digest bytes mismatch");
     };
-    check_digest(1, "sha2_256", &sha2_want);
-    check_digest(3, "sha3_256", &sha3_want);
+    check_digest(2, "sha2_256", &sha2_want);
+    check_digest(4, "sha3_256", &sha3_want);
 
     // length(&digest) -> 32 (twice)
-    for idx in [4_usize, 5] {
+    for idx in [5_usize, 6] {
         assert_eq!(exits[idx].0, "length");
         assert_eq!(exits[idx].1["kind"].as_str(), Some("Int"));
         assert_eq!(exits[idx].1["i"].as_i64(), Some(32));
     }
-    assert_eq!(exits[6].0, "test_hash_builtins");
-    assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
 
     // ----- The hash arg also surfaces as the same Sequence<u8> ----------
-    // CloseFrame ordering: entries[0]=to_bytes(1), [1]=sha2_256, [2]=to_bytes(2),
-    // [3]=sha3_256, [4]=length, [5]=length, [6]=test_hash_builtins.
+    // Entry order: entries[0]=test_hash_builtins, [1]=to_bytes(1),
+    // [2]=sha2_256, [3]=to_bytes(2), [4]=sha3_256, [5]=length, [6]=length.
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    // sha2_256(bytes) — the bytes arg is the bcs output (entries[1]).
-    let sha2_arg0 = &entries[1]["args"][0]["value"];
+    // sha2_256(bytes) — the bytes arg is the bcs output (entries[2]).
+    let sha2_arg0 = &entries[2]["args"][0]["value"];
     assert_eq!(sha2_arg0["kind"].as_str(), Some("Sequence"));
     let sha2_arg_elems = sha2_arg0["elements"]
         .as_array()
@@ -3149,8 +3214,8 @@ fn test_hash_builtins_test_via_ct_print_full() {
         got_in, bcs_bytes_want,
         "sha2_256's input byte-vector must match bcs::to_bytes output exactly",
     );
-    // sha3_256(bytes2) — entries[3], same payload.
-    let sha3_arg0 = &entries[3]["args"][0]["value"];
+    // sha3_256(bytes2) — entries[4], same payload.
+    let sha3_arg0 = &entries[4]["args"][0]["value"];
     assert_eq!(sha3_arg0["kind"].as_str(), Some("Sequence"));
     let sha3_arg_elems = sha3_arg0["elements"]
         .as_array()
@@ -3165,7 +3230,8 @@ fn test_hash_builtins_test_via_ct_print_full() {
     );
 
     // ----- bcs::to_bytes(&p) takes a Reference<Point> ---------------------
-    let bcs_arg0 = &entries[0]["args"][0]["value"];
+    // The first to_bytes call is at entries[1] in entry order.
+    let bcs_arg0 = &entries[1]["args"][0]["value"];
     assert_eq!(bcs_arg0["kind"].as_str(), Some("Reference"));
     assert_eq!(bcs_arg0["mutable"].as_bool(), Some(false));
     let point = &bcs_arg0["dereferenced"];
@@ -3223,13 +3289,13 @@ fn test_string_test_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_string".to_string(),
             "utf8".to_string(),
             "utf8".to_string(),
             "append".to_string(),
             "sub_string".to_string(),
             "length".to_string(),
             "length".to_string(),
-            "test_string".to_string(),
         ],
     );
 
@@ -3263,47 +3329,51 @@ fn test_string_test_via_ct_print_full() {
         String::from_utf8(raw).expect("String bytes must round-trip as UTF-8")
     }
 
+    // Exits in entry order: 0=test_string (Void), 1=utf8, 2=utf8,
+    // 3=append, 4=sub_string, 5=length, 6=length.
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 7);
 
+    assert_eq!(exits[0].0, "test_string");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+
     // utf8(b"hello") -> "hello", utf8(b" world") -> " world"
-    assert_eq!(exits[0].0, "utf8");
-    assert_eq!(string_struct_text(&exits[0].1), "hello");
     assert_eq!(exits[1].0, "utf8");
-    assert_eq!(string_struct_text(&exits[1].1), " world");
+    assert_eq!(string_struct_text(&exits[1].1), "hello");
+    assert_eq!(exits[2].0, "utf8");
+    assert_eq!(string_struct_text(&exits[2].1), " world");
 
     // append(&mut s, suffix) -> Void
-    assert_eq!(exits[2].0, "append");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[3].0, "append");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
 
     // sub_string(&s, 0, 5) -> "hello"
-    assert_eq!(exits[3].0, "sub_string");
-    assert_eq!(string_struct_text(&exits[3].1), "hello");
+    assert_eq!(exits[4].0, "sub_string");
+    assert_eq!(string_struct_text(&exits[4].1), "hello");
 
     // length(&s) -> 11, length(&head_bytes) -> 5
-    assert_eq!(exits[4].0, "length");
-    assert_eq!(exits[4].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[4].1["i"].as_i64(), Some(11));
     assert_eq!(exits[5].0, "length");
     assert_eq!(exits[5].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[5].1["i"].as_i64(), Some(5));
-
-    assert_eq!(exits[6].0, "test_string");
-    assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[5].1["i"].as_i64(), Some(11));
+    assert_eq!(exits[6].0, "length");
+    assert_eq!(exits[6].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[6].1["i"].as_i64(), Some(5));
 
     // ----- After append, the &mut s arg snapshot is "hello world" -------
+    // entries[0]=test_string, [1]=utf8, [2]=utf8, [3]=append,
+    // [4]=sub_string, [5]=length, [6]=length (entry order).
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     // sub_string(&s, 0, 5) — its first arg is a Reference whose pointee
     // String must spell out "hello world" after the in-place append.
-    let sub_arg0 = &entries[3]["args"][0]["value"];
+    let sub_arg0 = &entries[4]["args"][0]["value"];
     assert_eq!(sub_arg0["kind"].as_str(), Some("Reference"));
     assert_eq!(sub_arg0["mutable"].as_bool(), Some(false));
     assert_eq!(string_struct_text(&sub_arg0["dereferenced"]), "hello world");
     // length(&s) — same shape.
-    let len_arg0 = &entries[4]["args"][0]["value"];
+    let len_arg0 = &entries[5]["args"][0]["value"];
     assert_eq!(len_arg0["kind"].as_str(), Some("Reference"));
     assert_eq!(string_struct_text(&len_arg0["dereferenced"]), "hello world");
 }
@@ -3363,6 +3433,7 @@ fn test_vector_operations_test_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_vector_operations".to_string(),
             "swap_remove".to_string(),
             "pop_back".to_string(),
             "contains".to_string(),
@@ -3372,39 +3443,42 @@ fn test_vector_operations_test_via_ct_print_full() {
             "index_of".to_string(),
             "borrow_mut".to_string(),
             "borrow".to_string(),
-            "test_vector_operations".to_string(),
         ],
     );
 
-    // ----- Return values pinned exactly ----------------------------------
+    // ----- Return values pinned exactly (entry order) -------------------
+    // exits[0]=test_vector_operations (Void), then each helper at
+    // indices 1..10 in entry order.
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 10);
+    assert_eq!(exits[0].0, "test_vector_operations");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
     // swap_remove(v, 1) -> 20
-    assert_eq!(exits[0].0, "swap_remove");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[0].1["i"].as_i64(), Some(20));
-    // pop_back(v) -> 30
-    assert_eq!(exits[1].0, "pop_back");
+    assert_eq!(exits[1].0, "swap_remove");
     assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(30));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(20));
+    // pop_back(v) -> 30
+    assert_eq!(exits[2].0, "pop_back");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(30));
     // contains(v, 40) -> true
-    assert_eq!(exits[2].0, "contains");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[2].1["b"].as_bool(), Some(true));
-    // contains(v, 99) -> false
     assert_eq!(exits[3].0, "contains");
     assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[3].1["b"].as_bool(), Some(false));
+    assert_eq!(exits[3].1["b"].as_bool(), Some(true));
+    // contains(v, 99) -> false
+    assert_eq!(exits[4].0, "contains");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[4].1["b"].as_bool(), Some(false));
     // reverse(v) -> Void
-    assert_eq!(exits[4].0, "reverse");
-    assert_eq!(exits[4].1["kind"].as_str(), Some("Void"));
-    // append(v, other) -> Void
-    assert_eq!(exits[5].0, "append");
+    assert_eq!(exits[5].0, "reverse");
     assert_eq!(exits[5].1["kind"].as_str(), Some("Void"));
+    // append(v, other) -> Void
+    assert_eq!(exits[6].0, "append");
+    assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
     // index_of(v, &7) -> (true, 2) — Tuple
-    assert_eq!(exits[6].0, "index_of");
-    let idx_rv = &exits[6].1;
+    assert_eq!(exits[7].0, "index_of");
+    let idx_rv = &exits[7].1;
     assert_eq!(idx_rv["kind"].as_str(), Some("Tuple"));
     let idx_elems = idx_rv["elements"].as_array().expect("Tuple.elements");
     assert_eq!(idx_elems.len(), 2);
@@ -3413,23 +3487,23 @@ fn test_vector_operations_test_via_ct_print_full() {
     assert_eq!(idx_elems[1]["kind"].as_str(), Some("Int"));
     assert_eq!(idx_elems[1]["i"].as_i64(), Some(2));
     // borrow_mut(v, 0) -> &mut u64 (Reference, mutable=true, pointee=40)
-    assert_eq!(exits[7].0, "borrow_mut");
-    let bm_rv = &exits[7].1;
+    assert_eq!(exits[8].0, "borrow_mut");
+    let bm_rv = &exits[8].1;
     assert_eq!(bm_rv["kind"].as_str(), Some("Reference"));
     assert_eq!(bm_rv["mutable"].as_bool(), Some(true));
     assert_eq!(bm_rv["dereferenced"]["kind"].as_str(), Some("Int"));
     assert_eq!(bm_rv["dereferenced"]["i"].as_i64(), Some(40));
     // borrow(v, 0) -> &u64 (Reference, mutable=false, pointee=100 after *r=100)
-    assert_eq!(exits[8].0, "borrow");
-    let b_rv = &exits[8].1;
+    assert_eq!(exits[9].0, "borrow");
+    let b_rv = &exits[9].1;
     assert_eq!(b_rv["kind"].as_str(), Some("Reference"));
     assert_eq!(b_rv["mutable"].as_bool(), Some(false));
     assert_eq!(b_rv["dereferenced"]["kind"].as_str(), Some("Int"));
     assert_eq!(b_rv["dereferenced"]["i"].as_i64(), Some(100));
-    assert_eq!(exits[9].0, "test_vector_operations");
-    assert_eq!(exits[9].1["kind"].as_str(), Some("Void"));
 
     // ----- Reference args carry the contents snapshot at call time ------
+    // entries[0]=test_vector_operations (no args); helpers at 1..10 in
+    // entry order, mirroring observed_call_sequence above.
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
@@ -3457,48 +3531,48 @@ fn test_vector_operations_test_via_ct_print_full() {
     };
     // swap_remove sees v = [10, 20, 30, 40] (initial)
     assert_eq!(
-        extract_seq(&entries[0]["args"][0]["value"]),
+        extract_seq(&entries[1]["args"][0]["value"]),
         vec![10_i64, 20, 30, 40],
     );
     // pop_back sees v = [10, 40, 30] (after swap_remove)
     assert_eq!(
-        extract_seq(&entries[1]["args"][0]["value"]),
+        extract_seq(&entries[2]["args"][0]["value"]),
         vec![10_i64, 40, 30],
     );
     // contains(_, 40) sees v = [10, 40] (after pop_back)
     assert_eq!(
-        extract_seq(&entries[2]["args"][0]["value"]),
+        extract_seq(&entries[3]["args"][0]["value"]),
         vec![10_i64, 40],
     );
     // contains(_, 99) sees the same v = [10, 40]
     assert_eq!(
-        extract_seq(&entries[3]["args"][0]["value"]),
+        extract_seq(&entries[4]["args"][0]["value"]),
         vec![10_i64, 40],
     );
     // reverse sees v = [10, 40]
     assert_eq!(
-        extract_seq(&entries[4]["args"][0]["value"]),
+        extract_seq(&entries[5]["args"][0]["value"]),
         vec![10_i64, 40],
     );
     // append sees v = [40, 10] (after reverse) and other = [7, 8]
     assert_eq!(
-        extract_seq(&entries[5]["args"][0]["value"]),
+        extract_seq(&entries[6]["args"][0]["value"]),
         vec![40_i64, 10],
     );
-    assert_eq!(extract_seq(&entries[5]["args"][1]["value"]), vec![7_i64, 8],);
+    assert_eq!(extract_seq(&entries[6]["args"][1]["value"]), vec![7_i64, 8],);
     // index_of sees v = [40, 10, 7, 8] (after append)
-    assert_eq!(
-        extract_seq(&entries[6]["args"][0]["value"]),
-        vec![40_i64, 10, 7, 8],
-    );
-    // borrow_mut sees the same v
     assert_eq!(
         extract_seq(&entries[7]["args"][0]["value"]),
         vec![40_i64, 10, 7, 8],
     );
-    // borrow (final readback) sees v = [100, 10, 7, 8] (after *r = 100)
+    // borrow_mut sees the same v
     assert_eq!(
         extract_seq(&entries[8]["args"][0]["value"]),
+        vec![40_i64, 10, 7, 8],
+    );
+    // borrow (final readback) sees v = [100, 10, 7, 8] (after *r = 100)
+    assert_eq!(
+        extract_seq(&entries[9]["args"][0]["value"]),
         vec![100_i64, 10, 7, 8],
     );
 
@@ -3606,22 +3680,26 @@ fn test_phantom_types_test_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
-            "mint".to_string(),
-            "mint".to_string(),
-            "value".to_string(),
-            "value".to_string(),
-            "burn".to_string(),
-            "burn".to_string(),
             "test_phantom_types".to_string(),
+            "mint".to_string(),
+            "mint".to_string(),
+            "value".to_string(),
+            "value".to_string(),
+            "burn".to_string(),
+            "burn".to_string(),
         ],
     );
 
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 7);
 
+    // Outer test entry first (Void).
+    assert_eq!(exits[0].0, "test_phantom_types");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+
     // ----- mint<USD>(100) -> TypedCoin<USD> { value: 100 } ---------------
-    assert_eq!(exits[0].0, "mint");
-    let usd_coin = &exits[0].1;
+    assert_eq!(exits[1].0, "mint");
+    let usd_coin = &exits[1].1;
     assert_eq!(usd_coin["kind"].as_str(), Some("Struct"));
     let usd_fields = usd_coin["field_values"]
         .as_array()
@@ -3632,8 +3710,8 @@ fn test_phantom_types_test_via_ct_print_full() {
     let usd_coin_type_id = usd_coin["type_id"].as_u64().expect("Struct.type_id");
 
     // ----- mint<EUR>(100) -> TypedCoin<EUR> { value: 100 } ---------------
-    assert_eq!(exits[1].0, "mint");
-    let eur_coin = &exits[1].1;
+    assert_eq!(exits[2].0, "mint");
+    let eur_coin = &exits[2].1;
     assert_eq!(eur_coin["kind"].as_str(), Some("Struct"));
     let eur_fields = eur_coin["field_values"]
         .as_array()
@@ -3654,31 +3732,31 @@ fn test_phantom_types_test_via_ct_print_full() {
     );
 
     // ----- value<USD>(&usd_coin) and value<EUR>(&eur_coin) ---------------
-    assert_eq!(exits[2].0, "value");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[2].1["i"].as_i64(), Some(100));
     assert_eq!(exits[3].0, "value");
     assert_eq!(exits[3].1["kind"].as_str(), Some("Int"));
     assert_eq!(exits[3].1["i"].as_i64(), Some(100));
-
-    // ----- burn<USD>(usd_coin) -> 100, burn<EUR>(eur_coin) -> 100 -------
-    assert_eq!(exits[4].0, "burn");
+    assert_eq!(exits[4].0, "value");
     assert_eq!(exits[4].1["kind"].as_str(), Some("Int"));
     assert_eq!(exits[4].1["i"].as_i64(), Some(100));
+
+    // ----- burn<USD>(usd_coin) -> 100, burn<EUR>(eur_coin) -> 100 -------
     assert_eq!(exits[5].0, "burn");
     assert_eq!(exits[5].1["kind"].as_str(), Some("Int"));
     assert_eq!(exits[5].1["i"].as_i64(), Some(100));
-    assert_eq!(exits[6].0, "test_phantom_types");
-    assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[6].0, "burn");
+    assert_eq!(exits[6].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[6].1["i"].as_i64(), Some(100));
 
     // ----- value<USD>'s &TypedCoin<USD> arg keeps the phantom-tagged id -
+    // entries[0]=test_phantom_types, [1]=mint<USD>, [2]=mint<EUR>,
+    // [3]=value<USD>, [4]=value<EUR>, [5]=burn<USD>, [6]=burn<EUR>.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let usd_value_arg = &entries[2]["args"][0]["value"];
+    let usd_value_arg = &entries[3]["args"][0]["value"];
     assert_eq!(usd_value_arg["kind"].as_str(), Some("Reference"));
     assert_eq!(usd_value_arg["mutable"].as_bool(), Some(false));
     let usd_pointee = &usd_value_arg["dereferenced"];
@@ -3690,7 +3768,7 @@ fn test_phantom_types_test_via_ct_print_full() {
          type id minted by mint<USD>",
     );
 
-    let eur_value_arg = &entries[3]["args"][0]["value"];
+    let eur_value_arg = &entries[4]["args"][0]["value"];
     assert_eq!(eur_value_arg["kind"].as_str(), Some("Reference"));
     let eur_pointee = &eur_value_arg["dereferenced"];
     assert_eq!(
@@ -3701,14 +3779,14 @@ fn test_phantom_types_test_via_ct_print_full() {
     );
 
     // ----- burn's owned TypedCoin<T> args also keep their phantom ids ---
-    let burn_usd_arg = &entries[4]["args"][0]["value"];
+    let burn_usd_arg = &entries[5]["args"][0]["value"];
     assert_eq!(burn_usd_arg["kind"].as_str(), Some("Struct"));
     assert_eq!(
         burn_usd_arg["type_id"].as_u64(),
         Some(usd_coin_type_id),
         "burn<USD>'s owned arg must carry the TypedCoin<USD> type id",
     );
-    let burn_eur_arg = &entries[5]["args"][0]["value"];
+    let burn_eur_arg = &entries[6]["args"][0]["value"];
     assert_eq!(burn_eur_arg["kind"].as_str(), Some("Struct"));
     assert_eq!(
         burn_eur_arg["type_id"].as_u64(),
@@ -3779,7 +3857,7 @@ fn test_signer_test_via_ct_print_full() {
 
     assert_eq!(
         observed_call_sequence(&doc),
-        vec!["address_of".to_string(), "authorize".to_string()],
+        vec!["authorize".to_string(), "address_of".to_string()],
     );
 
     // ----- authorize takes (admin: &signer, target: address) -------------
@@ -3787,8 +3865,9 @@ fn test_signer_test_via_ct_print_full() {
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    // CloseFrame ordering: entries[0]=address_of, entries[1]=authorize.
-    let authorize_args = entries[1]["args"].as_array().expect("authorize args");
+    // Entry order: entries[0]=authorize, entries[1]=address_of (called
+    // by authorize internally).
+    let authorize_args = entries[0]["args"].as_array().expect("authorize args");
     assert_eq!(
         authorize_args.len(),
         2,
@@ -3822,7 +3901,7 @@ fn test_signer_test_via_ct_print_full() {
     assert_eq!(target_arg["text"].as_str(), Some("0xBEEF"));
 
     // ----- address_of(admin) takes the same &signer pointee ------------
-    let address_of_args = entries[0]["args"].as_array().expect("address_of args");
+    let address_of_args = entries[1]["args"].as_array().expect("address_of args");
     assert_eq!(address_of_args.len(), 1);
     let inner_signer = &address_of_args[0]["value"];
     assert_eq!(inner_signer["kind"].as_str(), Some("Reference"));
@@ -3832,20 +3911,20 @@ fn test_signer_test_via_ct_print_full() {
         Some("0xA11CE"),
     );
 
-    // ----- Return values --------------------------------------------------
+    // ----- Return values (entry order) -----------------------------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 2);
 
-    // address_of returns the admin address as a typed String.
-    assert_eq!(exits[0].0, "address_of");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("String"));
-    assert_eq!(exits[0].1["text"].as_str(), Some("0xA11CE"));
-
     // authorize returns the boolean comparison verdict — true.
-    assert_eq!(exits[1].0, "authorize");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[1].1["b"].as_bool(), Some(true));
-    assert_eq!(exits[1].1["text"].as_str(), Some("true"));
+    assert_eq!(exits[0].0, "authorize");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[0].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[0].1["text"].as_str(), Some("true"));
+
+    // address_of returns the admin address as a typed String.
+    assert_eq!(exits[1].0, "address_of");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("String"));
+    assert_eq!(exits[1].1["text"].as_str(), Some("0xA11CE"));
 
     // ----- The boolean verdict also surfaces in the merged step ---------
     // The comparison `signer::address_of(admin) == @0xA11CE` produces the
@@ -3909,7 +3988,7 @@ fn test_tx_context_test_via_ct_print_full() {
 
     assert_eq!(
         observed_call_sequence(&doc),
-        vec!["sender".to_string(), "new".to_string(), "mint".to_string(),],
+        vec!["mint".to_string(), "sender".to_string(), "new".to_string(),],
     );
 
     let entries: Vec<&serde_json::Value> = events
@@ -3918,8 +3997,9 @@ fn test_tx_context_test_via_ct_print_full() {
         .collect();
 
     // ----- mint(ctx: &mut TxContext) — the &mut TxContext arg shape -----
-    // CloseFrame ordering: entries[0]=sender, entries[1]=new, entries[2]=mint.
-    let mint_args = entries[2]["args"].as_array().expect("mint args");
+    // Entry order: entries[0]=mint, entries[1]=sender (called by mint),
+    // entries[2]=new (also called by mint).
+    let mint_args = entries[0]["args"].as_array().expect("mint args");
     assert_eq!(mint_args.len(), 1, "mint takes a single &mut TxContext arg");
     let ctx_arg = &mint_args[0]["value"];
     assert_eq!(ctx_arg["kind"].as_str(), Some("Reference"));
@@ -3943,30 +4023,34 @@ fn test_tx_context_test_via_ct_print_full() {
     assert_eq!(ctx_fields[0]["text"].as_str(), Some("0xCAFE"));
 
     // tx_context::sender(ctx) takes the same &mut TxContext.
-    let sender_args = entries[0]["args"].as_array().expect("sender args");
+    let sender_args = entries[1]["args"].as_array().expect("sender args");
     assert_eq!(sender_args.len(), 1);
     assert_eq!(sender_args[0]["value"]["kind"].as_str(), Some("Reference"));
     assert_eq!(sender_args[0]["value"]["mutable"].as_bool(), Some(true));
 
     // object::new(ctx) takes the same &mut TxContext.
-    let new_args = entries[1]["args"].as_array().expect("new args");
+    let new_args = entries[2]["args"].as_array().expect("new args");
     assert_eq!(new_args.len(), 1);
     assert_eq!(new_args[0]["value"]["kind"].as_str(), Some("Reference"));
     assert_eq!(new_args[0]["value"]["mutable"].as_bool(), Some(true));
 
-    // ----- Return values --------------------------------------------------
+    // ----- Return values (entry order) -----------------------------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 3);
 
+    // mint returns Token { id: UID } — nested struct shape.  We assert
+    // the full shape after binding the UID type_id below.
+    assert_eq!(exits[0].0, "mint");
+
     // tx_context::sender returns the sender address as a typed String.
-    assert_eq!(exits[0].0, "sender");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("String"));
-    assert_eq!(exits[0].1["text"].as_str(), Some("0xCAFE"));
+    assert_eq!(exits[1].0, "sender");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("String"));
+    assert_eq!(exits[1].1["text"].as_str(), Some("0xCAFE"));
 
     // object::new returns a fresh UID as a typed Struct whose inner
     // ID { bytes: address } preserves the byte-vector identity.
-    assert_eq!(exits[1].0, "new");
-    let uid_rv = &exits[1].1;
+    assert_eq!(exits[2].0, "new");
+    let uid_rv = &exits[2].1;
     assert_eq!(uid_rv["kind"].as_str(), Some("Struct"));
     let uid_fields = uid_rv["field_values"].as_array().expect("UID.field_values");
     assert_eq!(uid_fields.len(), 1, "UID {{ id: ID }}");
@@ -3979,9 +4063,8 @@ fn test_tx_context_test_via_ct_print_full() {
     assert_eq!(id_fields[0]["text"].as_str(), Some("0xFEED"));
     let uid_type_id = uid_rv["type_id"].as_u64().expect("UID.type_id");
 
-    // mint returns Token { id: UID } — nested struct shape.
-    assert_eq!(exits[2].0, "mint");
-    let token_rv = &exits[2].1;
+    // Now check mint's Token { id: UID } return — nested struct shape.
+    let token_rv = &exits[0].1;
     assert_eq!(token_rv["kind"].as_str(), Some("Struct"));
     let token_fields = token_rv["field_values"]
         .as_array()
@@ -4053,41 +4136,42 @@ fn test_friend_visibility_test_via_ct_print_full() {
     assert_eq!(events.len(), 7);
     assert_step_indices_monotonic(&doc);
 
-    // CloseFrame ordering is LIFO — innermost first.  reveal is the
-    // innermost frame, then query, then the toplevel test frame.
+    // Entry order: outermost first, then each callee in call order.
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
-            "secrets::reveal".to_string(),
-            "query".to_string(),
             "test_friend_visibility".to_string(),
+            "query".to_string(),
+            "secrets::reveal".to_string(),
         ],
     );
 
     // ----- The Call/Return pair across the friend boundary --------------
+    // Exits in entry order: outer test, query, secrets::reveal.
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 3);
 
-    // secrets::reveal returns the canonical 42.
-    assert_eq!(exits[0].0, "secrets::reveal");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[0].1["i"].as_i64(), Some(42));
+    // The outer test frame returns Void.
+    assert_eq!(exits[0].0, "test_friend_visibility");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
     // query() forwards the value through the friend boundary.
     assert_eq!(exits[1].0, "query");
     assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
     assert_eq!(exits[1].1["i"].as_i64(), Some(42));
 
-    // The outer test frame returns Void.
-    assert_eq!(exits[2].0, "test_friend_visibility");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+    // secrets::reveal returns the canonical 42.
+    assert_eq!(exits[2].0, "secrets::reveal");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(42));
 
     // ----- The reveal call_entry has zero positional args ---------------
+    // entries[0]=test_friend_visibility, [1]=query, [2]=secrets::reveal.
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let reveal_entry = entries[0];
+    let reveal_entry = entries[2];
     assert_eq!(
         reveal_entry["function"].as_str(),
         Some("secrets::reveal"),
@@ -4161,7 +4245,7 @@ fn test_native_fun_test_via_ct_print_full() {
 
     assert_eq!(
         observed_call_sequence(&doc),
-        vec!["length".to_string(), "test_native_fun".to_string()],
+        vec!["test_native_fun".to_string(), "length".to_string()],
     );
 
     // ----- The native call_entry/call_exit pair brackets ZERO steps -----
@@ -4187,11 +4271,12 @@ fn test_native_fun_test_via_ct_print_full() {
     assert_eq!(length_entry["depth"].as_u64(), Some(1));
 
     // ----- The native call's argument is &vector<u8> --------------------
+    // entries[0]=test_native_fun (no args), entries[1]=length (entry order).
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let length_args = entries[0]["args"].as_array().expect("length args");
+    let length_args = entries[1]["args"].as_array().expect("length args");
     assert_eq!(length_args.len(), 1, "vector::length takes one &vector arg");
     let v_arg = &length_args[0]["value"];
     assert_eq!(v_arg["kind"].as_str(), Some("Reference"));
@@ -4209,17 +4294,17 @@ fn test_native_fun_test_via_ct_print_full() {
         .collect();
     assert_eq!(bytes, vec![97_i64, 98, 99, 100, 101]);
 
-    // ----- Return values --------------------------------------------------
+    // ----- Return values (entry order) -----------------------------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 2);
 
-    // vector::length returns the byte count as a typed Int.
-    assert_eq!(exits[0].0, "length");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[0].1["i"].as_i64(), Some(5));
+    assert_eq!(exits[0].0, "test_native_fun");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
-    assert_eq!(exits[1].0, "test_native_fun");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+    // vector::length returns the byte count as a typed Int.
+    assert_eq!(exits[1].0, "length");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(5));
 
     // ----- The 5-byte length surfaces in the merged step's vars ---------
     // The native `vector::length` returns `5` (the size of the input
@@ -4278,18 +4363,20 @@ fn test_dynamic_field_test_via_ct_print_full() {
     assert_eq!(events.len(), 9);
     assert_step_indices_monotonic(&doc);
 
-    // CloseFrame ordering is LIFO — innermost first.
+    // Entry order: outer test entry first, then each helper.
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_dynamic_field".to_string(),
             "add".to_string(),
             "borrow".to_string(),
             "remove".to_string(),
-            "test_dynamic_field".to_string(),
         ],
     );
 
     // ----- Each dynamic_field::* call's args -----------------------------
+    // entries[0]=test_dynamic_field (no args), [1]=add, [2]=borrow,
+    // [3]=remove (entry order).
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
@@ -4300,7 +4387,7 @@ fn test_dynamic_field_test_via_ct_print_full() {
     let expected_key: Vec<i64> = vec![107, 101, 121, 49];
 
     // ----- add(&mut parent.id, key, 42u64) -------------------------------
-    let add_args = entries[0]["args"].as_array().expect("add args");
+    let add_args = entries[1]["args"].as_array().expect("add args");
     assert_eq!(add_args.len(), 3, "dynamic_field::add takes 3 args");
     // arg0: &mut parent.id — a Reference whose pointee is the UID struct.
     let add_arg0 = &add_args[0]["value"];
@@ -4341,7 +4428,7 @@ fn test_dynamic_field_test_via_ct_print_full() {
     assert_eq!(add_arg2["i"].as_i64(), Some(42));
 
     // ----- borrow(&parent.id, key) ---------------------------------------
-    let borrow_args = entries[1]["args"].as_array().expect("borrow args");
+    let borrow_args = entries[2]["args"].as_array().expect("borrow args");
     assert_eq!(borrow_args.len(), 2, "dynamic_field::borrow takes 2 args");
     let borrow_arg0 = &borrow_args[0]["value"];
     assert_eq!(borrow_arg0["kind"].as_str(), Some("Reference"));
@@ -4369,7 +4456,7 @@ fn test_dynamic_field_test_via_ct_print_full() {
     assert_eq!(borrow_key_bytes, expected_key);
 
     // ----- remove(&mut parent.id, key) -----------------------------------
-    let remove_args = entries[2]["args"].as_array().expect("remove args");
+    let remove_args = entries[3]["args"].as_array().expect("remove args");
     assert_eq!(remove_args.len(), 2, "dynamic_field::remove takes 2 args");
     let remove_arg0 = &remove_args[0]["value"];
     assert_eq!(remove_arg0["kind"].as_str(), Some("Reference"));
@@ -4380,17 +4467,20 @@ fn test_dynamic_field_test_via_ct_print_full() {
         "the &mut UID arg to remove must share the parent's UID type id",
     );
 
-    // ----- Return values --------------------------------------------------
+    // ----- Return values (entry order) -----------------------------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 4);
 
-    // dynamic_field::add returns Void.
-    assert_eq!(exits[0].0, "add");
+    assert_eq!(exits[0].0, "test_dynamic_field");
     assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
+    // dynamic_field::add returns Void.
+    assert_eq!(exits[1].0, "add");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+
     // dynamic_field::borrow returns &u64 (Reference whose pointee is Int 42).
-    assert_eq!(exits[1].0, "borrow");
-    let borrow_rv = &exits[1].1;
+    assert_eq!(exits[2].0, "borrow");
+    let borrow_rv = &exits[2].1;
     assert_eq!(borrow_rv["kind"].as_str(), Some("Reference"));
     assert_eq!(borrow_rv["mutable"].as_bool(), Some(false));
     let borrow_pointee = &borrow_rv["dereferenced"];
@@ -4398,12 +4488,9 @@ fn test_dynamic_field_test_via_ct_print_full() {
     assert_eq!(borrow_pointee["i"].as_i64(), Some(42));
 
     // dynamic_field::remove returns the dynamic-field value as a typed Int.
-    assert_eq!(exits[2].0, "remove");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[2].1["i"].as_i64(), Some(42));
-
-    assert_eq!(exits[3].0, "test_dynamic_field");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[3].0, "remove");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[3].1["i"].as_i64(), Some(42));
 
     // ----- The two dereferenced 42 values surface in the merged step ----
     // The Effect::Write for the borrow-deref result lands as `local_1`,
@@ -4471,15 +4558,15 @@ fn test_table_test_via_ct_print_full() {
     assert_eq!(events.len(), 11);
     assert_step_indices_monotonic(&doc);
 
-    // CloseFrame ordering is LIFO — innermost first.
+    // Entry order: outer test entry first, then each helper.
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_table".to_string(),
             "new".to_string(),
             "add".to_string(),
             "borrow".to_string(),
             "contains".to_string(),
-            "test_table".to_string(),
         ],
     );
 
@@ -4496,13 +4583,15 @@ fn test_table_test_via_ct_print_full() {
         .unwrap_or_else(|| panic!("expected Table<address,u64> in the type table; got {types:?}"));
 
     // ----- Each table::* call's args -------------------------------------
+    // Entry order: entries[0]=test_table, [1]=new, [2]=add, [3]=borrow,
+    // [4]=contains.
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
 
     // ----- table::add(&mut entries, addr1, 100u64) -----------------------
-    let add_args = entries[1]["args"].as_array().expect("add args");
+    let add_args = entries[2]["args"].as_array().expect("add args");
     assert_eq!(add_args.len(), 3, "table::add takes 3 args");
     let add_arg0 = &add_args[0]["value"];
     assert_eq!(add_arg0["kind"].as_str(), Some("Reference"));
@@ -4524,7 +4613,7 @@ fn test_table_test_via_ct_print_full() {
     assert_eq!(add_args[2]["value"]["i"].as_i64(), Some(100));
 
     // ----- table::borrow(&entries, addr1) --------------------------------
-    let borrow_args = entries[2]["args"].as_array().expect("borrow args");
+    let borrow_args = entries[3]["args"].as_array().expect("borrow args");
     assert_eq!(borrow_args.len(), 2);
     assert_eq!(borrow_args[0]["value"]["kind"].as_str(), Some("Reference"));
     assert_eq!(borrow_args[0]["value"]["mutable"].as_bool(), Some(false));
@@ -4536,7 +4625,7 @@ fn test_table_test_via_ct_print_full() {
     assert_eq!(borrow_args[1]["value"]["text"].as_str(), Some("0xAB"));
 
     // ----- table::contains(&entries, addr1) ------------------------------
-    let contains_args = entries[3]["args"].as_array().expect("contains args");
+    let contains_args = entries[4]["args"].as_array().expect("contains args");
     assert_eq!(contains_args.len(), 2);
     assert_eq!(
         contains_args[0]["value"]["kind"].as_str(),
@@ -4549,13 +4638,16 @@ fn test_table_test_via_ct_print_full() {
         "the &Table arg to contains must share the Table<address,u64> type id",
     );
 
-    // ----- Return values --------------------------------------------------
+    // ----- Return values (entry order) -----------------------------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 5);
 
+    assert_eq!(exits[0].0, "test_table");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+
     // table::new returns the freshly-minted Table<address,u64> struct.
-    assert_eq!(exits[0].0, "new");
-    let new_rv = &exits[0].1;
+    assert_eq!(exits[1].0, "new");
+    let new_rv = &exits[1].1;
     assert_eq!(new_rv["kind"].as_str(), Some("Struct"));
     assert_eq!(
         new_rv["type_id"].as_u64(),
@@ -4570,25 +4662,22 @@ fn test_table_test_via_ct_print_full() {
     assert_eq!(new_fields[0]["text"].as_str(), Some("0xCAFE"));
 
     // table::add returns Void.
-    assert_eq!(exits[1].0, "add");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[2].0, "add");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 
     // table::borrow returns &u64 (Reference whose pointee is Int 100).
-    assert_eq!(exits[2].0, "borrow");
-    let borrow_rv = &exits[2].1;
+    assert_eq!(exits[3].0, "borrow");
+    let borrow_rv = &exits[3].1;
     assert_eq!(borrow_rv["kind"].as_str(), Some("Reference"));
     assert_eq!(borrow_rv["mutable"].as_bool(), Some(false));
     assert_eq!(borrow_rv["dereferenced"]["kind"].as_str(), Some("Int"));
     assert_eq!(borrow_rv["dereferenced"]["i"].as_i64(), Some(100));
 
     // table::contains returns the membership verdict as a typed Bool.
-    assert_eq!(exits[3].0, "contains");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[3].1["b"].as_bool(), Some(true));
-    assert_eq!(exits[3].1["text"].as_str(), Some("true"));
-
-    assert_eq!(exits[4].0, "test_table");
-    assert_eq!(exits[4].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[4].0, "contains");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[4].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[4].1["text"].as_str(), Some("true"));
 
     // ----- Step vars: the canonical Int / Bool surfaces ------------------
     let ints = unique_int_pairs(&doc);
@@ -4646,14 +4735,14 @@ fn test_address_literals_test_via_ct_print_full() {
     assert_eq!(events.len(), 9);
     assert_step_indices_monotonic(&doc);
 
-    // CloseFrame ordering is LIFO — innermost first.
+    // Entry order: outer test entry first, then three id_addr calls.
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
-            "id_addr".to_string(),
-            "id_addr".to_string(),
-            "id_addr".to_string(),
             "test_address_literals".to_string(),
+            "id_addr".to_string(),
+            "id_addr".to_string(),
+            "id_addr".to_string(),
         ],
     );
 
@@ -4675,6 +4764,7 @@ fn test_address_literals_test_via_ct_print_full() {
         .expect("`address` slot in types table") as u64;
 
     // ----- id_addr(a) / id_addr(b) / id_addr(c) call args + returns -----
+    // entries[0]=test_address_literals, [1..=3]=id_addr (entry order).
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
@@ -4682,7 +4772,10 @@ fn test_address_literals_test_via_ct_print_full() {
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 4);
 
-    for (idx, expected) in [(0usize, addr_a), (1, addr_b), (2, addr_c)] {
+    assert_eq!(exits[0].0, "test_address_literals");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+
+    for (idx, expected) in [(1usize, addr_a), (2, addr_b), (3, addr_c)] {
         let args = entries[idx]["args"].as_array().expect("args array");
         assert_eq!(args.len(), 1, "id_addr takes a single address arg");
         let arg0 = &args[0]["value"];
@@ -4705,9 +4798,6 @@ fn test_address_literals_test_via_ct_print_full() {
         assert_eq!(rv["text"].as_str(), Some(expected));
         assert_eq!(rv["text"].as_str().unwrap().len(), 66);
     }
-
-    assert_eq!(exits[3].0, "test_address_literals");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
 
     // ----- Each address surfaces in the merged step's vars ---------------
     // The Effect::Write events for local_0 / local_1 / local_2 (the three
@@ -4779,15 +4869,15 @@ fn test_multi_test_module_test_via_ct_print_full() {
     assert_eq!(events_a.len(), 5, "1 step + 2 call_entry + 2 call_exit");
     assert_eq!(
         observed_call_sequence(&doc_a),
-        vec!["add".to_string(), "test_arithmetic".to_string()],
+        vec!["test_arithmetic".to_string(), "add".to_string()],
     );
     let exits_a = observed_exit_sequence(&doc_a);
     assert_eq!(exits_a.len(), 2);
-    assert_eq!(exits_a[0].0, "add");
-    assert_eq!(exits_a[0].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits_a[0].1["i"].as_i64(), Some(5));
-    assert_eq!(exits_a[1].0, "test_arithmetic");
-    assert_eq!(exits_a[1].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits_a[0].0, "test_arithmetic");
+    assert_eq!(exits_a[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits_a[1].0, "add");
+    assert_eq!(exits_a[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits_a[1].1["i"].as_i64(), Some(5));
 
     // ----- test_resource_lifecycle: struct construction + destructure ----
     let Some((doc_b, _)) = record_and_dump_full_with_source(
@@ -4818,14 +4908,16 @@ fn test_multi_test_module_test_via_ct_print_full() {
     assert_eq!(
         observed_call_sequence(&doc_b),
         vec![
-            "make_counter".to_string(),
             "test_resource_lifecycle".to_string(),
+            "make_counter".to_string(),
         ],
     );
     let exits_b = observed_exit_sequence(&doc_b);
     assert_eq!(exits_b.len(), 2);
-    assert_eq!(exits_b[0].0, "make_counter");
-    let counter_rv = &exits_b[0].1;
+    assert_eq!(exits_b[0].0, "test_resource_lifecycle");
+    assert_eq!(exits_b[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits_b[1].0, "make_counter");
+    let counter_rv = &exits_b[1].1;
     assert_eq!(counter_rv["kind"].as_str(), Some("Struct"));
     let counter_fields = counter_rv["field_values"]
         .as_array()
@@ -4833,8 +4925,6 @@ fn test_multi_test_module_test_via_ct_print_full() {
     assert_eq!(counter_fields.len(), 1);
     assert_eq!(counter_fields[0]["kind"].as_str(), Some("Int"));
     assert_eq!(counter_fields[0]["i"].as_i64(), Some(7));
-    assert_eq!(exits_b[1].0, "test_resource_lifecycle");
-    assert_eq!(exits_b[1].1["kind"].as_str(), Some("Void"));
 
     // ----- test_event_emit: sui::event::emit Sui native ------------------
     let Some((doc_c, _)) = record_and_dump_full_with_source(
@@ -4869,13 +4959,13 @@ fn test_multi_test_module_test_via_ct_print_full() {
     assert_eq!(events_c.len(), 6);
     assert_eq!(
         observed_call_sequence(&doc_c),
-        vec!["emit".to_string(), "test_event_emit".to_string()],
+        vec!["test_event_emit".to_string(), "emit".to_string()],
     );
     let exits_c = observed_exit_sequence(&doc_c);
     assert_eq!(exits_c.len(), 2);
-    assert_eq!(exits_c[0].0, "emit");
+    assert_eq!(exits_c[0].0, "test_event_emit");
     assert_eq!(exits_c[0].1["kind"].as_str(), Some("Void"));
-    assert_eq!(exits_c[1].0, "test_event_emit");
+    assert_eq!(exits_c[1].0, "emit");
     assert_eq!(exits_c[1].1["kind"].as_str(), Some("Void"));
 
     // ----- Cross-trace isolation: each fn-table is disjoint --------------
@@ -4938,14 +5028,14 @@ fn test_generic_constraints_test_via_ct_print_full() {
     assert_eq!(events.len(), 9);
     assert_step_indices_monotonic(&doc);
 
-    // CloseFrame ordering — innermost first.
+    // Entry order: outer test entry first.
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "test_generic_constraints".to_string(),
             "store_value".to_string(),
             "store_value".to_string(),
             "discard".to_string(),
-            "test_generic_constraints".to_string(),
         ],
     );
 
@@ -4972,6 +5062,8 @@ fn test_generic_constraints_test_via_ct_print_full() {
     );
 
     // ----- Each store_value<T> call: arg + return-type identity ---------
+    // Entry order: entries[0]=test_generic_constraints (no args),
+    // [1]=store_value<u64>, [2]=store_value<bool>, [3]=discard<u64>.
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
@@ -4979,15 +5071,19 @@ fn test_generic_constraints_test_via_ct_print_full() {
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 4);
 
+    // Outer test frame returns Void.
+    assert_eq!(exits[0].0, "test_generic_constraints");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+
     // store_value<u64>(42) — arg is Int 42.
-    let sv_u64_args = entries[0]["args"]
+    let sv_u64_args = entries[1]["args"]
         .as_array()
         .expect("store_value<u64> args");
     assert_eq!(sv_u64_args.len(), 1);
     assert_eq!(sv_u64_args[0]["value"]["kind"].as_str(), Some("Int"));
     assert_eq!(sv_u64_args[0]["value"]["i"].as_i64(), Some(42));
-    assert_eq!(exits[0].0, "store_value");
-    let cu_rv = &exits[0].1;
+    assert_eq!(exits[1].0, "store_value");
+    let cu_rv = &exits[1].1;
     assert_eq!(cu_rv["kind"].as_str(), Some("Struct"));
     assert_eq!(
         cu_rv["type_id"].as_u64(),
@@ -5002,14 +5098,14 @@ fn test_generic_constraints_test_via_ct_print_full() {
     assert_eq!(cu_fields[0]["i"].as_i64(), Some(42));
 
     // store_value<bool>(true) — arg is Bool true.
-    let sv_bool_args = entries[1]["args"]
+    let sv_bool_args = entries[2]["args"]
         .as_array()
         .expect("store_value<bool> args");
     assert_eq!(sv_bool_args.len(), 1);
     assert_eq!(sv_bool_args[0]["value"]["kind"].as_str(), Some("Bool"));
     assert_eq!(sv_bool_args[0]["value"]["b"].as_bool(), Some(true));
-    assert_eq!(exits[1].0, "store_value");
-    let cb_rv = &exits[1].1;
+    assert_eq!(exits[2].0, "store_value");
+    let cb_rv = &exits[2].1;
     assert_eq!(cb_rv["kind"].as_str(), Some("Struct"));
     assert_eq!(
         cb_rv["type_id"].as_u64(),
@@ -5025,15 +5121,11 @@ fn test_generic_constraints_test_via_ct_print_full() {
     assert_eq!(cb_fields[0]["text"].as_str(), Some("true"));
 
     // discard<u64>(7) — arg is Int 7, returns Void.
-    let dis_args = entries[2]["args"].as_array().expect("discard args");
+    let dis_args = entries[3]["args"].as_array().expect("discard args");
     assert_eq!(dis_args.len(), 1);
     assert_eq!(dis_args[0]["value"]["kind"].as_str(), Some("Int"));
     assert_eq!(dis_args[0]["value"]["i"].as_i64(), Some(7));
-    assert_eq!(exits[2].0, "discard");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
-
-    // Outer test frame returns Void.
-    assert_eq!(exits[3].0, "test_generic_constraints");
+    assert_eq!(exits[3].0, "discard");
     assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
 
     // ----- Step vars: the typed Container<T> shapes surface --------------
@@ -5153,13 +5245,13 @@ fn test_public_package_test_via_ct_print_full() {
     assert_eq!(events.len(), 9);
     assert_step_indices_monotonic(&doc);
 
-    // CloseFrame ordering — innermost first.
+    // Entry order: outer test entry first.
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
-            "pkg_lib::helper".to_string(),
-            "call_helper".to_string(),
             "test_public_package".to_string(),
+            "call_helper".to_string(),
+            "pkg_lib::helper".to_string(),
         ],
     );
 
@@ -5174,12 +5266,13 @@ fn test_public_package_test_via_ct_print_full() {
     assert_eq!(io_events[1]["text"].as_str(), Some("public(package)"));
 
     // ----- Call_entry / call_exit pair across the package boundary -------
+    // entries[0]=test_public_package, [1]=call_helper, [2]=pkg_lib::helper.
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     assert_eq!(entries.len(), 3);
-    let helper_entry = entries[0];
+    let helper_entry = entries[2];
     assert_eq!(
         helper_entry["function"].as_str(),
         Some("pkg_lib::helper"),
@@ -5190,26 +5283,26 @@ fn test_public_package_test_via_ct_print_full() {
 
     // The intermediate `call_helper` and outer `test_public_package`
     // also have zero positional args.
+    assert_eq!(entries[0]["args"].as_array().map(|a| a.len()), Some(0));
     assert_eq!(entries[1]["args"].as_array().map(|a| a.len()), Some(0));
-    assert_eq!(entries[2]["args"].as_array().map(|a| a.len()), Some(0));
 
-    // ----- Return values across the package boundary --------------------
+    // ----- Return values across the package boundary (entry order) -------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 3);
 
-    // pkg_lib::helper returns the canonical 7.
-    assert_eq!(exits[0].0, "pkg_lib::helper");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[0].1["i"].as_i64(), Some(7));
+    // The outer test frame returns Void.
+    assert_eq!(exits[0].0, "test_public_package");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
     // call_helper forwards the value across the package boundary.
     assert_eq!(exits[1].0, "call_helper");
     assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
     assert_eq!(exits[1].1["i"].as_i64(), Some(7));
 
-    // The outer test frame returns Void.
-    assert_eq!(exits[2].0, "test_public_package");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+    // pkg_lib::helper returns the canonical 7.
+    assert_eq!(exits[2].0, "pkg_lib::helper");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(7));
 
     // ----- The `7` surfaces in the merged step's vars -------------------
     let ints = unique_int_pairs(&doc);
@@ -5278,10 +5371,10 @@ fn test_module_init_test_via_ct_print_full() {
     assert_eq!(events.len(), 6);
     assert_step_indices_monotonic(&doc);
 
-    // CloseFrame ordering — innermost first.
+    // Entry order: outer init first, then new (called by init).
     assert_eq!(
         observed_call_sequence(&doc),
-        vec!["new".to_string(), "init".to_string()],
+        vec!["init".to_string(), "new".to_string()],
     );
 
     // ----- The MoveCallVisibility io_event flags the init entry ---------
@@ -5296,13 +5389,13 @@ fn test_module_init_test_via_ct_print_full() {
     );
 
     // ----- init(ctx: &mut TxContext) — the &mut TxContext arg shape -----
+    // entries[0]=init, entries[1]=new (entry order).
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     assert_eq!(entries.len(), 2);
-    // CloseFrame ordering: entries[0]=new, entries[1]=init.
-    let init_entry = entries[1];
+    let init_entry = entries[0];
     assert_eq!(init_entry["function"].as_str(), Some("init"));
     let init_args = init_entry["args"].as_array().expect("init args");
     assert_eq!(init_args.len(), 1, "init takes a single &mut TxContext arg");
@@ -5328,19 +5421,23 @@ fn test_module_init_test_via_ct_print_full() {
     assert_eq!(ctx_fields[0]["text"].as_str(), Some("0xCAFE"));
 
     // The nested object::new(ctx) takes the same &mut TxContext.
-    let new_args = entries[0]["args"].as_array().expect("new args");
+    let new_args = entries[1]["args"].as_array().expect("new args");
     assert_eq!(new_args.len(), 1);
     assert_eq!(new_args[0]["value"]["kind"].as_str(), Some("Reference"));
     assert_eq!(new_args[0]["value"]["mutable"].as_bool(), Some(true));
 
-    // ----- Return values --------------------------------------------------
+    // ----- Return values (entry order) -----------------------------------
     let exits = observed_exit_sequence(&doc);
     assert_eq!(exits.len(), 2);
 
+    // init returns Void — Sui's publish-time entry has no return value.
+    assert_eq!(exits[0].0, "init");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+
     // object::new returns a fresh UID as a typed Struct whose inner
     // ID { bytes: address } preserves the byte-vector identity.
-    assert_eq!(exits[0].0, "new");
-    let uid_rv = &exits[0].1;
+    assert_eq!(exits[1].0, "new");
+    let uid_rv = &exits[1].1;
     assert_eq!(uid_rv["kind"].as_str(), Some("Struct"));
     let uid_fields = uid_rv["field_values"].as_array().expect("UID.field_values");
     assert_eq!(uid_fields.len(), 1, "UID {{ id: ID }}");
@@ -5351,8 +5448,4 @@ fn test_module_init_test_via_ct_print_full() {
     assert_eq!(id_fields.len(), 1, "ID {{ bytes: address }}");
     assert_eq!(id_fields[0]["kind"].as_str(), Some("String"));
     assert_eq!(id_fields[0]["text"].as_str(), Some("0xFEED"));
-
-    // init returns Void — Sui's publish-time entry has no return value.
-    assert_eq!(exits[1].0, "init");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
 }
