@@ -4109,10 +4109,7 @@ fn test_friend_visibility_test_via_ct_print_full() {
     let ints = unique_int_pairs(&doc);
     assert_eq!(
         ints,
-        vec![
-            ("stack_top".to_string(), 42),
-            ("local_0".to_string(), 42),
-        ],
+        vec![("stack_top".to_string(), 42), ("local_0".to_string(), 42),],
     );
 }
 
@@ -4231,4 +4228,862 @@ fn test_native_fun_test_via_ct_print_full() {
     // appears — pin the full set to confirm both shape and absence.
     let ints = unique_int_pairs(&doc);
     assert_eq!(ints, vec![("local_1".to_string(), 5)]);
+}
+
+// ===========================================================================
+// test_dynamic_field — Sui dynamic-field add/borrow/remove
+// ===========================================================================
+
+/// Records `flow_test::test_dynamic_field` (synthetic NDJSON).
+///
+/// Pins the recorder's surface for the canonical Sui dynamic-field
+/// trio: `dynamic_field::add(&mut parent.id, b"key1", 42u64)`,
+/// `dynamic_field::borrow<vector<u8>, u64>(&parent.id, b"key1")`, and
+/// `dynamic_field::remove(...)`.  Each call surfaces as a balanced
+/// Call/Return pair; the byte-vector key surfaces as a typed
+/// `ValueRecord::Sequence` whose elements are the raw `u8`-tagged
+/// `Int` bytes; and the dynamic-field value surfaces with its
+/// declared runtime type — a typed `Int(42)` on `remove`'s return and
+/// inside `borrow`'s `Reference` pointee.
+#[test]
+fn test_dynamic_field_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_dynamic_field_test_via_ct_print_full",
+        "test_dynamic_field",
+        flow_test_named_source("dynamic_field_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "dynamic_field_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec!["test_dynamic_field", "add", "borrow", "remove"],
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(4));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 4 call_entry + 4 call_exit = 9 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 9);
+    assert_step_indices_monotonic(&doc);
+
+    // CloseFrame ordering is LIFO — innermost first.
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "add".to_string(),
+            "borrow".to_string(),
+            "remove".to_string(),
+            "test_dynamic_field".to_string(),
+        ],
+    );
+
+    // ----- Each dynamic_field::* call's args -----------------------------
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+
+    // The canonical b"key1" byte-vector shape.  Pre-encoded as a typed
+    // `Sequence` whose four `u8`-tagged `Int` children spell "key1".
+    let expected_key: Vec<i64> = vec![107, 101, 121, 49];
+
+    // ----- add(&mut parent.id, key, 42u64) -------------------------------
+    let add_args = entries[0]["args"].as_array().expect("add args");
+    assert_eq!(add_args.len(), 3, "dynamic_field::add takes 3 args");
+    // arg0: &mut parent.id — a Reference whose pointee is the UID struct.
+    let add_arg0 = &add_args[0]["value"];
+    assert_eq!(add_arg0["kind"].as_str(), Some("Reference"));
+    assert_eq!(add_arg0["mutable"].as_bool(), Some(true));
+    let uid_pointee = &add_arg0["dereferenced"];
+    assert_eq!(uid_pointee["kind"].as_str(), Some("Struct"));
+    let uid_fields = uid_pointee["field_values"]
+        .as_array()
+        .expect("UID.field_values");
+    assert_eq!(uid_fields.len(), 1, "UID {{ id: ID }}");
+    assert_eq!(uid_fields[0]["kind"].as_str(), Some("Struct"));
+    let id_fields = uid_fields[0]["field_values"]
+        .as_array()
+        .expect("ID.field_values");
+    assert_eq!(id_fields.len(), 1, "ID {{ bytes: address }}");
+    assert_eq!(id_fields[0]["kind"].as_str(), Some("String"));
+    assert_eq!(id_fields[0]["text"].as_str(), Some("0xC0FFEE"));
+    let uid_type_id = uid_pointee["type_id"].as_u64().expect("UID type_id");
+
+    // arg1: b"key1" — typed Sequence<u8>.
+    let add_arg1 = &add_args[1]["value"];
+    assert_eq!(add_arg1["kind"].as_str(), Some("Sequence"));
+    assert_eq!(add_arg1["is_slice"].as_bool(), Some(false));
+    let key_elements = add_arg1["elements"].as_array().expect("Sequence.elements");
+    let key_bytes: Vec<i64> = key_elements
+        .iter()
+        .map(|e| {
+            assert_eq!(e["kind"].as_str(), Some("Int"));
+            e["i"].as_i64().expect("Int.i")
+        })
+        .collect();
+    assert_eq!(key_bytes, expected_key);
+
+    // arg2: 42u64 — typed Int.
+    let add_arg2 = &add_args[2]["value"];
+    assert_eq!(add_arg2["kind"].as_str(), Some("Int"));
+    assert_eq!(add_arg2["i"].as_i64(), Some(42));
+
+    // ----- borrow(&parent.id, key) ---------------------------------------
+    let borrow_args = entries[1]["args"].as_array().expect("borrow args");
+    assert_eq!(borrow_args.len(), 2, "dynamic_field::borrow takes 2 args");
+    let borrow_arg0 = &borrow_args[0]["value"];
+    assert_eq!(borrow_arg0["kind"].as_str(), Some("Reference"));
+    assert_eq!(
+        borrow_arg0["mutable"].as_bool(),
+        Some(false),
+        "borrow takes &UID (immutable)",
+    );
+    assert_eq!(
+        borrow_arg0["dereferenced"]["type_id"].as_u64(),
+        Some(uid_type_id),
+        "the borrowed UID pointee must share the parent UID's registered type id",
+    );
+    let borrow_arg1 = &borrow_args[1]["value"];
+    assert_eq!(borrow_arg1["kind"].as_str(), Some("Sequence"));
+    let borrow_key_bytes: Vec<i64> = borrow_arg1["elements"]
+        .as_array()
+        .expect("Sequence.elements")
+        .iter()
+        .map(|e| {
+            assert_eq!(e["kind"].as_str(), Some("Int"));
+            e["i"].as_i64().expect("Int.i")
+        })
+        .collect();
+    assert_eq!(borrow_key_bytes, expected_key);
+
+    // ----- remove(&mut parent.id, key) -----------------------------------
+    let remove_args = entries[2]["args"].as_array().expect("remove args");
+    assert_eq!(remove_args.len(), 2, "dynamic_field::remove takes 2 args");
+    let remove_arg0 = &remove_args[0]["value"];
+    assert_eq!(remove_arg0["kind"].as_str(), Some("Reference"));
+    assert_eq!(remove_arg0["mutable"].as_bool(), Some(true));
+    assert_eq!(
+        remove_arg0["dereferenced"]["type_id"].as_u64(),
+        Some(uid_type_id),
+        "the &mut UID arg to remove must share the parent's UID type id",
+    );
+
+    // ----- Return values --------------------------------------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 4);
+
+    // dynamic_field::add returns Void.
+    assert_eq!(exits[0].0, "add");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+
+    // dynamic_field::borrow returns &u64 (Reference whose pointee is Int 42).
+    assert_eq!(exits[1].0, "borrow");
+    let borrow_rv = &exits[1].1;
+    assert_eq!(borrow_rv["kind"].as_str(), Some("Reference"));
+    assert_eq!(borrow_rv["mutable"].as_bool(), Some(false));
+    let borrow_pointee = &borrow_rv["dereferenced"];
+    assert_eq!(borrow_pointee["kind"].as_str(), Some("Int"));
+    assert_eq!(borrow_pointee["i"].as_i64(), Some(42));
+
+    // dynamic_field::remove returns the dynamic-field value as a typed Int.
+    assert_eq!(exits[2].0, "remove");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(42));
+
+    assert_eq!(exits[3].0, "test_dynamic_field");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
+
+    // ----- The two dereferenced 42 values surface in the merged step ----
+    // The Effect::Write for the borrow-deref result lands as `local_1`,
+    // and the `remove` return value lands as `local_2` — both as typed
+    // Int(42).  Pin the full set so any drift in step-vars merging
+    // surfaces immediately.
+    let ints = unique_int_pairs(&doc);
+    assert_eq!(
+        ints,
+        vec![
+            ("arg2".to_string(), 42),
+            ("local_1".to_string(), 42),
+            ("local_2".to_string(), 42),
+        ],
+    );
+}
+
+// ===========================================================================
+// test_table — Aptos `0x1::table::Table` operations
+// ===========================================================================
+
+/// Records `flow_test::test_table` (synthetic NDJSON).
+///
+/// Pins the recorder's surface for the canonical Aptos table trio:
+/// `table::new()`, `table::add(&mut t, k, v)`, `table::borrow(&t, k)`,
+/// `table::contains(&t, k)`.  Each call surfaces as a balanced
+/// Call/Return pair; the `Table<address,u64>` struct surfaces as a
+/// typed `ValueRecord::Struct` with its single `handle: address` field
+/// captured as a `ValueRecord::String`; and the contained values
+/// surface with their declared runtime type — `Int` for the `u64`
+/// payload, `Bool` for the membership predicate.  The recorder also
+/// registers `Table<address,u64>` as a parameterised struct key in the
+/// type table so the type-args distinguish `Table<address,u64>` from
+/// any other `Table<K,V>` instantiation.
+#[test]
+fn test_table_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_table_test_via_ct_print_full",
+        "test_table",
+        flow_test_named_source("table_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "table_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec!["test_table", "new", "add", "borrow", "contains"],
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(5));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 5 call_entry + 5 call_exit = 11 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 11);
+    assert_step_indices_monotonic(&doc);
+
+    // CloseFrame ordering is LIFO — innermost first.
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "new".to_string(),
+            "add".to_string(),
+            "borrow".to_string(),
+            "contains".to_string(),
+            "test_table".to_string(),
+        ],
+    );
+
+    // ----- Table<address,u64> registers as a parameterised struct key ---
+    let types: Vec<&str> = doc["types"]
+        .as_array()
+        .expect("types array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    types
+        .iter()
+        .position(|t| *t == "Table<address,u64>")
+        .unwrap_or_else(|| {
+            panic!("expected Table<address,u64> in the type table; got {types:?}")
+        });
+
+    // ----- Each table::* call's args -------------------------------------
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+
+    // ----- table::add(&mut entries, addr1, 100u64) -----------------------
+    let add_args = entries[1]["args"].as_array().expect("add args");
+    assert_eq!(add_args.len(), 3, "table::add takes 3 args");
+    let add_arg0 = &add_args[0]["value"];
+    assert_eq!(add_arg0["kind"].as_str(), Some("Reference"));
+    assert_eq!(add_arg0["mutable"].as_bool(), Some(true));
+    let table_pointee = &add_arg0["dereferenced"];
+    assert_eq!(table_pointee["kind"].as_str(), Some("Struct"));
+    let table_fields = table_pointee["field_values"]
+        .as_array()
+        .expect("Table.field_values");
+    assert_eq!(table_fields.len(), 1, "Table {{ handle: address }}");
+    assert_eq!(table_fields[0]["kind"].as_str(), Some("String"));
+    assert_eq!(table_fields[0]["text"].as_str(), Some("0xCAFE"));
+    let table_type_id = table_pointee["type_id"]
+        .as_u64()
+        .expect("Table<address,u64> type_id");
+    assert_eq!(add_args[1]["value"]["kind"].as_str(), Some("String"));
+    assert_eq!(add_args[1]["value"]["text"].as_str(), Some("0xAB"));
+    assert_eq!(add_args[2]["value"]["kind"].as_str(), Some("Int"));
+    assert_eq!(add_args[2]["value"]["i"].as_i64(), Some(100));
+
+    // ----- table::borrow(&entries, addr1) --------------------------------
+    let borrow_args = entries[2]["args"].as_array().expect("borrow args");
+    assert_eq!(borrow_args.len(), 2);
+    assert_eq!(borrow_args[0]["value"]["kind"].as_str(), Some("Reference"));
+    assert_eq!(borrow_args[0]["value"]["mutable"].as_bool(), Some(false));
+    assert_eq!(
+        borrow_args[0]["value"]["dereferenced"]["type_id"].as_u64(),
+        Some(table_type_id),
+        "the &Table arg to borrow must share the Table<address,u64> type id",
+    );
+    assert_eq!(borrow_args[1]["value"]["text"].as_str(), Some("0xAB"));
+
+    // ----- table::contains(&entries, addr1) ------------------------------
+    let contains_args = entries[3]["args"].as_array().expect("contains args");
+    assert_eq!(contains_args.len(), 2);
+    assert_eq!(
+        contains_args[0]["value"]["kind"].as_str(),
+        Some("Reference")
+    );
+    assert_eq!(contains_args[0]["value"]["mutable"].as_bool(), Some(false));
+    assert_eq!(
+        contains_args[0]["value"]["dereferenced"]["type_id"].as_u64(),
+        Some(table_type_id),
+        "the &Table arg to contains must share the Table<address,u64> type id",
+    );
+
+    // ----- Return values --------------------------------------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 5);
+
+    // table::new returns the freshly-minted Table<address,u64> struct.
+    assert_eq!(exits[0].0, "new");
+    let new_rv = &exits[0].1;
+    assert_eq!(new_rv["kind"].as_str(), Some("Struct"));
+    assert_eq!(
+        new_rv["type_id"].as_u64(),
+        Some(table_type_id),
+        "table::new's return value must register as Table<address,u64>",
+    );
+    let new_fields = new_rv["field_values"]
+        .as_array()
+        .expect("Table.field_values");
+    assert_eq!(new_fields.len(), 1);
+    assert_eq!(new_fields[0]["kind"].as_str(), Some("String"));
+    assert_eq!(new_fields[0]["text"].as_str(), Some("0xCAFE"));
+
+    // table::add returns Void.
+    assert_eq!(exits[1].0, "add");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+
+    // table::borrow returns &u64 (Reference whose pointee is Int 100).
+    assert_eq!(exits[2].0, "borrow");
+    let borrow_rv = &exits[2].1;
+    assert_eq!(borrow_rv["kind"].as_str(), Some("Reference"));
+    assert_eq!(borrow_rv["mutable"].as_bool(), Some(false));
+    assert_eq!(borrow_rv["dereferenced"]["kind"].as_str(), Some("Int"));
+    assert_eq!(borrow_rv["dereferenced"]["i"].as_i64(), Some(100));
+
+    // table::contains returns the membership verdict as a typed Bool.
+    assert_eq!(exits[3].0, "contains");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[3].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[3].1["text"].as_str(), Some("true"));
+
+    assert_eq!(exits[4].0, "test_table");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Void"));
+
+    // ----- Step vars: the canonical Int / Bool surfaces ------------------
+    let ints = unique_int_pairs(&doc);
+    assert_eq!(
+        ints,
+        vec![("arg2".to_string(), 100), ("local_2".to_string(), 100),],
+    );
+    let bools = unique_bool_pairs(&doc);
+    assert_eq!(bools, vec![("local_3".to_string(), true)]);
+}
+
+// ===========================================================================
+// test_address_literals — @0x1cafe / @flow_test / @std (Move address literals)
+// ===========================================================================
+
+/// Records `flow_test::test_address_literals` (synthetic NDJSON).
+///
+/// Pins the recorder's surface for Move address literals (`@0x...`,
+/// `@named_address`, `@std`).  Each address is materialised in a
+/// local, then round-tripped through `id_addr(a: address): address` so
+/// the bytecode compiler cannot constant-fold it away.  Each address
+/// surfaces as a typed `ValueRecord::String { type_id: address_id }`
+/// carrying the exact 64-hex-digit zero-padded 32-byte address text —
+/// the same convention every other address-bearing fixture uses
+/// (`signer_test`, `tx_context_test`, `object_lifecycle_test`,
+/// `table_test`).  The address registry's TypeId is asserted to be
+/// the canonical `address` slot in the type table.
+#[test]
+fn test_address_literals_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_address_literals_test_via_ct_print_full",
+        "test_address_literals",
+        flow_test_named_source("address_literals_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "address_literals_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(functions, vec!["test_address_literals", "id_addr"]);
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(4));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 4 call_entry + 4 call_exit = 9 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 9);
+    assert_step_indices_monotonic(&doc);
+
+    // CloseFrame ordering is LIFO — innermost first.
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "id_addr".to_string(),
+            "id_addr".to_string(),
+            "id_addr".to_string(),
+            "test_address_literals".to_string(),
+        ],
+    );
+
+    // ----- The canonical 32-byte address payloads ------------------------
+    let addr_a = "0x000000000000000000000000000000000000000000000000000000000001cafe";
+    let addr_b = "0x00000000000000000000000000000000000000000000000000000000000abcde";
+    let addr_c = "0x0000000000000000000000000000000000000000000000000000000000000001";
+
+    // ----- The address `TypeId` is the canonical `address` slot ---------
+    let types: Vec<&str> = doc["types"]
+        .as_array()
+        .expect("types array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    let address_type_id = types
+        .iter()
+        .position(|t| *t == "address")
+        .expect("`address` slot in types table") as u64;
+
+    // ----- id_addr(a) / id_addr(b) / id_addr(c) call args + returns -----
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 4);
+
+    for (idx, expected) in [(0usize, addr_a), (1, addr_b), (2, addr_c)] {
+        let args = entries[idx]["args"].as_array().expect("args array");
+        assert_eq!(args.len(), 1, "id_addr takes a single address arg");
+        let arg0 = &args[0]["value"];
+        assert_eq!(arg0["kind"].as_str(), Some("String"));
+        assert_eq!(
+            arg0["type_id"].as_u64(),
+            Some(address_type_id),
+            "address arg must register against the canonical `address` TypeId",
+        );
+        assert_eq!(arg0["text"].as_str(), Some(expected));
+        // Length pin: the 32-byte address text is exactly 66 chars
+        // (`0x` + 64 hex digits) so the recorder is shown to capture
+        // the FULL 32-byte payload, not a trimmed short form.
+        assert_eq!(arg0["text"].as_str().unwrap().len(), 66);
+
+        assert_eq!(exits[idx].0, "id_addr");
+        let rv = &exits[idx].1;
+        assert_eq!(rv["kind"].as_str(), Some("String"));
+        assert_eq!(rv["type_id"].as_u64(), Some(address_type_id));
+        assert_eq!(rv["text"].as_str(), Some(expected));
+        assert_eq!(rv["text"].as_str().unwrap().len(), 66);
+    }
+
+    assert_eq!(exits[3].0, "test_address_literals");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
+
+    // ----- Each address surfaces in the merged step's vars ---------------
+    // The Effect::Write events for local_0 / local_1 / local_2 (the three
+    // address literals) and local_3 / local_4 / local_5 (the three
+    // round-tripped values), plus the `arg0` slot reused across each
+    // id_addr call, all surface in the merged step.  Pin the full set so
+    // any drift in step-vars merging surfaces immediately.
+    let pairs = unique_raw_pairs(&doc);
+    assert_eq!(
+        pairs,
+        vec![
+            // The three address literals materialise first (Effect::Write
+            // for local_0 / local_1 / local_2 before any id_addr call).
+            ("local_0".to_string(), addr_a.to_string()),
+            ("local_1".to_string(), addr_b.to_string()),
+            ("local_2".to_string(), addr_c.to_string()),
+            // Then each id_addr(arg0) call's arg + return-binding.
+            ("arg0".to_string(), addr_a.to_string()),
+            ("local_3".to_string(), addr_a.to_string()),
+            ("arg0".to_string(), addr_b.to_string()),
+            ("local_4".to_string(), addr_b.to_string()),
+            ("arg0".to_string(), addr_c.to_string()),
+            ("local_5".to_string(), addr_c.to_string()),
+        ],
+    );
+}
+
+// ===========================================================================
+// test_multi_test_module — three #[test] fns share one module / one source
+// ===========================================================================
+
+/// Records all THREE `#[test]` functions of `multi_test_module_test`
+/// (each backed by its own NDJSON trace fixture, mirroring the
+/// `sui move test --trace` per-test-function output convention).
+///
+/// Pins the per-test-isolation invariant: each trace lands on a
+/// *separate* converter invocation that registers ONLY the functions
+/// reached by that test body (no cross-contamination from peer
+/// `#[test]`s in the same source file).  Each test body surfaces as
+/// the toplevel `Function` entry of its own trace, and each call
+/// graph is balanced (`call_entry` count equals `call_exit` count).
+#[test]
+fn test_multi_test_module_test_via_ct_print_full() {
+    // ----- test_arithmetic: pure helper ----------------------------------
+    let Some((doc_a, _)) = record_and_dump_full_with_source(
+        "test_multi_test_module_test_via_ct_print_full[arithmetic]",
+        "test_arithmetic",
+        flow_test_named_source("multi_test_module_test"),
+    ) else {
+        return;
+    };
+    assert_metadata_program_is(&doc_a, "multi_test_module_test");
+    let fns_a: Vec<&str> = doc_a["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        fns_a,
+        vec!["test_arithmetic", "add"],
+        "arithmetic trace must register ONLY its own test body + helper",
+    );
+    let counts_a = &doc_a["counts"];
+    assert_eq!(counts_a["calls"].as_u64(), Some(2));
+    assert_eq!(counts_a["steps"].as_u64(), Some(1));
+    assert_eq!(counts_a["io_events"].as_u64(), Some(0));
+    let events_a = doc_a["events"].as_array().expect("events array");
+    assert_eq!(events_a.len(), 5, "1 step + 2 call_entry + 2 call_exit");
+    assert_eq!(
+        observed_call_sequence(&doc_a),
+        vec!["add".to_string(), "test_arithmetic".to_string()],
+    );
+    let exits_a = observed_exit_sequence(&doc_a);
+    assert_eq!(exits_a.len(), 2);
+    assert_eq!(exits_a[0].0, "add");
+    assert_eq!(exits_a[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits_a[0].1["i"].as_i64(), Some(5));
+    assert_eq!(exits_a[1].0, "test_arithmetic");
+    assert_eq!(exits_a[1].1["kind"].as_str(), Some("Void"));
+
+    // ----- test_resource_lifecycle: struct construction + destructure ----
+    let Some((doc_b, _)) = record_and_dump_full_with_source(
+        "test_multi_test_module_test_via_ct_print_full[resource]",
+        "test_resource_lifecycle",
+        flow_test_named_source("multi_test_module_test"),
+    ) else {
+        return;
+    };
+    assert_metadata_program_is(&doc_b, "multi_test_module_test");
+    let fns_b: Vec<&str> = doc_b["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        fns_b,
+        vec!["test_resource_lifecycle", "make_counter"],
+        "resource trace must register ONLY its own test body + helper",
+    );
+    let counts_b = &doc_b["counts"];
+    assert_eq!(counts_b["calls"].as_u64(), Some(2));
+    assert_eq!(counts_b["steps"].as_u64(), Some(1));
+    assert_eq!(counts_b["io_events"].as_u64(), Some(0));
+    let events_b = doc_b["events"].as_array().expect("events array");
+    assert_eq!(events_b.len(), 5);
+    assert_eq!(
+        observed_call_sequence(&doc_b),
+        vec![
+            "make_counter".to_string(),
+            "test_resource_lifecycle".to_string(),
+        ],
+    );
+    let exits_b = observed_exit_sequence(&doc_b);
+    assert_eq!(exits_b.len(), 2);
+    assert_eq!(exits_b[0].0, "make_counter");
+    let counter_rv = &exits_b[0].1;
+    assert_eq!(counter_rv["kind"].as_str(), Some("Struct"));
+    let counter_fields = counter_rv["field_values"]
+        .as_array()
+        .expect("Counter.field_values");
+    assert_eq!(counter_fields.len(), 1);
+    assert_eq!(counter_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(counter_fields[0]["i"].as_i64(), Some(7));
+    assert_eq!(exits_b[1].0, "test_resource_lifecycle");
+    assert_eq!(exits_b[1].1["kind"].as_str(), Some("Void"));
+
+    // ----- test_event_emit: sui::event::emit Sui native ------------------
+    let Some((doc_c, _)) = record_and_dump_full_with_source(
+        "test_multi_test_module_test_via_ct_print_full[event]",
+        "test_event_emit_multi",
+        flow_test_named_source("multi_test_module_test"),
+    ) else {
+        return;
+    };
+    assert_metadata_program_is(&doc_c, "multi_test_module_test");
+    let fns_c: Vec<&str> = doc_c["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        fns_c,
+        vec!["test_event_emit", "emit"],
+        "event trace must register ONLY its own test body + emit native",
+    );
+    let counts_c = &doc_c["counts"];
+    assert_eq!(counts_c["calls"].as_u64(), Some(2));
+    assert_eq!(counts_c["steps"].as_u64(), Some(1));
+    assert_eq!(
+        counts_c["io_events"].as_u64(),
+        Some(1),
+        "sui::event::emit must surface as exactly one MoveEvent io_event",
+    );
+    let events_c = doc_c["events"].as_array().expect("events array");
+    // 1 step + 2 call_entry + 1 io + 2 call_exit = 6 events.
+    assert_eq!(events_c.len(), 6);
+    assert_eq!(
+        observed_call_sequence(&doc_c),
+        vec!["emit".to_string(), "test_event_emit".to_string()],
+    );
+    let exits_c = observed_exit_sequence(&doc_c);
+    assert_eq!(exits_c.len(), 2);
+    assert_eq!(exits_c[0].0, "emit");
+    assert_eq!(exits_c[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits_c[1].0, "test_event_emit");
+    assert_eq!(exits_c[1].1["kind"].as_str(), Some("Void"));
+
+    // ----- Cross-trace isolation: each fn-table is disjoint --------------
+    // The strict `assert_eq!` pins above already prove each trace's
+    // function table contains exactly the test body + its helper, so
+    // by construction no foreign test body can leak in.  This block is
+    // intentionally a no-op verifier — it documents the isolation
+    // contract without re-asserting via membership checks.
+}
+
+// ===========================================================================
+// test_generic_constraints — multi-ability generic instantiations
+// ===========================================================================
+
+/// Records `flow_test::test_generic_constraints` (synthetic NDJSON).
+///
+/// Pins the recorder's surface for a multi-ability generic
+/// (`store_value<T: copy + drop + store>`) instantiated with two
+/// distinct primitives (`u64`, `bool`), plus a weaker-constraint
+/// peer (`discard<T: drop>`).  Each `Container<T>` instantiation must
+/// register a *distinct* `TypeId` keyed on `Container<u64>` /
+/// `Container<bool>` in the type table (per
+/// `TypeIds::ensure_parameterised_struct`); the two call_exit
+/// records for the same generic `store_value` must surface with
+/// these distinct return-type ids so downstream consumers can
+/// distinguish the two instantiations even though the function
+/// table lists `store_value` exactly once (the recorder's
+/// generic-aware function-name policy intentionally keeps the bare
+/// name and pushes the type identity into the value records).
+#[test]
+fn test_generic_constraints_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_generic_constraints_test_via_ct_print_full",
+        "test_generic_constraints",
+        flow_test_named_source("generic_constraints_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "generic_constraints_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec!["test_generic_constraints", "store_value", "discard"],
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(4));
+    assert_eq!(counts["io_events"].as_u64(), Some(0));
+
+    // 1 step + 4 call_entry + 4 call_exit = 9 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 9);
+    assert_step_indices_monotonic(&doc);
+
+    // CloseFrame ordering — innermost first.
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "store_value".to_string(),
+            "store_value".to_string(),
+            "discard".to_string(),
+            "test_generic_constraints".to_string(),
+        ],
+    );
+
+    // ----- Both Container<T> instantiations register as distinct types --
+    let types: Vec<&str> = doc["types"]
+        .as_array()
+        .expect("types array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    let cu_type_id = types
+        .iter()
+        .position(|t| *t == "Container<u64>")
+        .expect("Container<u64> slot in types table") as u64;
+    let cb_type_id = types
+        .iter()
+        .position(|t| *t == "Container<bool>")
+        .expect("Container<bool> slot in types table") as u64;
+    assert_ne!(
+        cu_type_id, cb_type_id,
+        "Container<u64> and Container<bool> must register as distinct \
+         TypeKind::Struct ids — multi-ability generic instantiations of \
+         the same struct must not collapse into a single type id",
+    );
+
+    // ----- Each store_value<T> call: arg + return-type identity ---------
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 4);
+
+    // store_value<u64>(42) — arg is Int 42.
+    let sv_u64_args = entries[0]["args"]
+        .as_array()
+        .expect("store_value<u64> args");
+    assert_eq!(sv_u64_args.len(), 1);
+    assert_eq!(sv_u64_args[0]["value"]["kind"].as_str(), Some("Int"));
+    assert_eq!(sv_u64_args[0]["value"]["i"].as_i64(), Some(42));
+    assert_eq!(exits[0].0, "store_value");
+    let cu_rv = &exits[0].1;
+    assert_eq!(cu_rv["kind"].as_str(), Some("Struct"));
+    assert_eq!(
+        cu_rv["type_id"].as_u64(),
+        Some(cu_type_id),
+        "store_value<u64>'s return must carry the Container<u64> type id",
+    );
+    let cu_fields = cu_rv["field_values"]
+        .as_array()
+        .expect("Container<u64>.field_values");
+    assert_eq!(cu_fields.len(), 1);
+    assert_eq!(cu_fields[0]["kind"].as_str(), Some("Int"));
+    assert_eq!(cu_fields[0]["i"].as_i64(), Some(42));
+
+    // store_value<bool>(true) — arg is Bool true.
+    let sv_bool_args = entries[1]["args"]
+        .as_array()
+        .expect("store_value<bool> args");
+    assert_eq!(sv_bool_args.len(), 1);
+    assert_eq!(sv_bool_args[0]["value"]["kind"].as_str(), Some("Bool"));
+    assert_eq!(sv_bool_args[0]["value"]["b"].as_bool(), Some(true));
+    assert_eq!(exits[1].0, "store_value");
+    let cb_rv = &exits[1].1;
+    assert_eq!(cb_rv["kind"].as_str(), Some("Struct"));
+    assert_eq!(
+        cb_rv["type_id"].as_u64(),
+        Some(cb_type_id),
+        "store_value<bool>'s return must carry the Container<bool> type id",
+    );
+    let cb_fields = cb_rv["field_values"]
+        .as_array()
+        .expect("Container<bool>.field_values");
+    assert_eq!(cb_fields.len(), 1);
+    assert_eq!(cb_fields[0]["kind"].as_str(), Some("Bool"));
+    assert_eq!(cb_fields[0]["b"].as_bool(), Some(true));
+    assert_eq!(cb_fields[0]["text"].as_str(), Some("true"));
+
+    // discard<u64>(7) — arg is Int 7, returns Void.
+    let dis_args = entries[2]["args"].as_array().expect("discard args");
+    assert_eq!(dis_args.len(), 1);
+    assert_eq!(dis_args[0]["value"]["kind"].as_str(), Some("Int"));
+    assert_eq!(dis_args[0]["value"]["i"].as_i64(), Some(7));
+    assert_eq!(exits[2].0, "discard");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+
+    // Outer test frame returns Void.
+    assert_eq!(exits[3].0, "test_generic_constraints");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
+
+    // ----- Step vars: the typed Container<T> shapes surface --------------
+    // Each Container<T> { inner: ... } binding (local_0 = Container<u64>{42},
+    // local_1 = Container<bool>{true}) materialises a typed Struct payload
+    // at the corresponding `type_id`.  The destructured inner values then
+    // surface as scalar Int / Bool locals.
+    let mut container_u64_count = 0usize;
+    let mut container_bool_count = 0usize;
+    for ev in events {
+        if ev["kind"] != "step" {
+            continue;
+        }
+        for v in ev["vars"].as_array().cloned().unwrap_or_default() {
+            let val = &v["value"];
+            if val["kind"] == "Struct" {
+                let tid = val["type_id"].as_u64();
+                if tid == Some(cu_type_id) {
+                    container_u64_count += 1;
+                }
+                if tid == Some(cb_type_id) {
+                    container_bool_count += 1;
+                }
+            }
+        }
+    }
+    assert_eq!(
+        container_u64_count, 1,
+        "expected exactly one Container<u64> Struct binding in step vars",
+    );
+    assert_eq!(
+        container_bool_count, 1,
+        "expected exactly one Container<bool> Struct binding in step vars",
+    );
+
+    // The destructured inner-Int (42) and inner-Bool (true) bindings.
+    let ints = unique_int_pairs(&doc);
+    assert_eq!(
+        ints,
+        vec![
+            ("arg0".to_string(), 42),
+            ("arg0".to_string(), 7),
+            ("local_2".to_string(), 42),
+        ],
+    );
+    let bools = unique_bool_pairs(&doc);
+    assert_eq!(
+        bools,
+        vec![("arg0".to_string(), true), ("local_3".to_string(), true),],
+    );
 }
