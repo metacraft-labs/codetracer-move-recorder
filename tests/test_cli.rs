@@ -171,11 +171,15 @@ fn record_creates_output_files() {
 ///    bindings `a = 10`, `b = 32`, `sum_val = a + b = 42`,
 ///    `doubled = sum_val * 2 = 84`, `final_result = doubled + a = 94`.
 ///    The Move recorder surfaces locals via `Effect::Read`/`Effect::Write`
-///    using slot indices (`local_0`, `local_1`, `local_2`, …) and pushes
-///    every intermediate stack value as `stack_top` / `popped`.  Each
-///    binding must surface in the trace as a step variable with a
-///    decoded `Int` ValueRecord whose `i` field matches the literal
-///    value from the source program.
+///    using source-level identifiers when the Sui Move compiler's
+///    debug-info JSON sidecar at
+///    `<package_root>/build/<PackageName>/debug_info/<Module>.json` is
+///    available (see `crate::move_debug_info`); for hand-rolled NDJSON
+///    fixtures without a `build/` directory the recorder falls back to
+///    synthetic `local_<N>` slot names.  Stack pushes/pops surface as
+///    `stack_top` / `popped` regardless.  Each binding must surface in
+///    the trace as a step variable with a decoded `Int` ValueRecord
+///    whose `i` field matches the literal value from the source program.
 ///
 /// Pre-2026-05-08 the recorder shipped a `--format json` mode and a
 /// trace.json file was written directly.  The convention now mandates
@@ -406,18 +410,24 @@ fn test_recorded_trace_via_ct_print_json() {
         })
         .collect();
 
-    // The Move VM stores let-bindings in numbered local slots (the
-    // recorder writes them as `local_0`, `local_1`, …).  For
-    // `test_computation`'s body the canonical assignments are:
+    // The Move VM stores let-bindings in numbered local slots; the
+    // recorder resolves those slots to source-level identifiers via
+    // the package's compiler-emitted debug info JSON sidecar at
+    // `<package_root>/build/<PackageName>/debug_info/<Module>.json`
+    // (see `crate::move_debug_info`).  For `test_computation`'s body
+    // the canonical assignments are (pinned by
+    // `function_map["10"].locals == ["a#1#0", "doubled#1#0",
+    // "sum_val#1#0"]` in `flow_test.json`, with the compiler-internal
+    // `#scope#unique` suffix stripped):
     //   slot 0 (`a`)        = 10
-    //   slot 2 (`sum_val`)  = 42
     //   slot 1 (`doubled`)  = 84
+    //   slot 2 (`sum_val`)  = 42
     // (`b = 32` is consumed before being stored back into a
     //  long-lived slot, so it surfaces only via the stack stream below.
     //  `final_result = 94` similarly is computed and immediately fed
     //  into the assert, so it surfaces via the stack stream rather than
     //  a dedicated local write.)
-    let expected_locals: &[(&str, i64)] = &[("local_0", 10), ("local_2", 42), ("local_1", 84)];
+    let expected_locals: &[(&str, i64)] = &[("a", 10), ("sum_val", 42), ("doubled", 84)];
     for (name, value) in expected_locals {
         assert!(
             observed_vars.iter().any(|(n, v)| n == name && v == value),

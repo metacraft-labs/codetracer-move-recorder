@@ -29,11 +29,20 @@
 //! deviation used to be documented inline as `RECORDER BUG: ...` and
 //! captured with a parallel pin.  The recorder + trace writer have
 //! since been brought into spec alignment for the call-entry ordering,
-//! the typed compound `ValueRecord` variants, and the BigInt-for-u128
-//! path; the few remaining limitations (synthetic `local_<N>` names,
-//! Sui VM constant-folding eliding dead let-bindings) are recorder /
-//! upstream-VM constraints that require a Move source parser or a
-//! re-recording with a different VM, both tracked separately.
+//! the typed compound `ValueRecord` variants, the BigInt-for-u128
+//! path, AND the source-level local naming (the recorder now reads
+//! the Sui Move compiler's debug-info JSON sidecar at
+//! `<package_root>/build/<PackageName>/debug_info/<Module>.json` and
+//! substitutes source-level identifiers for the historical synthetic
+//! `local_<N>` slot names — see `crate::move_debug_info`).  The one
+//! remaining limitation — Sui Move compiler constant-folding +
+//! dead-code-elimination dropping let-bindings whose values aren't
+//! observed downstream (see `test_abort_via_ct_print_full` and
+//! `test_boolean_and_integers_via_ct_print_full` for the per-fixture
+//! pins documenting which source bindings survive) — is an upstream
+//! compiler constraint, not a recorder bug.  Re-recording with a
+//! Sui CLI built with DCE / constant-folding disabled would unblock
+//! it; that CLI is not Nix-packaged in this workspace.
 //!
 //! Coverage matrix (universal checklist):
 //!
@@ -604,37 +613,40 @@ fn test_loops_via_ct_print_full() {
     let ints = unique_int_pairs(&doc);
     let int_set: std::collections::BTreeSet<(String, i64)> = ints.iter().cloned().collect();
 
-    // The Move converter assigns synthetic names `local_<idx>` to
-    // every function-frame local in slot order.  For test_loops the
-    // mapping is (pinned by inspection of `locals_types` in the raw
-    // NDJSON):
-    //   local_0 -> grade           (assigned last; reaches 1)
-    //   local_1 -> accumulator     (reaches 55)
-    //   local_2 -> counter         (reaches 10)
-    //   local_3 -> iterations      (reaches 7)
-    //   local_4 -> power           (reaches 128)
+    // The Move converter resolves each function-frame local slot to a
+    // source-level name by reading the package's compiler-emitted
+    // debug-info JSON sidecar at
+    //   <package_root>/build/<PackageName>/debug_info/<Module>.json
+    // (see `crate::move_debug_info`).  The sidecar's
+    // `function_map[binary_member_index].locals` array is in
+    // slot-allocation order and the loader strips the compiler-internal
+    // `#scope#unique` suffix (e.g. `accumulator#1#0` -> `accumulator`)
+    // so the resulting names match the source.  Compiler-generated
+    // temps that lack a source-level counterpart (the `let grade = if
+    // (...) { 1 } else { 0 }` rhs gets folded into a `%#1` temp because
+    // `grade` itself is dead beyond the immediately-following
+    // `assert!`) keep their `%#N` form so they're visually distinct
+    // from real user bindings.
     //
-    // Limitation: the Sui Move v3 trace format carries only `locals_types`
-    // (per-slot type tags) — no source-level identifiers — so resolving
-    // these `local_<N>` slots back to the source's `counter`/`accumulator`/
-    // `power`/`iterations`/`grade` names requires either a Move source
-    // parser AND a faithful reproduction of the compiler's slot-allocation
-    // algorithm (it does NOT match source declaration order — `grade`
-    // declared last lands in slot 0, `counter` declared first lands in
-    // slot 2), or a `.mvsm` debug-info reader.  Both are tracked as
-    // follow-ups; the synthetic names below are the current spec-pinned
-    // surface.
+    // Slot-by-slot mapping for test_loops (pinned by the Sui compiler
+    // emitted at `build/flow_test/debug_info/flow_test.json`,
+    // `function_map["13"].locals`):
+    //   slot 0 -> %#1            (the if-result feeding `grade`; folded)
+    //   slot 1 -> accumulator    (reaches 55)
+    //   slot 2 -> counter        (reaches 10)
+    //   slot 3 -> iterations     (reaches 7)
+    //   slot 4 -> power          (reaches 128)
     let must_observe: &[(&str, i64)] = &[
-        // grade = 1
-        ("local_0", 1),
+        // grade = 1, surfaced via the compiler-generated `%#1` temp
+        ("%#1", 1),
         // accumulator = 55
-        ("local_1", 55),
+        ("accumulator", 55),
         // counter = 10
-        ("local_2", 10),
+        ("counter", 10),
         // iterations = 7
-        ("local_3", 7),
+        ("iterations", 7),
         // power = 128
-        ("local_4", 128),
+        ("power", 128),
     ];
     for (n, v) in must_observe {
         assert!(
@@ -1492,22 +1504,42 @@ fn test_abort_via_ct_print_full() {
         int_set.contains(&0),
         "expected y=0 in vars; got {int_set:?}"
     );
-    // Limitation (upstream Sui VM, not the recorder): the source-level
-    // binding `let x: u64 = 10;` does NOT surface in the trace because
-    // the Sui Move compiler elides `x` (dead in the code path that
-    // executes — the abort branch never reads `x`, so no `LD_U64 10`
-    // instruction is emitted).  The recorder cannot synthesise values
-    // that aren't in the trace it consumes.  Recovering `x = 10` would
-    // require either re-recording with a non-constant-folding Sui CLI
-    // build or augmenting the recorder to parse the .move source for
-    // declared let-bindings — both are outside the recorder's current
-    // contract.  Pin the present-day shape here so any unexpected
-    // appearance of `10` is caught.
+    // Limitation (upstream Sui Move compiler, not the recorder): the
+    // source-level binding `let x: u64 = 10;` does NOT surface in the
+    // trace because the Sui Move compiler's dead-code-elimination pass
+    // drops `x` entirely — the abort branch never reads `x`, so no
+    // `LD_U64 10` instruction is emitted into the bytecode and `x`
+    // does not occupy any slot in `locals_types`.  Concrete evidence:
+    // the compiler-emitted debug info at
+    //   `test-programs/move/flow_test/build/flow_test/debug_info/flow_test.json`
+    // shows `function_map["19"].locals == [["y#1#0", ...]]` — only
+    // `y` survives, `x` is gone.
+    //
+    // The recorder cannot synthesise values that aren't in the trace
+    // it consumes.  Three theoretically possible fixes, all outside
+    // the recorder's current contract:
+    //   (a) Re-record with a sui CLI built from source with the
+    //       constant-folding / DCE passes disabled.  The Sui CLI is
+    //       not Nix-packaged in this workspace, so this is blocked
+    //       on workspace tooling.
+    //   (b) Augment the recorder with a Move source-AST parser
+    //       (e.g. via the upstream `move-compiler` crate) and a
+    //       trivial-constant evaluator that synthesises `let x: u64
+    //       = 10;` as a Write event the trace does not contain.
+    //       Adding `move-compiler` would import the entire Move VM
+    //       into this crate's dependency tree and is far out of scope.
+    //   (c) Document as an inherent VM limitation — which is what
+    //       this comment does.
+    //
+    // Pin the present-day shape here so any unexpected appearance of
+    // `10` is caught (would indicate the Sui compiler stopped DCE'ing
+    // dead let-bindings — extend the assertion above to require it).
     assert!(
         !int_set.contains(&10),
         "x=10 unexpectedly surfaced in test_abort vars — the upstream \
-         Sui VM appears to no longer elide the dead `let x: u64 = 10;` \
-         binding; extend the assertion above to require it.  Got {int_set:?}"
+         Sui Move compiler appears to no longer DCE the dead \
+         `let x: u64 = 10;` binding; extend the assertion above to \
+         require it.  Got {int_set:?}"
     );
 }
 
@@ -1871,14 +1903,38 @@ fn test_boolean_and_integers_via_ct_print_full() {
     assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
     // ----- All canonical integer values must surface in vars -------------
-    // Limitation (upstream Sui VM, not the recorder): the captured trace
+    // Limitation (upstream Sui Move compiler, not the recorder): the
+    // captured trace
     // (`flow_test__flow_test__test_boolean_and_integers.json.zst`) does
-    // NOT contain any `U8` or `U128` values — the Sui Move compiler
-    // constant-folds the small_a/small_b/small_sum and big_a/big_b/big_sum
-    // let-bindings since their results only feed dead `assert!` calls.
-    // The only Int that survives is the final `status: u64 = 1`.  The
-    // recorder cannot synthesise values that aren't in the trace; the
-    // dedicated `test_boolean_and_integers_u128_overflow_uses_bigint`
+    // NOT contain any `U8` or `U128` values — the Sui Move compiler's
+    // constant-folding + dead-code-elimination passes drop the
+    // small_a/small_b/small_sum and big_a/big_b/big_sum let-bindings
+    // because their results only feed `assert!` calls whose conditions
+    // const-fold to `true`.  Concrete evidence: the compiler-emitted
+    // debug info at
+    //   `test-programs/move/flow_test/build/flow_test/debug_info/flow_test.json`
+    // shows `function_map["18"].locals == ["%#1", "%#2", "%#3", "%#4",
+    //   "and_result", "f", "not_result", "or_result", "t"]` —
+    // none of the U8/U128 source bindings survive, and `status` itself
+    // gets folded into one of the `%#N` compiler temps.  The only Int
+    // that surfaces in the trace is the final `1` (the value bound to
+    // the if-result temp for `let status: u64 = if (or_result &&
+    // !and_result) { 1 } else { 0 }`).
+    //
+    // Three theoretically possible fixes, all outside the recorder's
+    // current contract:
+    //   (a) Re-record with a sui CLI built from source with the DCE +
+    //       constant-folding passes disabled.  The Sui CLI is not
+    //       Nix-packaged in this workspace, so this is blocked on
+    //       workspace tooling.
+    //   (b) Pull the `move-compiler` crate in and synthesise Write
+    //       events for trivially-constant let-bindings via an AST-level
+    //       evaluator.  This would import the entire Move VM into this
+    //       crate's dependency tree and is far out of scope.
+    //   (c) Document as an inherent VM limitation — which is what this
+    //       comment does.
+    //
+    // The dedicated `test_boolean_and_integers_u128_overflow_uses_bigint`
     // sibling feeds a synthetic NDJSON to confirm the BigInt path
     // independently of this re-recording limitation.  Pin the shape so
     // any future capture-of-dead-bindings shows up here.
@@ -1887,9 +1943,9 @@ fn test_boolean_and_integers_via_ct_print_full() {
     assert_eq!(
         int_set,
         std::collections::BTreeSet::from([1_i64]),
-        "Only status=1 survives the Sui VM constant-folding for this \
-         fixture; if more Int values now appear, extend this assertion \
-         to require them"
+        "Only status=1 survives the Sui Move compiler's constant-folding \
+         + DCE for this fixture; if more Int values now appear, extend \
+         this assertion to require them"
     );
 
     // ----- Boolean typed-Bool values --------------------------------------
