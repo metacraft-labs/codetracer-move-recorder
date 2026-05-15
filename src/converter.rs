@@ -11,6 +11,7 @@ use codetracer_trace_writer_nim::trace_writer::TraceWriter;
 use codetracer_trace_writer_nim::{TraceEventsFileFormat, create_trace_writer};
 use eyre::{Result, eyre};
 
+use crate::move_debug_info::DebugInfo;
 use crate::move_types::{
     Effect, Location, SerializableMoveValue, TraceEvent, TraceValue, VersionHeader,
 };
@@ -144,6 +145,22 @@ pub fn convert_trace_into_writer(
     let mut prev_line: Option<u32> = None;
     let mut prev_pc: Option<u64> = None;
     let mut current_module: Option<String> = None;
+
+    // Per-package debug info loaded from the Move compiler's
+    // `<package_root>/build/<PackageName>/debug_info/<Module>.json`
+    // sidecar.  When the source path lives inside a real package
+    // (`sui move build`-produced layout), this carries the per-function
+    // local / parameter names that we substitute for the synthetic
+    // `local_<N>` / `argN` strings.  Synthetic NDJSON fixtures (where
+    // no `build/` exists) get an empty store and the converter
+    // gracefully falls back to the synthetic names.
+    let debug_info = DebugInfo::discover(source_path);
+
+    // Stack of (module_name, binary_member_index) for currently open
+    // frames so that `Effect::Write` / `Effect::Read` events can name
+    // locals using the debug info of the *enclosing* frame.  Push on
+    // `OpenFrame`, pop on `CloseFrame`.
+    let mut frame_stack: Vec<(String, u64)> = Vec::new();
     // The module of the outer (toplevel) frame.  When a callee runs in
     // a *different* user-code module (`address == 0x0`) than this
     // outer module, the recorder qualifies the function-table entry
@@ -171,6 +188,7 @@ pub fn convert_trace_into_writer(
         match event {
             TraceEvent::OpenFrame { frame, .. } => {
                 current_module = Some(frame.module.name.clone());
+                frame_stack.push((frame.module.name.clone(), frame.binary_member_index));
                 // Reset per-frame step bookkeeping: a backward-pc relative
                 // to the *caller's* last instruction is meaningless for the
                 // callee, and the callee's first instruction must always
@@ -240,14 +258,21 @@ pub fn convert_trace_into_writer(
                 // — mirrors the Ruby (1.22) / JS (1.38) call-arg staging
                 // pattern used by other recorder audits.
                 //
-                // We synthesise positional names (`arg0`, `arg1`, ...)
-                // because Sui's frame schema only carries the *values*
-                // of the parameters, not their declared identifiers.
-                // Higher-fidelity names would require parsing the
-                // function's source-map (.mvsm) — tracked as a follow-up.
+                // When the package's `build/<pkg>/debug_info/<module>.json`
+                // sidecar is available we look up the source-level
+                // parameter names (`a`, `b`, `factor`, ...) from the
+                // Move compiler's debug info; otherwise we fall back to
+                // synthetic positional names (`arg0`, `arg1`, ...) so
+                // hand-rolled NDJSON fixtures without a `build/` dir
+                // continue to work.
+                let frame_dbg = debug_info.function(&frame.module.name, frame.binary_member_index);
                 for (idx, param) in frame.parameters.iter().enumerate() {
                     let value = convert_trace_value(param, &mut type_ids, writer);
-                    let _ = TraceWriter::arg(writer, &format!("arg{idx}"), value);
+                    let arg_name = frame_dbg
+                        .and_then(|d| d.parameters.get(idx))
+                        .cloned()
+                        .unwrap_or_else(|| format!("arg{idx}"));
+                    let _ = TraceWriter::arg(writer, &arg_name, value);
                 }
 
                 TraceWriter::register_call(writer, fn_id, vec![]);
@@ -281,6 +306,7 @@ pub fn convert_trace_into_writer(
                 };
 
                 TraceWriter::register_return(writer, ret_val);
+                frame_stack.pop();
                 // Reset per-frame step bookkeeping on close as well so the
                 // caller's next instruction (which resumes after the call)
                 // is judged against the caller's own prior pc/line, not a
@@ -337,7 +363,7 @@ pub fn convert_trace_into_writer(
                     location,
                     root_value_after_write,
                 } => {
-                    let name = format!("local_{}", location.local_index());
+                    let name = local_slot_name(&frame_stack, &debug_info, location.local_index());
                     let val = convert_move_value(
                         root_value_after_write.inner_value(),
                         &mut type_ids,
@@ -350,7 +376,7 @@ pub fn convert_trace_into_writer(
                     root_value_read,
                     ..
                 } => {
-                    let name = format!("local_{}", location.local_index());
+                    let name = local_slot_name(&frame_stack, &debug_info, location.local_index());
                     let val =
                         convert_move_value(root_value_read.inner_value(), &mut type_ids, writer);
                     TraceWriter::register_variable_with_full_value(writer, &name, val);
@@ -767,6 +793,34 @@ pub fn convert_trace_value(
             }
         }
     }
+}
+
+/// Resolve a local-slot index to a human-readable name for the
+/// currently-executing Move frame.
+///
+/// When the Move compiler's `<package_root>/build/<pkg>/debug_info/
+/// <module>.json` sidecar is available for the active frame's
+/// `(module_name, binary_member_index)`, the name comes straight from
+/// the `function_map[idx].locals[slot]` entry — i.e. the source-level
+/// identifier (with the compiler-internal `#scope#unique` suffix
+/// stripped by [`crate::move_debug_info::strip_scope_suffix`]).
+///
+/// When the debug info is absent (synthetic NDJSON fixtures, or a
+/// real fixture whose `build/` directory was pruned), the fallback is
+/// the historical synthetic name `local_<slot>` that the recorder has
+/// emitted since M2 — pinned by the `tests/test_comprehensive.rs` and
+/// `tests/test_converter.rs` suites which feed hand-rolled NDJSON
+/// without any package context.  This means the `local_<N>` shape
+/// remains the contract for synthetic fixtures while real
+/// `sui move test --trace-execution` captures get spec-correct names.
+fn local_slot_name(frame_stack: &[(String, u64)], debug_info: &DebugInfo, slot: u64) -> String {
+    if let Some((module_name, binary_member_index)) = frame_stack.last()
+        && let Some(fn_dbg) = debug_info.function(module_name, *binary_member_index)
+        && let Some(name) = fn_dbg.locals.get(slot as usize)
+    {
+        return name.clone();
+    }
+    format!("local_{slot}")
 }
 
 /// Derive a stable synthetic `u64` address for a reference borrowed
