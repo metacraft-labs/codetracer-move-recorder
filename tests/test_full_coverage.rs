@@ -4493,9 +4493,7 @@ fn test_table_test_via_ct_print_full() {
     types
         .iter()
         .position(|t| *t == "Table<address,u64>")
-        .unwrap_or_else(|| {
-            panic!("expected Table<address,u64> in the type table; got {types:?}")
-        });
+        .unwrap_or_else(|| panic!("expected Table<address,u64> in the type table; got {types:?}"));
 
     // ----- Each table::* call's args -------------------------------------
     let entries: Vec<&serde_json::Value> = events
@@ -5086,4 +5084,275 @@ fn test_generic_constraints_test_via_ct_print_full() {
         bools,
         vec![("arg0".to_string(), true), ("local_3".to_string(), true),],
     );
+}
+
+// ===========================================================================
+// test_public_package — Move 2024 `public(package) fun` visibility
+// ===========================================================================
+
+/// Records `flow_test::test_public_package` (synthetic NDJSON).
+///
+/// Pins the recorder's surface for a Move 2024 `public(package) fun`
+/// call across a package-internal module boundary
+/// (`pkg_app::call_helper` -> `pkg_lib::helper`).  Move 2024's
+/// `public(package)` visibility class — the modern, package-scoped
+/// replacement for the legacy `public(friend)` mechanism — must
+/// survive the recorder's call surface as:
+///
+///   1. A normal balanced Call/Return pair across the boundary.
+///   2. A `MoveCallVisibility` `TraceLogEvent` carrying the literal
+///      visibility-class string (`"public(package)"` for the callee,
+///      `"public"` for the intermediate caller).  The recorder
+///      surfaces the tag immediately *before* the corresponding
+///      `call_entry` so downstream consumers can pair the visibility
+///      with the call by emission order.
+///   3. The cross-module callee (`pkg_lib::helper`) takes the
+///      qualified `module::name` form in the function table because
+///      the callee module differs from the toplevel test frame's
+///      module, mirroring the friend-boundary convention pinned by
+///      `test_friend_visibility_test_via_ct_print_full`.
+#[test]
+fn test_public_package_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_public_package_test_via_ct_print_full",
+        "test_public_package",
+        flow_test_named_source("public_package_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "public_package_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(
+        functions,
+        vec!["test_public_package", "call_helper", "pkg_lib::helper"],
+        "the package-boundary callee must surface as `pkg_lib::helper` \
+         (qualified) because it crosses into a different user-code \
+         module than the toplevel `pkg_app` frame",
+    );
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(3));
+    assert_eq!(
+        counts["io_events"].as_u64(),
+        Some(2),
+        "two MoveCallVisibility io_events must surface — one for the \
+         intermediate `call_helper` (`public`) and one for the \
+         `public(package)` `pkg_lib::helper` callee",
+    );
+
+    // 1 step + 3 call_entry + 2 io + 3 call_exit = 9 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 9);
+    assert_step_indices_monotonic(&doc);
+
+    // CloseFrame ordering — innermost first.
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec![
+            "pkg_lib::helper".to_string(),
+            "call_helper".to_string(),
+            "test_public_package".to_string(),
+        ],
+    );
+
+    // ----- The two MoveCallVisibility io_events -------------------------
+    // The recorder emits the visibility tag immediately *before* its
+    // corresponding `call_entry`, so the io stream order mirrors the
+    // OpenFrame order in the trace: first `call_helper` (public),
+    // then `pkg_lib::helper` (public(package)).
+    let io_events: Vec<&serde_json::Value> = events.iter().filter(|e| e["kind"] == "io").collect();
+    assert_eq!(io_events.len(), 2);
+    assert_eq!(io_events[0]["text"].as_str(), Some("public"));
+    assert_eq!(io_events[1]["text"].as_str(), Some("public(package)"));
+
+    // ----- Call_entry / call_exit pair across the package boundary -------
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    assert_eq!(entries.len(), 3);
+    let helper_entry = entries[0];
+    assert_eq!(
+        helper_entry["function"].as_str(),
+        Some("pkg_lib::helper"),
+        "the package-callee call_entry must use the qualified function name",
+    );
+    let helper_args = helper_entry["args"].as_array().expect("helper args");
+    assert_eq!(helper_args.len(), 0, "pkg_lib::helper takes no parameters");
+
+    // The intermediate `call_helper` and outer `test_public_package`
+    // also have zero positional args.
+    assert_eq!(entries[1]["args"].as_array().map(|a| a.len()), Some(0));
+    assert_eq!(entries[2]["args"].as_array().map(|a| a.len()), Some(0));
+
+    // ----- Return values across the package boundary --------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 3);
+
+    // pkg_lib::helper returns the canonical 7.
+    assert_eq!(exits[0].0, "pkg_lib::helper");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(7));
+
+    // call_helper forwards the value across the package boundary.
+    assert_eq!(exits[1].0, "call_helper");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(7));
+
+    // The outer test frame returns Void.
+    assert_eq!(exits[2].0, "test_public_package");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+
+    // ----- The `7` surfaces in the merged step's vars -------------------
+    let ints = unique_int_pairs(&doc);
+    assert_eq!(
+        ints,
+        vec![("stack_top".to_string(), 7), ("local_0".to_string(), 7),],
+    );
+}
+
+// ===========================================================================
+// test_module_init — Sui `fun init(ctx: &mut TxContext)` one-time entry
+// ===========================================================================
+
+/// Records `flow_test::test_module_init` (synthetic NDJSON).
+///
+/// Pins the recorder's surface for Sui's one-time module-init entry
+/// point — `fun init(ctx: &mut TxContext)`, the callback Sui runs
+/// exactly once when a package is published.  `init` has no `public`
+/// modifier and no `#[test]` attribute: it is a first-class entry
+/// point recognised by the Sui runtime via its name + signature.
+/// The recorder must:
+///
+///   1. Surface the `init` invocation as a normal Call/Return pair
+///      that brackets the publish-time body (the `object::new` UID
+///      mint plus the `Bootstrap` resource construction).
+///   2. Surface the `&mut TxContext` parameter as a typed
+///      `ValueRecord::Reference { mutable: true, .. }` whose
+///      pointee is the underlying `TxContext` struct — the same
+///      shape pinned by `test_tx_context_test_via_ct_print_full`.
+///   3. Flag the invocation as one-time / module-init via a
+///      `MoveCallVisibility` `TraceLogEvent` with content `"init"`
+///      so downstream consumers can highlight the publish-time
+///      bootstrap frame in the call graph.
+#[test]
+fn test_module_init_test_via_ct_print_full() {
+    let Some((doc, _)) = record_and_dump_full_with_source(
+        "test_module_init_test_via_ct_print_full",
+        "test_module_init",
+        flow_test_named_source("module_init_test"),
+    ) else {
+        return;
+    };
+
+    assert_metadata_program_is(&doc, "module_init_test");
+
+    let functions: Vec<&str> = doc["functions"]
+        .as_array()
+        .expect("functions array")
+        .iter()
+        .filter_map(|v| v.as_str())
+        .collect();
+    assert_eq!(functions, vec!["init", "new"]);
+
+    let counts = &doc["counts"];
+    assert_eq!(counts["steps"].as_u64(), Some(1));
+    assert_eq!(counts["calls"].as_u64(), Some(2));
+    assert_eq!(
+        counts["io_events"].as_u64(),
+        Some(1),
+        "exactly one MoveCallVisibility io_event must surface tagging \
+         the `init` frame as the Sui one-time module-init entry",
+    );
+
+    // 1 step + 1 io + 2 call_entry + 2 call_exit = 6 events.
+    let events = doc["events"].as_array().expect("events array");
+    assert_eq!(events.len(), 6);
+    assert_step_indices_monotonic(&doc);
+
+    // CloseFrame ordering — innermost first.
+    assert_eq!(
+        observed_call_sequence(&doc),
+        vec!["new".to_string(), "init".to_string()],
+    );
+
+    // ----- The MoveCallVisibility io_event flags the init entry ---------
+    let io_events: Vec<&serde_json::Value> = events.iter().filter(|e| e["kind"] == "io").collect();
+    assert_eq!(io_events.len(), 1);
+    assert_eq!(
+        io_events[0]["text"].as_str(),
+        Some("init"),
+        "the `init` frame must surface a MoveCallVisibility tag with \
+         content `\"init\"` — the stable hook downstream consumers key \
+         off to highlight Sui's publish-time bootstrap frame",
+    );
+
+    // ----- init(ctx: &mut TxContext) — the &mut TxContext arg shape -----
+    let entries: Vec<&serde_json::Value> = events
+        .iter()
+        .filter(|e| e["kind"] == "call_entry")
+        .collect();
+    assert_eq!(entries.len(), 2);
+    // CloseFrame ordering: entries[0]=new, entries[1]=init.
+    let init_entry = entries[1];
+    assert_eq!(init_entry["function"].as_str(), Some("init"));
+    let init_args = init_entry["args"].as_array().expect("init args");
+    assert_eq!(init_args.len(), 1, "init takes a single &mut TxContext arg");
+    let ctx_arg = &init_args[0]["value"];
+    assert_eq!(ctx_arg["kind"].as_str(), Some("Reference"));
+    assert_eq!(
+        ctx_arg["mutable"].as_bool(),
+        Some(true),
+        "&mut TxContext must surface with mutable=true",
+    );
+    let ctx_pointee = &ctx_arg["dereferenced"];
+    assert_eq!(ctx_pointee["kind"].as_str(), Some("Struct"));
+    let ctx_fields = ctx_pointee["field_values"]
+        .as_array()
+        .expect("TxContext.field_values");
+    assert_eq!(
+        ctx_fields.len(),
+        5,
+        "TxContext fields: sender, tx_hash, epoch, epoch_timestamp_ms, ids_created",
+    );
+    // sender field is the typed address String.
+    assert_eq!(ctx_fields[0]["kind"].as_str(), Some("String"));
+    assert_eq!(ctx_fields[0]["text"].as_str(), Some("0xCAFE"));
+
+    // The nested object::new(ctx) takes the same &mut TxContext.
+    let new_args = entries[0]["args"].as_array().expect("new args");
+    assert_eq!(new_args.len(), 1);
+    assert_eq!(new_args[0]["value"]["kind"].as_str(), Some("Reference"));
+    assert_eq!(new_args[0]["value"]["mutable"].as_bool(), Some(true));
+
+    // ----- Return values --------------------------------------------------
+    let exits = observed_exit_sequence(&doc);
+    assert_eq!(exits.len(), 2);
+
+    // object::new returns a fresh UID as a typed Struct whose inner
+    // ID { bytes: address } preserves the byte-vector identity.
+    assert_eq!(exits[0].0, "new");
+    let uid_rv = &exits[0].1;
+    assert_eq!(uid_rv["kind"].as_str(), Some("Struct"));
+    let uid_fields = uid_rv["field_values"].as_array().expect("UID.field_values");
+    assert_eq!(uid_fields.len(), 1, "UID {{ id: ID }}");
+    assert_eq!(uid_fields[0]["kind"].as_str(), Some("Struct"));
+    let id_fields = uid_fields[0]["field_values"]
+        .as_array()
+        .expect("ID.field_values");
+    assert_eq!(id_fields.len(), 1, "ID {{ bytes: address }}");
+    assert_eq!(id_fields[0]["kind"].as_str(), Some("String"));
+    assert_eq!(id_fields[0]["text"].as_str(), Some("0xFEED"));
+
+    // init returns Void — Sui's publish-time entry has no return value.
+    assert_eq!(exits[1].0, "init");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
 }
