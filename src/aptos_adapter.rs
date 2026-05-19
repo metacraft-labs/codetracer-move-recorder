@@ -313,14 +313,9 @@ pub fn convert_aptos_trace(
     // from the `.bin` extension.  No JSON / legacy-binary alternative
     // is exposed.
     let events_path = out_dir.join("trace.bin");
-    let metadata_path = out_dir.join("trace_metadata.json");
-    let paths_path = out_dir.join("trace_paths.json");
 
     TraceWriter::begin_writing_trace_events(&mut *writer, &events_path)
         .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::begin_writing_trace_metadata(&mut *writer, &metadata_path)
-        .map_err(|e| eyre!("{e}"))?;
-    TraceWriter::begin_writing_trace_paths(&mut *writer, &paths_path).map_err(|e| eyre!("{e}"))?;
 
     // Start the trace.
     TraceWriter::start(&mut *writer, source_path, Line(1));
@@ -384,8 +379,9 @@ pub fn convert_aptos_trace(
 
     // Finish writing.
     TraceWriter::finish_writing_trace_events(&mut *writer).map_err(|e| eyre!("{e}"))?;
-    TraceWriter::finish_writing_trace_metadata(&mut *writer).map_err(|e| eyre!("{e}"))?;
-    TraceWriter::finish_writing_trace_paths(&mut *writer).map_err(|e| eyre!("{e}"))?;
+    writer
+        .write_meta_dat("codetracer-move-recorder")
+        .map_err(|e| eyre!("{e}"))?;
     writer.close().map_err(|e| eyre!("{e}"))?;
 
     Ok(())
