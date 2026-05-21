@@ -15,8 +15,18 @@ use codetracer_move_recorder::source_map::SourceMapResolver;
 /// `CTFS_MAGIC` in `codetracer-trace-format-spec/src/container.rs`.
 const CTFS_MAGIC: [u8; 5] = [0xC0, 0xDE, 0x72, 0xAC, 0xE2];
 
-/// Path to the flow_test Move package (relative to the project root).
-const FLOW_TEST_PACKAGE: &str = "test-programs/move/flow_test";
+/// Path to the Sui Move package this test compiles with `sui move test`.
+///
+/// This is a *dedicated* package holding only `flow_test.move` -- a
+/// Sui-edition-2024-valid module.  It is intentionally separate from the
+/// broader `test-programs/move/flow_test` corpus: that corpus also carries
+/// generic-Move and Aptos fixtures (resource structs without a Sui `UID`
+/// field, `aptos_std` imports, deprecated-edition constructs) which the
+/// recorder consumes directly as source but which `sui move test` -- which
+/// compiles *every* file under `sources/` -- cannot build.  Pointing this
+/// integration test at the mixed corpus made `sui move test` fail to
+/// compile regardless of the host OS or Sui version.
+const FLOW_TEST_PACKAGE: &str = "test-programs/move/sui_flow_test";
 
 /// Find the project root by looking for Cargo.toml from CARGO_MANIFEST_DIR.
 fn project_root() -> PathBuf {
@@ -32,12 +42,18 @@ fn sui_is_available() -> bool {
         .unwrap_or(false)
 }
 
-/// Run `sui move test --trace` on the given package directory.
-/// Returns the path to the package directory (traces are written inside
-/// the package's `build/` subdirectory).
+/// Run `sui move test --trace full` on the given package directory.
+/// Each test's Move trace v3 NDJSON is written to a `traces/` directory at
+/// the package root.
+///
+/// The Sui CLI renamed the unit-test tracing flag from the original boolean
+/// `--trace-execution` to `--trace [<MODE>]`.  `--trace full` is the
+/// equivalent and emits the externally-tagged v3 trace events that
+/// `move_types::TraceEvent` (and `converter::convert_trace`) are written
+/// against (Sui >= 1.68).
 fn run_sui_move_test_trace(package_dir: &Path) -> (bool, String, String) {
     let output = Command::new("sui")
-        .args(["move", "test", "--trace-execution"])
+        .args(["move", "test", "--trace", "full"])
         .current_dir(package_dir)
         .output()
         .expect("failed to execute sui move test");
@@ -71,37 +87,39 @@ fn find_trace_files(dir: &Path) -> Vec<PathBuf> {
     results
 }
 
-/// Find trace NDJSON files in the build directory after running `sui move test --trace`.
-/// Sui writes traces to `<package>/build/<package_name>/traces/`.
+/// Find the Move trace v3 NDJSON files emitted by `sui move test --trace`.
+///
+/// Current Sui releases write one `<pkg>__<module>__<test>.json.zst` file
+/// per test into a `traces/` directory at the *package root*.  Older
+/// layouts placed them under `build/<PackageName>/traces/`.  Search both,
+/// preferring the package-root `traces/` dir.
+///
+/// The `build/` tree also contains compiler-emitted `debug_info/*.json`
+/// files whose first line is `{"version":2,...}`; those are *not* execution
+/// traces, so the discovery is restricted to `traces/` directories rather
+/// than scanning every `{"version":` JSON under `build/`.
 fn find_sui_trace_files(package_dir: &Path) -> Vec<PathBuf> {
+    let mut trace_dirs = vec![package_dir.join("traces")];
     let build_dir = package_dir.join("build");
-    if !build_dir.exists() {
-        return Vec::new();
-    }
-
-    // Look for trace files in the build directory tree.
-    // Sui places them under build/<PackageName>/traces/
-    let mut trace_files = find_trace_files(&build_dir);
-
-    // Also check for trace files directly in the traces subdirectories.
-    if trace_files.is_empty() {
-        // Try a broader search — some versions may put traces elsewhere.
+    if build_dir.exists() {
         for entry in walkdir::WalkDir::new(&build_dir)
             .into_iter()
             .filter_map(|e| e.ok())
         {
-            let path = entry.path();
-            if path.is_file() {
-                // Check if file looks like NDJSON trace data (starts with {"version":)
-                if let Ok(content) = std::fs::read_to_string(path) {
-                    if content.starts_with("{\"version\":") {
-                        trace_files.push(path.to_path_buf());
-                    }
-                }
+            if entry.file_type().is_dir() && entry.file_name() == "traces" {
+                trace_dirs.push(entry.path().to_path_buf());
             }
         }
     }
 
+    let mut trace_files = Vec::new();
+    for dir in trace_dirs {
+        for f in find_trace_files(&dir) {
+            if !trace_files.contains(&f) {
+                trace_files.push(f);
+            }
+        }
+    }
     trace_files
 }
 
@@ -280,6 +298,16 @@ fn test_sui_trace_ndjson_parsing() {
     let trace_files = find_sui_trace_files(&package_dir);
     assert!(!trace_files.is_empty(), "No trace files found");
 
+    // Aggregate event-kind tallies across every trace file.  A *single*
+    // trace need not exercise every event kind -- e.g. a Move test that
+    // `abort`s emits an `OpenFrame` but no matching `CloseFrame`, because
+    // the abort terminates the frame.  The deserializer-coverage assertions
+    // therefore hold across the whole trace set rather than per file.
+    let mut total_open = 0usize;
+    let mut total_close = 0usize;
+    let mut total_instruction = 0usize;
+    let mut total_effect = 0usize;
+
     for trace_file in &trace_files {
         let trace_data = std::fs::read(trace_file).expect("failed to read trace file");
         let trace_bytes = if trace_file.extension().is_some_and(|ext| ext == "zst") {
@@ -354,27 +382,39 @@ fn test_sui_trace_ndjson_parsing() {
             event_count
         );
 
-        // Basic sanity: there should be events.
+        // Per-file sanity: every Move test opens its entry frame and runs
+        // at least one instruction, so these always hold.
         assert!(event_count > 0, "trace should contain at least one event");
         assert!(
             open_frame_count > 0,
             "trace should contain at least one OpenFrame"
         );
         assert!(
-            close_frame_count > 0,
-            "trace should contain at least one CloseFrame"
-        );
-        assert!(
             instruction_count > 0,
             "trace should contain at least one Instruction"
         );
-        assert!(effect_count > 0, "trace should contain at least one Effect");
-
-        // OpenFrame and CloseFrame counts should match (each opened frame is closed).
-        assert_eq!(
-            open_frame_count, close_frame_count,
-            "OpenFrame count ({open_frame_count}) should equal \
-             CloseFrame count ({close_frame_count})"
+        // A frame can close at most once per open; an aborting test leaves
+        // `close < open` (the abort terminates the frame uncleanly), so the
+        // invariant is `<=`, not strict equality.
+        assert!(
+            close_frame_count <= open_frame_count,
+            "CloseFrame count ({close_frame_count}) must not exceed \
+             OpenFrame count ({open_frame_count})"
         );
+
+        total_open += open_frame_count;
+        total_close += close_frame_count;
+        total_instruction += instruction_count;
+        total_effect += effect_count;
     }
+
+    // Across the whole trace set every event kind the deserializer models
+    // must have been exercised at least once.
+    assert!(total_open > 0, "no OpenFrame events across any trace");
+    assert!(total_close > 0, "no CloseFrame events across any trace");
+    assert!(
+        total_instruction > 0,
+        "no Instruction events across any trace"
+    );
+    assert!(total_effect > 0, "no Effect events across any trace");
 }
