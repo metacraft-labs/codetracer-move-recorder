@@ -181,13 +181,32 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
     let bytes = fs::read(path).ok()?;
     let raw: RawDebugInfo = serde_json::from_slice(&bytes).ok()?;
 
-    // The `from_file_path` field gives us the absolute path to the
-    // source file at compile time; we read it once so we can extract
-    // function names and parameter names from `definition_location`
-    // byte ranges.
-    let source_text = fs::read_to_string(&raw.from_file_path).ok()?;
-
     let module_short_name = raw.module_name.get(1).cloned()?;
+
+    // `from_file_path` records the *absolute* source path as it was on the
+    // machine that compiled the package.  Prefer it, but it is not
+    // portable: a debug-info JSON committed as a test fixture (or a
+    // `build/` tree copied between machines / OSes) carries a path that
+    // does not exist on the current host.  Fall back to the canonical Sui
+    // package layout, where this JSON lives at
+    //   <package_root>/build/<PackageName>/debug_info/<Module>.json
+    // and the source at
+    //   <package_root>/sources/<Module>.move
+    // so the function/parameter-name extraction still works regardless of
+    // where (or on which OS) the package was originally built.
+    let source_text = fs::read_to_string(&raw.from_file_path)
+        .ok()
+        .or_else(|| {
+            let package_root = path // <Module>.json
+                .parent() // debug_info/
+                .and_then(Path::parent) // <PackageName>/
+                .and_then(Path::parent) // build/
+                .and_then(Path::parent)?; // <package_root>
+            let candidate = package_root
+                .join("sources")
+                .join(format!("{module_short_name}.move"));
+            fs::read_to_string(candidate).ok()
+        })?;
 
     let mut functions = HashMap::new();
     for (idx_str, fn_raw) in raw.function_map {
