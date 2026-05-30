@@ -69,6 +69,17 @@ pub struct FunctionDebugInfo {
     /// Used to label `arg0`, `arg1`, ... with source identifiers when
     /// the debug info is present.
     pub parameters: Vec<String>,
+    /// Per-bytecode-PC source line numbers (1-indexed).  The Move
+    /// compiler's `code_map` records a byte range per PC inside the
+    /// source file; we resolve the range start to a line number while
+    /// loading the debug info so the converter can look it up in O(1)
+    /// without re-scanning the source on every `Instruction` event.
+    ///
+    /// Indexed by the bytecode `pc` (u64 in the trace's `Instruction`
+    /// event).  Missing entries (`None` returned from `pc_to_line`)
+    /// mean the compiler did not record a source mapping for that
+    /// instruction — typically a synthesised prologue/epilogue op.
+    pub pc_to_line: HashMap<u64, u32>,
 }
 
 /// Per-module debug info, keyed by the bytecode function index
@@ -208,6 +219,13 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
             fs::read_to_string(candidate).ok()
         })?;
 
+    // Precompute a byte-offset -> 1-indexed-line lookup for the source
+    // text so we can resolve every `code_map` entry without re-scanning
+    // the file per PC.  Storing one `Vec<u32>` of line offsets keeps
+    // the resolver hot in cache and turns the lookup into a single
+    // binary search per PC.
+    let line_starts = build_line_starts(&source_text);
+
     let mut functions = HashMap::new();
     for (idx_str, fn_raw) in raw.function_map {
         let idx: u64 = idx_str.parse().ok()?;
@@ -230,17 +248,84 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
             .into_iter()
             .map(|(raw_name, _)| strip_scope_suffix(&raw_name))
             .collect();
+        // Build pc -> line from the compiler's `code_map`.  Each entry
+        // pins a single bytecode PC to a byte range in the source; the
+        // range *start* identifies the user-facing line for the step.
+        let mut pc_to_line: HashMap<u64, u32> = HashMap::new();
+        for (pc_str, loc) in fn_raw.code_map {
+            if let Ok(pc) = pc_str.parse::<u64>() {
+                let line = byte_offset_to_line(&line_starts, loc.start);
+                pc_to_line.insert(pc, line);
+            }
+        }
         functions.insert(
             idx,
             FunctionDebugInfo {
                 name,
                 locals,
                 parameters,
+                pc_to_line,
             },
         );
     }
 
     Some((module_short_name, ModuleDebugInfo { functions }))
+}
+
+/// Build a sorted list of byte offsets where each source line begins.
+/// `line_starts[0] == 0` and `line_starts[i]` is the byte offset of the
+/// `i+1`-th line (1-indexed for callers).  Uses byte semantics so it
+/// matches the Move compiler's `start` offsets verbatim — both are raw
+/// byte indices into the source's UTF-8 representation.
+fn build_line_starts(source: &str) -> Vec<u32> {
+    let mut starts: Vec<u32> = Vec::with_capacity(source.len() / 32 + 1);
+    starts.push(0);
+    for (idx, ch) in source.bytes().enumerate() {
+        if ch == b'\n' {
+            // The next byte is the start of the next line.
+            starts.push((idx + 1) as u32);
+        }
+    }
+    starts
+}
+
+/// Resolve a byte offset into a 1-indexed line number using a precomputed
+/// `line_starts` table.  The result is `1` when `offset == 0` and
+/// monotonically non-decreasing in `offset`.
+fn byte_offset_to_line(line_starts: &[u32], offset: u32) -> u32 {
+    // partition_point returns the first index whose start is *strictly
+    // greater* than `offset`; the line containing `offset` is therefore
+    // `idx` (0-indexed) → `idx` as 1-indexed.
+    let idx = line_starts.partition_point(|&start| start <= offset);
+    idx.max(1) as u32
+}
+
+impl FunctionDebugInfo {
+    /// Look up the 1-indexed source line for a bytecode PC, if the
+    /// compiler recorded one.  Returns `None` when no mapping exists
+    /// (typically a synthesised entry/exit op).
+    pub fn pc_to_line(&self, pc: u64) -> Option<u32> {
+        self.pc_to_line.get(&pc).copied()
+    }
+}
+
+impl DebugInfo {
+    /// Iterate `(module_short_name, binary_member_index, pc, line)`
+    /// for every PC mapping the compiler recorded.  Used to seed a
+    /// `SourceMapResolver` directly from the loaded debug info,
+    /// without re-parsing the build/ tree.
+    pub fn iter_pc_lines(&self) -> impl Iterator<Item = (&str, u64, u64, u32)> + '_ {
+        self.modules.iter().flat_map(|(module_name, mod_info)| {
+            mod_info.functions.iter().flat_map(move |(idx, fn_info)| {
+                let module_name = module_name.as_str();
+                let idx = *idx;
+                fn_info
+                    .pc_to_line
+                    .iter()
+                    .map(move |(pc, line)| (module_name, idx, *pc, *line))
+            })
+        })
+    }
 }
 
 /// Strip the compiler-internal `#scope#unique` suffix from a local /
@@ -298,6 +383,13 @@ struct RawFunction {
     parameters: Vec<(String, Location)>,
     #[serde(default)]
     locals: Vec<(String, Location)>,
+    /// `code_map[pc] = {file_hash, start, end}` — byte ranges in the
+    /// source that the compiler associates with each bytecode PC.  Used
+    /// here to recover per-PC source lines.  The PC keys arrive as
+    /// JSON strings ("0", "1", ...) so we deserialise them as strings
+    /// and parse to u64 later.
+    #[serde(default)]
+    code_map: HashMap<String, Location>,
 }
 
 #[derive(Deserialize)]

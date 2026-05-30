@@ -837,21 +837,40 @@ fn test_linear_execution_with_source_map() {
 
     // Verify Step events map to the expected source lines 5-9
     // (pc 0->line 5, pc 1->line 6, ..., pc 4->line 9).
+    //
+    // The Move converter now seeds `TraceWriter::start` with the
+    // first source-mapped Instruction's line (so the GUI entry step
+    // lines up with the user-facing first executed line — see
+    // GUI-Test-Stabilization-2026-05 M5).  This means the first
+    // Instruction's `register_step` collapses into the entry step,
+    // so under `NonStreamingTraceWriter` (which does *not* emit a
+    // Step for `start`) only lines 6..=9 surface as explicit Step
+    // events; line 5 is recorded as the toplevel function's line in
+    // the `Function` event.  We assert against the union of both
+    // sources so the test continues to verify the converter resolves
+    // every PC correctly.
     let step_lines = extract_step_lines(&events);
-
+    let toplevel_line = events
+        .iter()
+        .find_map(|e| match e {
+            TraceLowLevelEvent::Function(f) if f.name == "<toplevel>" => Some(f.line.0),
+            _ => None,
+        })
+        .expect("toplevel function event must record the entry line");
     let instruction_step_lines: Vec<i64> = step_lines
         .iter()
         .copied()
         .filter(|&line| (5..=9).contains(&line))
         .collect();
-
-    let mut unique_lines = instruction_step_lines.clone();
-    unique_lines.sort();
-    unique_lines.dedup();
+    let mut covered_lines: Vec<i64> = std::iter::once(toplevel_line)
+        .chain(instruction_step_lines.iter().copied())
+        .collect();
+    covered_lines.sort();
+    covered_lines.dedup();
     assert_eq!(
-        unique_lines,
+        covered_lines,
         vec![5, 6, 7, 8, 9],
-        "expected steps for lines 5 through 9 from linear execution"
+        "expected steps (or entry-step seed) for lines 5 through 9 from linear execution"
     );
 }
 
@@ -1574,7 +1593,13 @@ fn test_source_map_dedup_same_line_no_duplicate_steps() {
     ]
     .join("\n");
 
-    // This should succeed - the converter deduplicates steps on the same line
+    // This should succeed - the converter deduplicates steps on the same line.
+    //
+    // The converter seeds `TraceWriter::start` with the first source
+    // line (line 5 here, from the explicit source map), so the entry
+    // step IS the first user-visible step.  Subsequent same-line
+    // instructions are deduplicated.  The next line change (pc=3,
+    // line=6) emits the second user-visible step.
     let events = run_converter_events(&trace, &source_map, "dedup.move");
     assert!(!events.is_empty());
 
@@ -1586,27 +1611,41 @@ fn test_source_map_dedup_same_line_no_duplicate_steps() {
         })
         .collect();
 
-    // Filter out the initial step (line 1 from start()) to check only instruction-derived steps
+    let toplevel_line = events
+        .iter()
+        .find_map(|e| match e {
+            TraceLowLevelEvent::Function(f) if f.name == "<toplevel>" => Some(f.line.0),
+            _ => None,
+        })
+        .expect("toplevel function event must record the entry line");
+    // Filter out the synthetic per-frame "start of function" step the
+    // abstract trace writer emits on `register_call` (line==1 for any
+    // function whose `ensure_function_id` was called with
+    // `Line(1)`).  The remaining Step events are the
+    // instruction-derived ones.
     let instruction_step_lines: Vec<i64> = step_lines
         .iter()
         .copied()
         .filter(|&line| line != 1)
         .collect();
+    let user_visible_lines: Vec<i64> = std::iter::once(toplevel_line)
+        .chain(instruction_step_lines.iter().copied())
+        .collect();
 
     assert_eq!(
-        instruction_step_lines.len(),
+        user_visible_lines.len(),
         2,
-        "expected exactly 2 instruction-derived Step events (dedup same-line instructions), got {}: {:?}",
-        instruction_step_lines.len(),
-        instruction_step_lines,
+        "expected exactly 2 user-visible step lines (entry + dedup-collapsed instruction step), got {}: {:?}",
+        user_visible_lines.len(),
+        user_visible_lines,
     );
     assert_eq!(
-        instruction_step_lines[0], 5,
-        "first instruction step should be on line 5"
+        user_visible_lines[0], 5,
+        "first user-visible step (entry) should be on line 5"
     );
     assert_eq!(
-        instruction_step_lines[1], 6,
-        "second instruction step should be on line 6"
+        user_visible_lines[1], 6,
+        "second user-visible step should be on line 6"
     );
 }
 
