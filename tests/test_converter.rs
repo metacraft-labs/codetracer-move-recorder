@@ -126,26 +126,44 @@ fn test_move_to_ct_step_mapping() {
         .collect();
 
     // The steps come from instruction events mapped via the source map to lines 3-7.
+    // The Move converter seeds `TraceWriter::start` with the first
+    // source-mapped Instruction's line so the entry step lines up with
+    // the user-facing first executed line (see
+    // GUI-Test-Stabilization-2026-05 M5 / `first_step_line` in
+    // `src/converter.rs`).  Consequence: under
+    // `NonStreamingTraceWriter` (which does *not* emit a Step from
+    // `start`) only lines 4..=7 surface as explicit instruction Step
+    // events; line 3 is recorded as the toplevel function's line in
+    // the `Function` event.
     let instruction_step_lines: Vec<i64> = step_lines
         .iter()
         .copied()
         .filter(|&line| (3..=7).contains(&line))
         .collect();
 
-    // We expect 5 distinct lines (3, 4, 5, 6, 7) since each pc maps to a different line.
-    let mut unique_lines = instruction_step_lines.clone();
+    let toplevel_line = events
+        .iter()
+        .find_map(|e| match e {
+            TraceLowLevelEvent::Function(f) if f.name == "<toplevel>" => Some(f.line.0),
+            _ => None,
+        })
+        .expect("toplevel function event must record the entry line");
+    let mut unique_lines: Vec<i64> = std::iter::once(toplevel_line)
+        .chain(instruction_step_lines.iter().copied())
+        .collect();
     unique_lines.sort();
     unique_lines.dedup();
     assert_eq!(
         unique_lines,
         vec![3, 4, 5, 6, 7],
-        "should have steps for lines 3 through 7"
+        "should have steps (or entry-step seed) for lines 3 through 7"
     );
 
-    // Verify the instruction-derived steps appear in order.
+    // Verify the instruction-derived steps appear in sequential order
+    // (post-entry-step).
     assert_eq!(
         instruction_step_lines,
-        vec![3, 4, 5, 6, 7],
+        vec![4, 5, 6, 7],
         "instruction steps should appear in sequential order"
     );
 
