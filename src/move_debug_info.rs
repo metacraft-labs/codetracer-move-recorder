@@ -205,19 +205,17 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
     //   <package_root>/sources/<Module>.move
     // so the function/parameter-name extraction still works regardless of
     // where (or on which OS) the package was originally built.
-    let source_text = fs::read_to_string(&raw.from_file_path)
-        .ok()
-        .or_else(|| {
-            let package_root = path // <Module>.json
-                .parent() // debug_info/
-                .and_then(Path::parent) // <PackageName>/
-                .and_then(Path::parent) // build/
-                .and_then(Path::parent)?; // <package_root>
-            let candidate = package_root
-                .join("sources")
-                .join(format!("{module_short_name}.move"));
-            fs::read_to_string(candidate).ok()
-        })?;
+    let source_text = fs::read_to_string(&raw.from_file_path).ok().or_else(|| {
+        let package_root = path // <Module>.json
+            .parent() // debug_info/
+            .and_then(Path::parent) // <PackageName>/
+            .and_then(Path::parent) // build/
+            .and_then(Path::parent)?; // <package_root>
+        let candidate = package_root
+            .join("sources")
+            .join(format!("{module_short_name}.move"));
+        fs::read_to_string(candidate).ok()
+    })?;
 
     // Precompute a byte-offset -> 1-indexed-line lookup for the source
     // text so we can resolve every `code_map` entry without re-scanning
