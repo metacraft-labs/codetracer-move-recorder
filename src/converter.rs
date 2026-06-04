@@ -446,8 +446,7 @@ pub fn convert_trace_into_writer_with_options(
                     // is already captured by the `call_entry` records
                     // that drive the call-trace pane.
                     if options.emit_test_entry_event {
-                        let qualified =
-                            format!("{}::{}", frame.module.name, frame.function_name);
+                        let qualified = format!("{}::{}", frame.module.name, frame.function_name);
                         TraceWriter::register_special_event(
                             writer,
                             EventLogKind::TraceLogEvent,
@@ -563,8 +562,10 @@ pub fn convert_trace_into_writer_with_options(
                 // entire run to a single step (see
                 // GUI-Test-Stabilization-2026-05.status.org M5).
                 let module_name = current_module.as_deref().unwrap_or("");
-                let line = source_map.lookup(module_name, *pc).map(|(_, line)| line).or_else(
-                    || {
+                let line = source_map
+                    .lookup(module_name, *pc)
+                    .map(|(_, line)| line)
+                    .or_else(|| {
                         if !options.resolve_pc_lines_from_debug_info {
                             return None;
                         }
@@ -575,9 +576,10 @@ pub fn convert_trace_into_writer_with_options(
                         // in the module" would mis-attribute PCs that
                         // happen to collide across functions.
                         let (_module_top, bmi) = frame_stack.last()?;
-                        debug_info.function(module_name, *bmi).and_then(|fi| fi.pc_to_line(*pc))
-                    },
-                );
+                        debug_info
+                            .function(module_name, *bmi)
+                            .and_then(|fi| fi.pc_to_line(*pc))
+                    });
                 if let Some(line) = line {
                     let line_changed = prev_line != Some(line);
                     let backward_jump = prev_pc.is_some_and(|p| *pc < p);

@@ -350,14 +350,12 @@ fn pick_trace_file(traces_dir: &Path, source_path: &Path) -> eyre::Result<PathBu
         .file_stem()
         .and_then(|s| s.to_str())
         .filter(|s| !s.is_empty())
-        && let Some(matched) = candidates
-            .iter()
-            .find(|p| {
-                p.file_name()
-                    .and_then(|n| n.to_str())
-                    .map(|n| n.contains(stem))
-                    .unwrap_or(false)
-            })
+        && let Some(matched) = candidates.iter().find(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|n| n.contains(stem))
+                .unwrap_or(false)
+        })
     {
         return Ok(matched.clone());
     }
@@ -371,8 +369,8 @@ fn load_trace_bytes(trace_file: &Path) -> eyre::Result<Vec<u8>> {
     let raw_bytes = fs::read(trace_file)
         .wrap_err_with(|| format!("Failed to read trace file: {}", trace_file.display()))?;
     if trace_file.extension().is_some_and(|ext| ext == "zst") {
-        let mut decoder = zstd::Decoder::new(raw_bytes.as_slice())
-            .wrap_err("Failed to create zstd decoder")?;
+        let mut decoder =
+            zstd::Decoder::new(raw_bytes.as_slice()).wrap_err("Failed to create zstd decoder")?;
         let mut decompressed = Vec::new();
         decoder
             .read_to_end(&mut decompressed)
@@ -516,9 +514,8 @@ fn main() -> eyre::Result<()> {
 
                 // Determine source path (use provided --source or derive
                 // from trace file).
-                let source_path = source.unwrap_or_else(|| {
-                    trace_file.with_extension("").with_extension("move")
-                });
+                let source_path =
+                    source.unwrap_or_else(|| trace_file.with_extension("").with_extension("move"));
 
                 // For now, use an empty source map. Real source maps will
                 // come in a later milestone when we parse .mvsm files.
