@@ -15,6 +15,24 @@ jobs:
     name: Lint and test
     runs-on: ubuntu-latest
     steps:
+      - name: Free disk space on runner
+        # The Move recorder transitively pulls the Sui crate, whose
+        # rocksdb-sys C++ build chews through ~10 GB of intermediate
+        # objects.  The hosted Ubuntu runner ships with only ~14 GB
+        # free after the OS image, so rocksdb-sys fails with
+        # "No space left on device" partway through.  Strip the
+        # preinstalled .NET / Android / GHC / Haskell toolchains
+        # we don't need before the Nix build starts.
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: false
+          docker-images: true
+          swap-storage: true
+
       - uses: actions/checkout@v4
 
       - name: Clone codetracer-trace-format sibling
