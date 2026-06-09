@@ -1,3 +1,9 @@
+// The CLI doc-block uses bullet-with-continuation prose to describe
+// each subcommand; clippy::doc_overindented_list_items objects to the
+// continuation indentation but the layout is intentional for readers
+// scanning `--help`-style text.
+#![allow(clippy::doc_overindented_list_items)]
+
 //! CLI entry point for the CodeTracer Move recorder.
 //!
 //! Supports three subcommands:
