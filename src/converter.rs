@@ -32,7 +32,7 @@ const TRACE_FORMAT: TraceEventsFileFormat = TraceEventsFileFormat::Ctfs;
 /// enrichments that should fire for the end-user `ct record` flow but
 /// not for low-level snapshot tests that pin the exact event stream
 /// shape (see `tests/test_full_coverage.rs`).
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, Default)]
 pub struct ConverterOptions {
     /// Emit a `MoveTestEntry` `TraceLogEvent` for the toplevel
     /// function so the GUI event-log pane has at least one row even
@@ -60,19 +60,12 @@ pub struct ConverterOptions {
     pub resolve_pc_lines_from_debug_info: bool,
 }
 
-impl Default for ConverterOptions {
-    fn default() -> Self {
-        // The library-default is *off* so existing callers (the
-        // recorder's own unit / golden-snapshot tests) keep their
-        // exact event-stream pin without per-test plumbing.  The CLI's
-        // `record` subcommand opts in via `with_test_entry_event` when
-        // it drives the full `move test --trace` pipeline.
-        Self {
-            emit_test_entry_event: false,
-            resolve_pc_lines_from_debug_info: false,
-        }
-    }
-}
+// The library-default is *off* so existing callers (the recorder's own
+// unit / golden-snapshot tests) keep their exact event-stream pin
+// without per-test plumbing.  The CLI's `record` subcommand opts in via
+// `with_test_entry_event` when it drives the full `move test --trace`
+// pipeline.  See `ConverterOptions` doc-comment for the per-field
+// rationale.
 
 impl ConverterOptions {
     /// Enable the `MoveTestEntry` baseline event for the toplevel
