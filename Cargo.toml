@@ -6,6 +6,16 @@ authors = ["Metacraft Labs Ltd"]
 description = "CodeTracer recorder for Move smart contracts (Sui/Aptos)"
 license = "Apache-2.0"
 
+# Allow stylistic clippy 1.96 lints that don't meaningfully apply to
+# the Move recorder's test fixture constructors and JSON path traversal
+# helpers.  Same workspace-allow pattern as codetracer-solana-recorder.
+[lints.clippy]
+collapsible_if = "allow"
+collapsible_match = "allow"
+expect_fun_call = "allow"
+unnecessary_map_or = "allow"
+useless_vec = "allow"
+
 [dependencies]
 # CodeTracer trace format
 codetracer_trace_types = { path = "../codetracer-trace-format/codetracer_trace_types" }

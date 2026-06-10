@@ -203,7 +203,7 @@ fn test_aptos_trace_to_codetracer() {
         .expect("read output dir")
         .filter_map(|e| e.ok())
         .map(|e| e.path())
-        .filter(|p| p.extension().map_or(false, |ext| ext == "ct"))
+        .filter(|p| p.extension().is_some_and(|ext| ext == "ct"))
         .collect();
     assert!(
         !ct_files.is_empty(),
@@ -289,7 +289,7 @@ fn test_aptos_rest_api_types() {
         resources[0].data["coin"]["value"].as_str().unwrap(),
         "1000000"
     );
-    assert_eq!(resources[0].data["frozen"].as_bool().unwrap(), false);
+    assert!(!resources[0].data["frozen"].as_bool().unwrap());
 
     // Verify Account resource.
     assert_eq!(resources[1].resource_type, "0x1::account::Account");
@@ -567,7 +567,7 @@ fn test_aptos_replay_from_existing_data() {
         .expect("read output dir")
         .filter_map(|e| e.ok())
         .map(|e| e.path())
-        .filter(|p| p.extension().map_or(false, |ext| ext == "ct"))
+        .filter(|p| p.extension().is_some_and(|ext| ext == "ct"))
         .collect();
     assert!(
         !ct_files.is_empty(),
@@ -598,7 +598,7 @@ fn test_aptos_replay_from_existing_data_no_gas() {
         .expect("read output dir")
         .filter_map(|e| e.ok())
         .map(|e| e.path())
-        .filter(|p| p.extension().map_or(false, |ext| ext == "ct"))
+        .filter(|p| p.extension().is_some_and(|ext| ext == "ct"))
         .collect();
     assert!(
         !ct_files.is_empty(),
