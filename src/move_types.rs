@@ -7,10 +7,7 @@
 // Doc-comment formatting in this file mixes prose with inline code
 // blocks and signature snippets; clippy::doc_*_list_items flag the
 // continuation indentation but the layout is intentional.
-#![allow(
-    clippy::doc_lazy_continuation,
-    clippy::doc_overindented_list_items
-)]
+#![allow(clippy::doc_lazy_continuation, clippy::doc_overindented_list_items)]
 
 use serde::Deserialize;
 use serde::de;
