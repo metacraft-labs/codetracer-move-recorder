@@ -317,6 +317,43 @@ pub fn convert_aptos_trace(
     TraceWriter::begin_writing_trace_events(&mut *writer, &events_path)
         .map_err(|e| eyre!("{e}"))?;
 
+    // Opt the writer into column-aware step encoding *before* the first
+    // `start` / `register_step_with_column` call.  Sticky for the
+    // lifetime of the trace; gates the writer's `DeltaColumn` (tag
+    // 0x07) emission path plus the `meta.dat` bit 4 flag
+    // (`FLAG_HAS_COLUMN_AWARE_STEPS`).  Legacy backends keep the trait
+    // default (no-op); the Nim writer used here flips the real flag.
+    //
+    // Aptos's `MOVE_VM_TRACE` CSV carries only `(function_name, PC)`
+    // — no source-level column information.  We still emit the flag so
+    // the resulting trace is wire-compatible with the column-aware
+    // replay reader; every step's column is `None`, which the reader
+    // interprets as "no column override" (line-only step).  When Aptos
+    // upstream eventually exposes per-PC source locations, the call
+    // site below can start forwarding a real `Some(column)`.
+    TraceWriter::enable_column_aware_steps(&mut *writer);
+
+    // Register the source path together with its per-line byte counts
+    // (paths.dat Layout A) so the column-aware reader can map the
+    // writer-side `global_position_index` back to (line, column).
+    // Aptos has no source mapping today, so we emit an empty
+    // line-length table when the source can't be read — the writer
+    // accepts this and `column=None` steps stay well-formed.
+    let line_lengths = match std::fs::read_to_string(source_path) {
+        Ok(src) => crate::move_debug_info::compute_line_lengths(&src),
+        Err(_) => Vec::new(),
+    };
+    if let Err(err) =
+        TraceWriter::register_path_with_line_lengths(&mut *writer, source_path, &line_lengths)
+    {
+        eprintln!(
+            "[codetracer-move-recorder] register_path_with_line_lengths failed for {}: {} \
+             (column resolution will fall back to None for this file)",
+            source_path.display(),
+            err,
+        );
+    }
+
     // Start the trace.
     TraceWriter::start(&mut *writer, source_path, Line(1));
 
@@ -369,7 +406,15 @@ pub fn convert_aptos_trace(
 
         // Emit a step for each trace entry.
         // Note: without source maps, we use incrementing line numbers as placeholders.
-        TraceWriter::register_step(&mut *writer, source_path, Line(step_line));
+        // Column-aware encoding: Aptos's MOVE_VM_TRACE has no source-
+        // column info, so we forward `None` — the reader records a
+        // line-only step (DeltaLine, no DeltaColumn override).
+        TraceWriter::register_step_with_column(
+            &mut *writer,
+            source_path,
+            Line(step_line),
+            None,
+        );
     }
 
     // Close the last function.

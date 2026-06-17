@@ -268,6 +268,65 @@ pub fn convert_trace_into_writer_with_options(
         options.resolve_pc_lines_from_debug_info,
     )
     .unwrap_or(1);
+
+    // Opt the writer into column-aware step encoding *before* the first
+    // `start` / `register_step_with_column` call.  Sticky for the
+    // lifetime of the trace; gates the writer's `DeltaColumn` (tag
+    // 0x07) emission path plus the `meta.dat` bit 4 flag
+    // (`FLAG_HAS_COLUMN_AWARE_STEPS`).  Legacy / test-double backends
+    // keep the trait default no-op; the canonical Nim writer
+    // (production CLI flow) flips the real flag.
+    TraceWriter::enable_column_aware_steps(writer);
+
+    // Register every source path the trace touches together with its
+    // per-line UTF-8 byte-length table (paths.dat Layout A) so the
+    // column-aware reader can map the writer-side global byte position
+    // back to (line, column) at replay time.  Soft-fails (logged) if
+    // the writer rejects the call — the trace remains usable, but
+    // columns for that file fall back to `None` on read.
+    //
+    // Two sources of paths:
+    //   1. The primary source path passed in (always registered, even
+    //      when no instruction lands on it — keeps metadata coherent).
+    //   2. Per-module debug-info sidecars: each module's compiler-
+    //      recorded `from_file_path` (or its canonical
+    //      `sources/<Module>.move` fallback) plus pre-computed
+    //      line-length table.
+    let mut registered_paths: HashMap<std::path::PathBuf, ()> = HashMap::new();
+    {
+        let primary_lengths = std::fs::read_to_string(source_path)
+            .ok()
+            .map(|src| crate::move_debug_info::compute_line_lengths(&src))
+            .unwrap_or_default();
+        if let Err(err) =
+            TraceWriter::register_path_with_line_lengths(writer, source_path, &primary_lengths)
+        {
+            eprintln!(
+                "[codetracer-move-recorder] register_path_with_line_lengths failed for {}: {} \
+                 (column resolution will fall back to None for this file)",
+                source_path.display(),
+                err,
+            );
+        }
+        registered_paths.insert(source_path.to_path_buf(), ());
+        for (path, lengths) in debug_info.iter_source_line_lengths() {
+            if registered_paths.contains_key(path) {
+                continue;
+            }
+            if let Err(err) =
+                TraceWriter::register_path_with_line_lengths(writer, path, lengths)
+            {
+                eprintln!(
+                    "[codetracer-move-recorder] register_path_with_line_lengths failed for \
+                     {}: {} (column resolution will fall back to None for this file)",
+                    path.display(),
+                    err,
+                );
+            }
+            registered_paths.insert(path.to_path_buf(), ());
+        }
+    }
+
     TraceWriter::start(writer, source_path, Line(first_step_line as i64));
 
     // Register common Move types.
@@ -573,11 +632,40 @@ pub fn convert_trace_into_writer_with_options(
                             .function(module_name, *bmi)
                             .and_then(|fi| fi.pc_to_line(*pc))
                     });
+                // Look up the column for this PC via the debug-info
+                // `code_map` entry (1-based byte column on the resolved
+                // line).  Gated on `resolve_pc_lines_from_debug_info`
+                // for the same reason as the line fallback — the
+                // legacy `SourceMapResolver` carries only lines, so
+                // when it answers we forward `column=None` (line-only
+                // step).  Synthesised entry/exit ops without a
+                // `code_map` entry also resolve to `None`, which the
+                // column-aware reader treats as "no column override".
+                let column = if options.resolve_pc_lines_from_debug_info {
+                    frame_stack
+                        .last()
+                        .and_then(|(_m, bmi)| debug_info.function(module_name, *bmi))
+                        .and_then(|fi| fi.pc_to_column(*pc))
+                } else {
+                    None
+                };
                 if let Some(line) = line {
                     let line_changed = prev_line != Some(line);
                     let backward_jump = prev_pc.is_some_and(|p| *pc < p);
                     if line_changed || backward_jump {
-                        TraceWriter::register_step(writer, source_path, Line(line as i64));
+                        // M-move: column-aware step emission.  Forward
+                        // `Some(column)` when the compiler debug info
+                        // recorded one (1-based byte column on `line`);
+                        // forward `None` otherwise so the reader records
+                        // a line-only step (DeltaLine, no DeltaColumn
+                        // override).  Mirrors the EVM recorder's M14
+                        // pattern.
+                        TraceWriter::register_step_with_column(
+                            writer,
+                            source_path,
+                            Line(line as i64),
+                            column.map(|c| Line(c as i64)),
+                        );
                         prev_line = Some(line);
                     }
                 }

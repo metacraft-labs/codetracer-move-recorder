@@ -80,6 +80,14 @@ pub struct FunctionDebugInfo {
     /// mean the compiler did not record a source mapping for that
     /// instruction — typically a synthesised prologue/epilogue op.
     pub pc_to_line: HashMap<u64, u32>,
+    /// Per-bytecode-PC source column numbers (1-indexed), aligned with
+    /// `pc_to_line`.  Derived from the `code_map` range start minus the
+    /// containing line's first-byte offset (+1 for 1-based columns) so
+    /// the column-aware replay reader can map back from the writer-side
+    /// `global_position_index` to (line, column).  Missing entries mean
+    /// the PC had no source mapping (synthesised op) and the converter
+    /// emits `Option<column>=None` for that step.
+    pub pc_to_column: HashMap<u64, u32>,
 }
 
 /// Per-module debug info, keyed by the bytecode function index
@@ -87,6 +95,20 @@ pub struct FunctionDebugInfo {
 #[derive(Debug, Default, Clone)]
 pub struct ModuleDebugInfo {
     pub functions: HashMap<u64, FunctionDebugInfo>,
+    /// Path to the on-disk `.move` source file the compiler used when
+    /// building this module, when discoverable.  Carried alongside the
+    /// per-PC line/column tables so the converter can register the
+    /// `paths.dat` Layout A line-length table (column-aware mode)
+    /// without re-walking the package layout for every module.
+    pub source_path: Option<PathBuf>,
+    /// Per-line byte-length table (line `i+1`'s UTF-8 byte count
+    /// excluding the trailing `\n`).  Pre-computed at debug-info load
+    /// time and forwarded verbatim to
+    /// `TraceWriter::register_path_with_line_lengths` so the column-
+    /// aware reader can decode columns from the running
+    /// `global_position_index`.  Empty when the source file could not
+    /// be read.
+    pub line_lengths: Vec<u32>,
 }
 
 /// Workspace of debug-info modules, keyed by module short name
@@ -246,14 +268,19 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
             .into_iter()
             .map(|(raw_name, _)| strip_scope_suffix(&raw_name))
             .collect();
-        // Build pc -> line from the compiler's `code_map`.  Each entry
-        // pins a single bytecode PC to a byte range in the source; the
-        // range *start* identifies the user-facing line for the step.
+        // Build pc -> (line, column) from the compiler's `code_map`.
+        // Each entry pins a single bytecode PC to a byte range in the
+        // source; the range *start* identifies the user-facing line and
+        // (start - line_start_offset + 1) is the 1-based column for the
+        // column-aware step encoding.
         let mut pc_to_line: HashMap<u64, u32> = HashMap::new();
+        let mut pc_to_column: HashMap<u64, u32> = HashMap::new();
         for (pc_str, loc) in fn_raw.code_map {
             if let Ok(pc) = pc_str.parse::<u64>() {
                 let line = byte_offset_to_line(&line_starts, loc.start);
+                let column = byte_offset_to_column(&line_starts, loc.start, line);
                 pc_to_line.insert(pc, line);
+                pc_to_column.insert(pc, column);
             }
         }
         functions.insert(
@@ -263,11 +290,76 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
                 locals,
                 parameters,
                 pc_to_line,
+                pc_to_column,
             },
         );
     }
 
-    Some((module_short_name, ModuleDebugInfo { functions }))
+    // Compute the per-line UTF-8 byte-length table once per module so
+    // the converter can hand it to
+    // `TraceWriter::register_path_with_line_lengths` (paths.dat Layout A,
+    // see codetracer-trace-format-spec/trace-events.md §"paths.dat
+    // per-line offset table — Layout A").
+    let line_lengths = compute_line_lengths(&source_text);
+    let source_path = resolve_source_path(path, &raw.from_file_path, &module_short_name);
+
+    Some((
+        module_short_name,
+        ModuleDebugInfo {
+            functions,
+            source_path,
+            line_lengths,
+        },
+    ))
+}
+
+/// Resolve the on-disk `.move` source path the debug-info JSON refers
+/// to.  Prefers the compiler-recorded absolute path when it still exists
+/// on the host; otherwise falls back to the canonical package layout
+/// (`<package_root>/sources/<Module>.move`).  Returns `None` when
+/// neither candidate is readable — the converter then skips column
+/// resolution for that module and emits steps with `column=None`.
+fn resolve_source_path(
+    debug_json: &Path,
+    from_file_path: &Path,
+    module_short_name: &str,
+) -> Option<PathBuf> {
+    if from_file_path.exists() {
+        return Some(from_file_path.to_path_buf());
+    }
+    let package_root = debug_json
+        .parent() // debug_info/
+        .and_then(Path::parent) // <PackageName>/
+        .and_then(Path::parent) // build/
+        .and_then(Path::parent)?; // <package_root>
+    let candidate = package_root
+        .join("sources")
+        .join(format!("{module_short_name}.move"));
+    candidate.exists().then_some(candidate)
+}
+
+/// Compute the per-line UTF-8 byte-length table required by the
+/// `paths.dat` Layout A record (column-aware mode).
+///
+/// `line_lengths[i]` is the byte count of source line `i+1` (1-based,
+/// matching the CTFS spec), excluding the trailing `\n`.  An `\r\n`
+/// terminator contributes its `\r` to the line's byte count so the
+/// table is consistent with the column byte offsets the Move compiler's
+/// `code_map` emits.  A file that doesn't end with `\n` still has its
+/// final line counted.  Mirrors the EVM/Solana recorder helper.
+pub fn compute_line_lengths(source: &str) -> Vec<u32> {
+    let mut lengths: Vec<u32> = Vec::new();
+    let mut line_start: usize = 0;
+    for (i, b) in source.bytes().enumerate() {
+        if b == b'\n' {
+            lengths.push((i - line_start) as u32);
+            line_start = i + 1;
+        }
+    }
+    if line_start < source.len() {
+        lengths.push((source.len() - line_start) as u32);
+    }
+    lengths
 }
 
 /// Build a sorted list of byte offsets where each source line begins.
@@ -298,12 +390,31 @@ fn byte_offset_to_line(line_starts: &[u32], offset: u32) -> u32 {
     idx.max(1) as u32
 }
 
+/// Resolve a byte offset into a 1-indexed column number on `line`.
+/// Returns `1` (start-of-line) when `line` is out of bounds — keeping
+/// the column-aware reader's wire format well-formed for the rare case
+/// of a code_map entry that points outside the source we loaded.
+fn byte_offset_to_column(line_starts: &[u32], offset: u32, line: u32) -> u32 {
+    let idx = line.saturating_sub(1) as usize;
+    let line_start = line_starts.get(idx).copied().unwrap_or(0);
+    (offset.saturating_sub(line_start) + 1).max(1)
+}
+
 impl FunctionDebugInfo {
     /// Look up the 1-indexed source line for a bytecode PC, if the
     /// compiler recorded one.  Returns `None` when no mapping exists
     /// (typically a synthesised entry/exit op).
     pub fn pc_to_line(&self, pc: u64) -> Option<u32> {
         self.pc_to_line.get(&pc).copied()
+    }
+
+    /// Look up the 1-indexed source column for a bytecode PC.  Returns
+    /// `None` for synthesised ops (same gating as `pc_to_line`); the
+    /// converter forwards that `None` straight into
+    /// `register_step_with_column` so the column-aware reader records a
+    /// line-only step (DeltaLine without a DeltaColumn override).
+    pub fn pc_to_column(&self, pc: u64) -> Option<u32> {
+        self.pc_to_column.get(&pc).copied()
     }
 }
 
@@ -322,6 +433,18 @@ impl DebugInfo {
                     .iter()
                     .map(move |(pc, line)| (module_name, idx, *pc, *line))
             })
+        })
+    }
+
+    /// Iterate `(source_path, line_lengths)` pairs for every module
+    /// whose debug-info JSON pointed at a readable on-disk source file.
+    /// The converter consumes this to call
+    /// `TraceWriter::register_path_with_line_lengths` once per source
+    /// path before emitting the first column-aware step.
+    pub fn iter_source_line_lengths(&self) -> impl Iterator<Item = (&Path, &[u32])> + '_ {
+        self.modules.values().filter_map(|m| {
+            let path = m.source_path.as_deref()?;
+            Some((path, m.line_lengths.as_slice()))
         })
     }
 }
