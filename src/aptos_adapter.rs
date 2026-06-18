@@ -333,6 +333,17 @@ pub fn convert_aptos_trace(
     // site below can start forwarding a real `Some(column)`.
     TraceWriter::enable_column_aware_steps(&mut *writer);
 
+    // M-capability-flags: DELIBERATELY leave both capability bits
+    // clear.  Aptos's CSV trace format doesn't expose per-PC source
+    // columns yet, so individual VM instructions cannot be told apart
+    // on a multi-statement source line.  Per spec, advertising the
+    // capabilities would lie to the GUI about the recorder's column
+    // precision; the GUI must continue to hide its per-column
+    // breakpoint and per-column motion affordances on Aptos traces.
+    // When upstream Aptos surfaces per-PC source locations, mirror
+    // the Sui-side path in `converter.rs` and call both
+    // `enable_column_breakpoints_support` / `enable_column_motions_support`.
+
     // Register the source path together with its per-line byte counts
     // (paths.dat Layout A) so the column-aware reader can map the
     // writer-side `global_position_index` back to (line, column).
