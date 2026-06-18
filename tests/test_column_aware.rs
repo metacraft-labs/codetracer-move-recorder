@@ -25,7 +25,8 @@
 //! pattern from
 //! `codetracer_trace_writer_nim/tests/register_step_with_column_roundtrip.rs`.
 
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use std::process::Command;
 use std::sync::Mutex;
 
 use codetracer_trace_writer_nim::NimTraceReaderHandle;
@@ -33,7 +34,7 @@ use codetracer_trace_writer_nim::NimTraceReaderHandle;
 use codetracer_move_recorder::aptos_adapter::{
     AptosEnrichedEntry, AptosTraceEntry, convert_aptos_trace,
 };
-use codetracer_move_recorder::converter;
+use codetracer_move_recorder::converter::{self, ConverterOptions};
 use codetracer_move_recorder::source_map::SourceMapResolver;
 
 static NIM_TEST_LOCK: Mutex<()> = Mutex::new(());
@@ -231,5 +232,206 @@ fn aptos_adapter_enables_column_aware_steps_for_column_less_trace() {
     );
 
     drop(reader);
+    drop(tmp);
+}
+
+// ---------------------------------------------------------------------------
+// Real-Move multi-statement-per-line column verification.
+//
+// This is the strict end-to-end pin requested by the column-aware audit:
+// build a real Sui Move package whose `#[test]` function packs three
+// statements onto a single source line, record the resulting trace
+// through the recorder's debug-info-enabled converter path, run
+// `ct-print --full`, and assert that the multi-statement line surfaces
+// >= 3 distinct columns in the decoded JSON.  Mirrors the EVM
+// recorder's `test_column_aware_distinct_columns_on_one_line` against
+// `test-programs/column_aware/ColumnAware.sol`.
+// ---------------------------------------------------------------------------
+
+const COLUMN_AWARE_PACKAGE: &str = "test-programs/move/column_aware";
+const COLUMN_AWARE_MODULE: &str = "column_aware";
+const COLUMN_AWARE_TEST_FN: &str = "test_multi_statement_line";
+
+fn manifest_dir() -> PathBuf {
+    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
+}
+
+fn ct_print_path() -> PathBuf {
+    manifest_dir()
+        .join("..")
+        .join("codetracer-trace-format-nim")
+        .join("ct-print")
+}
+
+fn sui_is_available() -> bool {
+    Command::new("sui")
+        .arg("--version")
+        .output()
+        .map(|o| o.status.success())
+        .unwrap_or(false)
+}
+
+#[test]
+fn move_recorder_surfaces_distinct_columns_for_multi_statement_line() {
+    let _guard = NIM_TEST_LOCK.lock().unwrap();
+
+    let ct_print = ct_print_path();
+    if !ct_print.exists() {
+        eprintln!(
+            "SKIP: move_recorder_surfaces_distinct_columns_for_multi_statement_line \
+             requires ct-print at {} — only available within the metacraft workspace \
+             where codetracer-trace-format-nim is a sibling.",
+            ct_print.display()
+        );
+        return;
+    }
+    if !sui_is_available() {
+        eprintln!(
+            "SKIP: move_recorder_surfaces_distinct_columns_for_multi_statement_line \
+             requires the `sui` CLI on PATH (use the Nix dev shell)."
+        );
+        return;
+    }
+
+    // ---- 1. Build the column_aware package + run its #[test] fn -----------
+    let package_dir = manifest_dir().join(COLUMN_AWARE_PACKAGE);
+    assert!(
+        package_dir.join("Move.toml").exists(),
+        "column_aware Move package missing at {}",
+        package_dir.display()
+    );
+
+    let test_output = Command::new("sui")
+        .args(["move", "test", "--trace", COLUMN_AWARE_TEST_FN])
+        .current_dir(&package_dir)
+        .output()
+        .expect("failed to spawn `sui move test --trace`");
+    assert!(
+        test_output.status.success(),
+        "`sui move test --trace` failed; stdout: {}\nstderr: {}",
+        String::from_utf8_lossy(&test_output.stdout),
+        String::from_utf8_lossy(&test_output.stderr)
+    );
+
+    let trace_zst = package_dir.join("traces").join(format!(
+        "{COLUMN_AWARE_MODULE}__{COLUMN_AWARE_MODULE}__{COLUMN_AWARE_TEST_FN}.json.zst"
+    ));
+    assert!(
+        trace_zst.exists(),
+        "expected Sui to write the per-test trace at {}",
+        trace_zst.display()
+    );
+
+    // Decompress.
+    let zst_bytes = std::fs::read(&trace_zst).expect("read trace .zst");
+    let mut decoder =
+        zstd::Decoder::new(zst_bytes.as_slice()).expect("zstd decoder for trace fixture");
+    let mut trace_bytes = Vec::new();
+    std::io::Read::read_to_end(&mut decoder, &mut trace_bytes).expect("decompress trace");
+
+    // ---- 2. Convert through the recorder's debug-info-enabled path -------
+    let source_path = package_dir
+        .join("sources")
+        .join(format!("{COLUMN_AWARE_MODULE}.move"));
+    assert!(source_path.exists(), "source missing: {}", source_path.display());
+
+    let tmp = tempfile::tempdir().expect("tempdir");
+    let out_dir = tmp.path().join("ct-out");
+
+    // `for_ct_record_flow()` opts into the per-package debug-info source-line
+    // resolution path that carries the per-PC column from the Move compiler's
+    // `code_map`.  Without this, the converter forwards `column=None` for
+    // every step (legacy SourceMapResolver carries only lines).
+    converter::convert_trace_with_options(
+        &trace_bytes,
+        &SourceMapResolver::empty(),
+        &source_path,
+        &out_dir,
+        ConverterOptions::default().for_ct_record_flow(),
+    )
+    .expect("convert_trace_with_options");
+
+    let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
+        .expect("read out_dir")
+        .filter_map(|e| e.ok())
+        .map(|e| e.path())
+        .filter(|p| p.extension().is_some_and(|x| x == "ct"))
+        .collect();
+    assert!(
+        !ct_files.is_empty(),
+        "expected a .ct container in {}",
+        out_dir.display()
+    );
+
+    // ---- 3. ct-print --full + parse JSON ---------------------------------
+    let dump = Command::new(&ct_print)
+        .args(["--full", "--strip-paths"])
+        .arg(&ct_files[0])
+        .output()
+        .expect("failed to spawn ct-print");
+    assert!(
+        dump.status.success(),
+        "ct-print --full should succeed; stderr: {}",
+        String::from_utf8_lossy(&dump.stderr)
+    );
+    let doc: serde_json::Value =
+        serde_json::from_slice(&dump.stdout).expect("ct-print --full should emit valid JSON");
+
+    // ---- 4. Assertions ---------------------------------------------------
+
+    // (a) meta.dat bit 4 advertised through the canonical
+    //     `metadata.flags.has_column_aware_steps` JSON path.
+    assert_eq!(
+        doc["metadata"]["flags"]["has_column_aware_steps"].as_bool(),
+        Some(true),
+        "trace metadata must advertise has_column_aware_steps=true; got {:?}",
+        doc["metadata"]
+    );
+
+    // (b) Find the multi-statement source line: identify it by parsing the
+    //     source file and locating the first line that contains three
+    //     `blackbox(` call sites.  This keeps the assertion robust to the
+    //     fixture's doc-comment block drifting line numbers.
+    let source_text = std::fs::read_to_string(&source_path).expect("read source");
+    let target_line: i64 = source_text
+        .lines()
+        .enumerate()
+        .find_map(|(i, line)| (line.matches("blackbox(").count() >= 3).then_some((i + 1) as i64))
+        .expect("fixture must contain a line with >=3 blackbox() call sites");
+
+    // (c) Collect the set of distinct (step) columns surfaced on
+    //     `target_line` in the trace.
+    let events = doc["events"].as_array().expect("events array");
+    let mut cols_on_target = std::collections::BTreeSet::<i64>::new();
+    let mut cols_by_line: std::collections::BTreeMap<i64, std::collections::BTreeSet<i64>> =
+        std::collections::BTreeMap::new();
+    for ev in events {
+        if ev["kind"] != "step" {
+            continue;
+        }
+        let Some(line) = ev["line"].as_i64() else { continue };
+        let Some(col) = ev["column"].as_i64() else { continue };
+        cols_by_line.entry(line).or_default().insert(col);
+        if line == target_line {
+            cols_on_target.insert(col);
+        }
+    }
+
+    assert!(
+        cols_on_target.len() >= 3,
+        "multi-statement line {target_line} should surface >= 3 distinct step columns, \
+         got {cols_on_target:?}; full line->cols map: {cols_by_line:?}",
+    );
+    for col in &cols_on_target {
+        assert!(
+            *col >= 1,
+            "step column must be >= 1 (1-based on the wire); got {col} on line {target_line}",
+        );
+    }
+
+    eprintln!(
+        "PASS: column-aware step emission — line {target_line} surfaces distinct columns {cols_on_target:?}"
+    );
+
     drop(tmp);
 }
