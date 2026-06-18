@@ -278,6 +278,15 @@ pub fn convert_trace_into_writer_with_options(
     // (production CLI flow) flips the real flag.
     TraceWriter::enable_column_aware_steps(writer);
 
+    // M-capability-flags: the Move trace adapter resolves each
+    // bytecode position to a single sub-statement source position
+    // via the compiler's `debug_info` code map, so per-column
+    // breakpoints AND per-column motions are both meaningful.
+    // Advertise both capabilities to the GUI.  See spec
+    // `internal-files.md` §"Column-Aware Capability Flags".
+    TraceWriter::enable_column_breakpoints_support(writer);
+    TraceWriter::enable_column_motions_support(writer);
+
     // Register every source path the trace touches together with its
     // per-line UTF-8 byte-length table (paths.dat Layout A) so the
     // column-aware reader can map the writer-side global byte position
