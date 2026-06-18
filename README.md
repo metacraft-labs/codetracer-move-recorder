@@ -79,6 +79,13 @@ The recorder is organized into the following modules:
 * `move_types.rs` — Sui Move trace v3 schema types
 * `source_map.rs` / `source_lookup.rs` — Move source-map + filesystem source discovery
 
+### Examples
+
+See [`examples/`](./examples/README.md) for small Move programs you can
+record with `ct record` and replay in the CodeTracer GUI, including a
+walkthrough that demonstrates column-aware step-over on multi-statement
+lines.
+
 ### Testing
 
 Run the test suite with:
