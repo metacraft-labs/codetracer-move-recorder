@@ -55,10 +55,31 @@ jobs:
 
       - name: Clone codetracer-trace-format-nim sibling
         run: |
-          rm -rf "${GITHUB_WORKSPACE}/../codetracer-trace-format-nim"
-          git clone --depth 1 \
-            "https://github.com/metacraft-labs/codetracer-trace-format-nim.git" \
-            "${GITHUB_WORKSPACE}/../codetracer-trace-format-nim"
+          PINS=".github/sibling-pins"
+          TFN_REF="main"
+          TFN_BRANCH=""
+          if [ -f "${PINS}" ]; then
+            PIN="$(grep '^codetracer-trace-format-nim ' "${PINS}" | cut -d' ' -f2)" || true
+            BRANCH="$(grep '^codetracer-trace-format-nim ' "${PINS}" | cut -d' ' -f3)" || true
+            [ -n "${PIN}" ] && TFN_REF="${PIN}"
+            [ -n "${BRANCH}" ] && [ "${BRANCH}" != "HEAD" ] && TFN_BRANCH="${BRANCH}"
+          fi
+          DEST="${GITHUB_WORKSPACE}/../codetracer-trace-format-nim"
+          URL="https://github.com/metacraft-labs/codetracer-trace-format-nim.git"
+          rm -rf "${DEST}"
+          if [ -n "${TFN_BRANCH}" ] && git clone --depth 1 --branch "${TFN_BRANCH}" --single-branch \
+            "${URL}" "${DEST}"; then
+            if git -C "${DEST}" checkout "${TFN_REF}"; then
+              exit 0
+            fi
+          fi
+          rm -rf "${DEST}"
+          if ! git clone --depth 1 --branch "${TFN_REF}" --single-branch \
+            "${URL}" "${DEST}" 2>/dev/null; then
+            rm -rf "${DEST}"
+            git clone --no-checkout "${URL}" "${DEST}"
+            git -C "${DEST}" checkout "${TFN_REF}"
+          fi
 
       - name: Setup dev env
         uses: metacraft-labs/metacraft-github-actions/setup-dev-env@main
