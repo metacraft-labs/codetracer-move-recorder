@@ -284,8 +284,8 @@ pub fn convert_trace_into_writer_with_options(
     // breakpoints AND per-column motions are both meaningful.
     // Advertise both capabilities to the GUI.  See spec
     // `internal-files.md` §"Column-Aware Capability Flags".
-    TraceWriter::enable_column_breakpoints_support(writer);
-    TraceWriter::enable_column_motions_support(writer);
+    writer.enable_column_breakpoints_support();
+    writer.enable_column_motions_support();
 
     // Register every source path the trace touches together with its
     // per-line UTF-8 byte-length table (paths.dat Layout A) so the
