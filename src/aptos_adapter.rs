@@ -420,12 +420,7 @@ pub fn convert_aptos_trace(
         // Column-aware encoding: Aptos's MOVE_VM_TRACE has no source-
         // column info, so we forward `None` — the reader records a
         // line-only step (DeltaLine, no DeltaColumn override).
-        TraceWriter::register_step_with_column(
-            &mut *writer,
-            source_path,
-            Line(step_line),
-            None,
-        );
+        TraceWriter::register_step_with_column(&mut *writer, source_path, Line(step_line), None);
     }
 
     // Close the last function.

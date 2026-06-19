@@ -322,9 +322,7 @@ pub fn convert_trace_into_writer_with_options(
             if registered_paths.contains_key(path) {
                 continue;
             }
-            if let Err(err) =
-                TraceWriter::register_path_with_line_lengths(writer, path, lengths)
-            {
+            if let Err(err) = TraceWriter::register_path_with_line_lengths(writer, path, lengths) {
                 eprintln!(
                     "[codetracer-move-recorder] register_path_with_line_lengths failed for \
                      {}: {} (column resolution will fall back to None for this file)",
