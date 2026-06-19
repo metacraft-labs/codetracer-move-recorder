@@ -240,7 +240,7 @@ jobs:
           DEST="$GITHUB_WORKSPACE/../codetracer-trace-format-nim"
           rm -rf "$DEST"
           git clone "https://x-access-token:${GH_TOKEN}@github.com/metacraft-labs/codetracer-trace-format-nim.git" "$DEST"
-          git -C "$DEST" checkout "$TFN_REF" 2>/dev/null || true
+          git -C "$DEST" checkout "$TFN_REF"
 
       - name: Clone codetracer-trace-format into codetracer/libs (CI override)
         env:
@@ -262,10 +262,29 @@ jobs:
           git clone "https://x-access-token:${GH_TOKEN}@github.com/metacraft-labs/codetracer-trace-format.git" "$DEST"
           git -C "$DEST" checkout "$TF_REF"
 
+      - name: Clone codetracer-trace-format-nim into codetracer/libs (CI override)
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        # The codetracer build has its own codetracer-trace-format-nim
+        # flake input. Override it with the same sibling pin the recorder
+        # build uses so the CodeTracer reader decodes the CTFS path table
+        # layout written by the recorder.
+        run: |
+          PINS="$GITHUB_WORKSPACE/.github/sibling-pins"
+          TFN_REF="main"
+          if [ -f "$PINS" ]; then
+            PIN_REF="$(grep '^codetracer-trace-format-nim ' "$PINS" | cut -d' ' -f2)" || true
+            [ -n "$PIN_REF" ] && TFN_REF="$PIN_REF"
+          fi
+          DEST="$GITHUB_WORKSPACE/../codetracer/libs/codetracer-trace-format-nim"
+          rm -rf "$DEST"
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/metacraft-labs/codetracer-trace-format-nim.git" "$DEST"
+          git -C "$DEST" checkout "$TFN_REF"
+
       - name: Build codetracer
         run: |
           cd "$GITHUB_WORKSPACE/../codetracer"
-          OVERRIDE="--override-input codetracer-trace-format path:./libs/codetracer-trace-format"
+          OVERRIDE="--override-input codetracer-trace-format path:./libs/codetracer-trace-format --override-input codetracer-trace-format-nim path:./libs/codetracer-trace-format-nim"
           # ``metacraft-labs-codetracer.cachix.org`` serves a stale
           # narinfo for the noir flake input keyed under a NAR-hash
           # that no longer matches the lockfile, so the build aborts
