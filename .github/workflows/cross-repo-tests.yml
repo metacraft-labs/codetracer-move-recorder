@@ -180,16 +180,13 @@ jobs:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           EXT_REF="${{ steps.resolve-refs.outputs.vscode_extension_ref }}"
-          EXT_BRANCH="${{ steps.resolve-refs.outputs.vscode_extension_branch }}"
           DEST="$GITHUB_WORKSPACE/../codetracer-vscode-extension"
           rm -rf "$DEST"
           git clone --depth 1 \
             "https://x-access-token:${GH_TOKEN}@github.com/metacraft-labs/codetracer-vscode-extension.git" \
             "$DEST"
-          if [ "$EXT_BRANCH" != "main" ]; then
-            git -C "$DEST" fetch origin "$EXT_BRANCH"
-            git -C "$DEST" checkout FETCH_HEAD
-          fi
+          git -C "$DEST" fetch --depth 1 origin "$EXT_REF"
+          git -C "$DEST" checkout --detach FETCH_HEAD
 
       - name: Clone nix-blockchain-development
         env:
