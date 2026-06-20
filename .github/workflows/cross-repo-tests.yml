@@ -20,13 +20,13 @@ on:
   workflow_dispatch:
     inputs:
       codetracer_ref:
-        description: 'Git ref for codetracer repo'
+        description: "Git ref for codetracer repo"
         required: false
-        default: ''
+        default: ""
       vscode_extension_ref:
-        description: 'Git ref for codetracer-vscode-extension repo'
+        description: "Git ref for codetracer-vscode-extension repo"
         required: false
-        default: ''
+        default: ""
 
   repository_dispatch:
     types: [cross-repo-test]
@@ -64,13 +64,12 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Nix
-        uses: metacraft-labs/metacraft-github-actions/setup-nix@main
+        uses: metacraft-labs/nixos-modules/.github/setup-nix@main
         with:
-          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
-          cachix-cache: ''
-          trusted-public-keys: ''
-          substituters: ''
-          gh-token: ${{ steps.app-token.outputs.token }}
+          push-to-cache: false
+          trusted-public-keys: ${{ vars.ATTIC_TRUSTED_PUBLIC_KEY }}
+          substituters: ${{ vars.ATTIC_SUBSTITUTER }}
+          nix-github-token: ${{ steps.app-token.outputs.token }}
 
       - name: Install just
         uses: extractions/setup-just@v2
@@ -141,12 +140,20 @@ jobs:
           git clone --depth 1 \
             "https://x-access-token:${GH_TOKEN}@github.com/metacraft-labs/codetracer.git" \
             "$DEST"
+          if [ "$CT_REF" != "main" ]; then
+            git -C "$DEST" \
+              -c fetch.recurseSubmodules=false \
+              fetch --no-recurse-submodules origin "$CT_REF"
+            git -C "$DEST" \
+              -c submodule.recurse=false \
+              checkout --no-recurse-submodules FETCH_HEAD
+          fi
           cd "$DEST"
           git submodule init
           # Rewrite submodule URLs with auth token for private repos
           for url in $(git config --get-regexp '^submodule\..*\.url$' \
-                       | grep -E 'git@github\.com:|https://github\.com/' \
-                       | cut -d' ' -f1); do
+                        | grep -E 'git@github\.com:|https://github\.com/' \
+                        | cut -d' ' -f1); do
             old_url=$(git config --get "$url")
             new_url=$(echo "$old_url" \
               | sed "s|git@github.com:|https://x-access-token:${GH_TOKEN}@github.com/|" \
@@ -170,27 +177,19 @@ jobs:
             fi
           done
           set -e
-          cd -
-          if [ "$CT_REF" != "main" ]; then
-            git -C "$DEST" fetch origin "$CT_REF"
-            git -C "$DEST" checkout "$CT_REF"
-          fi
 
       - name: Clone codetracer-vscode-extension
         env:
           GH_TOKEN: ${{ steps.app-token.outputs.token }}
         run: |
           EXT_REF="${{ steps.resolve-refs.outputs.vscode_extension_ref }}"
-          EXT_BRANCH="${{ steps.resolve-refs.outputs.vscode_extension_branch }}"
           DEST="$GITHUB_WORKSPACE/../codetracer-vscode-extension"
           rm -rf "$DEST"
           git clone --depth 1 \
             "https://x-access-token:${GH_TOKEN}@github.com/metacraft-labs/codetracer-vscode-extension.git" \
             "$DEST"
-          if [ "$EXT_BRANCH" != "main" ]; then
-            git -C "$DEST" fetch origin "$EXT_BRANCH"
-            git -C "$DEST" checkout FETCH_HEAD
-          fi
+          git -C "$DEST" fetch --depth 1 origin "$EXT_REF"
+          git -C "$DEST" checkout --detach FETCH_HEAD
 
       - name: Clone nix-blockchain-development
         env:
@@ -201,7 +200,6 @@ jobs:
           git clone --depth 1 \
             "https://x-access-token:${GH_TOKEN}@github.com/metacraft-labs/nix-blockchain-development.git" \
             "$DEST"
-
 
       - name: Clone codetracer-trace-format as recorder Cargo sibling
         env:
@@ -245,7 +243,7 @@ jobs:
           DEST="$GITHUB_WORKSPACE/../codetracer-trace-format-nim"
           rm -rf "$DEST"
           git clone "https://x-access-token:${GH_TOKEN}@github.com/metacraft-labs/codetracer-trace-format-nim.git" "$DEST"
-          git -C "$DEST" checkout "$TFN_REF" 2>/dev/null || true
+          git -C "$DEST" checkout "$TFN_REF"
 
       - name: Clone codetracer-trace-format into codetracer/libs (CI override)
         env:
@@ -267,10 +265,29 @@ jobs:
           git clone "https://x-access-token:${GH_TOKEN}@github.com/metacraft-labs/codetracer-trace-format.git" "$DEST"
           git -C "$DEST" checkout "$TF_REF"
 
+      - name: Clone codetracer-trace-format-nim into codetracer/libs (CI override)
+        env:
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        # The codetracer build has its own codetracer-trace-format-nim
+        # flake input. Override it with the same sibling pin the recorder
+        # build uses so the CodeTracer reader decodes the CTFS path table
+        # layout written by the recorder.
+        run: |
+          PINS="$GITHUB_WORKSPACE/.github/sibling-pins"
+          TFN_REF="main"
+          if [ -f "$PINS" ]; then
+            PIN_REF="$(grep '^codetracer-trace-format-nim ' "$PINS" | cut -d' ' -f2)" || true
+            [ -n "$PIN_REF" ] && TFN_REF="$PIN_REF"
+          fi
+          DEST="$GITHUB_WORKSPACE/../codetracer/libs/codetracer-trace-format-nim"
+          rm -rf "$DEST"
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/metacraft-labs/codetracer-trace-format-nim.git" "$DEST"
+          git -C "$DEST" checkout "$TFN_REF"
+
       - name: Build codetracer
         run: |
           cd "$GITHUB_WORKSPACE/../codetracer"
-          OVERRIDE="--override-input codetracer-trace-format path:./libs/codetracer-trace-format"
+          OVERRIDE="--override-input codetracer-trace-format path:./libs/codetracer-trace-format --override-input codetracer-trace-format-nim path:./libs/codetracer-trace-format-nim"
           # ``metacraft-labs-codetracer.cachix.org`` serves a stale
           # narinfo for the noir flake input keyed under a NAR-hash
           # that no longer matches the lockfile, so the build aborts
