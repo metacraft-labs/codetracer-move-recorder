@@ -72,9 +72,9 @@ package codetracer_move_recorder:
       "target/release/codetracer-move-recorder" & binarySuffix
     const traceFormatNimExtraPaths =
       "../../codetracer-move-recorder/.reprobuild-src/libs/results/src:" &
-      "../../codetracer-move-recorder/.reprobuild-src/libs/nim-stew:" &
+      "../../codetracer-move-recorder/.reprobuild-src/libs/nim-stew/src:" &
       "../../codetracer-move-recorder/reprobuild/libs/results/src:" &
-      "../../codetracer-move-recorder/reprobuild/libs/nim-stew"
+      "../../codetracer-move-recorder/reprobuild/libs/nim-stew/src"
     let traceFormatNimEnv = @[
       ("CODETRACER_TRACE_FORMAT_NIM_SKIP_NIMBLE_INSTALL", "1"),
       ("CODETRACER_TRACE_FORMAT_NIM_EXTRA_PATHS", traceFormatNimExtraPaths)
