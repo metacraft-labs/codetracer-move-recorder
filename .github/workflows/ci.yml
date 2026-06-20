@@ -13,7 +13,7 @@ on:
 jobs:
   lint-and-test:
     name: Lint and test
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, nixos]
     steps:
       - name: Free disk space on runner
         # The Move recorder transitively pulls the Sui crate, whose
