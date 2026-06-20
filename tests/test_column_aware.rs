@@ -144,7 +144,10 @@ fn move_converter_enables_column_aware_steps_and_registers_line_lengths() {
     //   line 2: "  fun f {"     -> 9 bytes
     //   line 3: "    let _x = 1;" -> 15 bytes
     //   line 4: "}"             -> 1 byte
-    assert!(reader.path_count() >= 1, "trace must register the source path");
+    assert!(
+        reader.path_count() >= 1,
+        "trace must register the source path"
+    );
     assert_eq!(
         reader.line_length(0, 0),
         Some(8),
@@ -210,8 +213,8 @@ fn aptos_adapter_enables_column_aware_steps_for_column_less_trace() {
         out_dir.display()
     );
 
-    let reader =
-        NimTraceReaderHandle::open(ct_files[0].to_str().expect("ct path utf-8")).expect("reader open");
+    let reader = NimTraceReaderHandle::open(ct_files[0].to_str().expect("ct path utf-8"))
+        .expect("reader open");
 
     // The Aptos adapter must still flip the column-aware flag even
     // though every emitted step carries `column=None`.  This
@@ -333,7 +336,11 @@ fn move_recorder_surfaces_distinct_columns_for_multi_statement_line() {
     let source_path = package_dir
         .join("sources")
         .join(format!("{COLUMN_AWARE_MODULE}.move"));
-    assert!(source_path.exists(), "source missing: {}", source_path.display());
+    assert!(
+        source_path.exists(),
+        "source missing: {}",
+        source_path.display()
+    );
 
     let tmp = tempfile::tempdir().expect("tempdir");
     let out_dir = tmp.path().join("ct-out");
@@ -409,8 +416,12 @@ fn move_recorder_surfaces_distinct_columns_for_multi_statement_line() {
         if ev["kind"] != "step" {
             continue;
         }
-        let Some(line) = ev["line"].as_i64() else { continue };
-        let Some(col) = ev["column"].as_i64() else { continue };
+        let Some(line) = ev["line"].as_i64() else {
+            continue;
+        };
+        let Some(col) = ev["column"].as_i64() else {
+            continue;
+        };
         cols_by_line.entry(line).or_default().insert(col);
         if line == target_line {
             cols_on_target.insert(col);
