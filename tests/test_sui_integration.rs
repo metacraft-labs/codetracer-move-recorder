@@ -42,18 +42,18 @@ fn sui_is_available() -> bool {
         .unwrap_or(false)
 }
 
-/// Run `sui move test --trace full` on the given package directory.
+/// Run `sui move test --trace` on the given package directory.
 /// Each test's Move trace v3 NDJSON is written to a `traces/` directory at
 /// the package root.
 ///
 /// The Sui CLI renamed the unit-test tracing flag from the original boolean
-/// `--trace-execution` to `--trace [<MODE>]`.  `--trace full` is the
-/// equivalent and emits the externally-tagged v3 trace events that
+/// `--trace-execution` to `--trace`.  The tracing flag emits the
+/// externally-tagged v3 trace events that
 /// `move_types::TraceEvent` (and `converter::convert_trace`) are written
 /// against (Sui >= 1.68).
 fn run_sui_move_test_trace(package_dir: &Path) -> (bool, String, String) {
     let output = Command::new("sui")
-        .args(["move", "test", "--trace", "full"])
+        .args(["move", "test", "--trace"])
         .current_dir(package_dir)
         .output()
         .expect("failed to execute sui move test");
@@ -62,6 +62,16 @@ fn run_sui_move_test_trace(package_dir: &Path) -> (bool, String, String) {
     let stderr = String::from_utf8_lossy(&output.stderr).to_string();
 
     (output.status.success(), stdout, stderr)
+}
+
+fn total_sui_tests(output: &str) -> Option<usize> {
+    let (_, rest) = output.split_once("Total tests:")?;
+    let digits: String = rest
+        .trim_start()
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    digits.parse().ok()
 }
 
 /// Recursively find all `.json` trace files under a given directory.
@@ -171,11 +181,16 @@ fn test_sui_move_trace_integration() {
     let (success, stdout, stderr) = run_sui_move_test_trace(&package_dir);
     assert!(
         success,
-        "sui move test --trace-execution failed.\nstdout: {stdout}\nstderr: {stderr}"
+        "sui move test --trace failed.\nstdout: {stdout}\nstderr: {stderr}"
     );
 
     // Verify that the test output mentions passing tests.
     let combined_output = format!("{stdout}{stderr}");
+    let total_tests = total_sui_tests(&combined_output);
+    assert!(
+        total_tests.is_some_and(|count| count > 0),
+        "sui move test --trace ran no tests; stdout: {stdout}\nstderr: {stderr}"
+    );
     assert!(
         combined_output.contains("PASS") || combined_output.contains("pass"),
         "sui move test output should indicate passing tests.\nstdout: {stdout}\nstderr: {stderr}"
@@ -185,7 +200,7 @@ fn test_sui_move_trace_integration() {
     let trace_files = find_sui_trace_files(&package_dir);
     assert!(
         !trace_files.is_empty(),
-        "No trace files found after running sui move test --trace-execution. \
+        "No trace files found after running sui move test --trace. \
          Looked in: {}/build/\nstdout: {stdout}\nstderr: {stderr}",
         package_dir.display()
     );
@@ -294,9 +309,19 @@ fn test_sui_trace_ndjson_parsing() {
         success,
         "sui move test failed.\nstdout: {stdout}\nstderr: {stderr}"
     );
+    let combined_output = format!("{stdout}{stderr}");
+    let total_tests = total_sui_tests(&combined_output);
+    assert!(
+        total_tests.is_some_and(|count| count > 0),
+        "sui move test --trace ran no tests; stdout: {stdout}\nstderr: {stderr}"
+    );
 
     let trace_files = find_sui_trace_files(&package_dir);
-    assert!(!trace_files.is_empty(), "No trace files found");
+    assert!(
+        !trace_files.is_empty(),
+        "No trace files found after running sui move test --trace; \
+         stdout: {stdout}\nstderr: {stderr}"
+    );
 
     // Aggregate event-kind tallies across every trace file.  A *single*
     // trace need not exercise every event kind -- e.g. a Move test that
