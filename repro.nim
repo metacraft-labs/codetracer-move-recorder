@@ -46,6 +46,16 @@ package codetracer_move_recorder:
     # static library into the cargo build.
     "zstd"
 
+    # libzstd is also consumed directly by ct-print's linkage; declared
+    # once above under ``zstd``.
+
+    # Cap'n Proto is declared above; the writer's build.rs invokes capnp.
+
+    # POSIX shell — drives the CLI-convention verification edge below,
+    # the same ``bash tests/verify-cli-convention-no-silent-skip.sh``
+    # step ``just test`` runs after ``cargo test`` (see ``Justfile``).
+    "sh"
+
     # pkg-config + OpenSSL — openssl-sys consults pkg-config to find
     # OpenSSL on Linux/macOS. The Windows build uses the rustls-tls
     # feature instead so neither is on the windows toolchain floor.
@@ -115,8 +125,32 @@ package codetracer_move_recorder:
       after = @[testsBuild.action],
       extraInputs = @[
         "Cargo.toml", "Cargo.lock",
-        "src", "tests",
+        "src", "tests", "test-programs",
         "target/debug/deps"
       ])
 
-    discard collect("test", @[testsRun.action])
+    # ---- CLI-convention verification edge -----------------------------
+    #
+    # ``just test`` runs ``bash
+    # tests/verify-cli-convention-no-silent-skip.sh`` after ``cargo
+    # test``. The script asserts the recorder's ``--help`` / ``--version``
+    # surface complies with the recorder CLI conventions (``ct print``
+    # present, ``--format`` / ``CODETRACER_FORMAT`` absent, ``--out-dir``
+    # present, the ``CODETRACER_MOVE_RECORDER_*`` env knobs referenced in
+    # ``src/``). It is not a cargo target, so it is modelled as its own
+    # ``sh.shell`` execute edge rather than dropped — reproducing the
+    # repo's full ``just test`` set. The script builds the debug binary
+    # and inspects its ``--help`` text, so it is re-run every ``repro
+    # test`` pass (matching ``just test``); ``after`` the cargo test-build
+    # edge guarantees the binary exists before the script runs.
+    let cliVerify = shell(
+      command = "bash tests/verify-cli-convention-no-silent-skip.sh",
+      actionId = "codetracer-move-recorder.verify-cli-convention",
+      after = @[testsBuild.action],
+      extraInputs = @[
+        "tests/verify-cli-convention-no-silent-skip.sh",
+        "Cargo.toml", "Cargo.lock", "src"
+      ],
+      cacheable = false)
+
+    discard collect("test", @[testsRun.action, cliVerify])
