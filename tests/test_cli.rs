@@ -349,19 +349,22 @@ fn test_recorded_trace_via_ct_print_json() {
 
     // ----- Step / call counts ----------------------------------------
     // The Move converter wraps the bytecode trace in exactly one
-    // `call_entry` for `test_computation`.  These are stable properties
+    // `call_entry` for `test_computation`, and `start` opens the
+    // `<toplevel>` frame that roots the call tree at depth 0
+    // (trace-events.md, "Recorder Integration — Starting a Recording"),
+    // so the recording holds two calls.  These are stable properties
     // of the canonical fixture — if they change, that's a real
     // regression to investigate, not a flake.
     let counts = &doc["counts"];
     assert_eq!(
         counts["calls"].as_u64(),
-        Some(1),
-        "expected 1 call event (test_computation); counts={counts}",
+        Some(2),
+        "expected 2 call events (<toplevel> + test_computation); counts={counts}",
     );
 
     let events = doc["events"].as_array().expect("events array");
 
-    // ----- Call sequence: only test_computation -----------------------
+    // ----- Call sequence: <toplevel> root, then test_computation ------
     let call_sequence: Vec<&str> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
@@ -369,13 +372,18 @@ fn test_recorded_trace_via_ct_print_json() {
         .collect();
     assert_eq!(
         call_sequence.len(),
-        1,
-        "expected exactly 1 call_entry event; got {:?}",
+        2,
+        "expected exactly 2 call_entry events; got {:?}",
+        call_sequence
+    );
+    assert_eq!(
+        call_sequence[0], "<toplevel>",
+        "the call tree's root frame, opened by `start` at depth 0; got {:?}",
         call_sequence
     );
     assert!(
-        call_sequence[0].ends_with("test_computation"),
-        "expected first call to be `test_computation`; got {:?}",
+        call_sequence[1].ends_with("test_computation"),
+        "expected the recorded call to be `test_computation`; got {:?}",
         call_sequence
     );
 
