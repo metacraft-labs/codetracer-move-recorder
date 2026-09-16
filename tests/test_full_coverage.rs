@@ -845,7 +845,10 @@ fn test_nested_calls_via_ct_print_full() {
     // ----- counts -----------------------------------------------------------
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1), "steps; counts={counts}");
-    assert_eq!(counts["calls"].as_u64(), Some(6), "calls; counts={counts}");
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(7), "calls; counts={counts}");
     assert_eq!(
         counts["io_events"].as_u64(),
         Some(0),
@@ -854,13 +857,20 @@ fn test_nested_calls_via_ct_print_full() {
 
     // 1 step + 6 call_entry + 6 call_exit = 13 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 13, "events.len()");
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 15, "events.len()");
     assert_step_indices_monotonic(&doc);
 
     // ----- Call-entry sequence (entry order) ------------------------------
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             // test_nested_calls itself (the outer test entry)
             "test_nested_calls".to_string(),
             // compute_triple(12, 8)
@@ -1212,17 +1222,27 @@ fn test_structs_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(3));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(4));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 3 call_entry + 3 call_exit = 7 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 7);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 9);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_structs".to_string(),
             "add_points".to_string(),
             "rectangle_area".to_string(),
@@ -1358,17 +1378,27 @@ fn test_references_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(3));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(4));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 3 call_entry + 3 call_exit = 7 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 7);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 9);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_references".to_string(),
             "scale_point".to_string(),
             "scale_point".to_string(),
@@ -1708,18 +1738,28 @@ fn test_fibonacci_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(6));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(7));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 6 call_entry + 6 call_exit = 13 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 13);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 15);
     assert_step_indices_monotonic(&doc);
 
     // ----- Call sequence: outer test entry + five fibonacci calls --------
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_fibonacci".to_string(),
             "fibonacci".to_string(),
             "fibonacci".to_string(),
@@ -1810,17 +1850,27 @@ fn test_generics_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(7));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(8));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 7 call_entry + 7 call_exit = 15 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 15);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 17);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_generics".to_string(),
             "wrap_value".to_string(),
             "unwrap_value".to_string(),
@@ -2326,17 +2376,27 @@ fn test_variant_constructors_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1), "counts={counts}");
-    assert_eq!(counts["calls"].as_u64(), Some(4), "counts={counts}");
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(5), "counts={counts}");
     assert_eq!(counts["io_events"].as_u64(), Some(0), "counts={counts}");
 
     // 1 step + 4 call_entry + 4 call_exit = 9 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 9, "events.len()");
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 11, "events.len()");
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_variant_constructors".to_string(),
             "make_some".to_string(),
             "make_none".to_string(),
@@ -2350,7 +2410,10 @@ fn test_variant_constructors_via_ct_print_full() {
     // outer test_variant_constructors entry is the last frame open
     // (toplevel Return) and closes last.
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 4);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 5);
 
     // Some(42) -> Variant { discriminator: "0x1::option::Option::Variant#1",
     //                       contents: Struct { field_values: [Int(42)] } }
@@ -2624,17 +2687,27 @@ fn test_resources_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(4));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(5));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 4 call_entry + 4 call_exit = 9 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 9);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 11);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_resources".to_string(),
             "mint".to_string(),
             "balance".to_string(),
@@ -2643,7 +2716,10 @@ fn test_resources_via_ct_print_full() {
     );
 
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 4);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 5);
 
     // Exits in LIFO close order: the three helpers (direct children of
     // the test entry, invoked in sequence) close in call order; the
@@ -2748,7 +2824,10 @@ fn test_object_lifecycle_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(3));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(4));
     assert_eq!(
         counts["io_events"].as_u64(),
         Some(1),
@@ -2757,12 +2836,19 @@ fn test_object_lifecycle_via_ct_print_full() {
 
     // 1 step + 3 call_entry + 1 io + 3 call_exit = 8 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 8);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 10);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_object_lifecycle".to_string(),
             "increment".to_string(),
             "value".to_string(),
@@ -2845,7 +2931,10 @@ fn test_object_lifecycle_via_ct_print_full() {
     // sequence) close in call order; the outer test_object_lifecycle
     // entry is the last frame open (toplevel Return) and closes last.
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 3);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 4);
     assert_eq!(exits[0].0, "increment");
     assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
     assert_eq!(exits[1].0, "value");
@@ -2902,17 +2991,27 @@ fn test_abilities_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(4));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(5));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 4 call_entry + 4 call_exit = 9 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 9);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 11);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_abilities".to_string(),
             "mint_token".to_string(),
             "consume_token".to_string(),
@@ -2926,7 +3025,10 @@ fn test_abilities_via_ct_print_full() {
     // outer test_abilities entry is the last frame open (toplevel
     // Return) and closes last.
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 4);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 5);
     assert_eq!(exits[0].0, "mint_token");
     let mint_rv = &exits[0].1;
     assert_eq!(mint_rv["kind"].as_str(), Some("Struct"));
@@ -3045,20 +3147,30 @@ fn test_option_test_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1), "counts={counts}");
-    assert_eq!(counts["calls"].as_u64(), Some(8), "counts={counts}");
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(9), "counts={counts}");
     assert_eq!(counts["io_events"].as_u64(), Some(0), "counts={counts}");
 
     // 1 step + 8 call_entry + 8 call_exit = 17 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 17, "events.len()");
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 19, "events.len()");
     assert_step_indices_monotonic(&doc);
 
     // Entry-order call sequence.  borrow_inner is called *before*
     // option::borrow inside the test source (the inner helper invokes
     // option::borrow internally, but its OpenFrame fires first).
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_option".to_string(),
             "some".to_string(),
             "none".to_string(),
@@ -3077,7 +3189,10 @@ fn test_option_test_via_ct_print_full() {
     // extract closes next; the outer test_option entry is the last frame
     // open (toplevel Return) and closes last.
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 8);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 9);
 
     // Some(42) -> Variant { discriminator: "0x1::option::Option::Variant#1",
     //                       contents: Struct { field_values: [Int(42)] } }
@@ -3395,17 +3510,27 @@ fn test_hash_builtins_test_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(7));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(8));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 7 call_entry + 7 call_exit = 15 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 15);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 17);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_hash_builtins".to_string(),
             "to_bytes".to_string(),
             "sha2_256".to_string(),
@@ -3423,7 +3548,10 @@ fn test_hash_builtins_test_via_ct_print_full() {
     // The outer test_hash_builtins entry is the last frame open (toplevel
     // Return) and closes last (index 6).
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 7);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 8);
 
     // bcs::to_bytes(&Point { x: 3, y: 4 }) -> [3,0,0,0,0,0,0,0, 4,0,0,0,0,0,0,0]
     let bcs_bytes_want: Vec<i64> = vec![3, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0];
@@ -3583,17 +3711,27 @@ fn test_string_test_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(7));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(8));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 7 call_entry + 7 call_exit = 15 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 15);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 17);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_string".to_string(),
             "utf8".to_string(),
             "utf8".to_string(),
@@ -3640,7 +3778,10 @@ fn test_string_test_via_ct_print_full() {
     // outer test_string entry is the last frame open (toplevel Return)
     // and closes last (index 6).
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 7);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 8);
 
     // utf8(b"hello") -> "hello", utf8(b" world") -> " world"
     assert_eq!(exits[0].0, "utf8");
@@ -3735,17 +3876,27 @@ fn test_vector_operations_test_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(10));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(11));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 10 call_entry + 10 call_exit = 21 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 21);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 23);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_vector_operations".to_string(),
             "swap_remove".to_string(),
             "pop_back".to_string(),
@@ -3765,7 +3916,10 @@ fn test_vector_operations_test_via_ct_print_full() {
     // the outer test_vector_operations entry is the last frame open
     // (toplevel Return) and closes last (index 9).
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 10);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 11);
 
     // swap_remove(v, 1) -> 20
     assert_eq!(exits[0].0, "swap_remove");
@@ -3989,17 +4143,27 @@ fn test_phantom_types_test_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(7));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(8));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 7 call_entry + 7 call_exit = 15 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 15);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 17);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_phantom_types".to_string(),
             "mint".to_string(),
             "mint".to_string(),
@@ -4015,7 +4179,10 @@ fn test_phantom_types_test_via_ct_print_full() {
     // indices 0..6; the outer test_phantom_types entry is the last frame
     // open (toplevel Return) and closes last (index 6).
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 7);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 8);
 
     // ----- mint<USD>(100) -> TypedCoin<USD> { value: 100 } ---------------
     assert_eq!(exits[0].0, "mint");
@@ -4334,17 +4501,31 @@ fn test_tx_context_test_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(3));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(4));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 3 call_entry + 3 call_exit = 7 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 7);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 9);
     assert_step_indices_monotonic(&doc);
 
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
-        vec!["mint".to_string(), "sender".to_string(), "new".to_string(),],
+        vec![
+            "<toplevel>".to_string(),
+            "mint".to_string(),
+            "sender".to_string(),
+            "new".to_string()
+        ],
     );
 
     let entries: Vec<&serde_json::Value> = events
@@ -4396,7 +4577,10 @@ fn test_tx_context_test_via_ct_print_full() {
     // before mint's own frame.  So the inner sender and new close first
     // (in call order), and mint closes last.
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 3);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 4);
 
     // tx_context::sender returns the sender address as a typed String.
     assert_eq!(exits[0].0, "sender");
@@ -4788,18 +4972,28 @@ fn test_dynamic_field_test_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(4));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(5));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 4 call_entry + 4 call_exit = 9 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 9);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 11);
     assert_step_indices_monotonic(&doc);
 
     // Entry order: outer test entry first, then each helper.
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_dynamic_field".to_string(),
             "add".to_string(),
             "borrow".to_string(),
@@ -4906,7 +5100,10 @@ fn test_dynamic_field_test_via_ct_print_full() {
     // 0..3; the outer test_dynamic_field entry is the last frame open
     // (toplevel Return) and closes last (index 3).
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 4);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 5);
 
     // dynamic_field::add returns Void.
     assert_eq!(exits[0].0, "add");
@@ -4994,18 +5191,28 @@ fn test_table_test_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(5));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(6));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 5 call_entry + 5 call_exit = 11 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 11);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 13);
     assert_step_indices_monotonic(&doc);
 
     // Entry order: outer test entry first, then each helper.
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_table".to_string(),
             "new".to_string(),
             "add".to_string(),
@@ -5088,7 +5295,10 @@ fn test_table_test_via_ct_print_full() {
     // the outer test_table entry is the last frame open (toplevel Return)
     // and closes last (index 4).
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 5);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 6);
 
     // table::new returns the freshly-minted Table<address,u64> struct.
     assert_eq!(exits[0].0, "new");
@@ -5195,18 +5405,28 @@ fn test_address_literals_test_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(4));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(5));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 4 call_entry + 4 call_exit = 9 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 9);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 11);
     assert_step_indices_monotonic(&doc);
 
     // Entry order: outer test entry first, then three id_addr calls.
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_address_literals".to_string(),
             "id_addr".to_string(),
             "id_addr".to_string(),
@@ -5238,7 +5458,10 @@ fn test_address_literals_test_via_ct_print_full() {
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 4);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 5);
 
     // Exits in LIFO close order: the three id_addr calls are direct
     // children of the test entry invoked in sequence, so they close in
@@ -5549,18 +5772,28 @@ fn test_generic_constraints_test_via_ct_print_full() {
 
     let counts = &doc["counts"];
     assert_eq!(counts["steps"].as_u64(), Some(1));
-    assert_eq!(counts["calls"].as_u64(), Some(4));
+    // The `<toplevel>` frame counts as a call: `start` opens it at depth 0
+    // as the call tree's root, before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(counts["calls"].as_u64(), Some(5));
     assert_eq!(counts["io_events"].as_u64(), Some(0));
 
     // 1 step + 4 call_entry + 4 call_exit = 9 events.
     let events = doc["events"].as_array().expect("events array");
-    assert_eq!(events.len(), 9);
+    // One of the call frames is `<toplevel>`, the call tree's root that
+    // `start` opens at depth 0 and the recorder closes on exit
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(events.len(), 11);
     assert_step_indices_monotonic(&doc);
 
     // Entry order: outer test entry first.
+    // `<toplevel>` opens first: it is the call tree's root, which `start`
+    // opens at depth 0 before any call the recorder makes
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(
         observed_call_sequence(&doc),
         vec![
+            "<toplevel>".to_string(),
             "test_generic_constraints".to_string(),
             "store_value".to_string(),
             "store_value".to_string(),
@@ -5603,7 +5836,10 @@ fn test_generic_constraints_test_via_ct_print_full() {
     // last frame open (toplevel Return) and closes last (exit index 3).
     // Entry indices are still 1..=3 (0 = the test entry).
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits.len(), 4);
+    // `<toplevel>` closes last: it is the call tree's root, which `start`
+    // opens at depth 0, so every other frame unwinds inside it
+    // (trace-events.md, "Recorder Integration — Starting a Recording").
+    assert_eq!(exits.len(), 5);
 
     // store_value<u64>(42) — arg is Int 42.
     let sv_u64_args = entries[1]["args"]
