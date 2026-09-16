@@ -56,7 +56,7 @@ human-readable output.
 
 The recorder is CTFS-only. To convert a recorded `.ct` bundle to a
 human-readable form, use `ct print` from
-[`codetracer-trace-format-nim`](../codetracer-trace-format-nim):
+[`codetracer-trace-format-nim`](https://github.com/metacraft-labs/codetracer-trace-format-nim):
 
 ```bash
 ct-print --json <recording-dir>/<program>.ct
@@ -113,8 +113,7 @@ defined in `Recorder-CLI-Conventions.md` §5:
 
 ### Contributing
 
-Pull requests welcome. See `AUDIT-CTFS-2026-05.md` for the recorder's CTFS
-audit history.
+Pull requests welcome.
 
 ### License
 
