@@ -248,6 +248,87 @@ fn observed_exit_sequence(doc: &serde_json::Value) -> Vec<(String, serde_json::V
         .collect()
 }
 
+/// Assert the two ordering rules an assembled event stream owes
+/// `calls.dat`, derived from `children_keys` so they hold for every
+/// fixture rather than only the ones with a hand-written name list
+/// (trace-events.md, §"Assembling an event stream: storage order is not
+/// event order"; conformance-testing.md, §"Assert names, not counts"):
+///
+/// 1. No `call_exit` may be emitted while a call in its subtree is
+///    still open — a parent's exit is the last event of its subtree.
+/// 2. Where the container does not otherwise distinguish them, exits
+///    are ordered by `last_step_id` ascending, then `call_key`
+///    descending.
+///
+/// Records routinely share a `last_step_id`: every frame still open
+/// when a recording ends reports `step_count - 1`, and these fixtures
+/// drive the converter with no source map at all, so every call in
+/// them reports `0`. The tie-break is what decides the whole stream
+/// here, which is exactly why it is asserted structurally.
+fn assert_call_exit_order_conforms(doc: &serde_json::Value) {
+    let events = doc["events"].as_array().expect("events array");
+
+    let mut unclosed_children: std::collections::HashMap<u64, usize> =
+        std::collections::HashMap::new();
+    for ev in events {
+        if ev["kind"] != "call_entry" {
+            continue;
+        }
+        let key = ev["call_key"].as_u64().expect("call_entry.call_key");
+        let children = ev["children"].as_array().map(|c| c.len()).unwrap_or(0);
+        unclosed_children.insert(key, children);
+    }
+
+    let mut closed: std::collections::HashSet<u64> = std::collections::HashSet::new();
+    let mut prev: Option<(u64, u64)> = None;
+    for ev in events {
+        if ev["kind"] != "call_exit" {
+            continue;
+        }
+        let key = ev["call_key"].as_u64().expect("call_exit.call_key");
+        let step = ev["exit_step"].as_u64().expect("call_exit.exit_step");
+
+        let open_children = *unclosed_children
+            .get(&key)
+            .unwrap_or_else(|| panic!("call_exit for call_key {key} with no matching call_entry"));
+        assert_eq!(
+            open_children,
+            0,
+            "call_exit for `{}` (call_key {key}) was emitted while {open_children} \
+             call(s) in its subtree were still open; a parent's exit is the last \
+             event of its subtree",
+            ev["function"].as_str().unwrap_or("<unnamed>")
+        );
+
+        if let Some((prev_key, prev_step)) = prev {
+            assert!(
+                (prev_step, std::cmp::Reverse(prev_key)) < (step, std::cmp::Reverse(key)),
+                "call_exit events must run by exit_step ascending then call_key \
+                 descending; got (step {prev_step}, key {prev_key}) before \
+                 (step {step}, key {key})"
+            );
+        }
+        prev = Some((key, step));
+
+        closed.insert(key);
+        for parent in events.iter().filter(|e| e["kind"] == "call_entry") {
+            let has_child = parent["children"]
+                .as_array()
+                .is_some_and(|c| c.iter().any(|k| k.as_u64() == Some(key)));
+            if has_child {
+                let pk = parent["call_key"].as_u64().expect("call_entry.call_key");
+                *unclosed_children.get_mut(&pk).expect("parent tracked") -= 1;
+            }
+        }
+    }
+
+    assert_eq!(
+        closed.len(),
+        unclosed_children.len(),
+        "every call_entry must have a matching call_exit"
+    );
+}
+
 /// Assert that every `step` event carries a strictly non-decreasing
 /// `step_index`.
 fn assert_step_indices_monotonic(doc: &serde_json::Value) {
@@ -912,26 +993,38 @@ fn test_nested_calls_via_ct_print_full() {
             (f.clone(), i)
         })
         .collect();
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order, and it also
+    // satisfies the subtree rule the same section states: the inner
+    // `max_u64` (call_key 3) is compute_triple's (call_key 2) only child,
+    // and closes before it.
+    assert_call_exit_order_conforms(&doc);
     assert_eq!(
         exit_pairs,
         vec![
+            ("max_u64".to_string(), Some(15)),
+            ("min_u64".to_string(), Some(15)),
+            ("min_u64".to_string(), Some(8)),
+            // The inner max_u64, called from inside compute_triple.
             ("max_u64".to_string(), Some(12)),
             // compute_triple's return is a Tuple (not an Int), so the
             // shorthand `Option<i64>` projector reports `None` here —
             // the full Tuple shape is asserted explicitly below.
             ("compute_triple".to_string(), None),
-            ("min_u64".to_string(), Some(8)),
-            ("min_u64".to_string(), Some(15)),
-            ("max_u64".to_string(), Some(15)),
-            ("test_nested_calls".to_string(), None), // Void, toplevel Return
+            ("test_nested_calls".to_string(), None), // Void
+            ("<toplevel>".to_string(), None),        // Void, the call tree's root
         ]
     );
 
     // Strict tuple-shape assertion: kind=Tuple, three Int elements
     // [20, 96, 12].  Pinned exactly so any future regression toward
-    // truncation / re-shaping shows up here.  compute_triple closes
-    // second (LIFO), so it lands at exits[1].
-    let compute_triple_rv = &exits[1].1;
+    // truncation / re-shaping shows up here.  compute_triple holds
+    // call_key 2, so under the descending-call_key tie-break it lands at
+    // exits[4].
+    let compute_triple_rv = &exits[4].1;
     assert_eq!(compute_triple_rv["kind"].as_str(), Some("Tuple"));
     let tuple_elems = compute_triple_rv["elements"]
         .as_array()
@@ -947,9 +1040,9 @@ fn test_nested_calls_via_ct_print_full() {
     // ----- Argument decoding on call_entry --------------------------------
     // The recorder is supposed to decode each call's args.  Pin the
     // arg values for every helper invocation in entry order.  Indexing
-    // mirrors `observed_call_sequence` above: 0=test_nested_calls,
-    // 1=compute_triple, 2=inner max_u64, 3=first min_u64, 4=second
-    // min_u64, 5=outer max_u64.
+    // mirrors `observed_call_sequence` above: 0=<toplevel>,
+    // 1=test_nested_calls, 2=compute_triple, 3=inner max_u64,
+    // 4=first min_u64, 5=second min_u64, 6=outer max_u64.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
@@ -965,19 +1058,19 @@ fn test_nested_calls_via_ct_print_full() {
             .collect()
     };
     assert!(
-        entries[0]["args"].as_array().unwrap().is_empty(),
+        entries[1]["args"].as_array().unwrap().is_empty(),
         "test_nested_calls itself takes no args"
     );
-    assert_eq!(arg_ints(1), vec![12, 8], "compute_triple(12,8)");
+    assert_eq!(arg_ints(2), vec![12, 8], "compute_triple(12,8)");
     assert_eq!(
-        arg_ints(2),
+        arg_ints(3),
         vec![12, 8],
         "max_u64(12,8) inside compute_triple"
     );
-    assert_eq!(arg_ints(3), vec![12, 8], "first min_u64(12,8)");
-    assert_eq!(arg_ints(4), vec![15, 20], "second min_u64(15,20)");
+    assert_eq!(arg_ints(4), vec![12, 8], "first min_u64(12,8)");
+    assert_eq!(arg_ints(5), vec![15, 20], "second min_u64(15,20)");
     assert_eq!(
-        arg_ints(5),
+        arg_ints(6),
         vec![8, 15],
         "outer max_u64(min_u64(12,8), min_u64(15,20))"
     );
@@ -1250,17 +1343,19 @@ fn test_structs_via_ct_print_full() {
     );
 
     // ----- Return values: add_points -> Struct(Point), area=40 -----------
-    // Exits emitted in LIFO close order: add_points and rectangle_area
-    // (both direct children of the test entry, called in sequence) close
-    // in call order as each completes before the next; the outer
-    // test_structs entry is the last frame open (toplevel Return) and
-    // closes last.
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits[0].0, "add_points");
+    assert_eq!(exits[1].0, "add_points");
     // The Point struct return now surfaces as a typed
     // `ValueRecord::Struct` carrying two `Int` fields [x=10, y=10].
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Struct"));
-    let p_fields = exits[0].1["field_values"]
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Struct"));
+    let p_fields = exits[1].1["field_values"]
         .as_array()
         .expect("Struct.field_values");
     assert_eq!(p_fields.len(), 2, "Point has two fields (x, y)");
@@ -1268,9 +1363,9 @@ fn test_structs_via_ct_print_full() {
     assert_eq!(p_fields[0]["i"].as_i64(), Some(10), "Point.x == 10");
     assert_eq!(p_fields[1]["kind"].as_str(), Some("Int"));
     assert_eq!(p_fields[1]["i"].as_i64(), Some(10), "Point.y == 10");
-    assert_eq!(exits[1].0, "rectangle_area");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(40));
+    assert_eq!(exits[0].0, "rectangle_area");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(40));
     assert_eq!(exits[2].0, "test_structs");
     assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 
@@ -1449,14 +1544,16 @@ fn test_references_via_ct_print_full() {
         let i1 = arg1["i"].as_i64();
         (kind0, mutable0, xy0, i1)
     };
-    // entries[0] is the outer `test_references` entry (no args); the two
-    // `scale_point(&mut mut_point, _)` calls land at entries[1] and
-    // entries[2] in entry order.
+    // entries[0] is `<toplevel>`, the call tree's root that `start` opens
+    // at depth 0 (trace-events.md, "Recorder Integration — Starting a
+    // Recording"); entries[1] is the outer `test_references` entry (no
+    // args); the two `scale_point(&mut mut_point, _)` calls land at
+    // entries[2] and entries[3] in entry order.
     assert!(
-        entries[0]["args"].as_array().unwrap().is_empty(),
+        entries[1]["args"].as_array().unwrap().is_empty(),
         "test_references itself takes no args"
     );
-    let (k0, m0, xy0, i0) = scale_args(1);
+    let (k0, m0, xy0, i0) = scale_args(2);
     assert_eq!(
         k0, "Reference",
         "scale_point's &mut Point arg surfaces as a typed Reference wrapper"
@@ -1468,7 +1565,7 @@ fn test_references_via_ct_print_full() {
         "Point {{ x: 2, y: 3 }}"
     );
     assert_eq!(i0, Some(5), "scale_point's factor arg = 5");
-    let (k1, m1, xy1, i1) = scale_args(2);
+    let (k1, m1, xy1, i1) = scale_args(3);
     assert_eq!(k1, "Reference");
     assert!(m1);
     assert_eq!(
@@ -1482,8 +1579,8 @@ fn test_references_via_ct_print_full() {
     // local, so the synthesised reference address must be stable across
     // call_entry events — verify so a future reshape that loses
     // borrow-identity (e.g. zeroing the address) is caught here.
-    let address0 = entries[1]["args"][0]["value"]["address"].as_u64();
-    let address1 = entries[2]["args"][0]["value"]["address"].as_u64();
+    let address0 = entries[2]["args"][0]["value"]["address"].as_u64();
+    let address1 = entries[3]["args"][0]["value"]["address"].as_u64();
     assert!(
         address0.is_some(),
         "Reference must carry a synthetic address"
@@ -1610,6 +1707,7 @@ fn test_abort_via_ct_print_full() {
         observed_call_sequence(&doc),
         vec!["<toplevel>".to_string(), "test_abort".to_string()]
     );
+    assert_call_exit_order_conforms(&doc);
     let exits = observed_exit_sequence(&doc);
     // One frame more than the recorder's own: `<toplevel>` roots the call
     // tree at depth 0, opened by `start`
@@ -1770,8 +1868,10 @@ fn test_fibonacci_via_ct_print_full() {
     );
 
     // ----- Argument decoding: fibonacci(0,1,5,10,15) ----------------------
-    // entries[0] is the outer `test_fibonacci` (no args); the five
-    // fibonacci(n) calls land at entries[1..6] in entry order.
+    // entries[0] is `<toplevel>`, the call tree's root that `start` opens
+    // at depth 0 (trace-events.md, "Recorder Integration — Starting a
+    // Recording"); entries[1] is the outer `test_fibonacci` (no args);
+    // the five fibonacci(n) calls land at entries[2..7] in entry order.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
@@ -1779,7 +1879,7 @@ fn test_fibonacci_via_ct_print_full() {
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     assert!(
-        entries[0]["args"].as_array().unwrap().is_empty(),
+        entries[1]["args"].as_array().unwrap().is_empty(),
         "test_fibonacci itself takes no args"
     );
     let fib_arg = |idx: usize| -> i64 {
@@ -1787,25 +1887,29 @@ fn test_fibonacci_via_ct_print_full() {
         assert_eq!(args.len(), 1, "fibonacci takes one u64 arg");
         args[0]["value"]["i"].as_i64().expect("arg Int.i")
     };
-    assert_eq!(fib_arg(1), 0);
-    assert_eq!(fib_arg(2), 1);
-    assert_eq!(fib_arg(3), 5);
-    assert_eq!(fib_arg(4), 10);
-    assert_eq!(fib_arg(5), 15);
+    assert_eq!(fib_arg(2), 0);
+    assert_eq!(fib_arg(3), 1);
+    assert_eq!(fib_arg(4), 5);
+    assert_eq!(fib_arg(5), 10);
+    assert_eq!(fib_arg(6), 15);
 
     // ----- Return values: F(n) for n in [0,1,5,10,15] = [0,1,5,55,610] ---
-    // Exits emitted in LIFO close order: the five sibling fibonacci(n)
-    // calls each open and close before the next, so they close in entry
-    // order; the outer `test_fibonacci` frame is the last still open and
-    // closes last (toplevel Return, N+1 model).
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    // So the five fibonacci(n) returns read back-to-front: 610, 55, 5, 1, 0.
+    assert_call_exit_order_conforms(&doc);
     let exits = observed_exit_sequence(&doc);
-    assert_eq!(exits[0].0, "fibonacci");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[0].1["i"].as_i64(), Some(0));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(1));
+    assert_eq!(exits[4].0, "fibonacci");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[4].1["i"].as_i64(), Some(0));
+    assert_eq!(exits[3].1["i"].as_i64(), Some(1));
     assert_eq!(exits[2].1["i"].as_i64(), Some(5));
-    assert_eq!(exits[3].1["i"].as_i64(), Some(55));
-    assert_eq!(exits[4].1["i"].as_i64(), Some(610));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(55));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(610));
     assert_eq!(exits[5].0, "test_fibonacci");
     assert_eq!(exits[5].1["kind"].as_str(), Some("Void"));
 }
@@ -1890,15 +1994,18 @@ fn test_generics_via_ct_print_full() {
     // instead of re-parsing the rendered text.
     let exits = observed_exit_sequence(&doc);
     // Exits in LIFO close order.  The six wrap_value/unwrap_value calls
-    // are direct children of the test entry, invoked one after another,
-    // so each closes before the next opens — they close in call order.
-    // The outer test_generics entry is the last frame open (toplevel
-    // Return) and closes last.
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
     // wrap_value<u64>(42, 1) -> Container { value: 42, label: 1 }
     //   field_values = [Int(42), Int(1)]
-    assert_eq!(exits[0].0, "wrap_value");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Struct"));
-    let c1_fields = exits[0].1["field_values"]
+    assert_eq!(exits[5].0, "wrap_value");
+    assert_eq!(exits[5].1["kind"].as_str(), Some("Struct"));
+    let c1_fields = exits[5].1["field_values"]
         .as_array()
         .expect("Struct.field_values");
     assert_eq!(c1_fields.len(), 2, "Container has two fields");
@@ -1907,14 +2014,14 @@ fn test_generics_via_ct_print_full() {
     assert_eq!(c1_fields[1]["kind"].as_str(), Some("Int"));
     assert_eq!(c1_fields[1]["i"].as_i64(), Some(1));
     // unwrap_value<u64>(c1) -> 42
-    assert_eq!(exits[1].0, "unwrap_value");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(42));
+    assert_eq!(exits[4].0, "unwrap_value");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[4].1["i"].as_i64(), Some(42));
     // wrap_value<bool>(true, 2) -> Container { value: true, label: 2 }
     //   field_values = [Bool(true), Int(2)]
-    assert_eq!(exits[2].0, "wrap_value");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Struct"));
-    let c2_fields = exits[2].1["field_values"]
+    assert_eq!(exits[3].0, "wrap_value");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Struct"));
+    let c2_fields = exits[3].1["field_values"]
         .as_array()
         .expect("Struct.field_values");
     assert_eq!(c2_fields.len(), 2);
@@ -1926,15 +2033,15 @@ fn test_generics_via_ct_print_full() {
     // `ValueRecord::Bool` here, so this exit now surfaces with the
     // typed Bool variant (kind=Bool, b=true, text="true") rather than
     // the previous flattened Raw "true" string.
-    assert_eq!(exits[3].0, "unwrap_value");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[3].1["b"].as_bool(), Some(true));
-    assert_eq!(exits[3].1["text"].as_str(), Some("true"));
+    assert_eq!(exits[2].0, "unwrap_value");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[2].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[2].1["text"].as_str(), Some("true"));
     // wrap_value<Point>(pt, 3) -> Container { value: Point {...}, label: 3 }
     //   field_values = [Struct(Point{Int(5), Int(10)}), Int(3)]
-    assert_eq!(exits[4].0, "wrap_value");
-    assert_eq!(exits[4].1["kind"].as_str(), Some("Struct"));
-    let c3_fields = exits[4].1["field_values"]
+    assert_eq!(exits[1].0, "wrap_value");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Struct"));
+    let c3_fields = exits[1].1["field_values"]
         .as_array()
         .expect("Struct.field_values");
     assert_eq!(c3_fields.len(), 2);
@@ -1950,9 +2057,9 @@ fn test_generics_via_ct_print_full() {
     assert_eq!(c3_fields[1]["kind"].as_str(), Some("Int"));
     assert_eq!(c3_fields[1]["i"].as_i64(), Some(3));
     // unwrap_value<Point>(c3) -> Point { x: 5, y: 10 } (typed Struct)
-    assert_eq!(exits[5].0, "unwrap_value");
-    assert_eq!(exits[5].1["kind"].as_str(), Some("Struct"));
-    let pt5_fields = exits[5].1["field_values"]
+    assert_eq!(exits[0].0, "unwrap_value");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Struct"));
+    let pt5_fields = exits[0].1["field_values"]
         .as_array()
         .expect("Point Struct.field_values");
     assert_eq!(pt5_fields.len(), 2);
@@ -1975,19 +2082,20 @@ fn test_generics_via_ct_print_full() {
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    // entries[0] = test_generics (no args); entries[1..] = each helper
+    // entries[0] = <toplevel>; entries[1] = test_generics (no args);
+    // entries[2..] = each helper
     // call in entry order.
     assert!(
-        entries[0]["args"].as_array().unwrap().is_empty(),
+        entries[1]["args"].as_array().unwrap().is_empty(),
         "test_generics itself takes no args"
     );
     // wrap_value<u64>(42, 1)
-    let wv_u64_args = entries[1]["args"].as_array().unwrap();
+    let wv_u64_args = entries[2]["args"].as_array().unwrap();
     assert_eq!(wv_u64_args[0]["value"]["kind"].as_str(), Some("Int"));
     assert_eq!(wv_u64_args[0]["value"]["i"].as_i64(), Some(42));
     assert_eq!(wv_u64_args[1]["value"]["i"].as_i64(), Some(1));
     // wrap_value<bool>(true, 2)
-    let wv_bool_args = entries[3]["args"].as_array().unwrap();
+    let wv_bool_args = entries[4]["args"].as_array().unwrap();
     assert_eq!(wv_bool_args[1]["value"]["i"].as_i64(), Some(2));
     // The bool arg surfaces as a Bool with `text="true"`.
     assert_eq!(wv_bool_args[0]["value"]["kind"].as_str(), Some("Bool"));
@@ -2405,10 +2513,13 @@ fn test_variant_constructors_via_ct_print_full() {
     );
 
     // ----- Return values: each helper returns a typed Variant -------------
-    // Exits in LIFO close order: the three constructors (direct children
-    // of the test entry, invoked in sequence) close in call order; the
-    // outer test_variant_constructors entry is the last frame open
-    // (toplevel Return) and closes last.
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
     let exits = observed_exit_sequence(&doc);
     // `<toplevel>` closes last: it is the call tree's root, which `start`
     // opens at depth 0, so every other frame unwinds inside it
@@ -2417,8 +2528,8 @@ fn test_variant_constructors_via_ct_print_full() {
 
     // Some(42) -> Variant { discriminator: "0x1::option::Option::Variant#1",
     //                       contents: Struct { field_values: [Int(42)] } }
-    assert_eq!(exits[0].0, "make_some");
-    let some_rv = &exits[0].1;
+    assert_eq!(exits[2].0, "make_some");
+    let some_rv = &exits[2].1;
     assert_eq!(some_rv["kind"].as_str(), Some("Variant"));
     assert_eq!(
         some_rv["discriminator"].as_str(),
@@ -2451,8 +2562,8 @@ fn test_variant_constructors_via_ct_print_full() {
     );
 
     // Shape::Rect(3, 5) -> Variant { contents: Struct { fields: [Int(3), Int(5)] } }
-    assert_eq!(exits[2].0, "make_rect");
-    let rect_rv = &exits[2].1;
+    assert_eq!(exits[0].0, "make_rect");
+    let rect_rv = &exits[0].1;
     assert_eq!(rect_rv["kind"].as_str(), Some("Variant"));
     assert_eq!(
         rect_rv["discriminator"].as_str(),
@@ -2721,13 +2832,15 @@ fn test_resources_via_ct_print_full() {
     // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(exits.len(), 5);
 
-    // Exits in LIFO close order: the three helpers (direct children of
-    // the test entry, invoked in sequence) close in call order; the
-    // outer test_resources entry is the last frame open (toplevel
-    // Return) and closes last.
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
     // mint(1, 100) -> Coin { id: 1, balance: 100 } (typed Struct)
-    assert_eq!(exits[0].0, "mint");
-    let mint_rv = &exits[0].1;
+    assert_eq!(exits[2].0, "mint");
+    let mint_rv = &exits[2].1;
     assert_eq!(mint_rv["kind"].as_str(), Some("Struct"));
     let mint_fields = mint_rv["field_values"]
         .as_array()
@@ -2745,24 +2858,24 @@ fn test_resources_via_ct_print_full() {
     assert_eq!(exits[1].1["i"].as_i64(), Some(100));
 
     // burn(coin) -> Int(100) (consumed via destructure)
-    assert_eq!(exits[2].0, "burn");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[2].1["i"].as_i64(), Some(100));
+    assert_eq!(exits[0].0, "burn");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(100));
 
     // test_resources -> Void (toplevel Return, closes last).
     assert_eq!(exits[3].0, "test_resources");
     assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
 
     // ----- The `&Coin` arg to balance() is a Reference wrapping a Struct ---
-    // entries[0]=test_resources, entries[1]=mint, entries[2]=balance,
-    // entries[3]=burn (entry order).
+    // entries[0]=<toplevel>, entries[1]=test_resources, entries[2]=mint,
+    // entries[3]=balance, entries[4]=burn (entry order).
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let bal_arg0 = &entries[2]["args"][0]["value"];
+    let bal_arg0 = &entries[3]["args"][0]["value"];
     assert_eq!(bal_arg0["kind"].as_str(), Some("Reference"));
     assert_eq!(
         bal_arg0["mutable"].as_bool(),
@@ -2863,8 +2976,10 @@ fn test_object_lifecycle_via_ct_print_full() {
     assert_eq!(io["text"].as_str(), Some("Transfer"));
 
     // ----- &mut Counter and &Counter args carry nested Struct payload ---
-    // entries[0]=test_object_lifecycle (no args), entries[1]=increment,
-    // entries[2]=value (entry order).
+    // Entry order: entries[0]=<toplevel>, [1]=test_object_lifecycle (no
+    // args), [2]=increment, [3]=value.  `<toplevel>` is entries[0] — the call tree's root, which `start` opens
+    // at depth 0 before any call the recorder makes (trace-events.md,
+    // "Recorder Integration — Starting a Recording").
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
@@ -2872,7 +2987,7 @@ fn test_object_lifecycle_via_ct_print_full() {
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     // increment(&mut Counter, by) -> Void
-    let inc_args = entries[1]["args"].as_array().expect("args array");
+    let inc_args = entries[2]["args"].as_array().expect("args array");
     assert_eq!(inc_args.len(), 2);
     let inc_arg0 = &inc_args[0]["value"];
     assert_eq!(inc_arg0["kind"].as_str(), Some("Reference"));
@@ -2908,7 +3023,7 @@ fn test_object_lifecycle_via_ct_print_full() {
     assert_eq!(inc_args[1]["value"]["i"].as_i64(), Some(7));
 
     // value(&Counter) — same nested shape but `value: 7` after mutation
-    let val_args = entries[2]["args"].as_array().expect("args array");
+    let val_args = entries[3]["args"].as_array().expect("args array");
     let val_arg0 = &val_args[0]["value"];
     assert_eq!(val_arg0["kind"].as_str(), Some("Reference"));
     assert_eq!(
@@ -2926,20 +3041,24 @@ fn test_object_lifecycle_via_ct_print_full() {
         "Counter.value is 7 after increment(7)",
     );
 
-    // ----- Return values (LIFO close order) ------------------------------
-    // increment and value (direct children of the test entry, invoked in
-    // sequence) close in call order; the outer test_object_lifecycle
-    // entry is the last frame open (toplevel Return) and closes last.
+    // ----- Return values -------------------------------------------------
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
     let exits = observed_exit_sequence(&doc);
     // `<toplevel>` closes last: it is the call tree's root, which `start`
     // opens at depth 0, so every other frame unwinds inside it
     // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(exits.len(), 4);
-    assert_eq!(exits[0].0, "increment");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
-    assert_eq!(exits[1].0, "value");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(7));
+    assert_eq!(exits[1].0, "increment");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[0].0, "value");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(7));
     assert_eq!(exits[2].0, "test_object_lifecycle");
     assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 }
@@ -3020,17 +3139,20 @@ fn test_abilities_via_ct_print_full() {
     );
 
     // ----- mint_token(7) -> AccessToken { operation_id: 7 } ---------------
-    // Exits in LIFO close order: the three helpers (direct children of
-    // the test entry, invoked in sequence) close in call order; the
-    // outer test_abilities entry is the last frame open (toplevel
-    // Return) and closes last.
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
     let exits = observed_exit_sequence(&doc);
     // `<toplevel>` closes last: it is the call tree's root, which `start`
     // opens at depth 0, so every other frame unwinds inside it
     // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(exits.len(), 5);
-    assert_eq!(exits[0].0, "mint_token");
-    let mint_rv = &exits[0].1;
+    assert_eq!(exits[2].0, "mint_token");
+    let mint_rv = &exits[2].1;
     assert_eq!(mint_rv["kind"].as_str(), Some("Struct"));
     let mint_fields = mint_rv["field_values"]
         .as_array()
@@ -3047,15 +3169,16 @@ fn test_abilities_via_ct_print_full() {
     // The hot potato AccessToken arg to consume_token must carry the
     // SAME type_id as the one returned by mint_token — this is the
     // "linearity" invariant from the recorder's POV: the same value
-    // identity flows through.  In entry order: entries[0]=test_abilities,
-    // [1]=mint_token, [2]=consume_token, [3]=destroy_storage_item.
+    // identity flows through.  In entry order: entries[0]=<toplevel>,
+    // [1]=test_abilities, [2]=mint_token, [3]=consume_token,
+    // [4]=destroy_storage_item.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let consume_arg = &entries[2]["args"][0]["value"];
+    let consume_arg = &entries[3]["args"][0]["value"];
     assert_eq!(consume_arg["kind"].as_str(), Some("Struct"));
     assert_eq!(
         consume_arg["type_id"].as_u64(),
@@ -3065,9 +3188,9 @@ fn test_abilities_via_ct_print_full() {
     );
 
     // ----- destroy_storage_item(s) -> Int(99) ----------------------------
-    assert_eq!(exits[2].0, "destroy_storage_item");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[2].1["i"].as_i64(), Some(99));
+    assert_eq!(exits[0].0, "destroy_storage_item");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(99));
 
     // ----- test_abilities -> Void (toplevel Return, closes last) ---------
     assert_eq!(exits[3].0, "test_abilities");
@@ -3196,8 +3319,15 @@ fn test_option_test_via_ct_print_full() {
 
     // Some(42) -> Variant { discriminator: "0x1::option::Option::Variant#1",
     //                       contents: Struct { field_values: [Int(42)] } }
-    assert_eq!(exits[0].0, "some");
-    let some_rv = &exits[0].1;
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
+    assert_eq!(exits[6].0, "some");
+    let some_rv = &exits[6].1;
     assert_eq!(some_rv["kind"].as_str(), Some("Variant"));
     assert_eq!(
         some_rv["discriminator"].as_str(),
@@ -3213,8 +3343,8 @@ fn test_option_test_via_ct_print_full() {
     let option_type_id = some_rv["type_id"].as_u64().expect("Variant.type_id");
 
     // None -> Variant#0 with empty payload.
-    assert_eq!(exits[1].0, "none");
-    let none_rv = &exits[1].1;
+    assert_eq!(exits[5].0, "none");
+    let none_rv = &exits[5].1;
     assert_eq!(none_rv["kind"].as_str(), Some("Variant"));
     assert_eq!(
         none_rv["discriminator"].as_str(),
@@ -3235,10 +3365,10 @@ fn test_option_test_via_ct_print_full() {
     );
 
     // is_some / is_none -> Bool(true)
-    assert_eq!(exits[2].0, "is_some");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[2].1["b"].as_bool(), Some(true));
-    assert_eq!(exits[2].1["text"].as_str(), Some("true"));
+    assert_eq!(exits[4].0, "is_some");
+    assert_eq!(exits[4].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[4].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[4].1["text"].as_str(), Some("true"));
 
     assert_eq!(exits[3].0, "is_none");
     assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
@@ -3246,32 +3376,34 @@ fn test_option_test_via_ct_print_full() {
     assert_eq!(exits[3].1["text"].as_str(), Some("true"));
 
     // option::borrow(&Some(42)) -> &u64 — typed ValueRecord::Reference.
-    // borrow is called *from inside* borrow_inner, so it closes first.
-    assert_eq!(exits[4].0, "borrow");
-    let borrow_rv = &exits[4].1;
+    // borrow is called *from inside* borrow_inner, so it closes first —
+    // required by the subtree rule, not just by the tie-break.
+    assert_eq!(exits[1].0, "borrow");
+    let borrow_rv = &exits[1].1;
     assert_eq!(borrow_rv["kind"].as_str(), Some("Reference"));
     assert_eq!(borrow_rv["mutable"].as_bool(), Some(false));
     assert_eq!(borrow_rv["dereferenced"]["kind"].as_str(), Some("Int"));
     assert_eq!(borrow_rv["dereferenced"]["i"].as_i64(), Some(42));
 
     // borrow_inner is the outer helper wrapping option::borrow: Int(42).
-    assert_eq!(exits[5].0, "borrow_inner");
-    assert_eq!(exits[5].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[5].1["i"].as_i64(), Some(42));
+    assert_eq!(exits[2].0, "borrow_inner");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(42));
 
     // extract -> Int(42)
-    assert_eq!(exits[6].0, "extract");
-    assert_eq!(exits[6].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[6].1["i"].as_i64(), Some(42));
+    assert_eq!(exits[0].0, "extract");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(42));
 
     // test_option -> Void (toplevel Return, closes last).
     assert_eq!(exits[7].0, "test_option");
     assert_eq!(exits[7].1["kind"].as_str(), Some("Void"));
 
     // ----- Reference-typed call args carry the typed Variant pointee -----
-    // entries[0]=test_option (no args); helpers at entries[1..] in entry
-    // order: 1=some, 2=none, 3=is_some, 4=is_none, 5=borrow, 6=borrow_inner,
-    // 7=extract.
+    // entries[0]=<toplevel>; entries[1]=test_option (no args); helpers at
+    // entries[2..] in entry order: 2=some, 3=none, 4=is_some, 5=is_none,
+    // 6=borrow_inner, 7=borrow (called from inside borrow_inner),
+    // 8=extract.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
@@ -3279,7 +3411,7 @@ fn test_option_test_via_ct_print_full() {
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     // is_some takes &Option<u64> wrapping the Some(42) variant.
-    let is_some_arg = &entries[3]["args"][0]["value"];
+    let is_some_arg = &entries[4]["args"][0]["value"];
     assert_eq!(is_some_arg["kind"].as_str(), Some("Reference"));
     assert_eq!(is_some_arg["mutable"].as_bool(), Some(false));
     let is_some_pointee = &is_some_arg["dereferenced"];
@@ -3289,7 +3421,7 @@ fn test_option_test_via_ct_print_full() {
         Some("0x1::option::Option::Variant#1"),
     );
     // is_none takes &Option<u64> wrapping the None variant.
-    let is_none_arg = &entries[4]["args"][0]["value"];
+    let is_none_arg = &entries[5]["args"][0]["value"];
     assert_eq!(is_none_arg["kind"].as_str(), Some("Reference"));
     assert_eq!(is_none_arg["mutable"].as_bool(), Some(false));
     let is_none_pointee = &is_none_arg["dereferenced"];
@@ -3299,7 +3431,7 @@ fn test_option_test_via_ct_print_full() {
         Some("0x1::option::Option::Variant#0"),
     );
     // extract takes &mut Option<u64>.
-    let extract_arg = &entries[7]["args"][0]["value"];
+    let extract_arg = &entries[8]["args"][0]["value"];
     assert_eq!(extract_arg["kind"].as_str(), Some("Reference"));
     assert_eq!(extract_arg["mutable"].as_bool(), Some(true));
 
@@ -3545,8 +3677,13 @@ fn test_hash_builtins_test_via_ct_print_full() {
     // Exits in LIFO close order: the six helpers are direct children of
     // the test entry invoked in sequence, so they close in call order:
     // 0=to_bytes, 1=sha2_256, 2=to_bytes, 3=sha3_256, 4=length, 5=length.
-    // The outer test_hash_builtins entry is the last frame open (toplevel
-    // Return) and closes last (index 6).
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
     let exits = observed_exit_sequence(&doc);
     // `<toplevel>` closes last: it is the call tree's root, which `start`
     // opens at depth 0, so every other frame unwinds inside it
@@ -3555,7 +3692,7 @@ fn test_hash_builtins_test_via_ct_print_full() {
 
     // bcs::to_bytes(&Point { x: 3, y: 4 }) -> [3,0,0,0,0,0,0,0, 4,0,0,0,0,0,0,0]
     let bcs_bytes_want: Vec<i64> = vec![3, 0, 0, 0, 0, 0, 0, 0, 4, 0, 0, 0, 0, 0, 0, 0];
-    for idx in [0_usize, 2] {
+    for idx in [5_usize, 3] {
         assert_eq!(exits[idx].0, "to_bytes");
         let rv = &exits[idx].1;
         assert_eq!(rv["kind"].as_str(), Some("Sequence"));
@@ -3602,11 +3739,11 @@ fn test_hash_builtins_test_via_ct_print_full() {
             .collect();
         assert_eq!(got, want.to_vec(), "{name} digest bytes mismatch");
     };
-    check_digest(1, "sha2_256", &sha2_want);
-    check_digest(3, "sha3_256", &sha3_want);
+    check_digest(4, "sha2_256", &sha2_want);
+    check_digest(2, "sha3_256", &sha3_want);
 
     // length(&digest) -> 32 (twice)
-    for idx in [4_usize, 5] {
+    for idx in [1_usize, 0] {
         assert_eq!(exits[idx].0, "length");
         assert_eq!(exits[idx].1["kind"].as_str(), Some("Int"));
         assert_eq!(exits[idx].1["i"].as_i64(), Some(32));
@@ -3617,14 +3754,15 @@ fn test_hash_builtins_test_via_ct_print_full() {
     assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
 
     // ----- The hash arg also surfaces as the same Sequence<u8> ----------
-    // Entry order: entries[0]=test_hash_builtins, [1]=to_bytes(1),
-    // [2]=sha2_256, [3]=to_bytes(2), [4]=sha3_256, [5]=length, [6]=length.
+    // Entry order: entries[0]=<toplevel>, [1]=test_hash_builtins,
+    // [2]=to_bytes(1), [3]=sha2_256, [4]=to_bytes(2), [5]=sha3_256,
+    // [6]=length, [7]=length.
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     // sha2_256(bytes) — the bytes arg is the bcs output (entries[2]).
-    let sha2_arg0 = &entries[2]["args"][0]["value"];
+    let sha2_arg0 = &entries[3]["args"][0]["value"];
     assert_eq!(sha2_arg0["kind"].as_str(), Some("Sequence"));
     let sha2_arg_elems = sha2_arg0["elements"]
         .as_array()
@@ -3637,8 +3775,8 @@ fn test_hash_builtins_test_via_ct_print_full() {
         got_in, bcs_bytes_want,
         "sha2_256's input byte-vector must match bcs::to_bytes output exactly",
     );
-    // sha3_256(bytes2) — entries[4], same payload.
-    let sha3_arg0 = &entries[4]["args"][0]["value"];
+    // sha3_256(bytes2) — entries[5], same payload.
+    let sha3_arg0 = &entries[5]["args"][0]["value"];
     assert_eq!(sha3_arg0["kind"].as_str(), Some("Sequence"));
     let sha3_arg_elems = sha3_arg0["elements"]
         .as_array()
@@ -3653,8 +3791,8 @@ fn test_hash_builtins_test_via_ct_print_full() {
     );
 
     // ----- bcs::to_bytes(&p) takes a Reference<Point> ---------------------
-    // The first to_bytes call is at entries[1] in entry order.
-    let bcs_arg0 = &entries[1]["args"][0]["value"];
+    // The first to_bytes call is at entries[2] in entry order.
+    let bcs_arg0 = &entries[2]["args"][0]["value"];
     assert_eq!(bcs_arg0["kind"].as_str(), Some("Reference"));
     assert_eq!(bcs_arg0["mutable"].as_bool(), Some(false));
     let point = &bcs_arg0["dereferenced"];
@@ -3783,47 +3921,55 @@ fn test_string_test_via_ct_print_full() {
     // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(exits.len(), 8);
 
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
+
     // utf8(b"hello") -> "hello", utf8(b" world") -> " world"
-    assert_eq!(exits[0].0, "utf8");
-    assert_eq!(string_struct_text(&exits[0].1), "hello");
-    assert_eq!(exits[1].0, "utf8");
-    assert_eq!(string_struct_text(&exits[1].1), " world");
+    assert_eq!(exits[5].0, "utf8");
+    assert_eq!(string_struct_text(&exits[5].1), "hello");
+    assert_eq!(exits[4].0, "utf8");
+    assert_eq!(string_struct_text(&exits[4].1), " world");
 
     // append(&mut s, suffix) -> Void
-    assert_eq!(exits[2].0, "append");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[3].0, "append");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
 
     // sub_string(&s, 0, 5) -> "hello"
-    assert_eq!(exits[3].0, "sub_string");
-    assert_eq!(string_struct_text(&exits[3].1), "hello");
+    assert_eq!(exits[2].0, "sub_string");
+    assert_eq!(string_struct_text(&exits[2].1), "hello");
 
     // length(&s) -> 11, length(&head_bytes) -> 5
-    assert_eq!(exits[4].0, "length");
-    assert_eq!(exits[4].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[4].1["i"].as_i64(), Some(11));
-    assert_eq!(exits[5].0, "length");
-    assert_eq!(exits[5].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[5].1["i"].as_i64(), Some(5));
+    assert_eq!(exits[1].0, "length");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(11));
+    assert_eq!(exits[0].0, "length");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(5));
 
     // test_string -> Void (toplevel Return, closes last).
     assert_eq!(exits[6].0, "test_string");
     assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
 
     // ----- After append, the &mut s arg snapshot is "hello world" -------
-    // entries[0]=test_string, [1]=utf8, [2]=utf8, [3]=append,
-    // [4]=sub_string, [5]=length, [6]=length (entry order).
+    // entries[0]=<toplevel>, [1]=test_string, [2]=utf8, [3]=utf8,
+    // [4]=append, [5]=sub_string, [6]=length, [7]=length (entry order).
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
     // sub_string(&s, 0, 5) — its first arg is a Reference whose pointee
     // String must spell out "hello world" after the in-place append.
-    let sub_arg0 = &entries[4]["args"][0]["value"];
+    let sub_arg0 = &entries[5]["args"][0]["value"];
     assert_eq!(sub_arg0["kind"].as_str(), Some("Reference"));
     assert_eq!(sub_arg0["mutable"].as_bool(), Some(false));
     assert_eq!(string_struct_text(&sub_arg0["dereferenced"]), "hello world");
     // length(&s) — same shape.
-    let len_arg0 = &entries[5]["args"][0]["value"];
+    let len_arg0 = &entries[6]["args"][0]["value"];
     assert_eq!(len_arg0["kind"].as_str(), Some("Reference"));
     assert_eq!(string_struct_text(&len_arg0["dereferenced"]), "hello world");
 }
@@ -3921,31 +4067,38 @@ fn test_vector_operations_test_via_ct_print_full() {
     // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(exits.len(), 11);
 
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
     // swap_remove(v, 1) -> 20
-    assert_eq!(exits[0].0, "swap_remove");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[0].1["i"].as_i64(), Some(20));
+    assert_eq!(exits[8].0, "swap_remove");
+    assert_eq!(exits[8].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[8].1["i"].as_i64(), Some(20));
     // pop_back(v) -> 30
-    assert_eq!(exits[1].0, "pop_back");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[1].1["i"].as_i64(), Some(30));
+    assert_eq!(exits[7].0, "pop_back");
+    assert_eq!(exits[7].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[7].1["i"].as_i64(), Some(30));
     // contains(v, 40) -> true
-    assert_eq!(exits[2].0, "contains");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[2].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[6].0, "contains");
+    assert_eq!(exits[6].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[6].1["b"].as_bool(), Some(true));
     // contains(v, 99) -> false
-    assert_eq!(exits[3].0, "contains");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[3].1["b"].as_bool(), Some(false));
+    assert_eq!(exits[5].0, "contains");
+    assert_eq!(exits[5].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[5].1["b"].as_bool(), Some(false));
     // reverse(v) -> Void
     assert_eq!(exits[4].0, "reverse");
     assert_eq!(exits[4].1["kind"].as_str(), Some("Void"));
     // append(v, other) -> Void
-    assert_eq!(exits[5].0, "append");
-    assert_eq!(exits[5].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[3].0, "append");
+    assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
     // index_of(v, &7) -> (true, 2) — Tuple
-    assert_eq!(exits[6].0, "index_of");
-    let idx_rv = &exits[6].1;
+    assert_eq!(exits[2].0, "index_of");
+    let idx_rv = &exits[2].1;
     assert_eq!(idx_rv["kind"].as_str(), Some("Tuple"));
     let idx_elems = idx_rv["elements"].as_array().expect("Tuple.elements");
     assert_eq!(idx_elems.len(), 2);
@@ -3954,15 +4107,15 @@ fn test_vector_operations_test_via_ct_print_full() {
     assert_eq!(idx_elems[1]["kind"].as_str(), Some("Int"));
     assert_eq!(idx_elems[1]["i"].as_i64(), Some(2));
     // borrow_mut(v, 0) -> &mut u64 (Reference, mutable=true, pointee=40)
-    assert_eq!(exits[7].0, "borrow_mut");
-    let bm_rv = &exits[7].1;
+    assert_eq!(exits[1].0, "borrow_mut");
+    let bm_rv = &exits[1].1;
     assert_eq!(bm_rv["kind"].as_str(), Some("Reference"));
     assert_eq!(bm_rv["mutable"].as_bool(), Some(true));
     assert_eq!(bm_rv["dereferenced"]["kind"].as_str(), Some("Int"));
     assert_eq!(bm_rv["dereferenced"]["i"].as_i64(), Some(40));
     // borrow(v, 0) -> &u64 (Reference, mutable=false, pointee=100 after *r=100)
-    assert_eq!(exits[8].0, "borrow");
-    let b_rv = &exits[8].1;
+    assert_eq!(exits[0].0, "borrow");
+    let b_rv = &exits[0].1;
     assert_eq!(b_rv["kind"].as_str(), Some("Reference"));
     assert_eq!(b_rv["mutable"].as_bool(), Some(false));
     assert_eq!(b_rv["dereferenced"]["kind"].as_str(), Some("Int"));
@@ -3973,8 +4126,9 @@ fn test_vector_operations_test_via_ct_print_full() {
     assert_eq!(exits[9].1["kind"].as_str(), Some("Void"));
 
     // ----- Reference args carry the contents snapshot at call time ------
-    // entries[0]=test_vector_operations (no args); helpers at 1..10 in
-    // entry order, mirroring observed_call_sequence above.
+    // entries[0]=<toplevel>; entries[1]=test_vector_operations (no args);
+    // helpers at 2..=10 in entry order, mirroring observed_call_sequence
+    // above.
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
@@ -4002,48 +4156,48 @@ fn test_vector_operations_test_via_ct_print_full() {
     };
     // swap_remove sees v = [10, 20, 30, 40] (initial)
     assert_eq!(
-        extract_seq(&entries[1]["args"][0]["value"]),
+        extract_seq(&entries[2]["args"][0]["value"]),
         vec![10_i64, 20, 30, 40],
     );
     // pop_back sees v = [10, 40, 30] (after swap_remove)
     assert_eq!(
-        extract_seq(&entries[2]["args"][0]["value"]),
+        extract_seq(&entries[3]["args"][0]["value"]),
         vec![10_i64, 40, 30],
     );
     // contains(_, 40) sees v = [10, 40] (after pop_back)
     assert_eq!(
-        extract_seq(&entries[3]["args"][0]["value"]),
+        extract_seq(&entries[4]["args"][0]["value"]),
         vec![10_i64, 40],
     );
     // contains(_, 99) sees the same v = [10, 40]
     assert_eq!(
-        extract_seq(&entries[4]["args"][0]["value"]),
+        extract_seq(&entries[5]["args"][0]["value"]),
         vec![10_i64, 40],
     );
     // reverse sees v = [10, 40]
     assert_eq!(
-        extract_seq(&entries[5]["args"][0]["value"]),
+        extract_seq(&entries[6]["args"][0]["value"]),
         vec![10_i64, 40],
     );
     // append sees v = [40, 10] (after reverse) and other = [7, 8]
     assert_eq!(
-        extract_seq(&entries[6]["args"][0]["value"]),
+        extract_seq(&entries[7]["args"][0]["value"]),
         vec![40_i64, 10],
     );
-    assert_eq!(extract_seq(&entries[6]["args"][1]["value"]), vec![7_i64, 8],);
+    assert_eq!(extract_seq(&entries[7]["args"][1]["value"]), vec![7_i64, 8],);
     // index_of sees v = [40, 10, 7, 8] (after append)
-    assert_eq!(
-        extract_seq(&entries[7]["args"][0]["value"]),
-        vec![40_i64, 10, 7, 8],
-    );
-    // borrow_mut sees the same v
     assert_eq!(
         extract_seq(&entries[8]["args"][0]["value"]),
         vec![40_i64, 10, 7, 8],
     );
-    // borrow (final readback) sees v = [100, 10, 7, 8] (after *r = 100)
+    // borrow_mut sees the same v
     assert_eq!(
         extract_seq(&entries[9]["args"][0]["value"]),
+        vec![40_i64, 10, 7, 8],
+    );
+    // borrow (final readback) sees v = [100, 10, 7, 8] (after *r = 100)
+    assert_eq!(
+        extract_seq(&entries[10]["args"][0]["value"]),
         vec![100_i64, 10, 7, 8],
     );
 
@@ -4184,9 +4338,17 @@ fn test_phantom_types_test_via_ct_print_full() {
     // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(exits.len(), 8);
 
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
+
     // ----- mint<USD>(100) -> TypedCoin<USD> { value: 100 } ---------------
-    assert_eq!(exits[0].0, "mint");
-    let usd_coin = &exits[0].1;
+    assert_eq!(exits[5].0, "mint");
+    let usd_coin = &exits[5].1;
     assert_eq!(usd_coin["kind"].as_str(), Some("Struct"));
     let usd_fields = usd_coin["field_values"]
         .as_array()
@@ -4197,8 +4359,8 @@ fn test_phantom_types_test_via_ct_print_full() {
     let usd_coin_type_id = usd_coin["type_id"].as_u64().expect("Struct.type_id");
 
     // ----- mint<EUR>(100) -> TypedCoin<EUR> { value: 100 } ---------------
-    assert_eq!(exits[1].0, "mint");
-    let eur_coin = &exits[1].1;
+    assert_eq!(exits[4].0, "mint");
+    let eur_coin = &exits[4].1;
     assert_eq!(eur_coin["kind"].as_str(), Some("Struct"));
     let eur_fields = eur_coin["field_values"]
         .as_array()
@@ -4220,34 +4382,35 @@ fn test_phantom_types_test_via_ct_print_full() {
 
     // ----- value<USD>(&usd_coin) and value<EUR>(&eur_coin) ---------------
     assert_eq!(exits[2].0, "value");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[2].1["i"].as_i64(), Some(100));
-    assert_eq!(exits[3].0, "value");
     assert_eq!(exits[3].1["kind"].as_str(), Some("Int"));
     assert_eq!(exits[3].1["i"].as_i64(), Some(100));
+    assert_eq!(exits[2].0, "value");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[2].1["i"].as_i64(), Some(100));
 
     // ----- burn<USD>(usd_coin) -> 100, burn<EUR>(eur_coin) -> 100 -------
-    assert_eq!(exits[4].0, "burn");
-    assert_eq!(exits[4].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[4].1["i"].as_i64(), Some(100));
-    assert_eq!(exits[5].0, "burn");
-    assert_eq!(exits[5].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[5].1["i"].as_i64(), Some(100));
+    assert_eq!(exits[1].0, "burn");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[1].1["i"].as_i64(), Some(100));
+    assert_eq!(exits[0].0, "burn");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(100));
 
     // ----- test_phantom_types -> Void (toplevel Return, closes last) ----
     assert_eq!(exits[6].0, "test_phantom_types");
     assert_eq!(exits[6].1["kind"].as_str(), Some("Void"));
 
     // ----- value<USD>'s &TypedCoin<USD> arg keeps the phantom-tagged id -
-    // entries[0]=test_phantom_types, [1]=mint<USD>, [2]=mint<EUR>,
-    // [3]=value<USD>, [4]=value<EUR>, [5]=burn<USD>, [6]=burn<EUR>.
+    // entries[0]=<toplevel>, [1]=test_phantom_types, [2]=mint<USD>,
+    // [3]=mint<EUR>, [4]=value<USD>, [5]=value<EUR>, [6]=burn<USD>,
+    // [7]=burn<EUR>.
     let entries: Vec<&serde_json::Value> = doc["events"]
         .as_array()
         .unwrap()
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    let usd_value_arg = &entries[3]["args"][0]["value"];
+    let usd_value_arg = &entries[4]["args"][0]["value"];
     assert_eq!(usd_value_arg["kind"].as_str(), Some("Reference"));
     assert_eq!(usd_value_arg["mutable"].as_bool(), Some(false));
     let usd_pointee = &usd_value_arg["dereferenced"];
@@ -4259,7 +4422,7 @@ fn test_phantom_types_test_via_ct_print_full() {
          type id minted by mint<USD>",
     );
 
-    let eur_value_arg = &entries[4]["args"][0]["value"];
+    let eur_value_arg = &entries[5]["args"][0]["value"];
     assert_eq!(eur_value_arg["kind"].as_str(), Some("Reference"));
     let eur_pointee = &eur_value_arg["dereferenced"];
     assert_eq!(
@@ -4270,14 +4433,14 @@ fn test_phantom_types_test_via_ct_print_full() {
     );
 
     // ----- burn's owned TypedCoin<T> args also keep their phantom ids ---
-    let burn_usd_arg = &entries[5]["args"][0]["value"];
+    let burn_usd_arg = &entries[6]["args"][0]["value"];
     assert_eq!(burn_usd_arg["kind"].as_str(), Some("Struct"));
     assert_eq!(
         burn_usd_arg["type_id"].as_u64(),
         Some(usd_coin_type_id),
         "burn<USD>'s owned arg must carry the TypedCoin<USD> type id",
     );
-    let burn_eur_arg = &entries[6]["args"][0]["value"];
+    let burn_eur_arg = &entries[7]["args"][0]["value"];
     assert_eq!(burn_eur_arg["kind"].as_str(), Some("Struct"));
     assert_eq!(
         burn_eur_arg["type_id"].as_u64(),
@@ -4534,9 +4697,12 @@ fn test_tx_context_test_via_ct_print_full() {
         .collect();
 
     // ----- mint(ctx: &mut TxContext) — the &mut TxContext arg shape -----
-    // Entry order: entries[0]=mint, entries[1]=sender (called by mint),
-    // entries[2]=new (also called by mint).
-    let mint_args = entries[0]["args"].as_array().expect("mint args");
+    // Entry order: entries[0]=<toplevel>, entries[1]=mint,
+    // entries[2]=sender (called by mint), entries[3]=new (also called by
+    // mint).  `<toplevel>` is entries[0] — the call tree's root, which `start` opens
+    // at depth 0 before any call the recorder makes (trace-events.md,
+    // "Recorder Integration — Starting a Recording").
+    let mint_args = entries[1]["args"].as_array().expect("mint args");
     assert_eq!(mint_args.len(), 1, "mint takes a single &mut TxContext arg");
     let ctx_arg = &mint_args[0]["value"];
     assert_eq!(ctx_arg["kind"].as_str(), Some("Reference"));
@@ -4560,22 +4726,27 @@ fn test_tx_context_test_via_ct_print_full() {
     assert_eq!(ctx_fields[0]["text"].as_str(), Some("0xCAFE"));
 
     // tx_context::sender(ctx) takes the same &mut TxContext.
-    let sender_args = entries[1]["args"].as_array().expect("sender args");
+    let sender_args = entries[2]["args"].as_array().expect("sender args");
     assert_eq!(sender_args.len(), 1);
     assert_eq!(sender_args[0]["value"]["kind"].as_str(), Some("Reference"));
     assert_eq!(sender_args[0]["value"]["mutable"].as_bool(), Some(true));
 
     // object::new(ctx) takes the same &mut TxContext.
-    let new_args = entries[2]["args"].as_array().expect("new args");
+    let new_args = entries[3]["args"].as_array().expect("new args");
     assert_eq!(new_args.len(), 1);
     assert_eq!(new_args[0]["value"]["kind"].as_str(), Some("Reference"));
     assert_eq!(new_args[0]["value"]["mutable"].as_bool(), Some(true));
 
-    // ----- Return values (LIFO close order) ------------------------------
+    // ----- Return values -------------------------------------------------
     // mint is the entry function here (no synthetic outer test frame); it
-    // calls tx_context::sender then object::new, each of which closes
-    // before mint's own frame.  So the inner sender and new close first
-    // (in call order), and mint closes last.
+    // calls tx_context::sender then object::new.
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
     let exits = observed_exit_sequence(&doc);
     // `<toplevel>` closes last: it is the call tree's root, which `start`
     // opens at depth 0, so every other frame unwinds inside it
@@ -4583,14 +4754,14 @@ fn test_tx_context_test_via_ct_print_full() {
     assert_eq!(exits.len(), 4);
 
     // tx_context::sender returns the sender address as a typed String.
-    assert_eq!(exits[0].0, "sender");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("String"));
-    assert_eq!(exits[0].1["text"].as_str(), Some("0xCAFE"));
+    assert_eq!(exits[1].0, "sender");
+    assert_eq!(exits[1].1["kind"].as_str(), Some("String"));
+    assert_eq!(exits[1].1["text"].as_str(), Some("0xCAFE"));
 
     // object::new returns a fresh UID as a typed Struct whose inner
     // ID { bytes: address } preserves the byte-vector identity.
-    assert_eq!(exits[1].0, "new");
-    let uid_rv = &exits[1].1;
+    assert_eq!(exits[0].0, "new");
+    let uid_rv = &exits[0].1;
     assert_eq!(uid_rv["kind"].as_str(), Some("Struct"));
     let uid_fields = uid_rv["field_values"].as_array().expect("UID.field_values");
     assert_eq!(uid_fields.len(), 1, "UID {{ id: ID }}");
@@ -4750,7 +4921,7 @@ fn test_friend_visibility_test_via_ct_print_full() {
     assert_eq!(reveal_args.len(), 0, "secrets::reveal takes no parameters");
 
     // The query call_entry also has zero positional args.
-    let query_args = entries[1]["args"].as_array().expect("query args");
+    let query_args = entries[2]["args"].as_array().expect("query args");
     assert_eq!(query_args.len(), 0);
 
     // ----- The 42 surfaces in the logical step's vars -------------------
@@ -5002,8 +5173,10 @@ fn test_dynamic_field_test_via_ct_print_full() {
     );
 
     // ----- Each dynamic_field::* call's args -----------------------------
-    // entries[0]=test_dynamic_field (no args), [1]=add, [2]=borrow,
-    // [3]=remove (entry order).
+    // Entry order: entries[0]=<toplevel>, [1]=test_dynamic_field (no args),
+    // [2]=add, [3]=borrow, [4]=remove.  `<toplevel>` is entries[0] — the call tree's root, which `start` opens
+    // at depth 0 before any call the recorder makes (trace-events.md,
+    // "Recorder Integration — Starting a Recording").
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
@@ -5014,7 +5187,7 @@ fn test_dynamic_field_test_via_ct_print_full() {
     let expected_key: Vec<i64> = vec![107, 101, 121, 49];
 
     // ----- add(&mut parent.id, key, 42u64) -------------------------------
-    let add_args = entries[1]["args"].as_array().expect("add args");
+    let add_args = entries[2]["args"].as_array().expect("add args");
     assert_eq!(add_args.len(), 3, "dynamic_field::add takes 3 args");
     // arg0: &mut parent.id — a Reference whose pointee is the UID struct.
     let add_arg0 = &add_args[0]["value"];
@@ -5055,7 +5228,7 @@ fn test_dynamic_field_test_via_ct_print_full() {
     assert_eq!(add_arg2["i"].as_i64(), Some(42));
 
     // ----- borrow(&parent.id, key) ---------------------------------------
-    let borrow_args = entries[2]["args"].as_array().expect("borrow args");
+    let borrow_args = entries[3]["args"].as_array().expect("borrow args");
     assert_eq!(borrow_args.len(), 2, "dynamic_field::borrow takes 2 args");
     let borrow_arg0 = &borrow_args[0]["value"];
     assert_eq!(borrow_arg0["kind"].as_str(), Some("Reference"));
@@ -5083,7 +5256,7 @@ fn test_dynamic_field_test_via_ct_print_full() {
     assert_eq!(borrow_key_bytes, expected_key);
 
     // ----- remove(&mut parent.id, key) -----------------------------------
-    let remove_args = entries[3]["args"].as_array().expect("remove args");
+    let remove_args = entries[4]["args"].as_array().expect("remove args");
     assert_eq!(remove_args.len(), 2, "dynamic_field::remove takes 2 args");
     let remove_arg0 = &remove_args[0]["value"];
     assert_eq!(remove_arg0["kind"].as_str(), Some("Reference"));
@@ -5096,9 +5269,13 @@ fn test_dynamic_field_test_via_ct_print_full() {
 
     // ----- Return values (LIFO close order) ------------------------------
     // The three dynamic_field helpers are direct children of the test
-    // entry invoked in sequence, so they close in call order at indices
-    // 0..3; the outer test_dynamic_field entry is the last frame open
-    // (toplevel Return) and closes last (index 3).
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
     let exits = observed_exit_sequence(&doc);
     // `<toplevel>` closes last: it is the call tree's root, which `start`
     // opens at depth 0, so every other frame unwinds inside it
@@ -5106,8 +5283,8 @@ fn test_dynamic_field_test_via_ct_print_full() {
     assert_eq!(exits.len(), 5);
 
     // dynamic_field::add returns Void.
-    assert_eq!(exits[0].0, "add");
-    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[2].0, "add");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 
     // dynamic_field::borrow returns &u64 (Reference whose pointee is Int 42).
     assert_eq!(exits[1].0, "borrow");
@@ -5119,9 +5296,9 @@ fn test_dynamic_field_test_via_ct_print_full() {
     assert_eq!(borrow_pointee["i"].as_i64(), Some(42));
 
     // dynamic_field::remove returns the dynamic-field value as a typed Int.
-    assert_eq!(exits[2].0, "remove");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Int"));
-    assert_eq!(exits[2].1["i"].as_i64(), Some(42));
+    assert_eq!(exits[0].0, "remove");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Int"));
+    assert_eq!(exits[0].1["i"].as_i64(), Some(42));
 
     // test_dynamic_field -> Void (toplevel Return, closes last).
     assert_eq!(exits[3].0, "test_dynamic_field");
@@ -5234,15 +5411,17 @@ fn test_table_test_via_ct_print_full() {
         .unwrap_or_else(|| panic!("expected Table<address,u64> in the type table; got {types:?}"));
 
     // ----- Each table::* call's args -------------------------------------
-    // Entry order: entries[0]=test_table, [1]=new, [2]=add, [3]=borrow,
-    // [4]=contains.
+    // Entry order: entries[0]=<toplevel>, [1]=test_table, [2]=new, [3]=add,
+    // [4]=borrow, [5]=contains.  `<toplevel>` is entries[0] — the call tree's root, which `start` opens
+    // at depth 0 before any call the recorder makes (trace-events.md,
+    // "Recorder Integration — Starting a Recording").
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
 
     // ----- table::add(&mut entries, addr1, 100u64) -----------------------
-    let add_args = entries[2]["args"].as_array().expect("add args");
+    let add_args = entries[3]["args"].as_array().expect("add args");
     assert_eq!(add_args.len(), 3, "table::add takes 3 args");
     let add_arg0 = &add_args[0]["value"];
     assert_eq!(add_arg0["kind"].as_str(), Some("Reference"));
@@ -5264,7 +5443,7 @@ fn test_table_test_via_ct_print_full() {
     assert_eq!(add_args[2]["value"]["i"].as_i64(), Some(100));
 
     // ----- table::borrow(&entries, addr1) --------------------------------
-    let borrow_args = entries[3]["args"].as_array().expect("borrow args");
+    let borrow_args = entries[4]["args"].as_array().expect("borrow args");
     assert_eq!(borrow_args.len(), 2);
     assert_eq!(borrow_args[0]["value"]["kind"].as_str(), Some("Reference"));
     assert_eq!(borrow_args[0]["value"]["mutable"].as_bool(), Some(false));
@@ -5276,7 +5455,7 @@ fn test_table_test_via_ct_print_full() {
     assert_eq!(borrow_args[1]["value"]["text"].as_str(), Some("0xAB"));
 
     // ----- table::contains(&entries, addr1) ------------------------------
-    let contains_args = entries[4]["args"].as_array().expect("contains args");
+    let contains_args = entries[5]["args"].as_array().expect("contains args");
     assert_eq!(contains_args.len(), 2);
     assert_eq!(
         contains_args[0]["value"]["kind"].as_str(),
@@ -5291,9 +5470,13 @@ fn test_table_test_via_ct_print_full() {
 
     // ----- Return values (LIFO close order) ------------------------------
     // The four table helpers are direct children of the test entry
-    // invoked in sequence, so they close in call order at indices 0..4;
-    // the outer test_table entry is the last frame open (toplevel Return)
-    // and closes last (index 4).
+    // Exits run by `last_step_id` ascending, then `call_key` descending —
+    // the spec's tie-break, and the whole of the order here because every
+    // call in this recording reports `last_step_id` 0 (trace-events.md,
+    // §"Assembling an event stream: storage order is not event order").
+    // Descending `call_key` is the reverse of the entry order: the last
+    // helper called exits first, and `<toplevel>` (call_key 0) exits last.
+    assert_call_exit_order_conforms(&doc);
     let exits = observed_exit_sequence(&doc);
     // `<toplevel>` closes last: it is the call tree's root, which `start`
     // opens at depth 0, so every other frame unwinds inside it
@@ -5301,8 +5484,8 @@ fn test_table_test_via_ct_print_full() {
     assert_eq!(exits.len(), 6);
 
     // table::new returns the freshly-minted Table<address,u64> struct.
-    assert_eq!(exits[0].0, "new");
-    let new_rv = &exits[0].1;
+    assert_eq!(exits[3].0, "new");
+    let new_rv = &exits[3].1;
     assert_eq!(new_rv["kind"].as_str(), Some("Struct"));
     assert_eq!(
         new_rv["type_id"].as_u64(),
@@ -5317,24 +5500,25 @@ fn test_table_test_via_ct_print_full() {
     assert_eq!(new_fields[0]["text"].as_str(), Some("0xCAFE"));
 
     // table::add returns Void.
-    assert_eq!(exits[1].0, "add");
-    assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[2].0, "add");
+    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 
     // table::borrow returns &u64 (Reference whose pointee is Int 100).
-    assert_eq!(exits[2].0, "borrow");
-    let borrow_rv = &exits[2].1;
+    assert_eq!(exits[1].0, "borrow");
+    let borrow_rv = &exits[1].1;
     assert_eq!(borrow_rv["kind"].as_str(), Some("Reference"));
     assert_eq!(borrow_rv["mutable"].as_bool(), Some(false));
     assert_eq!(borrow_rv["dereferenced"]["kind"].as_str(), Some("Int"));
     assert_eq!(borrow_rv["dereferenced"]["i"].as_i64(), Some(100));
 
     // table::contains returns the membership verdict as a typed Bool.
-    assert_eq!(exits[3].0, "contains");
-    assert_eq!(exits[3].1["kind"].as_str(), Some("Bool"));
-    assert_eq!(exits[3].1["b"].as_bool(), Some(true));
-    assert_eq!(exits[3].1["text"].as_str(), Some("true"));
+    assert_eq!(exits[0].0, "contains");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Bool"));
+    assert_eq!(exits[0].1["b"].as_bool(), Some(true));
+    assert_eq!(exits[0].1["text"].as_str(), Some("true"));
 
-    // test_table -> Void (toplevel Return, closes last).
+    // test_table -> Void (the outermost user frame, closes last before
+    // `<toplevel>`).
     assert_eq!(exits[4].0, "test_table");
     assert_eq!(exits[4].1["kind"].as_str(), Some("Void"));
 
@@ -5452,7 +5636,10 @@ fn test_address_literals_test_via_ct_print_full() {
         .expect("`address` slot in types table") as u64;
 
     // ----- id_addr(a) / id_addr(b) / id_addr(c) call args + returns -----
-    // entries[0]=test_address_literals, [1..=3]=id_addr (entry order).
+    // Entry order: entries[0]=<toplevel>, [1]=test_address_literals,
+    // [2..=4]=id_addr.  `<toplevel>` is entries[0] — the call tree's root, which `start` opens
+    // at depth 0 before any call the recorder makes (trace-events.md,
+    // "Recorder Integration — Starting a Recording").
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
@@ -5463,13 +5650,15 @@ fn test_address_literals_test_via_ct_print_full() {
     // (trace-events.md, "Recorder Integration — Starting a Recording").
     assert_eq!(exits.len(), 5);
 
-    // Exits in LIFO close order: the three id_addr calls are direct
-    // children of the test entry invoked in sequence, so they close in
-    // call order at exit indices 0..3; the outer test_address_literals
-    // entry is the last frame open (toplevel Return) and closes last
-    // (exit index 3).  Entry indices are still 1..=3 (0 = the test entry).
+    // Every call in this recording shares `last_step_id` 0, so the exit
+    // order is the spec's tie-break: `last_step_id` ascending, then
+    // `call_key` descending (trace-events.md, §"Assembling an event
+    // stream: storage order is not event order").  The three id_addr
+    // frames hold call_keys 2, 3, 4, so they exit at indices 2, 1, 0 —
+    // the reverse of their entry order.  `<toplevel>` holds call_key 0
+    // and exits last.
     for (entry_idx, exit_idx, expected) in
-        [(1usize, 0usize, addr_a), (2, 1, addr_b), (3, 2, addr_c)]
+        [(2usize, 2usize, addr_a), (3, 1, addr_b), (4, 0, addr_c)]
     {
         let args = entries[entry_idx]["args"].as_array().expect("args array");
         assert_eq!(args.len(), 1, "id_addr takes a single address arg");
@@ -5824,17 +6013,19 @@ fn test_generic_constraints_test_via_ct_print_full() {
     );
 
     // ----- Each store_value<T> call: arg + return-type identity ---------
-    // Entry order: entries[0]=test_generic_constraints (no args),
-    // [1]=store_value<u64>, [2]=store_value<bool>, [3]=discard<u64>.
+    // Entry order: entries[0]=<toplevel>, [1]=test_generic_constraints (no
+    // args), [2]=store_value<u64>, [3]=store_value<bool>, [4]=discard<u64>.
     let entries: Vec<&serde_json::Value> = events
         .iter()
         .filter(|e| e["kind"] == "call_entry")
         .collect();
-    // Exits in LIFO close order: the three helpers are direct children of
-    // the test entry invoked in sequence, so they close in call order at
-    // exit indices 0..3; the outer test_generic_constraints entry is the
-    // last frame open (toplevel Return) and closes last (exit index 3).
-    // Entry indices are still 1..=3 (0 = the test entry).
+    // Every call in this recording shares `last_step_id` 0, so the exit
+    // order is the spec's tie-break: `last_step_id` ascending, then
+    // `call_key` descending (trace-events.md, §"Assembling an event
+    // stream: storage order is not event order"), which is the reverse
+    // of the entry order.  `<toplevel>` holds call_key 0 and exits last.
+    // So: discard<u64> at exits[0], store_value<bool> at [1],
+    // store_value<u64> at [2], test_generic_constraints at [3].
     let exits = observed_exit_sequence(&doc);
     // `<toplevel>` closes last: it is the call tree's root, which `start`
     // opens at depth 0, so every other frame unwinds inside it
@@ -5842,14 +6033,14 @@ fn test_generic_constraints_test_via_ct_print_full() {
     assert_eq!(exits.len(), 5);
 
     // store_value<u64>(42) — arg is Int 42.
-    let sv_u64_args = entries[1]["args"]
+    let sv_u64_args = entries[2]["args"]
         .as_array()
         .expect("store_value<u64> args");
     assert_eq!(sv_u64_args.len(), 1);
     assert_eq!(sv_u64_args[0]["value"]["kind"].as_str(), Some("Int"));
     assert_eq!(sv_u64_args[0]["value"]["i"].as_i64(), Some(42));
-    assert_eq!(exits[0].0, "store_value");
-    let cu_rv = &exits[0].1;
+    assert_eq!(exits[2].0, "store_value");
+    let cu_rv = &exits[2].1;
     assert_eq!(cu_rv["kind"].as_str(), Some("Struct"));
     assert_eq!(
         cu_rv["type_id"].as_u64(),
@@ -5864,7 +6055,7 @@ fn test_generic_constraints_test_via_ct_print_full() {
     assert_eq!(cu_fields[0]["i"].as_i64(), Some(42));
 
     // store_value<bool>(true) — arg is Bool true.
-    let sv_bool_args = entries[2]["args"]
+    let sv_bool_args = entries[3]["args"]
         .as_array()
         .expect("store_value<bool> args");
     assert_eq!(sv_bool_args.len(), 1);
@@ -5887,12 +6078,12 @@ fn test_generic_constraints_test_via_ct_print_full() {
     assert_eq!(cb_fields[0]["text"].as_str(), Some("true"));
 
     // discard<u64>(7) — arg is Int 7, returns Void.
-    let dis_args = entries[3]["args"].as_array().expect("discard args");
+    let dis_args = entries[4]["args"].as_array().expect("discard args");
     assert_eq!(dis_args.len(), 1);
     assert_eq!(dis_args[0]["value"]["kind"].as_str(), Some("Int"));
     assert_eq!(dis_args[0]["value"]["i"].as_i64(), Some(7));
-    assert_eq!(exits[2].0, "discard");
-    assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
+    assert_eq!(exits[0].0, "discard");
+    assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
     // test_generic_constraints -> Void (toplevel Return, closes last).
     assert_eq!(exits[3].0, "test_generic_constraints");
