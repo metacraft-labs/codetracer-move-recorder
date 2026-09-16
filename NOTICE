@@ -1,48 +1,39 @@
 codetracer-move-recorder
 Copyright (c) Metacraft Labs
 
-This product includes software developed as part of the Move and Sui projects.
+Licensed under the Apache License, Version 2.0. A copy of the license is in the
+LICENSE file at the root of this repository.
 
 --------------------------------------------------------------------------------
 Third-party code redistributed in this repository
 --------------------------------------------------------------------------------
 
-The following directory contains a vendored copy of the compiled output and
-sources of the Move standard library and the Sui framework, produced by the Move
-build system and committed so that the recorder's test programs build and replay
-reproducibly:
+None.
 
-    test-programs/move/flow_test/build/flow_test/
-        bytecode_modules/dependencies/{MoveStdlib,Sui}/
-        debug_info/dependencies/{MoveStdlib,Sui}/
-        disassembly/dependencies/{MoveStdlib,Sui}/
-        sources/dependencies/{MoveStdlib,Sui}/
+Every tracked file at the current tip is original work of Metacraft Labs. The
+Move packages under test-programs/ and examples/ vendor no upstream sources and
+declare no dependencies of their own; the Move standard library and the Sui
+framework are supplied by the Move toolchain at build time and are not committed
+here.
 
-That tree comprises 1092 files. 182 of them are source files carrying the
-upstream copyright headers and an SPDX identifier; the remaining files are
-generated build outputs (bytecode, debug info, disassembly) derived from them.
-
-The copyright notices appearing in those headers are:
-
-    Copyright (c) Mysten Labs, Inc.            (182 files)
-    Copyright (c) The Move Contributors        (9 files)
-    Copyright (c) The Diem Core Contributors   (9 files)
-
-Every one of those 182 files is marked:
-
-    SPDX-License-Identifier: Apache-2.0
-
-and is redistributed unmodified, with its notices intact, under the Apache
-License, Version 2.0. A copy of that license is in the LICENSE file at the root
-of this repository.
-
-Upstream sources:
+For reference, the upstream projects this recorder targets are:
 
     Sui / Move standard library   https://github.com/MystenLabs/sui
     Move language                 https://github.com/move-language/move
 
-Note on Apache-2.0 section 4(d): neither MystenLabs/sui nor move-language/move
-distributes a NOTICE file at the root of its source tree, and no NOTICE file is
-present anywhere in the vendored tree. There is therefore no upstream NOTICE
-text this file is obliged to reproduce. This file is provided as attribution for
-the redistributed work rather than to satisfy a 4(d) obligation.
+--------------------------------------------------------------------------------
+Historical note
+--------------------------------------------------------------------------------
+
+Until 2026-09-16 this repository committed the Move build system's output for
+test-programs/move/flow_test/, which contained a vendored copy of the Move
+standard library and Sui framework — 1092 files, of which 182 were sources
+carrying upstream copyright headers:
+
+    Copyright (c) Mysten Labs, Inc.
+    Copyright (c) The Move Contributors
+    Copyright (c) The Diem Core Contributors
+
+all marked SPDX-License-Identifier: Apache-2.0 and redistributed unmodified.
+That tree was removed from every branch on 2026-09-16; it is not present in any
+current checkout of this repository.
