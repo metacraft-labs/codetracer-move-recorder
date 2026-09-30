@@ -4448,18 +4448,21 @@ fn test_phantom_types_test_via_ct_print_full() {
         "burn<EUR>'s owned arg must carry the TypedCoin<EUR> type id",
     );
 
-    // ----- A TypedCoin<T> { value: 100 } shape surfaces on the logical
-    //       step --------------------------------------------------------
-    // The first mint(100) result binding materialises a typed
-    // `TypedCoin<T> { value: 100 }` Struct on the line-level logical step
-    // that `ct print --full` presents.  The remaining mint/value/burn
-    // frames' TypedCoin snapshots materialise on subsequent column-nudge
-    // steps (distinct source statements) that the logical-step view —
-    // aligned with logicalStepCount — does not carry; the per-frame typed
-    // shapes and their phantom-distinct `type_id`s are already pinned
-    // exactly on the call_exit return values above.
+    // ----- TypedCoin<T> { value: 100 } shapes surface on the step -------
+    // This module has no compiler debug info in the package build (only
+    // the `flow_test` module does), so no PC resolves to a source line and
+    // the run is the single step `start` opens.  Every value the converter
+    // registers after it is staged onto that step: staged values attach to
+    // the next step, and those still staged when the recording ends attach
+    // to the last one (trace-events.md, "Recorder Integration — Staging
+    // Values").  The step therefore carries each binding in write order.
+    // Each owned `TypedCoin<T> { value: 100 }` snapshot is a typed Struct:
+    // for each of the two mints the `stack_top` result and its binding
+    // (local_0 / local_1), then the owned coin passed to each of the two
+    // burns as `arg0`.  The `&TypedCoin<T>` arguments to `value` are
+    // References, not Structs, and are not collected here.
     let struct_lists = collect_struct_int_lists(&doc);
-    assert_eq!(struct_lists, vec![vec![100_i64]]);
+    assert_eq!(struct_lists, vec![vec![100_i64]; 6]);
 }
 
 // ===========================================================================
@@ -4605,22 +4608,34 @@ fn test_signer_test_via_ct_print_full() {
     assert_eq!(exits[1].1["b"].as_bool(), Some(true));
     assert_eq!(exits[1].1["text"].as_str(), Some("true"));
 
-    // ----- The target address surfaces in the logical step -------------
-    // The `target: address` argument (@0xBEEF) surfaces as the typed
-    // String `arg1` on the line-level logical step that `ct print --full`
-    // presents.  The boolean comparison verdict
-    // (`signer::address_of(admin) == @0xA11CE`) is computed on subsequent
-    // column-nudge steps (distinct source statements) whose `stack_top` /
-    // `local_3` Bool snapshots the logical-step view — aligned with
-    // logicalStepCount — does not carry; the verdict is already pinned
-    // exactly on the authorize call_exit return value above.
+    // ----- The target address and the verdict surface on the step ------
+    // This module has no compiler debug info in the package build (only
+    // the `flow_test` module does), so no PC resolves to a source line and
+    // the run is the single step `start` opens.  Every value the converter
+    // registers after it is staged onto that step: staged values attach to
+    // the next step, and those still staged when the recording ends attach
+    // to the last one (trace-events.md, "Recorder Integration — Staging
+    // Values").  The step therefore carries each binding in write order.
+    // `target` surfaces as `arg1`, `signer::address_of(admin)` as the
+    // `sender` binding (local_2), and the `sender == ADMIN` verdict as the
+    // `stack_top` snapshot and then its binding (local_3).
     let raws = unique_raw_pairs(&doc);
-    assert_eq!(raws, vec![("arg1".to_string(), "0xBEEF".to_string())]);
+    assert_eq!(
+        raws,
+        vec![
+            ("arg1".to_string(), "0xBEEF".to_string()),
+            ("local_2".to_string(), "0xA11CE".to_string()),
+            ("stack_top".to_string(), "true".to_string()),
+            ("local_3".to_string(), "true".to_string()),
+        ]
+    );
     let bools = unique_bool_pairs(&doc);
-    assert!(
-        bools.is_empty(),
-        "the boolean verdict lands on column-nudge steps, so no Bool surfaces \
-         on the logical step; got {bools:?}",
+    assert_eq!(
+        bools,
+        vec![
+            ("stack_top".to_string(), true),
+            ("local_3".to_string(), true)
+        ]
     );
 }
 
@@ -4924,17 +4939,22 @@ fn test_friend_visibility_test_via_ct_print_full() {
     let query_args = entries[2]["args"].as_array().expect("query args");
     assert_eq!(query_args.len(), 0);
 
-    // ----- The 42 surfaces in the logical step's vars -------------------
-    // The canonical secret value `42` returned by `secrets::reveal` flows
-    // back through `auth::query` and surfaces as `stack_top` (the Move VM
-    // stack snapshot) on the line-level logical step that `ct print
-    // --full` presents.  The `local_0` return-value binding materialises
-    // on a subsequent column-nudge step (a distinct source statement)
-    // that the logical-step view — aligned with logicalStepCount — does
-    // not carry; the cross-friend-call dataflow is already pinned exactly
-    // through the query / secrets::reveal call_exit return values above.
+    // ----- The 42 surfaces in the step's vars ---------------------------
+    // This module has no compiler debug info in the package build (only
+    // the `flow_test` module does), so no PC resolves to a source line and
+    // the run is the single step `start` opens.  Every value the converter
+    // registers after it is staged onto that step: staged values attach to
+    // the next step, and those still staged when the recording ends attach
+    // to the last one (trace-events.md, "Recorder Integration — Staging
+    // Values").  The step therefore carries each binding in write order.
+    // The secret `42` returned by `secrets::reveal` surfaces first as the
+    // Move VM `stack_top` snapshot, then as the `local_0` binding of
+    // `auth::query`'s return value.
     let ints = unique_int_pairs(&doc);
-    assert_eq!(ints, vec![("stack_top".to_string(), 42)]);
+    assert_eq!(
+        ints,
+        vec![("stack_top".to_string(), 42), ("local_0".to_string(), 42)]
+    );
 }
 
 // ===========================================================================
@@ -5073,25 +5093,24 @@ fn test_native_fun_test_via_ct_print_full() {
     assert_eq!(exits[1].0, "test_native_fun");
     assert_eq!(exits[1].1["kind"].as_str(), Some("Void"));
 
-    // ----- The 5-byte input vector surfaces in the logical step ----------
+    // ----- The input vector and its length surface on the step ---------
+    // This module has no compiler debug info in the package build (only
+    // the `flow_test` module does), so no PC resolves to a source line and
+    // the run is the single step `start` opens.  Every value the converter
+    // registers after it is staged onto that step: staged values attach to
+    // the next step, and those still staged when the recording ends attach
+    // to the last one (trace-events.md, "Recorder Integration — Staging
+    // Values").  The step therefore carries each binding in write order.
     // The `b"abcde"` byte vector passed to the native `vector::length`
-    // surfaces as a typed Sequence<u8> ([97, 98, 99, 100, 101]) on the
-    // line-level logical step that `ct print --full` presents.  The
-    // native's return value `5` is bound to `local_1` on a subsequent
-    // column-nudge step (a distinct source statement) that the
-    // logical-step view — aligned with logicalStepCount — does not carry;
-    // the length return is already pinned exactly on the call_exit above.
+    // surfaces as a typed Sequence<u8>, and the native's return value `5`
+    // as its `local_1` binding.
     let seq_lists = collect_sequence_int_lists(&doc);
     assert!(
         seq_lists.contains(&vec![97_i64, 98, 99, 100, 101]),
         "expected b\"abcde\" input as a typed Sequence<u8>; got {seq_lists:?}",
     );
     let ints = unique_int_pairs(&doc);
-    assert!(
-        ints.is_empty(),
-        "the native length return `5` lands on a column-nudge step, so no \
-         scalar Int surfaces on the logical step; got {ints:?}",
-    );
+    assert_eq!(ints, vec![("local_1".to_string(), 5)]);
 }
 
 // ===========================================================================
@@ -5304,16 +5323,26 @@ fn test_dynamic_field_test_via_ct_print_full() {
     assert_eq!(exits[3].0, "test_dynamic_field");
     assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
 
-    // ----- The dynamic-field value 42 surfaces in the logical step ------
-    // The `add(&mut id, key, 42u64)` value argument surfaces as the typed
-    // Int `arg2` on the line-level logical step that `ct print --full`
-    // presents.  The borrow-deref result (`local_1`) and the `remove`
-    // return binding (`local_2`) materialise on subsequent column-nudge
-    // steps (distinct source statements) that the logical-step view —
-    // aligned with logicalStepCount — does not carry; both are already
-    // pinned exactly on the borrow/remove call_exit return values above.
+    // ----- The dynamic-field value 42 surfaces in the step's vars ------
+    // This module has no compiler debug info in the package build (only
+    // the `flow_test` module does), so no PC resolves to a source line and
+    // the run is the single step `start` opens.  Every value the converter
+    // registers after it is staged onto that step: staged values attach to
+    // the next step, and those still staged when the recording ends attach
+    // to the last one (trace-events.md, "Recorder Integration — Staging
+    // Values").  The step therefore carries each binding in write order.
+    // The `add(&mut id, key, 42u64)` value argument surfaces as `arg2`,
+    // then the borrow-deref result `v` (local_1) and the `remove` return
+    // binding `removed` (local_2).
     let ints = unique_int_pairs(&doc);
-    assert_eq!(ints, vec![("arg2".to_string(), 42)]);
+    assert_eq!(
+        ints,
+        vec![
+            ("arg2".to_string(), 42),
+            ("local_1".to_string(), 42),
+            ("local_2".to_string(), 42),
+        ]
+    );
 }
 
 // ===========================================================================
@@ -5522,27 +5551,23 @@ fn test_table_test_via_ct_print_full() {
     assert_eq!(exits[4].0, "test_table");
     assert_eq!(exits[4].1["kind"].as_str(), Some("Void"));
 
-    // ----- Step vars on the logical step --------------------------------
-    // Every table operation's runtime effect (the `add` value arg 100,
-    // the borrow-deref `local_2 = 100`, and the `contains` verdict
-    // `local_3 = true`) is materialised on a column-nudge step attached to
-    // the corresponding `table::*` call statement; `ct print --full`
-    // surfaces the line-level logical step, which carries no variable
-    // snapshots here.  Each op's value/verdict is already pinned exactly
-    // through the call_exit return values above, so the logical step's
-    // scalar var sets are empty.
+    // ----- Step vars ---------------------------------------------------
+    // This module has no compiler debug info in the package build (only
+    // the `flow_test` module does), so no PC resolves to a source line and
+    // the run is the single step `start` opens.  Every value the converter
+    // registers after it is staged onto that step: staged values attach to
+    // the next step, and those still staged when the recording ends attach
+    // to the last one (trace-events.md, "Recorder Integration — Staging
+    // Values").  The step therefore carries each binding in write order.
+    // The `add` value argument surfaces as `arg2`, the borrow-deref `v` as
+    // local_2, and the `contains` verdict `present` as local_3.
     let ints = unique_int_pairs(&doc);
-    assert!(
-        ints.is_empty(),
-        "table op values land on column-nudge steps; the logical step has no \
-         scalar Int vars, got {ints:?}",
+    assert_eq!(
+        ints,
+        vec![("arg2".to_string(), 100), ("local_2".to_string(), 100)]
     );
     let bools = unique_bool_pairs(&doc);
-    assert!(
-        bools.is_empty(),
-        "the contains verdict lands on a column-nudge step; the logical step has \
-         no Bool vars, got {bools:?}",
-    );
+    assert_eq!(bools, vec![("local_3".to_string(), true)]);
 }
 
 // ===========================================================================
@@ -5687,27 +5712,30 @@ fn test_address_literals_test_via_ct_print_full() {
     assert_eq!(exits[3].0, "test_address_literals");
     assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
 
-    // ----- The address literals surface in the logical step's vars -------
-    // The Effect::Write events for local_0 / local_1 / local_2 (the three
-    // address literals materialised up-front) plus the first id_addr's
-    // reused `arg0` slot all attach to the line-level logical step that
-    // `ct print --full` surfaces.  The per-call round-trip bindings
-    // (local_3 / local_4 / local_5) and the arg0 reuses for the second
-    // and third id_addr calls materialise on subsequent column-nudge
-    // steps that the logical-step view — aligned with logicalStepCount —
-    // does not carry; each call's full round-trip is already pinned
-    // exactly through the call-arg + call_exit assertions above.
+    // ----- The address literals surface in the step's vars -------------
+    // This module has no compiler debug info in the package build (only
+    // the `flow_test` module does), so no PC resolves to a source line and
+    // the run is the single step `start` opens.  Every value the converter
+    // registers after it is staged onto that step: staged values attach to
+    // the next step, and those still staged when the recording ends attach
+    // to the last one (trace-events.md, "Recorder Integration — Staging
+    // Values").  The step therefore carries each binding in write order.
+    // The three literals are written first (local_0 / local_1 / local_2),
+    // then each `id_addr` call contributes its `arg0` and the `_ra` / `_rb`
+    // / `_rc` binding of its return value (local_3 / local_4 / local_5).
     let pairs = unique_raw_pairs(&doc);
     assert_eq!(
         pairs,
         vec![
-            // The three address literals materialise first (Effect::Write
-            // for local_0 / local_1 / local_2 before any id_addr call).
             ("local_0".to_string(), addr_a.to_string()),
             ("local_1".to_string(), addr_b.to_string()),
             ("local_2".to_string(), addr_c.to_string()),
-            // The first id_addr(arg0) call's arg binding.
             ("arg0".to_string(), addr_a.to_string()),
+            ("local_3".to_string(), addr_a.to_string()),
+            ("arg0".to_string(), addr_b.to_string()),
+            ("local_4".to_string(), addr_b.to_string()),
+            ("arg0".to_string(), addr_c.to_string()),
+            ("local_5".to_string(), addr_c.to_string()),
         ],
     );
 }
@@ -6089,19 +6117,27 @@ fn test_generic_constraints_test_via_ct_print_full() {
     assert_eq!(exits[3].0, "test_generic_constraints");
     assert_eq!(exits[3].1["kind"].as_str(), Some("Void"));
 
-    // ----- Step vars: the first store_value arg surfaces -----------------
-    // The `store_value<u64>(42)` call argument surfaces as the typed Int
-    // `arg0` on the line-level logical step that `ct print --full`
-    // presents.  The Container<u64>/Container<bool> Struct bindings, the
-    // second store_value / discard args, and the destructured inner
-    // values all materialise on subsequent column-nudge steps (distinct
-    // source statements) that the logical-step view — aligned with
-    // logicalStepCount — does not carry.  The typed Container<T> return
-    // shapes and their phantom-distinct `type_id`s are already pinned
-    // exactly on the store_value call_exit return values above.
+    // ----- Step vars ---------------------------------------------------
+    // This module has no compiler debug info in the package build (only
+    // the `flow_test` module does), so no PC resolves to a source line and
+    // the run is the single step `start` opens.  Every value the converter
+    // registers after it is staged onto that step: staged values attach to
+    // the next step, and those still staged when the recording ends attach
+    // to the last one (trace-events.md, "Recorder Integration — Staging
+    // Values").  The step therefore carries each binding in write order.
+    // The scalar Ints are the `store_value<u64>(42)` argument (`arg0`), the
+    // `discard<u64>(7)` argument (`arg0` again), and the destructured
+    // `ru` (local_2).
     let _ = (cu_type_id, cb_type_id);
     let ints = unique_int_pairs(&doc);
-    assert_eq!(ints, vec![("arg0".to_string(), 42)]);
+    assert_eq!(
+        ints,
+        vec![
+            ("arg0".to_string(), 42),
+            ("arg0".to_string(), 7),
+            ("local_2".to_string(), 42),
+        ]
+    );
 }
 
 // ===========================================================================
@@ -6261,17 +6297,21 @@ fn test_public_package_test_via_ct_print_full() {
     assert_eq!(exits[2].0, "test_public_package");
     assert_eq!(exits[2].1["kind"].as_str(), Some("Void"));
 
-    // ----- The `7` surfaces in the logical step's vars ------------------
-    // The `7` forwarded across the package boundary surfaces as the
-    // `stack_top` Move VM stack snapshot on the line-level logical step
-    // that `ct print --full` presents.  The `local_0` return-value
-    // binding materialises on a subsequent column-nudge step (a distinct
-    // source statement) that the logical-step view — aligned with
-    // logicalStepCount — does not carry; the cross-package dataflow is
-    // already pinned exactly on the call_helper / pkg_lib::helper
-    // call_exit return values above.
+    // ----- The `7` surfaces in the step's vars -------------------------
+    // This module has no compiler debug info in the package build (only
+    // the `flow_test` module does), so no PC resolves to a source line and
+    // the run is the single step `start` opens.  Every value the converter
+    // registers after it is staged onto that step: staged values attach to
+    // the next step, and those still staged when the recording ends attach
+    // to the last one (trace-events.md, "Recorder Integration — Staging
+    // Values").  The step therefore carries each binding in write order.
+    // The `7` forwarded across the package boundary surfaces as the Move VM
+    // `stack_top` snapshot and then as the `local_0` return binding.
     let ints = unique_int_pairs(&doc);
-    assert_eq!(ints, vec![("stack_top".to_string(), 7)]);
+    assert_eq!(
+        ints,
+        vec![("stack_top".to_string(), 7), ("local_0".to_string(), 7)]
+    );
 }
 
 // ===========================================================================
