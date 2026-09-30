@@ -8,5 +8,13 @@
 # reprobuild build artifacts
 .repro/
 
-# Move compiler build output (embeds absolute build paths)
-test-programs/move/*/build/
+# Move compiler build output (embeds absolute build paths). The one exception
+# is the flow_test module's minimized, path-normalized debug info, which the
+# trace-replay tests need; regenerate it with
+# test-programs/move/regenerate-flow-test-debug-info.sh.
+test-programs/move/*/build/*
+!test-programs/move/flow_test/build/flow_test/
+test-programs/move/flow_test/build/flow_test/*
+!test-programs/move/flow_test/build/flow_test/debug_info/
+test-programs/move/flow_test/build/flow_test/debug_info/*
+!test-programs/move/flow_test/build/flow_test/debug_info/flow_test.json
