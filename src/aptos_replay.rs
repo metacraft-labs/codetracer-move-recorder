@@ -79,9 +79,13 @@ pub fn aptos_replay_transaction(config: &AptosReplayConfig) -> Result<()> {
         );
     }
 
-    // Create working directory.
-    let work_dir = std::env::temp_dir().join(format!("aptos-replay-{}", config.txn_version));
-    fs::create_dir_all(&work_dir).map_err(|e| eyre!("failed to create working directory: {e}"))?;
+    // A fresh scratch directory per run, deleted when `work_dir_guard` drops —
+    // on success and on every error return below.
+    let work_dir_guard = tempfile::Builder::new()
+        .prefix(&format!("aptos-replay-{}-", config.txn_version))
+        .tempdir()
+        .map_err(|e| eyre!("failed to create working directory: {e}"))?;
+    let work_dir = work_dir_guard.path().to_path_buf();
 
     // Step 1: Run aptos move replay with MOVE_VM_TRACE
     let trace_csv_path = work_dir.join("move_vm_trace.csv");
