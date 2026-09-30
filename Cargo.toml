@@ -37,5 +37,8 @@ clap = { version = "4", features = ["derive"] }
 # Recursive directory walking (source file discovery)
 walkdir = "2"
 
-[dev-dependencies]
+# Scratch directories for the chain CLIs run by `replay` / `aptos-replay`,
+# removed when the command finishes.
 tempfile = "3"
+
+[dev-dependencies]
