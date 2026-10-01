@@ -50,11 +50,12 @@ impl ReplayConfig {
 /// 3. Locate source code via `SourceLookup`
 /// 4. Decompress and convert using `convert_trace()`
 pub fn replay_transaction(config: &ReplayConfig) -> Result<()> {
-    // Step 1: Run sui replay
+    // Step 1: Run sui replay. The directory is removed when `replay_dir`
+    // drops, after the trace has been converted.
     let replay_dir = run_sui_replay(&config.rpc_url, &config.digest)?;
 
     // Step 2: Find the trace file
-    let trace_file = find_trace_file(&replay_dir)?;
+    let trace_file = find_trace_file(replay_dir.path())?;
 
     // Step 3-4: Process the trace file
     let search_dirs = match &config.source_dir {
@@ -129,8 +130,10 @@ pub fn replay_from_existing_trace(
     Ok(())
 }
 
-/// Run `sui replay --trace --digest <DIGEST>` and return the output directory.
-fn run_sui_replay(rpc_url: &str, digest: &str) -> Result<PathBuf> {
+/// Run `sui replay --trace --digest <DIGEST>` in a fresh scratch directory
+/// and return it. The directory is deleted when the returned `TempDir` drops,
+/// including on every error path below.
+fn run_sui_replay(rpc_url: &str, digest: &str) -> Result<tempfile::TempDir> {
     // Check that sui CLI is available.
     let sui_check = Command::new("sui").arg("--version").output();
     if sui_check.is_err() {
@@ -140,9 +143,12 @@ fn run_sui_replay(rpc_url: &str, digest: &str) -> Result<PathBuf> {
         );
     }
 
-    // Create a temporary directory for replay output.
-    let replay_dir = std::env::temp_dir().join(format!("sui-replay-{digest}"));
-    fs::create_dir_all(&replay_dir).wrap_err("Failed to create replay output directory")?;
+    // A fresh directory per run: a trace left by an earlier replay of the same
+    // digest can never be picked up in place of this one.
+    let replay_dir = tempfile::Builder::new()
+        .prefix(&format!("sui-replay-{digest}-"))
+        .tempdir()
+        .wrap_err("Failed to create replay output directory")?;
 
     let output = Command::new("sui")
         .args([
@@ -153,7 +159,7 @@ fn run_sui_replay(rpc_url: &str, digest: &str) -> Result<PathBuf> {
             "--digest",
             digest,
         ])
-        .current_dir(&replay_dir)
+        .current_dir(replay_dir.path())
         .output()
         .wrap_err("Failed to execute sui replay")?;
 
