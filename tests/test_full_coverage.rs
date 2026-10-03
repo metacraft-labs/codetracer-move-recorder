@@ -1727,7 +1727,7 @@ fn test_abort_via_ct_print_full() {
         .iter()
         .find(|e| e["kind"] == "io")
         .expect("expected one `io` event for the abort");
-    assert_eq!(io["io_kind"].as_str(), Some("ioError"));
+    assert_eq!(io["io_kind"].as_str(), Some("Error"));
     assert_eq!(io["text"].as_str(), Some("ABORTED: code 42"));
     assert_eq!(io["bytes_len"].as_u64(), Some(16));
     assert_eq!(io["io_index"].as_u64(), Some(0));
