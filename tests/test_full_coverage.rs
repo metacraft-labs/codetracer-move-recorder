@@ -54,7 +54,7 @@
 //! | Tuple return            | `test_nested_calls_*` (compute_triple)        |
 //! | Struct return           | `test_structs_*` (add_points -> Point)        |
 //! | Void return             | every test_* (test entry returns Void)        |
-//! | Abort / error path      | `test_abort_*` (asserts ioError event)        |
+//! | Abort / error path      | `test_abort_*` (asserts Error event)        |
 //! | Collections (vector)    | `test_vectors_*`                              |
 //! | Collections (struct)    | `test_structs_*`                              |
 //! | Generics                | `test_generics_*`                             |
@@ -1689,7 +1689,7 @@ fn test_abort_via_ct_print_full() {
     assert_eq!(
         counts["io_events"].as_u64(),
         Some(1),
-        "abort must surface exactly one io_event of kind ioError; counts={counts}",
+        "abort must surface exactly one io_event of kind Error; counts={counts}",
     );
 
     // 1 step + 2 call_entry + 1 io + 2 call_exit = 6 events.
@@ -1716,7 +1716,7 @@ fn test_abort_via_ct_print_full() {
     assert_eq!(exits[0].0, "test_abort");
     assert_eq!(exits[0].1["kind"].as_str(), Some("Void"));
 
-    // ----- The `io` event: kind ioError, text "ABORTED: code 42" ----------
+    // ----- The `io` event: kind Error, text "ABORTED: code 42" ----------
     // The Move v3 trace format models `abort 42` as the sequence
     //   Instruction{ABORT} -> Effect::Pop(U64 42) -> Effect::ExecutionError("ABORTED")
     // and the `ExecutionError` payload itself is just the bare marker
@@ -1727,7 +1727,7 @@ fn test_abort_via_ct_print_full() {
         .iter()
         .find(|e| e["kind"] == "io")
         .expect("expected one `io` event for the abort");
-    assert_eq!(io["io_kind"].as_str(), Some("ioError"));
+    assert_eq!(io["io_kind"].as_str(), Some("Error"));
     assert_eq!(io["text"].as_str(), Some("ABORTED: code 42"));
     assert_eq!(io["bytes_len"].as_u64(), Some(16));
     assert_eq!(io["io_index"].as_u64(), Some(0));
