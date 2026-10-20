@@ -305,7 +305,9 @@ fn move_recorder_surfaces_distinct_columns_for_multi_statement_line() {
     );
 
     let test_output = Command::new("sui")
-        .args(["move", "test", "--trace", COLUMN_AWARE_TEST_FN])
+        // The filter goes BEFORE `--trace`: since sui 1.7x `--trace` takes
+        // an optional trace type, and a filter after it is parsed as one.
+        .args(["move", "test", COLUMN_AWARE_TEST_FN, "--trace"])
         .current_dir(&package_dir)
         .output()
         .expect("failed to spawn `sui move test --trace`");
