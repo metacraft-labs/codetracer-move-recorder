@@ -234,12 +234,95 @@ pub enum SerializableMoveValue {
         #[serde(alias = "value")]
         elements: Vec<SerializableMoveValue>,
     },
-    Variant {
-        tag: u16,
-        fields: Vec<SerializableMoveValue>,
-        #[serde(default)]
-        type_: String,
-    },
+    /// A Move enum value (Move 2024 enums, and `Option`-like shapes).
+    Variant(MoveVariant),
+}
+
+/// A Move enum value, normalised from either wire shape.
+///
+/// Upstream (`move-trace-format/src/value.rs`, `SimplifiedMoveVariant`):
+/// `{"type": "Variant", "value": {"type_": <StructTag>, "variant_name": "Some",
+/// "tag": 1, "fields": [["pos0", {...}], ...]}}`.  Older synthetic fixtures
+/// use a flat shape with positional fields and a string type:
+/// `{"type": "Variant", "tag": 1, "fields": [{...}], "type_": "0x1::option::Option"}`.
+/// Fields of the flat shape get positional names (`pos0`, `pos1`, …), the
+/// names the compiler gives positional variant fields.
+#[derive(Debug, Clone)]
+pub struct MoveVariant {
+    /// The enum's type: a StructTag object upstream, a string in the flat shape.
+    pub type_: serde_json::Value,
+    /// The variant's name, when the trace carries it.
+    pub variant_name: Option<String>,
+    pub tag: u16,
+    pub fields: Vec<(String, SerializableMoveValue)>,
+}
+
+impl MoveVariant {
+    /// The enum's short type name (`Option`), or the flat shape's string.
+    pub fn type_name(&self) -> String {
+        match &self.type_ {
+            serde_json::Value::String(s) => s.clone(),
+            other => other
+                .get("name")
+                .and_then(|v| v.as_str())
+                .unwrap_or("")
+                .to_string(),
+        }
+    }
+
+    /// The enum's type arguments, as upstream's StructTag carries them.
+    pub fn type_args(&self) -> Vec<serde_json::Value> {
+        self.type_
+            .get("type_args")
+            .and_then(|v| v.as_array())
+            .cloned()
+            .unwrap_or_default()
+    }
+}
+
+impl<'de> Deserialize<'de> for MoveVariant {
+    fn deserialize<D: de::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        #[derive(Deserialize)]
+        struct Upstream {
+            #[serde(default)]
+            type_: serde_json::Value,
+            #[serde(default)]
+            variant_name: Option<String>,
+            tag: u16,
+            fields: Vec<(String, SerializableMoveValue)>,
+        }
+        #[derive(Deserialize)]
+        #[serde(untagged)]
+        enum Repr {
+            Upstream {
+                value: Upstream,
+            },
+            Flat {
+                tag: u16,
+                fields: Vec<SerializableMoveValue>,
+                #[serde(default)]
+                type_: String,
+            },
+        }
+        Ok(match Repr::deserialize(deserializer)? {
+            Repr::Upstream { value } => MoveVariant {
+                type_: value.type_,
+                variant_name: value.variant_name,
+                tag: value.tag,
+                fields: value.fields,
+            },
+            Repr::Flat { tag, fields, type_ } => MoveVariant {
+                type_: serde_json::Value::String(type_),
+                variant_name: None,
+                tag,
+                fields: fields
+                    .into_iter()
+                    .enumerate()
+                    .map(|(i, v)| (format!("pos{i}"), v))
+                    .collect(),
+            },
+        })
+    }
 }
 
 /// The inner content of a Struct value.
@@ -469,6 +552,42 @@ mod tests {
             serde_json::from_str::<SerializableMoveValue>(r#"{"type":"U256","value":[1,2,3]}"#)
                 .is_err()
         );
+    }
+
+    #[test]
+    fn variants_parse_from_the_upstream_and_the_flat_shape() {
+        // Upstream `SimplifiedMoveVariant`, as `sui replay` 1.81 writes it.
+        let upstream: SerializableMoveValue = serde_json::from_str(
+            r#"{"type":"Variant","value":{"type_":{"address":"f4","module":"enum_option",
+                "name":"Option","type_args":["u64"]},"variant_name":"Some","tag":1,
+                "fields":[["pos0",{"type":"U64","value":7}]]}}"#,
+        )
+        .unwrap();
+        let SerializableMoveValue::Variant(v) = upstream else {
+            panic!("expected a variant")
+        };
+        assert_eq!(
+            (v.type_name(), v.variant_name.as_deref(), v.tag),
+            ("Option".into(), Some("Some"), 1)
+        );
+        assert_eq!(v.type_args(), vec![serde_json::json!("u64")]);
+        assert!(
+            matches!(v.fields.as_slice(), [(n, SerializableMoveValue::U64 { value: 7 })] if n == "pos0")
+        );
+
+        // CONTROL: the flat fixture shape still parses, with positional names.
+        let flat: SerializableMoveValue = serde_json::from_str(
+            r#"{"type":"Variant","tag":0,"fields":[{"type":"Bool","value":true}],"type_":"0x1::option::Option"}"#,
+        )
+        .unwrap();
+        let SerializableMoveValue::Variant(f) = flat else {
+            panic!("expected a variant")
+        };
+        assert_eq!(
+            (f.type_name(), f.variant_name, f.tag),
+            ("0x1::option::Option".into(), None, 0)
+        );
+        assert_eq!(f.fields[0].0, "pos0");
     }
 
     #[test]

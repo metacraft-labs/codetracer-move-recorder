@@ -419,3 +419,25 @@ fn a_trace_with_no_events_is_refused_by_name_and_writes_nothing() {
         .expect("a trace with events converts");
     assert!(fs::read_dir(out.path()).unwrap().count() > 0);
 }
+
+#[test]
+fn a_conversion_that_fails_part_way_leaves_no_container() {
+    // A trace whose second event is malformed fails after the bundle has
+    // been opened; the caller must not find a container it could mistake
+    // for a recording.
+    let dir = replay_dir();
+    let mut enc = zstd::Encoder::new(Vec::new(), 1).unwrap();
+    let text = format!("{}\n{{\"NotAnEvent\":1}}\n", trace());
+    std::io::Write::write_all(&mut enc, text.as_bytes()).unwrap();
+    fs::write(dir.path().join("trace.json.zst"), enc.finish().unwrap()).unwrap();
+    let out = tempfile::tempdir().unwrap();
+    let _nim = NIM_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let _ = codetracer_move_recorder::replay::convert_sui_replay_dir(dir.path(), out.path())
+        .expect_err("a malformed event fails the conversion");
+    let left: Vec<_> = fs::read_dir(out.path())
+        .unwrap()
+        .flatten()
+        .map(|e| e.file_name())
+        .collect();
+    assert!(left.is_empty(), "left behind: {left:?}");
+}

@@ -138,13 +138,24 @@ pub fn convert_sui_replay_dir(tx_dir: &Path, out_dir: &Path) -> Result<ReplayCon
     fs::create_dir_all(out_dir)
         .wrap_err_with(|| format!("Failed to create output directory: {}", out_dir.display()))?;
     let modules_loaded = debug_info.module_count();
+    // Convert into a sibling scratch directory and move the result into
+    // `out_dir` only when conversion succeeded, so a failure part-way leaves
+    // no container behind that a caller could mistake for a recording.
+    let staging = tempfile::Builder::new()
+        .prefix(".partial-")
+        .tempdir_in(out_dir)
+        .wrap_err("Failed to create a staging directory")?;
     converter::convert_trace_with_debug_info(
         &trace_data,
         &source_path,
         debug_info,
-        out_dir,
+        staging.path(),
         converter::ConverterOptions::default(),
     )?;
+    for entry in fs::read_dir(staging.path())? {
+        let entry = entry?;
+        fs::rename(entry.path(), out_dir.join(entry.file_name()))?;
+    }
     eprintln!("Trace files written to {}", out_dir.display());
     Ok(ReplayConversion {
         modules_loaded,

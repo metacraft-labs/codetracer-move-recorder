@@ -290,10 +290,10 @@ fn test_value_variant() {
     )
     .unwrap();
     match v {
-        SerializableMoveValue::Variant { tag, fields, type_ } => {
-            assert_eq!(tag, 1);
-            assert_eq!(type_, "0x1::option::Option");
-            assert_eq!(fields.len(), 1);
+        SerializableMoveValue::Variant(v) => {
+            assert_eq!(v.tag, 1);
+            assert_eq!(v.type_name(), "0x1::option::Option");
+            assert_eq!(v.fields.len(), 1);
         }
         _ => panic!("expected Variant"),
     }
@@ -306,9 +306,9 @@ fn test_value_variant_no_fields() {
     )
     .unwrap();
     match v {
-        SerializableMoveValue::Variant { tag, fields, .. } => {
-            assert_eq!(tag, 0);
-            assert!(fields.is_empty());
+        SerializableMoveValue::Variant(v) => {
+            assert_eq!(v.tag, 0);
+            assert!(v.fields.is_empty());
         }
         _ => panic!("expected Variant"),
     }
@@ -1571,9 +1571,9 @@ fn test_variant_with_no_type_name() {
     )
     .unwrap();
     match v {
-        SerializableMoveValue::Variant { tag, type_, .. } => {
-            assert_eq!(tag, 0);
-            assert!(type_.is_empty());
+        SerializableMoveValue::Variant(v) => {
+            assert_eq!(v.tag, 0);
+            assert!(v.type_name().is_empty());
         }
         _ => panic!("expected Variant"),
     }

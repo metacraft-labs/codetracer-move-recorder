@@ -953,14 +953,6 @@ impl TypeIds {
         }
     }
 
-    /// Resolve (and lazily register) a `TypeKind::Struct` `TypeId` for the
-    /// given Move struct name.  An empty `name` falls back to the
-    /// generic `struct_id` so anonymous structs still get a typed
-    /// `ValueRecord::Struct` payload.
-    fn ensure_struct(&mut self, writer: &mut dyn TraceWriter, name: &str) -> TypeId {
-        self.ensure_parameterised_struct(writer, name, &[])
-    }
-
     /// Resolve (and lazily register) a `TypeKind::Struct` `TypeId` keyed
     /// by `(name, type_args)`.  Phantom-type instantiations of the same
     /// underlying struct (e.g. `TypedCoin<USD>` vs `TypedCoin<EUR>`) share
@@ -1239,13 +1231,21 @@ fn move_value_to_json(value: &SerializableMoveValue) -> serde_json::Value {
         SerializableMoveValue::Vector { elements } => {
             J::Array(elements.iter().map(move_value_to_json).collect())
         }
-        SerializableMoveValue::Variant { tag, fields, type_ } => {
+        SerializableMoveValue::Variant(v) => {
             let mut obj = serde_json::Map::new();
-            obj.insert("variant_type".to_string(), J::String(type_.clone()));
-            obj.insert("tag".to_string(), J::from(*tag));
+            obj.insert("variant_type".to_string(), J::String(v.type_name()));
+            if let Some(name) = &v.variant_name {
+                obj.insert("variant".to_string(), J::String(name.clone()));
+            }
+            obj.insert("tag".to_string(), J::from(v.tag));
             obj.insert(
                 "fields".to_string(),
-                J::Array(fields.iter().map(move_value_to_json).collect()),
+                J::Array(
+                    v.fields
+                        .iter()
+                        .map(|(_, f)| move_value_to_json(f))
+                        .collect(),
+                ),
             );
             J::Object(obj)
         }
@@ -1510,7 +1510,7 @@ pub fn convert_move_value(
                 type_id: type_ids.vector_id,
             }
         }
-        SerializableMoveValue::Variant { tag, fields, type_ } => {
+        SerializableMoveValue::Variant(v) => {
             // Emit a typed `ValueRecord::Variant { discriminator, contents,
             // type_id }` so downstream consumers (ct-print --full, frontend
             // object inspector) can walk the variant's payload structurally
@@ -1531,15 +1531,26 @@ pub fn convert_move_value(
             // shape ("contents: usually a Struct or a Tuple") and keeps
             // typed walks through `value["contents"]["field_values"]`
             // cheap for ct-print consumers.
-            let discriminator = if type_.is_empty() {
-                format!("Variant#{tag}")
+            //
+            // When the trace names the variant (upstream traces do), the
+            // discriminator is `<Type>::<Variant>` (`Option::Some`); the tag
+            // form remains for traces that carry only the tag.
+            let type_name = v.type_name();
+            let variant = v
+                .variant_name
+                .clone()
+                .unwrap_or_else(|| format!("Variant#{}", v.tag));
+            let discriminator = if type_name.is_empty() {
+                variant
             } else {
-                format!("{type_}::Variant#{tag}")
+                format!("{type_name}::{variant}")
             };
-            let variant_type_id = type_ids.ensure_struct(writer, type_);
-            let field_values: Vec<ValueRecord> = fields
+            let variant_type_id =
+                type_ids.ensure_parameterised_struct(writer, &type_name, &v.type_args());
+            let field_values: Vec<ValueRecord> = v
+                .fields
                 .iter()
-                .map(|f| convert_move_value(f, type_ids, writer))
+                .map(|(_, f)| convert_move_value(f, type_ids, writer))
                 .collect();
             let contents = ValueRecord::Struct {
                 field_values,
