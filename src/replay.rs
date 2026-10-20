@@ -112,6 +112,18 @@ pub struct ReplayConversion {
 pub fn convert_sui_replay_dir(tx_dir: &Path, out_dir: &Path) -> Result<ReplayConversion> {
     let trace_file = tx_dir.join("trace.json.zst");
     let trace_data = read_trace_file(&trace_file)?;
+    if trace_event_count(&trace_data) == 0 {
+        // Sui protocol versions before 38 run on execution layers without
+        // trace hooks (`sui-execution/v0`..`v2`); `sui replay` re-executes
+        // such a transaction successfully and writes a trace that is only
+        // the version header.  Converting it would produce a bundle that
+        // looks recorded and contains nothing, so it is refused by name.
+        bail!(
+            "{NO_TRACE_EVENTS}: {} holds no trace events (the execution layer that ran \
+             this transaction emits none; on Sui mainnet, protocol versions before 38)",
+            trace_file.display()
+        );
+    }
     let (debug_info, rejected) = DebugInfo::from_sui_replay_dir(tx_dir)
         .wrap_err_with(|| format!("Failed to read replay directory: {}", tx_dir.display()))?;
     for rejection in &rejected {
@@ -138,6 +150,19 @@ pub fn convert_sui_replay_dir(tx_dir: &Path, out_dir: &Path) -> Result<ReplayCon
         modules_loaded,
         modules_rejected: rejected,
     })
+}
+
+/// Stable token that starts the error for a trace with no events, so a
+/// caller driving the CLI can tell this refusal from a failure.
+pub const NO_TRACE_EVENTS: &str = "NO-TRACE-EVENTS";
+
+/// Number of non-empty lines after the version header.
+fn trace_event_count(trace_data: &[u8]) -> usize {
+    String::from_utf8_lossy(trace_data)
+        .lines()
+        .skip(1)
+        .filter(|line| !line.trim().is_empty())
+        .count()
 }
 
 /// The disassembly path of the module the first `OpenFrame` runs in.

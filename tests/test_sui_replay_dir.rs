@@ -384,3 +384,38 @@ fn identical_inputs_produce_identical_events() {
         assert_eq!(converted_bundle(info, &trace()).paths, first);
     }
 }
+
+#[test]
+fn a_trace_with_no_events_is_refused_by_name_and_writes_nothing() {
+    // `sui replay` writes a header-only trace for transactions that ran on
+    // execution layers without trace hooks (mainnet protocol < 38).
+    let dir = replay_dir();
+    let write_trace = |text: &str| {
+        let mut enc = zstd::Encoder::new(Vec::new(), 1).unwrap();
+        std::io::Write::write_all(&mut enc, text.as_bytes()).unwrap();
+        fs::write(dir.path().join("trace.json.zst"), enc.finish().unwrap()).unwrap();
+    };
+    let out = tempfile::tempdir().unwrap();
+
+    write_trace("{\"version\":3}\n");
+    let err = codetracer_move_recorder::replay::convert_sui_replay_dir(dir.path(), out.path())
+        .expect_err("a header-only trace must be refused");
+    assert!(
+        err.to_string()
+            .starts_with(codetracer_move_recorder::replay::NO_TRACE_EVENTS),
+        "{err}"
+    );
+    assert_eq!(
+        fs::read_dir(out.path()).unwrap().count(),
+        0,
+        "nothing written"
+    );
+
+    // CONTROL: the same directory with events converts, so the refusal is
+    // about the empty trace and not about the directory.
+    let _nim = NIM_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    write_trace(&trace());
+    codetracer_move_recorder::replay::convert_sui_replay_dir(dir.path(), out.path())
+        .expect("a trace with events converts");
+    assert!(fs::read_dir(out.path()).unwrap().count() > 0);
+}
