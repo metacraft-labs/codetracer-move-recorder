@@ -42,7 +42,10 @@ pub enum TraceEvent {
         instruction: String,
     },
     Effect(Effect),
-    External(ExternalEffect),
+    /// Open-ended JSON, as upstream declares it
+    /// (`TraceEvent::External(Box<serde_json::Value>)` in
+    /// `move-trace-format`).  Interpret it with [`ExternalEffect::classify`].
+    External(serde_json::Value),
 }
 
 /// A function frame opened during execution.
@@ -131,21 +134,39 @@ pub enum Effect {
 /// `Local` is serialized as `{"Local": [frame_id, local_index]}`.
 /// `Indexed` is `{"Indexed": [<nested_location>, field_index]}` and
 /// appears when accessing struct fields through references.
+/// `Global` is `{"Global": trace_index}`: a reference into storage — on
+/// Sui, an input object passed by reference — identified by the trace
+/// position where it was introduced.
 #[derive(Deserialize, Debug)]
 pub enum Location {
     Local(u64, u64),
     Indexed(Box<Location>, u64),
+    Global(u64),
+}
+
+/// The location a (possibly indexed) location is rooted in.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum RootLocation {
+    /// Local `local_index` of the frame opened at trace index `frame_id`,
+    /// which need not be the running frame: a callee writes its caller's
+    /// local through a `&mut`.
+    Local { frame_id: u64, local_index: u64 },
+    /// A storage reference introduced at `trace_index`.
+    Global { trace_index: u64 },
 }
 
 impl Location {
-    /// Extract the innermost local variable index.
-    ///
-    /// For `Local(frame_id, idx)` returns `idx`.
-    /// For `Indexed(inner, _)` recurses into `inner` to find the base local.
-    pub fn local_index(&self) -> u64 {
+    /// Follow `Indexed` wrappers down to the root location.
+    pub fn root(&self) -> RootLocation {
         match self {
-            Location::Local(_, idx) => *idx,
-            Location::Indexed(inner, _) => inner.local_index(),
+            Location::Local(frame_id, local_index) => RootLocation::Local {
+                frame_id: *frame_id,
+                local_index: *local_index,
+            },
+            Location::Indexed(inner, _) => inner.root(),
+            Location::Global(trace_index) => RootLocation::Global {
+                trace_index: *trace_index,
+            },
         }
     }
 }
@@ -190,7 +211,11 @@ pub enum SerializableMoveValue {
         #[serde(deserialize_with = "deserialize_u128_from_number")]
         value: u128,
     },
+    /// Decimal digits.  Upstream serialises `U256` as its 32
+    /// little-endian bytes (`move-core-types/src/u256.rs`); older fixtures
+    /// carry a decimal string.  Both are accepted.
     U256 {
+        #[serde(deserialize_with = "deserialize_u256_to_decimal")]
         value: String,
     },
     Bool {
@@ -279,11 +304,119 @@ where
     deserializer.deserialize_any(U128Visitor)
 }
 
-/// External effect (simplified — we just capture the kind string).
-#[derive(Deserialize, Debug)]
-pub struct ExternalEffect {
-    #[serde(default)]
-    pub kind: String,
+fn deserialize_u256_to_decimal<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum Raw {
+        Text(String),
+        LeBytes(Vec<u8>),
+    }
+    match Raw::deserialize(deserializer)? {
+        Raw::Text(text) => Ok(text),
+        Raw::LeBytes(bytes) if bytes.len() == 32 => Ok(le_bytes_to_decimal(&bytes)),
+        Raw::LeBytes(bytes) => Err(de::Error::invalid_length(
+            bytes.len(),
+            &"32 little-endian bytes",
+        )),
+    }
+}
+
+/// Render an unsigned little-endian integer of any width in decimal, by
+/// repeated division of the big-endian digit array by 10.
+pub fn le_bytes_to_decimal(le_bytes: &[u8]) -> String {
+    let mut be: Vec<u8> = le_bytes.iter().rev().copied().collect();
+    let mut digits = Vec::new();
+    while be.iter().any(|&b| b != 0) {
+        let mut remainder: u16 = 0;
+        for byte in be.iter_mut() {
+            let acc = (remainder << 8) | u16::from(*byte);
+            *byte = (acc / 10) as u8;
+            remainder = acc % 10;
+        }
+        digits.push(b'0' + remainder as u8);
+    }
+    if digits.is_empty() {
+        return "0".to_string();
+    }
+    digits.reverse();
+    String::from_utf8(digits).expect("ASCII digits")
+}
+
+/// The interpretations of a `TraceEvent::External` payload.
+///
+/// Sui's adapter writes programmable-transaction-block (PTB) structure
+/// through this channel — see `crates/sui-types/src/ptb_trace.rs`
+/// (`PTBEvent`) in https://github.com/MystenLabs/sui:
+///
+///   * `{"Summary": {"name", "events": [PTBCommandInfo…]}}` once, before
+///     the first command, listing every command of the block;
+///   * `"MoveCallStart"` / `"MoveCallEnd"` around each `MoveCall` command;
+///   * `{"ExternalEvent": {"description", "name", "values"}}` for each
+///     non-Move command (`SplitCoins`, `TransferObjects`, `MakeMoveVec`, …).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExternalEffect {
+    /// The block's command list, one label per command in order:
+    /// `<pkg>::<module>::<function>` for a Move call, the command name
+    /// otherwise.
+    PtbSummary(Vec<String>),
+    /// A `MoveCall` command begins.
+    MoveCallStart,
+    /// A `MoveCall` command ends.
+    MoveCallEnd,
+    /// A non-Move command ran.
+    PtbCommand { name: String, description: String },
+    /// The `{"kind": …}` shape older synthetic fixtures use.
+    Kind(String),
+    /// Anything else, kept as compact JSON so nothing is dropped.
+    Other(String),
+}
+
+impl ExternalEffect {
+    /// Interpret an `External` payload.
+    pub fn classify(value: &serde_json::Value) -> Self {
+        use serde_json::Value;
+        let text = |v: Option<&Value>| v.and_then(Value::as_str).unwrap_or("").to_string();
+        match value {
+            Value::String(marker) if marker == "MoveCallStart" => Self::MoveCallStart,
+            Value::String(marker) if marker == "MoveCallEnd" => Self::MoveCallEnd,
+            Value::Object(map) => {
+                if let Some(summary) = map.get("Summary") {
+                    let commands = summary
+                        .get("events")
+                        .and_then(Value::as_array)
+                        .map(|events| events.iter().map(command_label).collect())
+                        .unwrap_or_default();
+                    return Self::PtbSummary(commands);
+                }
+                if let Some(event) = map.get("ExternalEvent") {
+                    return Self::PtbCommand {
+                        name: text(event.get("name")),
+                        description: text(event.get("description")),
+                    };
+                }
+                if let Some(Value::String(kind)) = map.get("kind") {
+                    return Self::Kind(kind.clone());
+                }
+                Self::Other(value.to_string())
+            }
+            _ => Self::Other(value.to_string()),
+        }
+    }
+}
+
+/// Label one `PTBCommandInfo` from a PTB summary.
+fn command_label(info: &serde_json::Value) -> String {
+    if let Some(call) = info.get("MoveCall") {
+        let part = |k: &str| call.get(k).and_then(|v| v.as_str()).unwrap_or("?");
+        return format!("{}::{}::{}", part("pkg"), part("module"), part("function"));
+    }
+    if let Some(name) = info.get("ExternalEvent").and_then(|v| v.as_str()) {
+        return name.to_string();
+    }
+    info.to_string()
 }
 
 impl TraceValue {
@@ -294,5 +427,86 @@ impl TraceValue {
             TraceValue::ImmRef { snapshot, .. } => snapshot,
             TraceValue::MutRef { snapshot, .. } => snapshot,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn u256_le_bytes_render_in_decimal() {
+        let mut le = [0u8; 32];
+        assert_eq!(le_bytes_to_decimal(&le), "0");
+        le[0] = 0x01;
+        le[1] = 0x01;
+        assert_eq!(le_bytes_to_decimal(&le), "257");
+        // 2^255: only the top bit of the last little-endian byte.
+        let mut top = [0u8; 32];
+        top[31] = 0x80;
+        assert_eq!(
+            le_bytes_to_decimal(&top),
+            "57896044618658097711785492504343953926634992332820282019728792003956564819968"
+        );
+    }
+
+    #[test]
+    fn u256_accepts_both_wire_forms() {
+        let from_bytes: SerializableMoveValue = serde_json::from_str(
+            r#"{"type":"U256","value":[1,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0]}"#,
+        )
+        .unwrap();
+        let from_text: SerializableMoveValue =
+            serde_json::from_str(r#"{"type":"U256","value":"257"}"#).unwrap();
+        for value in [from_bytes, from_text] {
+            match value {
+                SerializableMoveValue::U256 { value } => assert_eq!(value, "257"),
+                other => panic!("expected U256, got {other:?}"),
+            }
+        }
+        // A byte array of the wrong width is refused, not truncated.
+        assert!(
+            serde_json::from_str::<SerializableMoveValue>(r#"{"type":"U256","value":[1,2,3]}"#)
+                .is_err()
+        );
+    }
+
+    #[test]
+    fn external_payloads_classify_as_ptb_structure() {
+        let classify = |json: &str| ExternalEffect::classify(&serde_json::from_str(json).unwrap());
+        assert_eq!(
+            classify(r#""MoveCallStart""#),
+            ExternalEffect::MoveCallStart
+        );
+        assert_eq!(classify(r#""MoveCallEnd""#), ExternalEffect::MoveCallEnd);
+        assert_eq!(
+            classify(
+                r#"{"Summary":{"name":"PTBSummary","events":[
+                    {"MoveCall":{"pkg":"0x2","module":"coin","function":"split"}},
+                    {"ExternalEvent":"TransferObjects"}]}}"#
+            ),
+            ExternalEffect::PtbSummary(vec![
+                "0x2::coin::split".to_string(),
+                "TransferObjects".to_string()
+            ])
+        );
+        assert_eq!(
+            classify(
+                r#"{"ExternalEvent":{"description":"MakeMoveVec: vector","name":"MakeMoveVec","values":[]}}"#
+            ),
+            ExternalEffect::PtbCommand {
+                name: "MakeMoveVec".to_string(),
+                description: "MakeMoveVec: vector".to_string()
+            }
+        );
+        assert_eq!(
+            classify(r#"{"kind":"transfer_object"}"#),
+            ExternalEffect::Kind("transfer_object".to_string())
+        );
+        // An unrecognised payload is kept verbatim rather than dropped.
+        assert_eq!(
+            classify(r#"[1,2]"#),
+            ExternalEffect::Other("[1,2]".to_string())
+        );
     }
 }

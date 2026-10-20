@@ -86,6 +86,9 @@ fn sui_fixture() -> PathBuf {
         .join("test-programs/move/flow_test/traces/flow_test__flow_test__test_arithmetic.json.zst")
 }
 
+/// A `sui` that answers `--version`, and for `replay` writes the fixture
+/// trace where the real `sui replay -o <OUT> --digest <D>` does:
+/// `<OUT>/<D>/trace.json.zst`.
 fn fake_sui(sandbox: &Sandbox, replay_exit: i32) {
     write_script(
         &sandbox.bin,
@@ -93,7 +96,14 @@ fn fake_sui(sandbox: &Sandbox, replay_exit: i32) {
         &format!(
             "case \"$1\" in\n\
              --version) echo 'sui 0.0.0-test'; exit 0 ;;\n\
-             replay) cp '{}' ./trace.json.zst; exit {replay_exit} ;;\n\
+             replay)\n\
+               out=.; digest=\n\
+               while [ $# -gt 0 ]; do\n\
+                 case \"$1\" in -o) out=\"$2\"; shift ;; --digest) digest=\"$2\"; shift ;; esac\n\
+                 shift\n\
+               done\n\
+               mkdir -p \"$out/$digest\" && cp '{}' \"$out/$digest/trace.json.zst\"\n\
+               exit {replay_exit} ;;\n\
              esac\nexit 2\n",
             sui_fixture().display()
         ),

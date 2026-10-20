@@ -16,7 +16,8 @@
 //!
 //!   * `function_map[binary_member_index].locals` — a `Vec<(name,
 //!     source_loc)>` whose order matches the bytecode slot allocation
-//!     (slot 0 == `locals[0]`, slot 1 == `locals[1]`, ...).
+//!     (slot `parameters.len()` == `locals[0]`, ...: the VM numbers
+//!     parameters first; see `FunctionDebugInfo::slot_name`).
 //!   * `function_map[binary_member_index].parameters` — same shape,
 //!     for function arguments.
 //!   * `function_map[binary_member_index].definition_location` — a
@@ -88,6 +89,10 @@ pub struct FunctionDebugInfo {
     /// the PC had no source mapping (synthesised op) and the converter
     /// emits `Option<column>=None` for that step.
     pub pc_to_column: HashMap<u64, u32>,
+    /// 1-indexed source line of the function's name, i.e. where the
+    /// function is defined.  Registered as the function's location so
+    /// a call-trace entry opens at the definition rather than at line 1.
+    pub definition_line: u32,
 }
 
 /// Per-module debug info, keyed by the bytecode function index
@@ -111,11 +116,49 @@ pub struct ModuleDebugInfo {
     pub line_lengths: Vec<u32>,
 }
 
-/// Workspace of debug-info modules, keyed by module short name
-/// (e.g. `flow_test`).  Looked up by the trace's `frame.module.name`.
+/// Workspace of debug-info modules.
+///
+/// Two keyings coexist because the two producers of debug info differ:
+///
+///   * a local `sui move build` tree describes ONE package, so modules are
+///     keyed by short name (e.g. `flow_test`) and looked up by the
+///     trace's `frame.module.name`;
+///   * a `sui replay` output directory describes EVERY package an
+///     on-chain transaction entered, where short names collide (`coin`
+///     exists in `0x2` and in many third-party packages), so modules are
+///     keyed by `(package storage id, module name)`.  The storage id is
+///     the trace frame's `version_id`, which names the exact package
+///     version that executed — an upgraded package resolves to the
+///     version that ran, not to its latest publication.
 #[derive(Debug, Default, Clone)]
 pub struct DebugInfo {
     modules: HashMap<String, ModuleDebugInfo>,
+    by_package: HashMap<(String, String), ModuleDebugInfo>,
+}
+
+/// Why a module in a `sui replay` output directory was not loaded.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ReplayModuleRejection {
+    /// The debug-info JSON or its disassembly could not be read or parsed.
+    Unreadable { json: PathBuf, reason: String },
+    /// The disassembly's SHA-256 differs from the hash its debug info
+    /// names, so the byte ranges would point into different text.
+    HashMismatch {
+        json: PathBuf,
+        expected: String,
+        actual: String,
+    },
+}
+
+/// Normalise a Move address to 64 lowercase hex digits without `0x`, the
+/// form `sui replay` uses for directory names and trace frames alike.
+pub fn normalize_address(address: &str) -> String {
+    let hex = address
+        .strip_prefix("0x")
+        .or_else(|| address.strip_prefix("0X"))
+        .unwrap_or(address)
+        .to_ascii_lowercase();
+    format!("{hex:0>64}")
 }
 
 impl DebugInfo {
@@ -193,6 +236,84 @@ impl DebugInfo {
         }
     }
 
+    /// Load the debug info of every package a `sui replay` run fetched.
+    ///
+    /// `sui replay --trace` writes, next to `trace.json.zst`, one
+    /// directory per package storage id (`0x…`), each holding
+    /// `bytecode/<module>.mvb` (the module's disassembly) and
+    /// `bytecode/<module>.json` (debug info whose byte ranges point into
+    /// that disassembly).  On-chain packages carry no source, so the
+    /// disassembly is the source text: steps resolve to disassembly
+    /// lines, and locals keep the names the bytecode carries.  Each
+    /// module's path is recorded RELATIVE to `replay_dir`
+    /// (`0x<package>/bytecode/<module>.mvb`).
+    ///
+    /// A module is loaded only if the disassembly's SHA-256 equals the
+    /// `file_hash` its debug info names; otherwise its byte ranges would
+    /// attribute steps to the wrong text.  Rejected modules are returned
+    /// rather than dropped silently, so the caller can report them.
+    pub fn from_sui_replay_dir(
+        replay_dir: &Path,
+    ) -> std::io::Result<(Self, Vec<ReplayModuleRejection>)> {
+        let mut store = Self::empty();
+        let mut rejected = Vec::new();
+        for pkg in fs::read_dir(replay_dir)? {
+            let pkg = pkg?;
+            let pkg_name = pkg.file_name().to_string_lossy().into_owned();
+            let bytecode_dir = pkg.path().join("bytecode");
+            if !pkg_name.starts_with("0x") || !bytecode_dir.is_dir() {
+                continue;
+            }
+            let package = normalize_address(&pkg_name);
+            for entry in fs::read_dir(&bytecode_dir)? {
+                let json = entry?.path();
+                if json.extension().and_then(|s| s.to_str()) != Some("json") {
+                    continue;
+                }
+                // Recorded relative to the replay directory, so the bundle
+                // names no host path and a consumer can ship the
+                // disassembly beside it at the same relative location.
+                let relative = Path::new(&pkg_name)
+                    .join("bytecode")
+                    .join(json.with_extension("mvb").file_name().unwrap_or_default());
+                match parse_replay_module(&json, relative) {
+                    Ok((module, info)) => {
+                        store.by_package.insert((package.clone(), module), info);
+                    }
+                    Err(rejection) => rejected.push(rejection),
+                }
+            }
+        }
+        Ok((store, rejected))
+    }
+
+    /// Look up a module, preferring the package-qualified entry (loaded
+    /// from a `sui replay` directory) and falling back to the short-name
+    /// entry (loaded from a local build).  `package` may be empty.
+    pub fn module(&self, package: &str, module_name: &str) -> Option<&ModuleDebugInfo> {
+        if !package.is_empty()
+            && let Some(m) = self
+                .by_package
+                .get(&(normalize_address(package), module_name.to_string()))
+        {
+            return Some(m);
+        }
+        self.modules.get(module_name)
+    }
+
+    /// Look up the per-function debug info for `(package, module_name,
+    /// binary_member_index)`.  See [`DebugInfo::module`] for the lookup
+    /// order.
+    pub fn function_in(
+        &self,
+        package: &str,
+        module_name: &str,
+        binary_member_index: u64,
+    ) -> Option<&FunctionDebugInfo> {
+        self.module(package, module_name)
+            .and_then(|m| m.functions.get(&binary_member_index))
+    }
+
     /// Look up the per-function debug info for `(module_name,
     /// binary_member_index)`.  Returns `None` when either the module
     /// or the function is unknown.
@@ -201,10 +322,60 @@ impl DebugInfo {
         module_name: &str,
         binary_member_index: u64,
     ) -> Option<&FunctionDebugInfo> {
-        self.modules
-            .get(module_name)
-            .and_then(|m| m.functions.get(&binary_member_index))
+        self.function_in("", module_name, binary_member_index)
     }
+
+    /// The source file a module's lines refer to, when it is known.
+    pub fn module_source_path(&self, package: &str, module_name: &str) -> Option<&Path> {
+        self.module(package, module_name)
+            .and_then(|m| m.source_path.as_deref())
+    }
+
+    /// Number of modules loaded, under either keying.
+    pub fn module_count(&self) -> usize {
+        self.modules.len() + self.by_package.len()
+    }
+}
+
+/// Parse one `bytecode/<module>.json` from a `sui replay` directory
+/// against its sibling `<module>.mvb` disassembly.
+fn parse_replay_module(
+    json: &Path,
+    recorded_path: PathBuf,
+) -> Result<(String, ModuleDebugInfo), ReplayModuleRejection> {
+    use sha2::{Digest, Sha256};
+
+    let unreadable = |reason: String| ReplayModuleRejection::Unreadable {
+        json: json.to_path_buf(),
+        reason,
+    };
+    let bytes = fs::read(json).map_err(|e| unreadable(e.to_string()))?;
+    let raw: RawDebugInfo =
+        serde_json::from_slice(&bytes).map_err(|e| unreadable(e.to_string()))?;
+    let mvb = json.with_extension("mvb");
+    let source_bytes = fs::read(&mvb).map_err(|e| unreadable(format!("{}: {e}", mvb.display())))?;
+
+    let expected = raw
+        .definition_location
+        .as_ref()
+        .and_then(|loc| loc.file_hash.clone())
+        .ok_or_else(|| unreadable("debug info names no file_hash".to_string()))?;
+    let actual: String = Sha256::digest(&source_bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect();
+    if !actual.eq_ignore_ascii_case(&expected) {
+        return Err(ReplayModuleRejection::HashMismatch {
+            json: json.to_path_buf(),
+            expected,
+            actual,
+        });
+    }
+
+    let source_text = String::from_utf8(source_bytes)
+        .map_err(|e| unreadable(format!("{}: {e}", mvb.display())))?;
+    build_module(raw, &source_text, Some(recorded_path))
+        .ok_or_else(|| unreadable("debug info names no module".to_string()))
 }
 
 /// Parse a single `<Module>.json` debug-info file.  Returns
@@ -215,6 +386,7 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
     let raw: RawDebugInfo = serde_json::from_slice(&bytes).ok()?;
 
     let module_short_name = raw.module_name.get(1).cloned()?;
+    let from_file_path = raw.from_file_path.clone().unwrap_or_default();
 
     // `from_file_path` records the *absolute* source path as it was on the
     // machine that compiled the package.  Prefer it, but it is not
@@ -227,7 +399,7 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
     //   <package_root>/sources/<Module>.move
     // so the function/parameter-name extraction still works regardless of
     // where (or on which OS) the package was originally built.
-    let source_text = fs::read_to_string(&raw.from_file_path).ok().or_else(|| {
+    let source_text = fs::read_to_string(&from_file_path).ok().or_else(|| {
         let package_root = path // <Module>.json
             .parent() // debug_info/
             .and_then(Path::parent) // <PackageName>/
@@ -239,17 +411,32 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
         fs::read_to_string(candidate).ok()
     })?;
 
+    let source_path = resolve_source_path(path, &from_file_path, &module_short_name);
+    build_module(raw, &source_text, source_path)
+}
+
+/// Build a module's debug info from its parsed JSON and the text its byte
+/// ranges index into.  Returns `(module_short_name, ModuleDebugInfo)`, or
+/// `None` when the JSON names no module or a function index is malformed.
+fn build_module(
+    raw: RawDebugInfo,
+    source_text: &str,
+    source_path: Option<PathBuf>,
+) -> Option<(String, ModuleDebugInfo)> {
+    let module_short_name = raw.module_name.get(1).cloned()?;
+
     // Precompute a byte-offset -> 1-indexed-line lookup for the source
     // text so we can resolve every `code_map` entry without re-scanning
     // the file per PC.  Storing one `Vec<u32>` of line offsets keeps
     // the resolver hot in cache and turns the lookup into a single
     // binary search per PC.
-    let line_starts = build_line_starts(&source_text);
+    let line_starts = build_line_starts(source_text);
 
     let mut functions = HashMap::new();
     for (idx_str, fn_raw) in raw.function_map {
         let idx: u64 = idx_str.parse().ok()?;
-        let name = slice_or_empty(&source_text, &fn_raw.definition_location);
+        let name = slice_or_empty(source_text, &fn_raw.definition_location);
+        let definition_line = byte_offset_to_line(&line_starts, fn_raw.definition_location.start);
         if name.is_empty() {
             // Skip the synthetic per-module entry: the Move compiler
             // emits one extra `function_map` entry whose
@@ -291,6 +478,7 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
                 parameters,
                 pc_to_line,
                 pc_to_column,
+                definition_line,
             },
         );
     }
@@ -300,8 +488,7 @@ fn parse_module_debug_json(path: &Path) -> Option<(String, ModuleDebugInfo)> {
     // `TraceWriter::register_path_with_line_lengths` (paths.dat Layout A,
     // see codetracer-trace-format-spec/trace-events.md §"paths.dat
     // per-line offset table — Layout A").
-    let line_lengths = compute_line_lengths(&source_text);
-    let source_path = resolve_source_path(path, &raw.from_file_path, &module_short_name);
+    let line_lengths = compute_line_lengths(source_text);
 
     Some((
         module_short_name,
@@ -401,6 +588,19 @@ fn byte_offset_to_column(line_starts: &[u32], offset: u32, line: u32) -> u32 {
 }
 
 impl FunctionDebugInfo {
+    /// Name of frame slot `slot`.  The Move VM numbers a frame's slots
+    /// parameters first, then locals, while the debug info lists the two
+    /// separately — so slot `i` is `parameters[i]` below the parameter
+    /// count and `locals[i - parameters.len()]` above it.
+    pub fn slot_name(&self, slot: u64) -> Option<&str> {
+        let slot = usize::try_from(slot).ok()?;
+        match slot.checked_sub(self.parameters.len()) {
+            None => self.parameters.get(slot),
+            Some(local) => self.locals.get(local),
+        }
+        .map(String::as_str)
+    }
+
     /// Look up the 1-indexed source line for a bytecode PC, if the
     /// compiler recorded one.  Returns `None` when no mapping exists
     /// (typically a synthesised entry/exit op).
@@ -441,11 +641,18 @@ impl DebugInfo {
     /// The converter consumes this to call
     /// `TraceWriter::register_path_with_line_lengths` once per source
     /// path before emitting the first column-aware step.
+    ///
+    /// Yielded in path order, so path ids — and with them the bundle's
+    /// bytes — do not depend on hash-map iteration order.
     pub fn iter_source_line_lengths(&self) -> impl Iterator<Item = (&Path, &[u32])> + '_ {
-        self.modules.values().filter_map(|m| {
-            let path = m.source_path.as_deref()?;
-            Some((path, m.line_lengths.as_slice()))
-        })
+        let mut paths: Vec<(&Path, &[u32])> = self
+            .modules
+            .values()
+            .chain(self.by_package.values())
+            .filter_map(|m| Some((m.source_path.as_deref()?, m.line_lengths.as_slice())))
+            .collect();
+        paths.sort_by(|a, b| a.0.cmp(b.0));
+        paths.into_iter()
     }
 }
 
@@ -491,7 +698,14 @@ fn slice_or_empty(text: &str, loc: &Location) -> String {
 
 #[derive(Deserialize)]
 struct RawDebugInfo {
-    from_file_path: PathBuf,
+    /// Absent (`null`) in the debug info `sui replay` writes for on-chain
+    /// packages, whose source is the sibling disassembly.
+    #[serde(default)]
+    from_file_path: Option<PathBuf>,
+    /// The module's own location; its `file_hash` is the SHA-256 of the
+    /// text every byte range in this file indexes into.
+    #[serde(default)]
+    definition_location: Option<Location>,
     /// `[address, short_name]` — we use only the short name.
     module_name: Vec<String>,
     function_map: HashMap<String, RawFunction>,
@@ -515,6 +729,8 @@ struct RawFunction {
 
 #[derive(Deserialize)]
 struct Location {
+    #[serde(default)]
+    file_hash: Option<String>,
     start: u32,
     end: u32,
 }

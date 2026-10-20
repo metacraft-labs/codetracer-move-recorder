@@ -10,7 +10,9 @@ use codetracer_trace_types::TraceLowLevelEvent;
 use codetracer_trace_writer_nim::non_streaming_trace_writer::NonStreamingTraceWriter;
 
 use codetracer_move_recorder::converter;
-use codetracer_move_recorder::move_types::{SerializableMoveValue, TraceEvent, TraceValue};
+use codetracer_move_recorder::move_types::{
+    RootLocation, SerializableMoveValue, TraceEvent, TraceValue,
+};
 use codetracer_move_recorder::source_map::SourceMapResolver;
 
 // ============================================================================
@@ -740,7 +742,10 @@ fn test_effect_mut_ref_tracking() {
         TraceEvent::Effect(effect) => match effect {
             codetracer_move_recorder::move_types::Effect::Push(value) => match &value {
                 TraceValue::MutRef { location, snapshot } => {
-                    assert_eq!(location.local_index(), 0);
+                    assert!(matches!(
+                        location.root(),
+                        RootLocation::Local { local_index: 0, .. }
+                    ));
                     match snapshot {
                         SerializableMoveValue::U64 { value } => assert_eq!(*value, 10),
                         _ => panic!("expected U64 snapshot"),
@@ -784,7 +789,10 @@ fn test_effect_imm_ref_tracking() {
         TraceEvent::Effect(effect) => match effect {
             codetracer_move_recorder::move_types::Effect::Push(value) => match &value {
                 TraceValue::ImmRef { location, snapshot } => {
-                    assert_eq!(location.local_index(), 0);
+                    assert!(matches!(
+                        location.root(),
+                        RootLocation::Local { local_index: 0, .. }
+                    ));
                     match snapshot {
                         SerializableMoveValue::U64 { value } => assert_eq!(*value, 77),
                         _ => panic!("expected U64 snapshot"),

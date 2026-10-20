@@ -37,6 +37,10 @@ clap = { version = "4", features = ["derive"] }
 # Recursive directory walking (source file discovery)
 walkdir = "2"
 
+# Validates a `sui replay` disassembly against the SHA-256 its debug info
+# names, before any step is attributed to it.
+sha2 = "0.10"
+
 # Scratch directories for the chain CLIs run by `replay` / `aptos-replay`,
 # removed when the command finishes.
 tempfile = "3"

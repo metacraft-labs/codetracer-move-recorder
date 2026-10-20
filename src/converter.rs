@@ -11,9 +11,10 @@ use codetracer_trace_writer_nim::trace_writer::TraceWriter;
 use codetracer_trace_writer_nim::{TraceEventsFileFormat, create_trace_writer};
 use eyre::{Result, eyre};
 
-use crate::move_debug_info::DebugInfo;
+use crate::move_debug_info::{DebugInfo, FunctionDebugInfo};
 use crate::move_types::{
-    Effect, Location, SerializableMoveValue, TraceEvent, TraceValue, VersionHeader,
+    Effect, ExternalEffect, Location, RootLocation, SerializableMoveValue, TraceEvent, TraceValue,
+    VersionHeader,
 };
 use crate::source_map::SourceMapResolver;
 
@@ -131,6 +132,42 @@ pub fn convert_trace_with_options(
     out_dir: &Path,
     options: ConverterOptions,
 ) -> Result<()> {
+    write_bundle(source_path, out_dir, |writer| {
+        convert_trace_into_writer_with_options(trace_data, source_map, source_path, writer, options)
+    })
+}
+
+/// Convert a trace whose debug info the caller has already loaded — the
+/// on-chain path, where it comes from a `sui replay` output directory
+/// rather than from a package `build/` tree next to `source_path`.
+/// Per-PC lines are always resolved from `debug_info`.
+pub fn convert_trace_with_debug_info(
+    trace_data: &[u8],
+    source_path: &Path,
+    debug_info: DebugInfo,
+    out_dir: &Path,
+    options: ConverterOptions,
+) -> Result<()> {
+    let options = options.with_debug_info_source_lines();
+    write_bundle(source_path, out_dir, |writer| {
+        convert_events(
+            trace_data,
+            &SourceMapResolver::empty(),
+            source_path,
+            writer,
+            options,
+            debug_info,
+        )
+    })
+}
+
+/// Open a CTFS writer for `out_dir`, let `convert` feed it, and finish
+/// the bundle.
+fn write_bundle(
+    source_path: &Path,
+    out_dir: &Path,
+    convert: impl FnOnce(&mut dyn TraceWriter) -> Result<()>,
+) -> Result<()> {
     // -- 1. Create trace writer ------------------------------------------------
     let program_name = source_path
         .file_stem()
@@ -151,13 +188,7 @@ pub fn convert_trace_with_options(
         .map_err(|e| eyre!("{e}"))?;
 
     // -- 3. Convert events into writer ----------------------------------------
-    convert_trace_into_writer_with_options(
-        trace_data,
-        source_map,
-        source_path,
-        &mut *writer,
-        options,
-    )?;
+    convert(&mut *writer)?;
 
     // -- 4. Finish writing ----------------------------------------------------
     TraceWriter::finish_writing_trace_events(&mut *writer).map_err(|e| eyre!("{e}"))?;
@@ -198,6 +229,53 @@ pub fn convert_trace_into_writer_with_options(
     writer: &mut dyn TraceWriter,
     options: ConverterOptions,
 ) -> Result<()> {
+    // Per-package debug info loaded from the Move compiler's
+    // `<package_root>/build/<PackageName>/debug_info/<Module>.json`
+    // sidecar.  When the source path lives inside a real package
+    // (`sui move build`-produced layout), this carries the per-function
+    // local / parameter names that we substitute for the synthetic
+    // `local_<N>` / `argN` strings.  Synthetic NDJSON fixtures (where
+    // no `build/` exists) get an empty store and the converter
+    // gracefully falls back to the synthetic names.
+    let debug_info = DebugInfo::discover(source_path);
+    convert_events(
+        trace_data,
+        source_map,
+        source_path,
+        writer,
+        options,
+        debug_info,
+    )
+}
+
+/// In-memory twin of [`convert_trace_with_debug_info`]: feed `writer`
+/// instead of writing a bundle.  Per-PC lines are resolved from
+/// `debug_info`.
+pub fn convert_trace_into_writer_with_debug_info(
+    trace_data: &[u8],
+    source_path: &Path,
+    debug_info: DebugInfo,
+    writer: &mut dyn TraceWriter,
+    options: ConverterOptions,
+) -> Result<()> {
+    convert_events(
+        trace_data,
+        &SourceMapResolver::empty(),
+        source_path,
+        writer,
+        options.with_debug_info_source_lines(),
+        debug_info,
+    )
+}
+
+fn convert_events(
+    trace_data: &[u8],
+    source_map: &SourceMapResolver,
+    source_path: &Path,
+    writer: &mut dyn TraceWriter,
+    options: ConverterOptions,
+    debug_info: DebugInfo,
+) -> Result<()> {
     // -- 1. Parse NDJSON -------------------------------------------------------
     let text =
         std::str::from_utf8(trace_data).map_err(|e| eyre!("trace data is not valid UTF-8: {e}"))?;
@@ -226,16 +304,6 @@ pub fn convert_trace_into_writer_with_options(
             .map_err(|e| eyre!("failed to parse trace event at line {}: {e}", i + 2))?;
         events.push(event);
     }
-
-    // Per-package debug info loaded from the Move compiler's
-    // `<package_root>/build/<PackageName>/debug_info/<Module>.json`
-    // sidecar.  When the source path lives inside a real package
-    // (`sui move build`-produced layout), this carries the per-function
-    // local / parameter names that we substitute for the synthetic
-    // `local_<N>` / `argN` strings.  Synthetic NDJSON fixtures (where
-    // no `build/` exists) get an empty store and the converter
-    // gracefully falls back to the synthetic names.
-    let debug_info = DebugInfo::discover(source_path);
 
     // -- 2. Start the trace ----------------------------------------------------
     //
@@ -294,45 +362,39 @@ pub fn convert_trace_into_writer_with_options(
     // the writer rejects the call — the trace remains usable, but
     // columns for that file fall back to `None` on read.
     //
-    // Two sources of paths:
-    //   1. The primary source path passed in (always registered, even
+    // Two sources of paths, registered in this order:
+    //   1. Per-module debug info: each module's compiler-recorded
+    //      `from_file_path` (or its canonical `sources/<Module>.move`
+    //      fallback), or a `sui replay` disassembly, with the line-length
+    //      table computed at load time.
+    //   2. The primary source path passed in (always registered, even
     //      when no instruction lands on it — keeps metadata coherent).
-    //   2. Per-module debug-info sidecars: each module's compiler-
-    //      recorded `from_file_path` (or its canonical
-    //      `sources/<Module>.move` fallback) plus pre-computed
-    //      line-length table.
     let mut registered_paths: HashMap<std::path::PathBuf, ()> = HashMap::new();
-    {
-        let primary_lengths = std::fs::read_to_string(source_path)
-            .ok()
-            .map(|src| crate::move_debug_info::compute_line_lengths(&src))
-            .unwrap_or_default();
-        if let Err(err) =
-            TraceWriter::register_path_with_line_lengths(writer, source_path, &primary_lengths)
-        {
+    let mut register = |writer: &mut dyn TraceWriter, path: &Path, lengths: &[u32]| {
+        if registered_paths.contains_key(path) {
+            return;
+        }
+        if let Err(err) = TraceWriter::register_path_with_line_lengths(writer, path, lengths) {
             eprintln!(
-                "[codetracer-move-recorder] register_path_with_line_lengths failed for {}: {} \
-                 (column resolution will fall back to None for this file)",
-                source_path.display(),
+                "[codetracer-move-recorder] register_path_with_line_lengths failed for \
+                 {}: {} (column resolution will fall back to None for this file)",
+                path.display(),
                 err,
             );
         }
-        registered_paths.insert(source_path.to_path_buf(), ());
-        for (path, lengths) in debug_info.iter_source_line_lengths() {
-            if registered_paths.contains_key(path) {
-                continue;
-            }
-            if let Err(err) = TraceWriter::register_path_with_line_lengths(writer, path, lengths) {
-                eprintln!(
-                    "[codetracer-move-recorder] register_path_with_line_lengths failed for \
-                     {}: {} (column resolution will fall back to None for this file)",
-                    path.display(),
-                    err,
-                );
-            }
-            registered_paths.insert(path.to_path_buf(), ());
-        }
+        registered_paths.insert(path.to_path_buf(), ());
+    };
+    // Debug-info paths first: their line tables were computed when the
+    // text was loaded, which matters for a path recorded relative to a
+    // replay directory — it cannot be re-read from the working directory.
+    for (path, lengths) in debug_info.iter_source_line_lengths() {
+        register(writer, path, lengths);
     }
+    let primary_lengths = std::fs::read_to_string(source_path)
+        .ok()
+        .map(|src| crate::move_debug_info::compute_line_lengths(&src))
+        .unwrap_or_default();
+    register(writer, source_path, &primary_lengths);
 
     TraceWriter::start(writer, source_path, Line(first_step_line as i64));
 
@@ -372,11 +434,11 @@ pub fn convert_trace_into_writer_with_options(
     let mut prev_pc: Option<u64> = None;
     let mut current_module: Option<String> = None;
 
-    // Stack of (module_name, binary_member_index) for currently open
-    // frames so that `Effect::Write` / `Effect::Read` events can name
-    // locals using the debug info of the *enclosing* frame.  Push on
-    // `OpenFrame`, pop on `CloseFrame`.
-    let mut frame_stack: Vec<(String, u64)> = Vec::new();
+    // Stack of currently open frames so that `Effect::Write` /
+    // `Effect::Read` events can name locals, and `Instruction` events can
+    // resolve lines, using the debug info of the *enclosing* frame.  Push
+    // on `OpenFrame`, pop on `CloseFrame`.
+    let mut frame_stack: Vec<FrameKey> = Vec::new();
     // The module of the outer (toplevel) frame.  When a callee runs in
     // a *different* user-code module (`address == 0x0`) than this
     // outer module, the recorder qualifies the function-table entry
@@ -408,12 +470,15 @@ pub fn convert_trace_into_writer_with_options(
     // still reset (their PC stream starts fresh at 0 with no relation
     // to the caller's prior line).
     let mut first_open_frame_seen = false;
+    // Index of the programmable-transaction-block command now running;
+    // advanced as each command's `External` end marker is seen.
+    let mut ptb_command: usize = 0;
 
     for event in &events {
         match event {
             TraceEvent::OpenFrame { frame, .. } => {
                 current_module = Some(frame.module.name.clone());
-                frame_stack.push((frame.module.name.clone(), frame.binary_member_index));
+                frame_stack.push(FrameKey::of(frame));
                 // Reset per-frame step bookkeeping for *nested* frames:
                 // a backward-pc relative to the caller's last
                 // instruction is meaningless for the callee, and the
@@ -519,8 +584,20 @@ pub fn convert_trace_into_writer_with_options(
                     &frame.module,
                     &frame.function_name,
                 );
-                let fn_id =
-                    TraceWriter::ensure_function_id(writer, &display_name, source_path, Line(1));
+                // A function is located in the file of the module that
+                // defines it, at its definition line, when debug info
+                // knows both; otherwise at the primary source, line 1.
+                let frame_key = FrameKey::of(frame);
+                let fn_path = frame_key.source_path(&debug_info).unwrap_or(source_path);
+                let fn_line = frame_key
+                    .function(&debug_info)
+                    .map_or(1, |d| d.definition_line);
+                let fn_id = TraceWriter::ensure_function_id(
+                    writer,
+                    &display_name,
+                    fn_path,
+                    Line(fn_line as i64),
+                );
 
                 // Stage each formal parameter as a call arg via the
                 // canonical TraceWriter::arg(name, value) entry point so
@@ -536,7 +613,7 @@ pub fn convert_trace_into_writer_with_options(
                 // synthetic positional names (`arg0`, `arg1`, ...) so
                 // hand-rolled NDJSON fixtures without a `build/` dir
                 // continue to work.
-                let frame_dbg = debug_info.function(&frame.module.name, frame.binary_member_index);
+                let frame_dbg = frame_key.function(&debug_info);
                 for (idx, param) in frame.parameters.iter().enumerate() {
                     let value = convert_trace_value(param, &mut type_ids, writer);
                     let arg_name = frame_dbg
@@ -634,9 +711,9 @@ pub fn convert_trace_into_writer_with_options(
                         // `frame_stack`).  Falling back to "any function
                         // in the module" would mis-attribute PCs that
                         // happen to collide across functions.
-                        let (_module_top, bmi) = frame_stack.last()?;
-                        debug_info
-                            .function(module_name, *bmi)
+                        frame_stack
+                            .last()?
+                            .function(&debug_info)
                             .and_then(|fi| fi.pc_to_line(*pc))
                     });
                 // Look up the column for this PC via the debug-info
@@ -651,7 +728,7 @@ pub fn convert_trace_into_writer_with_options(
                 let column = if options.resolve_pc_lines_from_debug_info {
                     frame_stack
                         .last()
-                        .and_then(|(_m, bmi)| debug_info.function(module_name, *bmi))
+                        .and_then(|k| k.function(&debug_info))
                         .and_then(|fi| fi.pc_to_column(*pc))
                 } else {
                     None
@@ -667,9 +744,16 @@ pub fn convert_trace_into_writer_with_options(
                         // a line-only step (DeltaLine, no DeltaColumn
                         // override).  Mirrors the EVM recorder's M14
                         // pattern.
+                        // The step belongs to the file of the module
+                        // whose code is running, which in a multi-package
+                        // transaction is rarely the primary source.
+                        let step_path = frame_stack
+                            .last()
+                            .and_then(|k| k.source_path(&debug_info))
+                            .unwrap_or(source_path);
                         TraceWriter::register_step_with_column(
                             writer,
-                            source_path,
+                            step_path,
                             Line(line as i64),
                             column.map(|c| Line(c as i64)),
                         );
@@ -688,7 +772,7 @@ pub fn convert_trace_into_writer_with_options(
                     location,
                     root_value_after_write,
                 } => {
-                    let name = local_slot_name(&frame_stack, &debug_info, location.local_index());
+                    let name = location_name(&frame_stack, &debug_info, location);
                     let val = convert_move_value(
                         root_value_after_write.inner_value(),
                         &mut type_ids,
@@ -701,7 +785,7 @@ pub fn convert_trace_into_writer_with_options(
                     root_value_read,
                     ..
                 } => {
-                    let name = local_slot_name(&frame_stack, &debug_info, location.local_index());
+                    let name = location_name(&frame_stack, &debug_info, location);
                     let val =
                         convert_move_value(root_value_read.inner_value(), &mut type_ids, writer);
                     TraceWriter::register_variable_with_full_value(writer, &name, val);
@@ -756,21 +840,48 @@ pub fn convert_trace_into_writer_with_options(
             },
 
             TraceEvent::External(ext) => {
-                // External effects represent Sui-specific side effects
-                // (object transfers, native event emission, etc.) that
-                // are recorded outside the Move VM's stack/local state.
-                // Route them through the canonical `register_special_event`
-                // entry point so the trace contains a structured record
-                // rather than silently dropping the data.  Use
-                // `TraceLogEvent` (the "structured trace event" bucket
-                // shared with Solana's non-stdout syscalls — see Solana
-                // audit 1.44) so they do not pollute the program-log
-                // pane.
+                // External effects are recorded outside the Move VM's
+                // stack/local state.  On-chain they carry the PTB's
+                // command structure; route every kind through the
+                // canonical `register_special_event` entry point so the
+                // trace keeps a structured record rather than dropping
+                // it.  `TraceLogEvent` (the "structured trace event"
+                // bucket shared with Solana's non-stdout syscalls — see
+                // Solana audit 1.44) keeps them out of the program-log
+                // pane.  Commands are numbered in execution order, which
+                // is the order of the PTB summary.
+                let (tag, content) = match ExternalEffect::classify(ext) {
+                    ExternalEffect::PtbSummary(commands) => (
+                        "MovePtbSummary",
+                        commands
+                            .iter()
+                            .enumerate()
+                            .map(|(i, c)| format!("{i}: {c}"))
+                            .collect::<Vec<_>>()
+                            .join("\n"),
+                    ),
+                    ExternalEffect::MoveCallStart => {
+                        let content = format!("start {ptb_command}: MoveCall");
+                        ("MovePtbCommand", content)
+                    }
+                    ExternalEffect::MoveCallEnd => {
+                        let content = format!("end {ptb_command}: MoveCall");
+                        ptb_command += 1;
+                        ("MovePtbCommand", content)
+                    }
+                    ExternalEffect::PtbCommand { name, description } => {
+                        let content = format!("{ptb_command}: {name} ({description})");
+                        ptb_command += 1;
+                        ("MovePtbCommand", content)
+                    }
+                    ExternalEffect::Kind(kind) => ("MoveExternalEffect", kind),
+                    ExternalEffect::Other(json) => ("MoveExternalEffect", json),
+                };
                 TraceWriter::register_special_event(
                     writer,
                     EventLogKind::TraceLogEvent,
-                    "MoveExternalEffect",
-                    &ext.kind,
+                    tag,
+                    &content,
                 );
             }
         }
@@ -909,27 +1020,24 @@ fn first_step_line(
     // function's binary_member_index (the Move VM's PC space is
     // per-function, so picking the wrong function would yield the
     // wrong line — or no mapping at all).
-    let mut stack: Vec<(String, u64)> = Vec::new();
+    let mut stack: Vec<FrameKey> = Vec::new();
     for event in events {
         match event {
             TraceEvent::OpenFrame { frame, .. } => {
-                stack.push((frame.module.name.clone(), frame.binary_member_index));
+                stack.push(FrameKey::of(frame));
             }
             TraceEvent::CloseFrame { .. } => {
                 stack.pop();
             }
             TraceEvent::Instruction { pc, .. } => {
-                let (module_name, bmi) = match stack.last() {
-                    Some(top) => top,
-                    None => continue,
+                let Some(top) = stack.last() else {
+                    continue;
                 };
-                if let Some((_, line)) = source_map.lookup(module_name, *pc) {
+                if let Some((_, line)) = source_map.lookup(&top.module, *pc) {
                     return Some(line);
                 }
                 if consult_debug_info
-                    && let Some(line) = debug_info
-                        .function(module_name, *bmi)
-                        .and_then(|fi| fi.pc_to_line(*pc))
+                    && let Some(line) = top.function(debug_info).and_then(|fi| fi.pc_to_line(*pc))
                 {
                     return Some(line);
                 }
@@ -938,6 +1046,36 @@ fn first_step_line(
         }
     }
     None
+}
+
+/// Identifies an open frame's code for debug-info lookups: the package
+/// storage id that executed (`version_id`, empty in local unit-test
+/// traces), the module name, and the function's index in the module.
+struct FrameKey {
+    /// Trace index at which the frame was opened (`Frame::frame_id`).
+    frame_id: u64,
+    package: String,
+    module: String,
+    binary_member_index: u64,
+}
+
+impl FrameKey {
+    fn of(frame: &crate::move_types::Frame) -> Self {
+        Self {
+            frame_id: frame.frame_id,
+            package: frame.version_id.clone(),
+            module: frame.module.name.clone(),
+            binary_member_index: frame.binary_member_index,
+        }
+    }
+
+    fn function<'a>(&self, debug_info: &'a DebugInfo) -> Option<&'a FunctionDebugInfo> {
+        debug_info.function_in(&self.package, &self.module, self.binary_member_index)
+    }
+
+    fn source_path<'a>(&self, debug_info: &'a DebugInfo) -> Option<&'a Path> {
+        debug_info.module_source_path(&self.package, &self.module)
+    }
 }
 
 fn parameterised_struct_key(name: &str, type_args: &[serde_json::Value]) -> String {
@@ -1190,14 +1328,38 @@ pub fn convert_trace_value(
 /// without any package context.  This means the `local_<N>` shape
 /// remains the contract for synthetic fixtures while real
 /// `sui move test --trace-execution` captures get spec-correct names.
-fn local_slot_name(frame_stack: &[(String, u64)], debug_info: &DebugInfo, slot: u64) -> String {
-    if let Some((module_name, binary_member_index)) = frame_stack.last()
-        && let Some(fn_dbg) = debug_info.function(module_name, *binary_member_index)
-        && let Some(name) = fn_dbg.locals.get(slot as usize)
+fn local_slot_name(frame: Option<&FrameKey>, debug_info: &DebugInfo, slot: u64) -> String {
+    if let Some(frame) = frame
+        && let Some(fn_dbg) = frame.function(debug_info)
+        && let Some(name) = fn_dbg.slot_name(slot)
     {
-        return name.clone();
+        return name.to_string();
     }
     format!("local_{slot}")
+}
+
+/// Name the variable an `Effect::Read` / `Effect::Write` touches.
+///
+/// A local is named from the debug info of the frame that OWNS it — found
+/// by the frame id the location carries, falling back to the running frame
+/// when the id is not on the stack — because a callee writing through a
+/// `&mut` touches its caller's local, not one of its own.  A storage
+/// reference has no local name and is named `global_<trace index>`.
+fn location_name(frame_stack: &[FrameKey], debug_info: &DebugInfo, location: &Location) -> String {
+    match location.root() {
+        RootLocation::Local {
+            frame_id,
+            local_index,
+        } => {
+            let owner = frame_stack
+                .iter()
+                .rev()
+                .find(|k| k.frame_id == frame_id)
+                .or(frame_stack.last());
+            local_slot_name(owner, debug_info, local_index)
+        }
+        RootLocation::Global { trace_index } => format!("global_{trace_index}"),
+    }
 }
 
 /// Derive a stable synthetic `u64` address for a reference borrowed
@@ -1219,6 +1381,11 @@ fn synthetic_ref_address(location: &Location) -> u64 {
         Location::Indexed(inner, field_index) => {
             synthetic_ref_address(inner) ^ ((*field_index & 0xffff_ffff) << 16)
         }
+        // Frame ids are trace indices, which stay far below 2^30, so bit
+        // 62 keeps a storage reference distinct from every local.  Bit 63
+        // is avoided: readers decode the address as a signed 64-bit
+        // integer.
+        Location::Global(trace_index) => (1 << 62) | *trace_index,
     }
 }
 

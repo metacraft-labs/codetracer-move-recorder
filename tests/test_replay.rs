@@ -110,7 +110,8 @@ fn test_source_lookup_missing() {
 #[test]
 fn test_replay_config_defaults() {
     let config = ReplayConfig::new("ABC123".to_string());
-    assert_eq!(config.rpc_url, "http://localhost:9000");
+    assert_eq!(config.node, "mainnet");
+    assert!(config.replay_dir.is_none());
     assert_eq!(config.digest, "ABC123");
     assert!(config.source_dir.is_none());
     assert_eq!(config.out_dir, PathBuf::from("./ct-traces/"));

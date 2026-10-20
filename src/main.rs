@@ -126,11 +126,20 @@ enum Commands {
         #[arg(long)]
         digest: String,
 
-        /// Sui RPC endpoint URL.
-        #[arg(long, default_value = "http://localhost:9000")]
-        rpc_url: String,
+        /// Network to replay against: `mainnet`, `testnet`, `devnet`, or
+        /// a GraphQL service URL (passed to `sui replay --node`).
+        /// `--rpc-url` is accepted as an alias for older callers.
+        #[arg(long, alias = "rpc-url", default_value = "mainnet")]
+        node: String,
 
-        /// Directory containing Move source files.
+        /// Keep `sui replay`'s artifacts here (`<DIR>/<DIGEST>/`).  When it
+        /// already holds the transaction's trace, the transaction is
+        /// converted without replaying it again.
+        #[arg(long)]
+        replay_dir: Option<PathBuf>,
+
+        /// Directory containing Move source files.  Without it, steps map
+        /// to the disassembly `sui replay` writes for every package.
         #[arg(long)]
         source_dir: Option<PathBuf>,
 
@@ -534,7 +543,8 @@ fn main() -> eyre::Result<()> {
         }
         Commands::Replay {
             digest,
-            rpc_url,
+            node,
+            replay_dir,
             source_dir,
             out_dir,
         } => {
@@ -546,8 +556,9 @@ fn main() -> eyre::Result<()> {
             let out_dir = resolve_out_dir(out_dir);
 
             let config = ReplayConfig {
-                rpc_url,
+                node,
                 digest,
+                replay_dir,
                 source_dir,
                 out_dir,
             };

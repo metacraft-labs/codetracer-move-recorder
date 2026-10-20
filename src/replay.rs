@@ -11,6 +11,8 @@ use std::process::Command;
 use eyre::{Result, WrapErr, bail, eyre};
 
 use crate::converter;
+use crate::move_debug_info::{DebugInfo, ReplayModuleRejection};
+use crate::move_types::TraceEvent;
 use crate::source_lookup::SourceLookup;
 
 /// Configuration for replaying a transaction.
@@ -20,10 +22,19 @@ use crate::source_lookup::SourceLookup;
 /// `ct print` (from `codetracer-trace-format-nim`) for human-readable
 /// conversion of the produced bundle.
 pub struct ReplayConfig {
-    /// Sui RPC endpoint URL.
-    pub rpc_url: String,
+    /// Network to replay against: `mainnet`, `testnet`, `devnet`, or a
+    /// GraphQL service URL.  Passed to `sui replay --node`, which reads
+    /// the transaction and the exact object versions it names from that
+    /// network's GraphQL service (Sui's JSON-RPC was retired on public
+    /// fullnodes in 2026).
+    pub node: String,
     /// Transaction digest to replay.
     pub digest: String,
+    /// Where `sui replay` writes its artifacts, kept after the run.  If it
+    /// already holds `<digest>/trace.json.zst`, the transaction is not
+    /// replayed again and the existing artifacts are converted.  `None`
+    /// replays into a scratch directory that is removed afterwards.
+    pub replay_dir: Option<PathBuf>,
     /// Directory containing Move source files (optional).
     pub source_dir: Option<PathBuf>,
     /// Output directory for CodeTracer trace files.
@@ -34,8 +45,9 @@ impl ReplayConfig {
     /// Create a config with sensible defaults.
     pub fn new(digest: String) -> Self {
         Self {
-            rpc_url: "http://localhost:9000".to_string(),
+            node: "mainnet".to_string(),
             digest,
+            replay_dir: None,
             source_dir: None,
             out_dir: PathBuf::from("./ct-traces/"),
         }
@@ -50,20 +62,115 @@ impl ReplayConfig {
 /// 3. Locate source code via `SourceLookup`
 /// 4. Decompress and convert using `convert_trace()`
 pub fn replay_transaction(config: &ReplayConfig) -> Result<()> {
-    // Step 1: Run sui replay. The directory is removed when `replay_dir`
-    // drops, after the trace has been converted.
-    let replay_dir = run_sui_replay(&config.rpc_url, &config.digest)?;
-
-    // Step 2: Find the trace file
-    let trace_file = find_trace_file(replay_dir.path())?;
-
-    // Step 3-4: Process the trace file
-    let search_dirs = match &config.source_dir {
-        Some(dir) => vec![dir.clone()],
-        None => vec![std::env::current_dir().unwrap_or_default()],
+    // Step 1: Run sui replay, unless the kept replay directory already
+    // holds this transaction.  A scratch directory is removed when
+    // `_scratch` drops, after the trace has been converted.
+    let (base, _scratch) = match &config.replay_dir {
+        Some(dir) => (dir.clone(), None),
+        None => {
+            let scratch = tempfile::Builder::new()
+                .prefix(&format!("sui-replay-{}-", config.digest))
+                .tempdir()
+                .wrap_err("Failed to create replay output directory")?;
+            (scratch.path().to_path_buf(), Some(scratch))
+        }
     };
+    let tx_dir = base.join(&config.digest);
+    if !tx_dir.join("trace.json.zst").is_file() {
+        run_sui_replay(&config.node, &config.digest, &base)?;
+    }
 
-    replay_from_existing_trace(&trace_file, &search_dirs, &config.out_dir)
+    // Step 2: With explicit Move sources, convert against them (the
+    // local-development workflow); otherwise convert against the
+    // disassembly and debug info `sui replay` wrote for every package.
+    match &config.source_dir {
+        Some(dir) => {
+            let trace_file = find_trace_file(&tx_dir)?;
+            replay_from_existing_trace(&trace_file, std::slice::from_ref(dir), &config.out_dir)
+        }
+        None => convert_sui_replay_dir(&tx_dir, &config.out_dir).map(|_| ()),
+    }
+}
+
+/// What converting a `sui replay` directory loaded and refused.
+#[derive(Debug)]
+pub struct ReplayConversion {
+    /// Modules whose debug info was loaded and validated.
+    pub modules_loaded: usize,
+    /// Modules whose debug info was refused, with the reason.
+    pub modules_rejected: Vec<ReplayModuleRejection>,
+}
+
+/// Convert the artifacts `sui replay --trace` wrote for one transaction
+/// (`<replay_out>/<digest>/`) into a CTFS bundle in `out_dir`.
+///
+/// Every package the execution entered is resolved by the storage id the
+/// trace records for each frame, so a step lands on the disassembly of
+/// the module version that actually ran.  Refused modules are reported on
+/// stderr and returned; their frames keep values and calls but have no
+/// line mapping.
+pub fn convert_sui_replay_dir(tx_dir: &Path, out_dir: &Path) -> Result<ReplayConversion> {
+    let trace_file = tx_dir.join("trace.json.zst");
+    let trace_data = read_trace_file(&trace_file)?;
+    let (debug_info, rejected) = DebugInfo::from_sui_replay_dir(tx_dir)
+        .wrap_err_with(|| format!("Failed to read replay directory: {}", tx_dir.display()))?;
+    for rejection in &rejected {
+        eprintln!("[codetracer-move-recorder] debug info refused: {rejection:?}");
+    }
+
+    // The primary path names the bundle and anchors the entry step: the
+    // disassembly of the first frame's module, when it was loaded.
+    let source_path = first_frame_source(&trace_data, &debug_info)
+        .unwrap_or_else(|| tx_dir.join("transaction.mvb"));
+
+    fs::create_dir_all(out_dir)
+        .wrap_err_with(|| format!("Failed to create output directory: {}", out_dir.display()))?;
+    let modules_loaded = debug_info.module_count();
+    converter::convert_trace_with_debug_info(
+        &trace_data,
+        &source_path,
+        debug_info,
+        out_dir,
+        converter::ConverterOptions::default(),
+    )?;
+    eprintln!("Trace files written to {}", out_dir.display());
+    Ok(ReplayConversion {
+        modules_loaded,
+        modules_rejected: rejected,
+    })
+}
+
+/// The disassembly path of the module the first `OpenFrame` runs in.
+fn first_frame_source(trace_data: &[u8], debug_info: &DebugInfo) -> Option<PathBuf> {
+    let text = std::str::from_utf8(trace_data).ok()?;
+    text.lines()
+        .skip(1)
+        .filter_map(|line| serde_json::from_str::<TraceEvent>(line).ok())
+        .find_map(|event| match event {
+            TraceEvent::OpenFrame { frame, .. } => Some(
+                debug_info
+                    .module_source_path(&frame.version_id, &frame.module.name)?
+                    .to_path_buf(),
+            ),
+            _ => None,
+        })
+}
+
+/// Read a trace file, decompressing it when it is `.zst`.
+fn read_trace_file(trace_file: &Path) -> Result<Vec<u8>> {
+    let raw_bytes = fs::read(trace_file)
+        .wrap_err_with(|| format!("Failed to read trace file: {}", trace_file.display()))?;
+    if trace_file.extension().is_some_and(|ext| ext == "zst") {
+        let mut decoder =
+            zstd::Decoder::new(raw_bytes.as_slice()).wrap_err("Failed to create zstd decoder")?;
+        let mut decompressed = Vec::new();
+        decoder
+            .read_to_end(&mut decompressed)
+            .wrap_err("Failed to decompress zstd trace file")?;
+        Ok(decompressed)
+    } else {
+        Ok(raw_bytes)
+    }
 }
 
 /// Process an existing trace file through the replay pipeline.
@@ -78,21 +185,7 @@ pub fn replay_from_existing_trace(
     search_dirs: &[PathBuf],
     out_dir: &Path,
 ) -> Result<()> {
-    // Read and optionally decompress the trace file.
-    let raw_bytes = fs::read(trace_file)
-        .wrap_err_with(|| format!("Failed to read trace file: {}", trace_file.display()))?;
-
-    let trace_data = if trace_file.extension().is_some_and(|ext| ext == "zst") {
-        let mut decoder =
-            zstd::Decoder::new(raw_bytes.as_slice()).wrap_err("Failed to create zstd decoder")?;
-        let mut decompressed = Vec::new();
-        decoder
-            .read_to_end(&mut decompressed)
-            .wrap_err("Failed to decompress zstd trace file")?;
-        decompressed
-    } else {
-        raw_bytes
-    };
+    let trace_data = read_trace_file(trace_file)?;
 
     // Discover source files.
     let source_lookup = SourceLookup::new(search_dirs.to_vec());
@@ -130,10 +223,11 @@ pub fn replay_from_existing_trace(
     Ok(())
 }
 
-/// Run `sui replay --trace --digest <DIGEST>` in a fresh scratch directory
-/// and return it. The directory is deleted when the returned `TempDir` drops,
-/// including on every error path below.
-fn run_sui_replay(rpc_url: &str, digest: &str) -> Result<tempfile::TempDir> {
+/// Run `sui replay --trace --digest <DIGEST> --node <NODE> -o <OUT>`, which
+/// writes the transaction's artifacts to `<OUT>/<DIGEST>/`: the trace, the
+/// transaction data and effects, and each entered package's bytecode,
+/// disassembly and debug info.
+fn run_sui_replay(node: &str, digest: &str, out: &Path) -> Result<()> {
     // Check that sui CLI is available.
     let sui_check = Command::new("sui").arg("--version").output();
     if sui_check.is_err() {
@@ -143,23 +237,13 @@ fn run_sui_replay(rpc_url: &str, digest: &str) -> Result<tempfile::TempDir> {
         );
     }
 
-    // A fresh directory per run: a trace left by an earlier replay of the same
-    // digest can never be picked up in place of this one.
-    let replay_dir = tempfile::Builder::new()
-        .prefix(&format!("sui-replay-{digest}-"))
-        .tempdir()
-        .wrap_err("Failed to create replay output directory")?;
-
+    fs::create_dir_all(out)
+        .wrap_err_with(|| format!("Failed to create replay directory: {}", out.display()))?;
     let output = Command::new("sui")
-        .args([
-            "replay",
-            "--rpc-url",
-            rpc_url,
-            "--trace",
-            "--digest",
-            digest,
-        ])
-        .current_dir(replay_dir.path())
+        .args(["replay", "--trace", "--digest", digest, "--node", node])
+        .arg("-o")
+        .arg(out)
+        .current_dir(out)
         .output()
         .wrap_err("Failed to execute sui replay")?;
 
@@ -168,7 +252,7 @@ fn run_sui_replay(rpc_url: &str, digest: &str) -> Result<tempfile::TempDir> {
         if stderr.contains("pruned") || stderr.contains("not found") {
             bail!(
                 "Transaction {digest} could not be replayed. It may have been pruned \
-                 from the node or does not exist.\nRPC: {rpc_url}\nError: {stderr}"
+                 from the node or does not exist.\nNode: {node}\nError: {stderr}"
             );
         }
         bail!(
@@ -178,7 +262,14 @@ fn run_sui_replay(rpc_url: &str, digest: &str) -> Result<tempfile::TempDir> {
         );
     }
 
-    Ok(replay_dir)
+    if !out.join(digest).join("trace.json.zst").is_file() {
+        bail!(
+            "sui replay exited successfully but wrote no trace at {}; \
+             is the sui binary built with the `tracing` feature?",
+            out.join(digest).join("trace.json.zst").display()
+        );
+    }
+    Ok(())
 }
 
 /// Find a trace file (`.json.zst` or `.json`) in the given directory.
