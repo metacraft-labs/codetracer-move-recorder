@@ -138,6 +138,11 @@ enum Commands {
         #[arg(long)]
         replay_dir: Option<PathBuf>,
 
+        /// Refuse a trace that decompresses to more than this many bytes
+        /// (`TRACE-TOO-LARGE`), measured by streaming before it is read.
+        #[arg(long, default_value_t = replay::DEFAULT_MAX_TRACE_BYTES)]
+        max_trace_bytes: u64,
+
         /// Directory containing Move source files.  Without it, steps map
         /// to the disassembly `sui replay` writes for every package.
         #[arg(long)]
@@ -545,6 +550,7 @@ fn main() -> eyre::Result<()> {
             digest,
             node,
             replay_dir,
+            max_trace_bytes,
             source_dir,
             out_dir,
         } => {
@@ -559,6 +565,7 @@ fn main() -> eyre::Result<()> {
                 node,
                 digest,
                 replay_dir,
+                max_trace_bytes,
                 source_dir,
                 out_dir,
             };

@@ -35,6 +35,9 @@ pub struct ReplayConfig {
     /// replayed again and the existing artifacts are converted.  `None`
     /// replays into a scratch directory that is removed afterwards.
     pub replay_dir: Option<PathBuf>,
+    /// Refuse (by name, `TRACE-TOO-LARGE`) a trace that decompresses to more
+    /// than this many bytes, before reading it into memory.
+    pub max_trace_bytes: u64,
     /// Directory containing Move source files (optional).
     pub source_dir: Option<PathBuf>,
     /// Output directory for CodeTracer trace files.
@@ -48,6 +51,7 @@ impl ReplayConfig {
             node: "mainnet".to_string(),
             digest,
             replay_dir: None,
+            max_trace_bytes: DEFAULT_MAX_TRACE_BYTES,
             source_dir: None,
             out_dir: PathBuf::from("./ct-traces/"),
         }
@@ -88,7 +92,8 @@ pub fn replay_transaction(config: &ReplayConfig) -> Result<()> {
             let trace_file = find_trace_file(&tx_dir)?;
             replay_from_existing_trace(&trace_file, std::slice::from_ref(dir), &config.out_dir)
         }
-        None => convert_sui_replay_dir(&tx_dir, &config.out_dir).map(|_| ()),
+        None => convert_sui_replay_dir_bounded(&tx_dir, &config.out_dir, config.max_trace_bytes)
+            .map(|_| ()),
     }
 }
 
@@ -110,7 +115,31 @@ pub struct ReplayConversion {
 /// stderr and returned; their frames keep values and calls but have no
 /// line mapping.
 pub fn convert_sui_replay_dir(tx_dir: &Path, out_dir: &Path) -> Result<ReplayConversion> {
+    convert_sui_replay_dir_bounded(tx_dir, out_dir, DEFAULT_MAX_TRACE_BYTES)
+}
+
+/// [`convert_sui_replay_dir`] with an explicit bound on the decompressed
+/// trace size.  The converter holds the whole trace in memory, and a single
+/// mainnet transaction's trace can decompress to tens of gigabytes (every
+/// event carries full snapshots of the values it touches): one at checkpoint
+/// 28,845,373 is 4 GB compressed and ~79 GB decompressed, and reading it drove
+/// the process to 24 GB resident before it was killed.  The size is measured
+/// by streaming the decompression into a counter, so the refusal itself
+/// holds nothing.
+pub fn convert_sui_replay_dir_bounded(
+    tx_dir: &Path,
+    out_dir: &Path,
+    max_trace_bytes: u64,
+) -> Result<ReplayConversion> {
     let trace_file = tx_dir.join("trace.json.zst");
+    if let Some(size) = decompressed_size_over(&trace_file, max_trace_bytes)? {
+        bail!(
+            "{TRACE_TOO_LARGE}: {} decompresses to more than {max_trace_bytes} bytes \
+             (counted {size} before stopping); the converter holds a trace in memory, so it \
+             is refused rather than read. Raise --max-trace-bytes to convert it anyway.",
+            trace_file.display()
+        );
+    }
     let trace_data = read_trace_file(&trace_file)?;
     if trace_event_count(&trace_data) == 0 {
         // Sui protocol versions before 38 run on execution layers without
@@ -161,6 +190,30 @@ pub fn convert_sui_replay_dir(tx_dir: &Path, out_dir: &Path) -> Result<ReplayCon
         modules_loaded,
         modules_rejected: rejected,
     })
+}
+
+/// Default bound on a trace's decompressed size: well above the largest
+/// mainnet trace measured to convert (5.5 GB) and well below what a
+/// workstation can hold alongside the parsed events.
+pub const DEFAULT_MAX_TRACE_BYTES: u64 = 16 << 30;
+
+/// Stable token that starts the error for a trace over the size bound.
+pub const TRACE_TOO_LARGE: &str = "TRACE-TOO-LARGE";
+
+/// `Some(counted)` when `trace_file` decompresses to more than `limit` bytes,
+/// `None` when it fits.  Streams the decompression into a counting sink and
+/// stops at `limit + 1`, so nothing is held.
+fn decompressed_size_over(trace_file: &Path, limit: u64) -> Result<Option<u64>> {
+    let file = fs::File::open(trace_file)
+        .wrap_err_with(|| format!("Failed to open trace file: {}", trace_file.display()))?;
+    let counted = if trace_file.extension().is_some_and(|ext| ext == "zst") {
+        let decoder = zstd::Decoder::new(file).wrap_err("Failed to create zstd decoder")?;
+        std::io::copy(&mut decoder.take(limit + 1), &mut std::io::sink())
+    } else {
+        std::io::copy(&mut file.take(limit + 1), &mut std::io::sink())
+    }
+    .wrap_err("Failed to measure the trace")?;
+    Ok((counted > limit).then_some(counted))
 }
 
 /// Stable token that starts the error for a trace with no events, so a

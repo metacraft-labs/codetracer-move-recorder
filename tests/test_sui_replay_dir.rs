@@ -441,3 +441,40 @@ fn a_conversion_that_fails_part_way_leaves_no_container() {
         .collect();
     assert!(left.is_empty(), "left behind: {left:?}");
 }
+
+#[test]
+fn a_trace_over_the_size_bound_is_refused_by_name_before_it_is_read() {
+    let dir = replay_dir();
+    let mut enc = zstd::Encoder::new(Vec::new(), 1).unwrap();
+    std::io::Write::write_all(&mut enc, trace().as_bytes()).unwrap();
+    fs::write(dir.path().join("trace.json.zst"), enc.finish().unwrap()).unwrap();
+    let decompressed = trace().len() as u64;
+    let out = tempfile::tempdir().unwrap();
+
+    let err = codetracer_move_recorder::replay::convert_sui_replay_dir_bounded(
+        dir.path(),
+        out.path(),
+        decompressed - 1,
+    )
+    .expect_err("one byte over the bound is refused");
+    assert!(
+        err.to_string()
+            .starts_with(codetracer_move_recorder::replay::TRACE_TOO_LARGE),
+        "{err}"
+    );
+    assert_eq!(
+        fs::read_dir(out.path()).unwrap().count(),
+        0,
+        "nothing written"
+    );
+
+    // CONTROL: exactly at the bound converts, so the refusal is about the size.
+    let _nim = NIM_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    codetracer_move_recorder::replay::convert_sui_replay_dir_bounded(
+        dir.path(),
+        out.path(),
+        decompressed,
+    )
+    .expect("a trace at the bound converts");
+    assert!(fs::read_dir(out.path()).unwrap().count() > 0);
+}
