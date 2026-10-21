@@ -478,3 +478,65 @@ fn a_trace_over_the_size_bound_is_refused_by_name_before_it_is_read() {
     .expect("a trace at the bound converts");
     assert!(fs::read_dir(out.path()).unwrap().count() > 0);
 }
+
+#[test]
+fn positions_reports_every_step_and_call_without_decoding_values() {
+    let _nim = NIM_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let dir = replay_dir();
+    let (info, _) = load(dir.path());
+    let out = tempfile::tempdir().unwrap();
+    converter::convert_trace_with_debug_info(
+        trace().as_bytes(),
+        Path::new("primary.mvb"),
+        info,
+        out.path(),
+        ConverterOptions::default(),
+    )
+    .expect("conversion succeeds");
+    let doc =
+        codetracer_move_recorder::positions::container_positions(&out.path().join("primary.ct"))
+            .expect("positions reads the bundle");
+
+    let paths: Vec<PathBuf> = doc["paths"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| PathBuf::from(p.as_str().unwrap()))
+        .collect();
+    let steps: Vec<(PathBuf, i64)> = doc["pathId"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .zip(doc["line"].as_array().unwrap())
+        .map(|(p, l)| {
+            (
+                paths[p.as_u64().unwrap() as usize].clone(),
+                l.as_i64().unwrap(),
+            )
+        })
+        .collect();
+    // The same four steps `each_step_lands_in_the_disassembly_of_the_package_that_ran`
+    // reads through the reader's bulk API.
+    assert_eq!(
+        steps,
+        vec![
+            (PathBuf::from("primary.mvb"), line_of(MVB_A, "LdU64")),
+            (relative_mvb(PKG_A), line_of(MVB_A, "StLoc")),
+            (relative_mvb(PKG_B), line_of(MVB_B, "LdU64")),
+            (relative_mvb(PKG_B), line_of(MVB_B, "StLoc")),
+        ]
+    );
+    assert_eq!(doc["steps"].as_u64(), Some(4));
+    // Calls: the toplevel frame, f and g, entered in that order.
+    let names: Vec<&str> = doc["calls"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|c| c["function"].as_str().unwrap())
+        .collect();
+    assert_eq!(names, vec!["<toplevel>", "f", "g"]);
+    // CONTROL: g is entered after f, so its entry step is later and its depth deeper.
+    let calls = doc["calls"].as_array().unwrap();
+    assert!(calls[2]["entryStep"].as_u64() > calls[1]["entryStep"].as_u64());
+    assert!(calls[2]["depth"].as_u64() > calls[1]["depth"].as_u64());
+}

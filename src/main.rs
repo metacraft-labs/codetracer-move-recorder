@@ -185,6 +185,17 @@ enum Commands {
     /// Show Aptos-specific limitations compared to Sui support.
     AptosLimitations,
 
+    /// Write a recorded container's step positions and call frames as JSON,
+    /// read from its streams without decoding any value.
+    Positions {
+        /// The `.ct` container to read.
+        container: PathBuf,
+
+        /// Where to write the JSON document.
+        #[arg(long)]
+        out: PathBuf,
+    },
+
     /// Print version information.
     Version,
 }
@@ -600,6 +611,11 @@ fn main() -> eyre::Result<()> {
         }
         Commands::AptosLimitations => {
             println!("{}", aptos_adapter::aptos_limitations_summary());
+        }
+        Commands::Positions { container, out } => {
+            let doc = codetracer_move_recorder::positions::container_positions(&container)?;
+            fs::write(&out, serde_json::to_vec(&doc)?)
+                .wrap_err_with(|| format!("Failed to write {}", out.display()))?;
         }
         Commands::Version => {
             println!("codetracer-move-recorder {}", env!("CARGO_PKG_VERSION"));
