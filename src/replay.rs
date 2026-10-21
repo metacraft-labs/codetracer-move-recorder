@@ -161,8 +161,10 @@ pub fn convert_sui_replay_dir_bounded(
 
     // The primary path names the bundle and anchors the entry step: the
     // disassembly of the first frame's module, when it was loaded.
+    // A block of non-Move commands only has no first module; its primary path is then
+    // the RELATIVE `transaction.mvb`, which names no file and no host directory.
     let source_path = first_frame_source(&trace_data, &debug_info)
-        .unwrap_or_else(|| tx_dir.join("transaction.mvb"));
+        .unwrap_or_else(|| PathBuf::from("transaction.mvb"));
 
     fs::create_dir_all(out_dir)
         .wrap_err_with(|| format!("Failed to create output directory: {}", out_dir.display()))?;

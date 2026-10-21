@@ -540,3 +540,44 @@ fn positions_reports_every_step_and_call_without_decoding_values() {
     assert!(calls[2]["entryStep"].as_u64() > calls[1]["entryStep"].as_u64());
     assert!(calls[2]["depth"].as_u64() > calls[1]["depth"].as_u64());
 }
+
+#[test]
+fn a_block_of_non_move_commands_interns_no_host_path() {
+    // A programmable block of non-Move commands only (SplitCoins, TransferObjects, ...)
+    // opens no Move frame, so the converter has no first module to name the bundle after.
+    let dir = replay_dir();
+    let ptb_only = [
+        r#"{"version":3}"#,
+        r#"{"External":{"Summary":{"name":"PTBSummary","events":[{"ExternalEvent":"SplitCoins"}]}}}"#,
+        r#"{"External":{"ExternalEvent":{"description":"SplitCoins: coin","name":"SplitCoins","values":[]}}}"#,
+    ]
+    .join("\n");
+    let mut enc = zstd::Encoder::new(Vec::new(), 1).unwrap();
+    std::io::Write::write_all(&mut enc, ptb_only.as_bytes()).unwrap();
+    fs::write(dir.path().join("trace.json.zst"), enc.finish().unwrap()).unwrap();
+    let out = tempfile::tempdir().unwrap();
+    let _nim = NIM_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    codetracer_move_recorder::replay::convert_sui_replay_dir(dir.path(), out.path())
+        .expect("a block of non-Move commands converts");
+    let ct = fs::read_dir(out.path())
+        .unwrap()
+        .flatten()
+        .next()
+        .unwrap()
+        .path();
+    let doc = codetracer_move_recorder::positions::container_positions(&ct).unwrap();
+    let paths: Vec<&str> = doc["paths"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| p.as_str().unwrap())
+        .collect();
+    assert!(paths.contains(&"transaction.mvb"), "{paths:?}");
+    // CONTROL: the replay directory is absolute, so the old fallback (tx_dir joined with
+    // the name) would put a host path here.
+    assert!(dir.path().is_absolute());
+    assert!(
+        paths.iter().all(|p| !p.starts_with('/')),
+        "a host path was interned: {paths:?}"
+    );
+}
