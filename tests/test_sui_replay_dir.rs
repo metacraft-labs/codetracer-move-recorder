@@ -227,6 +227,7 @@ fn converted_bundle(debug_info: DebugInfo, trace: &str) -> Bundle {
         debug_info,
         out.path(),
         ConverterOptions::default(),
+        None,
     )
     .expect("conversion succeeds");
     let ct = out.path().join("primary.ct");
@@ -455,6 +456,7 @@ fn a_trace_over_the_size_bound_is_refused_by_name_before_it_is_read() {
         dir.path(),
         out.path(),
         decompressed - 1,
+        None,
     )
     .expect_err("one byte over the bound is refused");
     assert!(
@@ -474,6 +476,7 @@ fn a_trace_over_the_size_bound_is_refused_by_name_before_it_is_read() {
         dir.path(),
         out.path(),
         decompressed,
+        None,
     )
     .expect("a trace at the bound converts");
     assert!(fs::read_dir(out.path()).unwrap().count() > 0);
@@ -491,6 +494,7 @@ fn positions_reports_every_step_and_call_without_decoding_values() {
         info,
         out.path(),
         ConverterOptions::default(),
+        None,
     )
     .expect("conversion succeeds");
     let doc =
@@ -580,4 +584,78 @@ fn a_block_of_non_move_commands_interns_no_host_path() {
         paths.iter().all(|p| !p.starts_with('/')),
         "a host path was interned: {paths:?}"
     );
+}
+
+#[test]
+fn a_derived_recording_id_is_a_uuidv7_of_the_transaction() {
+    use codetracer_move_recorder::replay::derived_recording_id;
+    let a = derived_recording_id(
+        1_761_100_000_000,
+        "3gmLt819LSZyVXsCUahNRnS71p44sqqctuLrwyYPY3PV",
+    );
+    // 8-4-4-4-12 hex, version nibble 7, variant 10xx.
+    let parts: Vec<&str> = a.split('-').collect();
+    assert_eq!(
+        parts.iter().map(|p| p.len()).collect::<Vec<_>>(),
+        vec![8, 4, 4, 4, 12],
+        "{a}"
+    );
+    assert!(parts[2].starts_with('7'), "{a}");
+    assert!(
+        matches!(parts[3].as_bytes()[0], b'8' | b'9' | b'a' | b'b'),
+        "{a}"
+    );
+    // The 48-bit time field is the checkpoint's milliseconds.
+    assert_eq!(
+        u64::from_str_radix(&format!("{}{}", parts[0], parts[1]), 16).unwrap(),
+        1_761_100_000_000
+    );
+    // A pure function: the same input gives the same id …
+    assert_eq!(
+        a,
+        derived_recording_id(
+            1_761_100_000_000,
+            "3gmLt819LSZyVXsCUahNRnS71p44sqqctuLrwyYPY3PV"
+        )
+    );
+    // … and CONTROL: another digest, or another time, gives another one.
+    assert_ne!(
+        a,
+        derived_recording_id(
+            1_761_100_000_000,
+            "3y6ubUFW1ASbeVJySfdofCmfpFJCaYYBdJcWkVosJ3th"
+        )
+    );
+    assert_ne!(
+        a,
+        derived_recording_id(
+            1_761_100_000_001,
+            "3gmLt819LSZyVXsCUahNRnS71p44sqqctuLrwyYPY3PV"
+        )
+    );
+}
+
+#[test]
+fn a_pinned_recording_id_makes_two_conversions_byte_identical() {
+    let _nim = NIM_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let dir = replay_dir();
+    let convert = |id: Option<&str>| {
+        let (info, _) = load(dir.path());
+        let out = tempfile::tempdir().unwrap();
+        converter::convert_trace_with_debug_info(
+            trace().as_bytes(),
+            Path::new("primary.mvb"),
+            info,
+            out.path(),
+            ConverterOptions::default(),
+            id,
+        )
+        .expect("conversion succeeds");
+        fs::read(out.path().join("primary.ct")).unwrap()
+    };
+    let id = "019a4b9e-8d00-7abc-8def-0123456789ab";
+    assert_eq!(convert(Some(id)), convert(Some(id)), "same id, same bytes");
+    // CONTROL: without a pinned id the writer mints one per run, so the bytes
+    // differ — which is what the pinned id is for.
+    assert_ne!(convert(None), convert(None), "fresh ids should differ");
 }

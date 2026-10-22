@@ -38,6 +38,9 @@ pub struct ReplayConfig {
     /// Refuse (by name, `TRACE-TOO-LARGE`) a trace that decompresses to more
     /// than this many bytes, before reading it into memory.
     pub max_trace_bytes: u64,
+    /// The container's recording id: `None` lets the writer mint one; see
+    /// [`derived_recording_id`] for the reproducible form.
+    pub recording_id: Option<String>,
     /// Directory containing Move source files (optional).
     pub source_dir: Option<PathBuf>,
     /// Output directory for CodeTracer trace files.
@@ -52,6 +55,7 @@ impl ReplayConfig {
             digest,
             replay_dir: None,
             max_trace_bytes: DEFAULT_MAX_TRACE_BYTES,
+            recording_id: None,
             source_dir: None,
             out_dir: PathBuf::from("./ct-traces/"),
         }
@@ -92,8 +96,13 @@ pub fn replay_transaction(config: &ReplayConfig) -> Result<()> {
             let trace_file = find_trace_file(&tx_dir)?;
             replay_from_existing_trace(&trace_file, std::slice::from_ref(dir), &config.out_dir)
         }
-        None => convert_sui_replay_dir_bounded(&tx_dir, &config.out_dir, config.max_trace_bytes)
-            .map(|_| ()),
+        None => convert_sui_replay_dir_bounded(
+            &tx_dir,
+            &config.out_dir,
+            config.max_trace_bytes,
+            config.recording_id.as_deref(),
+        )
+        .map(|_| ()),
     }
 }
 
@@ -115,7 +124,34 @@ pub struct ReplayConversion {
 /// stderr and returned; their frames keep values and calls but have no
 /// line mapping.
 pub fn convert_sui_replay_dir(tx_dir: &Path, out_dir: &Path) -> Result<ReplayConversion> {
-    convert_sui_replay_dir_bounded(tx_dir, out_dir, DEFAULT_MAX_TRACE_BYTES)
+    convert_sui_replay_dir_bounded(tx_dir, out_dir, DEFAULT_MAX_TRACE_BYTES, None)
+}
+
+/// A recording id that is a function of the transaction, so two conversions
+/// of the same replay are byte-identical: a UUIDv7 (RFC 9562 §5.7) whose
+/// 48-bit timestamp is `time_ms` (the checkpoint's timestamp, which the caller
+/// knows and the replay artifacts do not carry) and whose remaining bits are
+/// taken from the SHA-256 of the digest's text. The same layout
+/// codetracer-evm-recorder uses for `--recording-id derive`.
+pub fn derived_recording_id(time_ms: u64, digest: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let h = Sha256::digest(digest.as_bytes());
+    let ms = time_ms & 0xFFFF_FFFF_FFFF;
+    let mut b = [0u8; 16];
+    b[..6].copy_from_slice(&ms.to_be_bytes()[2..]);
+    b[6] = 0x70 | (h[0] & 0x0f);
+    b[7] = h[1];
+    b[8] = 0x80 | (h[2] & 0x3f);
+    b[9..].copy_from_slice(&h[3..10]);
+    let hex: String = b.iter().map(|x| format!("{x:02x}")).collect();
+    format!(
+        "{}-{}-{}-{}-{}",
+        &hex[..8],
+        &hex[8..12],
+        &hex[12..16],
+        &hex[16..20],
+        &hex[20..]
+    )
 }
 
 /// [`convert_sui_replay_dir`] with an explicit bound on the decompressed
@@ -130,6 +166,7 @@ pub fn convert_sui_replay_dir_bounded(
     tx_dir: &Path,
     out_dir: &Path,
     max_trace_bytes: u64,
+    recording_id: Option<&str>,
 ) -> Result<ReplayConversion> {
     let trace_file = tx_dir.join("trace.json.zst");
     if let Some(size) = decompressed_size_over(&trace_file, max_trace_bytes)? {
@@ -182,6 +219,7 @@ pub fn convert_sui_replay_dir_bounded(
         debug_info,
         staging.path(),
         converter::ConverterOptions::default(),
+        recording_id,
     )?;
     for entry in fs::read_dir(staging.path())? {
         let entry = entry?;

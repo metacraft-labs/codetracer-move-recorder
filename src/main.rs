@@ -143,6 +143,16 @@ enum Commands {
         #[arg(long, default_value_t = replay::DEFAULT_MAX_TRACE_BYTES)]
         max_trace_bytes: u64,
 
+        /// The container's recording id: a UUID, or `derive` to build one
+        /// from the digest and `--recording-time-ms`, so that converting the
+        /// same replay twice writes identical bytes.
+        #[arg(long)]
+        recording_id: Option<String>,
+
+        /// The checkpoint's timestamp in milliseconds, for `--recording-id derive`.
+        #[arg(long)]
+        recording_time_ms: Option<u64>,
+
         /// Directory containing Move source files.  Without it, steps map
         /// to the disassembly `sui replay` writes for every package.
         #[arg(long)]
@@ -562,6 +572,8 @@ fn main() -> eyre::Result<()> {
             node,
             replay_dir,
             max_trace_bytes,
+            recording_id,
+            recording_time_ms,
             source_dir,
             out_dir,
         } => {
@@ -572,11 +584,23 @@ fn main() -> eyre::Result<()> {
 
             let out_dir = resolve_out_dir(out_dir);
 
+            let recording_id = match recording_id.as_deref() {
+                Some("derive") => {
+                    let Some(ms) = recording_time_ms else {
+                        bail!(
+                            "--recording-id derive needs --recording-time-ms (the checkpoint's timestamp)"
+                        );
+                    };
+                    Some(replay::derived_recording_id(ms, &digest))
+                }
+                other => other.map(str::to_string),
+            };
             let config = ReplayConfig {
                 node,
                 digest,
                 replay_dir,
                 max_trace_bytes,
+                recording_id,
                 source_dir,
                 out_dir,
             };

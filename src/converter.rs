@@ -8,7 +8,7 @@ use std::path::Path;
 
 use codetracer_trace_types::{EventLogKind, Line, NONE_VALUE, TypeId, TypeKind, ValueRecord};
 use codetracer_trace_writer_nim::trace_writer::TraceWriter;
-use codetracer_trace_writer_nim::{TraceEventsFileFormat, create_trace_writer};
+use codetracer_trace_writer_nim::{NimTraceWriter, TraceEventsFileFormat, create_trace_writer};
 use eyre::{Result, eyre};
 
 use crate::move_debug_info::{DebugInfo, FunctionDebugInfo};
@@ -132,7 +132,7 @@ pub fn convert_trace_with_options(
     out_dir: &Path,
     options: ConverterOptions,
 ) -> Result<()> {
-    write_bundle(source_path, out_dir, |writer| {
+    write_bundle(source_path, out_dir, None, |writer| {
         convert_trace_into_writer_with_options(trace_data, source_map, source_path, writer, options)
     })
 }
@@ -141,15 +141,20 @@ pub fn convert_trace_with_options(
 /// on-chain path, where it comes from a `sui replay` output directory
 /// rather than from a package `build/` tree next to `source_path`.
 /// Per-PC lines are always resolved from `debug_info`.
+///
+/// `recording_id` pins the container's recording id (a UUID); `None` lets the
+/// writer mint a fresh one, which makes two conversions of the same trace
+/// differ in those bytes.
 pub fn convert_trace_with_debug_info(
     trace_data: &[u8],
     source_path: &Path,
     debug_info: DebugInfo,
     out_dir: &Path,
     options: ConverterOptions,
+    recording_id: Option<&str>,
 ) -> Result<()> {
     let options = options.with_debug_info_source_lines();
-    write_bundle(source_path, out_dir, |writer| {
+    write_bundle(source_path, out_dir, recording_id, |writer| {
         convert_events(
             trace_data,
             &SourceMapResolver::empty(),
@@ -166,6 +171,7 @@ pub fn convert_trace_with_debug_info(
 fn write_bundle(
     source_path: &Path,
     out_dir: &Path,
+    recording_id: Option<&str>,
     convert: impl FnOnce(&mut dyn TraceWriter) -> Result<()>,
 ) -> Result<()> {
     // -- 1. Create trace writer ------------------------------------------------
@@ -174,7 +180,15 @@ fn write_bundle(
         .map(|s| s.to_string_lossy().to_string())
         .unwrap_or_else(|| "move_program".to_string());
 
-    let mut writer = create_trace_writer(&program_name, &[], TRACE_FORMAT);
+    let mut writer: Box<dyn TraceWriter> = match recording_id {
+        None => create_trace_writer(&program_name, &[], TRACE_FORMAT),
+        Some(id) => {
+            let mut nim = NimTraceWriter::new(&program_name, &[], TRACE_FORMAT);
+            nim.set_recording_id(id)
+                .map_err(|e| eyre!("the writer refused recording id {id}: {e}"))?;
+            Box::new(nim)
+        }
+    };
 
     // -- 2. Set up output files ------------------------------------------------
     std::fs::create_dir_all(out_dir).map_err(|e| eyre!("cannot create output dir: {e}"))?;
