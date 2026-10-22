@@ -87,15 +87,25 @@ lines.
 
 ### Testing
 
-Run the test suite with:
+Run the test suite inside the Nix dev shell (`nix develop`):
 
 ```bash
-cargo test
-just test     # also runs verify-cli-convention-no-silent-skip.sh
+just test     # builds ct-print, runs cargo test, then verify-cli-convention-no-silent-skip.sh
 ```
 
-`tests/test_sui_integration.rs` exercises a real `sui move test --trace-execution`
-run when the `sui` CLI is available; it skips gracefully otherwise.
+The tests need two tools from outside this crate, and **fail** (they do not
+skip) when either is missing, so a green run always means the checks ran:
+
+- **`ct-print`**, the `.ct` container inspector from the
+  [`codetracer-trace-format-nim`](https://github.com/metacraft-labs/codetracer-trace-format-nim)
+  repository. The tests expect it at `../codetracer-trace-format-nim/ct-print`,
+  so check that repository out next to this one. `just test` builds it;
+  to build it on its own, run `just build-ct-print` here, or
+  `nimble buildCtPrint` in that checkout. A bare `cargo test` does not build it.
+- **`sui`**, which `tests/test_sui_integration.rs` and
+  `tests/test_column_aware.rs` use to compile the Move test packages and
+  capture real `sui move test --trace` runs. The dev shell provides it.
+
 `tests/test_aptos.rs` covers the Aptos data adapters, REST API parsing and
 trace merging without requiring the `aptos` CLI.
 

@@ -12,6 +12,9 @@
 //!   The end-to-end pipeline that calls `sui move test --trace-execution`
 //!   itself is exercised by `test_sui_integration::test_sui_move_trace_integration`.
 //! * The produced `.ct` is piped through `ct-print --full --strip-paths`.
+//!   `ct-print` is a required prerequisite: when it has not been built,
+//!   every test here fails with a message saying how to build it (see
+//!   `tests/common/prerequisites.rs`), rather than passing unchecked.
 //! * Assertions are made on the **decoded JSON document** with EXACT
 //!   counts (`assert_eq!(events.len(), N)` — never `>=`), EXACT
 //!   ordering, and EXACT decoded values
@@ -63,23 +66,18 @@
 //!
 //! Concurrency: Move has no concurrency primitives.  Documented skip.
 
+mod common;
+
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use codetracer_move_recorder::converter;
 use codetracer_move_recorder::source_map::SourceMapResolver;
+use common::prerequisites::require_ct_print;
 
 // ===========================================================================
 // Helpers
 // ===========================================================================
-
-/// Path to the `ct-print` binary shipped with `codetracer-trace-format-nim`.
-fn ct_print_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("codetracer-trace-format-nim")
-        .join("ct-print")
-}
 
 /// Path to the `flow_test` Move source file.
 fn flow_test_source() -> PathBuf {
@@ -108,24 +106,6 @@ fn flow_test_trace_fixture(test_name: &str) -> PathBuf {
         .join(format!("flow_test__flow_test__{test_name}.json.zst"))
 }
 
-/// Skip-helper: returns `Some(path)` to ct-print or logs a clear
-/// `SKIP:` diagnostic and returns `None`.  The
-/// `verify-cli-convention-no-silent-skip.sh` script greps for the
-/// literal `SKIP:` token, so silent skips remain forbidden.
-fn ct_print_or_skip(test_name: &str) -> Option<PathBuf> {
-    let p = ct_print_path();
-    if !p.exists() {
-        eprintln!(
-            "SKIP: {test_name} requires ct-print at {} — only available \
-             within the metacraft workspace where codetracer-trace-format-nim \
-             is a sibling.",
-            p.display()
-        );
-        return None;
-    }
-    Some(p)
-}
-
 /// Decompress a zstd-compressed trace fixture into raw NDJSON bytes.
 fn read_decompressed_trace(zst_path: &Path) -> Vec<u8> {
     let zst_bytes = std::fs::read(zst_path)
@@ -142,12 +122,11 @@ fn read_decompressed_trace(zst_path: &Path) -> Vec<u8> {
 /// `converter::convert_trace`, then run `ct-print --full --strip-paths`
 /// on the produced `.ct` container and parse the resulting JSON.
 ///
-/// Returns `None` only when `ct-print` is unavailable (after emitting a
-/// `SKIP:` diagnostic via `ct_print_or_skip`).  Any other failure
-/// (decompression, conversion, ct-print non-zero exit, JSON parse
-/// failure) is a hard panic — it indicates a recorder regression, not
-/// a missing dependency.
-fn record_and_dump_full(test_name: &str, move_test: &str) -> Option<(serde_json::Value, PathBuf)> {
+/// Every failure is a hard panic.  A missing `ct-print` panics through
+/// `require_ct_print` (the test cannot assert anything without it, so it
+/// must not pass); decompression, conversion, a non-zero ct-print exit or
+/// unparsable JSON indicate a recorder regression.
+fn record_and_dump_full(test_name: &str, move_test: &str) -> (serde_json::Value, PathBuf) {
     record_and_dump_full_with_source(test_name, move_test, flow_test_source())
 }
 
@@ -160,8 +139,8 @@ fn record_and_dump_full_with_source(
     test_name: &str,
     move_test: &str,
     source_path: PathBuf,
-) -> Option<(serde_json::Value, PathBuf)> {
-    let ct_print = ct_print_or_skip(test_name)?;
+) -> (serde_json::Value, PathBuf) {
+    let ct_print = require_ct_print(test_name);
 
     let trace_zst = flow_test_trace_fixture(move_test);
     let trace_bytes = read_decompressed_trace(&trace_zst);
@@ -205,7 +184,7 @@ fn record_and_dump_full_with_source(
         serde_json::from_slice(&output.stdout).expect("ct-print --full should emit valid JSON");
 
     drop(tmp_dir);
-    Some((doc, source_path))
+    (doc, source_path)
 }
 
 /// Decode the `call_entry` sequence as a vector of function names, in
@@ -646,9 +625,7 @@ fn unique_bool_pairs(doc: &serde_json::Value) -> Vec<(String, bool)> {
 /// (which now passes against the recorder's backward-jump detection).
 #[test]
 fn test_loops_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full("test_loops_via_ct_print_full", "test_loops") else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_loops_via_ct_print_full", "test_loops");
 
     assert_metadata_program_is(&doc, "flow_test");
     assert_paths_contains_flow_test(&doc);
@@ -886,11 +863,7 @@ fn test_loops_one_step_per_source_line() {
 /// exactly so any future regression toward close-frame LIFO is caught.
 #[test]
 fn test_nested_calls_via_ct_print_full() {
-    let Some((doc, _)) =
-        record_and_dump_full("test_nested_calls_via_ct_print_full", "test_nested_calls")
-    else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_nested_calls_via_ct_print_full", "test_nested_calls");
 
     assert_metadata_program_is(&doc, "flow_test");
     assert_paths_contains_flow_test(&doc);
@@ -1095,12 +1068,10 @@ fn test_nested_calls_via_ct_print_full() {
 
 #[test]
 fn test_nested_calls_tuple_return_decodes_full_tuple() {
-    let Some((doc, _)) = record_and_dump_full(
+    let (doc, _) = record_and_dump_full(
         "test_nested_calls_tuple_return_decodes_full_tuple",
         "test_nested_calls",
-    ) else {
-        return;
-    };
+    );
     let exits = observed_exit_sequence(&doc);
     let compute_triple = exits
         .iter()
@@ -1148,10 +1119,7 @@ fn test_nested_calls_tuple_return_decodes_full_tuple() {
 /// kind-presence pin.
 #[test]
 fn test_vectors_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full("test_vectors_via_ct_print_full", "test_vectors")
-    else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_vectors_via_ct_print_full", "test_vectors");
 
     assert_metadata_program_is(&doc, "flow_test");
     assert_paths_contains_flow_test(&doc);
@@ -1244,11 +1212,7 @@ fn test_vectors_via_ct_print_full() {
 
 #[test]
 fn test_vectors_uses_sequence_value_record() {
-    let Some((doc, _)) =
-        record_and_dump_full("test_vectors_uses_sequence_value_record", "test_vectors")
-    else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_vectors_uses_sequence_value_record", "test_vectors");
     let mut kinds = std::collections::BTreeSet::new();
     for ev in doc["events"].as_array().unwrap() {
         if ev["kind"] != "step" {
@@ -1291,10 +1255,7 @@ fn test_vectors_uses_sequence_value_record() {
 /// kind-presence pin.
 #[test]
 fn test_structs_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full("test_structs_via_ct_print_full", "test_structs")
-    else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_structs_via_ct_print_full", "test_structs");
 
     assert_metadata_program_is(&doc, "flow_test");
     assert_paths_contains_flow_test(&doc);
@@ -1408,11 +1369,7 @@ fn test_structs_via_ct_print_full() {
 
 #[test]
 fn test_structs_uses_struct_value_record() {
-    let Some((doc, _)) =
-        record_and_dump_full("test_structs_uses_struct_value_record", "test_structs")
-    else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_structs_uses_struct_value_record", "test_structs");
     let mut kinds = std::collections::BTreeSet::new();
     for ev in doc["events"].as_array().unwrap() {
         if ev["kind"] != "step" {
@@ -1448,11 +1405,7 @@ fn test_structs_uses_struct_value_record() {
 /// `&p` ref, then calls `scale_point(&mut p, 3)` to reach `Point { x: 30, y: 45 }`.
 #[test]
 fn test_references_via_ct_print_full() {
-    let Some((doc, _)) =
-        record_and_dump_full("test_references_via_ct_print_full", "test_references")
-    else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_references_via_ct_print_full", "test_references");
 
     assert_metadata_program_is(&doc, "flow_test");
     assert_paths_contains_flow_test(&doc);
@@ -1628,12 +1581,10 @@ fn test_references_via_ct_print_full() {
 
 #[test]
 fn test_references_use_typed_reference_value_record() {
-    let Some((doc, _)) = record_and_dump_full(
+    let (doc, _) = record_and_dump_full(
         "test_references_use_typed_reference_value_record",
         "test_references",
-    ) else {
-        return;
-    };
+    );
     let mut kinds = std::collections::BTreeSet::new();
     for ev in doc["events"].as_array().unwrap() {
         if ev["kind"] != "call_entry" {
@@ -1662,9 +1613,7 @@ fn test_references_use_typed_reference_value_record() {
 /// the recorder spec's universal-checklist row.
 #[test]
 fn test_abort_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full("test_abort_via_ct_print_full", "test_abort") else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_abort_via_ct_print_full", "test_abort");
 
     assert_metadata_program_is(&doc, "flow_test");
     assert_paths_contains_flow_test(&doc);
@@ -1787,11 +1736,7 @@ fn test_abort_via_ct_print_full() {
 
 #[test]
 fn test_abort_io_event_carries_abort_code() {
-    let Some((doc, _)) =
-        record_and_dump_full("test_abort_io_event_carries_abort_code", "test_abort")
-    else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_abort_io_event_carries_abort_code", "test_abort");
     let io = doc["events"]
         .as_array()
         .unwrap()
@@ -1815,10 +1760,7 @@ fn test_abort_io_event_carries_abort_code() {
 /// regression in argument decoding or return decoding is caught.
 #[test]
 fn test_fibonacci_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full("test_fibonacci_via_ct_print_full", "test_fibonacci")
-    else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_fibonacci_via_ct_print_full", "test_fibonacci");
 
     assert_metadata_program_is(&doc, "flow_test");
     assert_paths_contains_flow_test(&doc);
@@ -1930,10 +1872,7 @@ fn test_fibonacci_via_ct_print_full() {
 /// the `text` field and the call-arg path surfaced `value.text == null`.
 #[test]
 fn test_generics_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full("test_generics_via_ct_print_full", "test_generics")
-    else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_generics_via_ct_print_full", "test_generics");
 
     assert_metadata_program_is(&doc, "flow_test");
     assert_paths_contains_flow_test(&doc);
@@ -2109,11 +2048,7 @@ fn test_generics_via_ct_print_full() {
 
 #[test]
 fn test_generics_bool_arg_decodes_text() {
-    let Some((doc, _)) =
-        record_and_dump_full("test_generics_bool_arg_decodes_text", "test_generics")
-    else {
-        return;
-    };
+    let (doc, _) = record_and_dump_full("test_generics_bool_arg_decodes_text", "test_generics");
     // call_entry events appear in entry order: 0=<toplevel>,
     // 1=test_generics, 2=wrap_value<u64>, 3=unwrap_value<u64>,
     // 4=wrap_value<bool>.  Index 0 is the call tree's root that `start`
@@ -2154,12 +2089,10 @@ fn test_generics_bool_arg_decodes_text() {
 /// emits `ValueRecord::BigInt` rather than truncating into `i64`.
 #[test]
 fn test_boolean_and_integers_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full(
+    let (doc, _) = record_and_dump_full(
         "test_boolean_and_integers_via_ct_print_full",
         "test_boolean_and_integers",
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "flow_test");
     assert_paths_contains_flow_test(&doc);
@@ -2299,10 +2232,7 @@ fn test_boolean_and_integers_via_ct_print_full() {
 /// magnitude.
 #[test]
 fn test_boolean_and_integers_u128_overflow_uses_bigint() {
-    let Some(ct_print) = ct_print_or_skip("test_boolean_and_integers_u128_overflow_uses_bigint")
-    else {
-        return;
-    };
+    let ct_print = require_ct_print("test_boolean_and_integers_u128_overflow_uses_bigint");
 
     // Synthetic v3 NDJSON: open a `test_u128` frame, push a U128 value
     // exceeding i64::MAX, write it into a local, then close the frame.
@@ -2439,13 +2369,11 @@ fn test_boolean_and_integers_u128_overflow_uses_bigint() {
 /// (tag=0), and a Sui Move 2024 enum `Shape::Rect(3, 5)` (tag=1).
 #[test]
 fn test_variant_constructors_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_variant_constructors_via_ct_print_full",
         "test_variant_constructors",
         flow_test_named_source("variant_constructors_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "variant_constructors_test");
     let paths: Vec<&str> = doc["paths"]
@@ -2631,13 +2559,11 @@ fn test_variant_constructors_via_ct_print_full() {
 /// so it must surface as a `BigInt` ValueRecord.
 #[test]
 fn test_wide_integer_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_wide_integer_via_ct_print_full",
         "test_wide_integer",
         flow_test_named_source("wide_integer_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "wide_integer_test");
 
@@ -2772,13 +2698,11 @@ fn test_wide_integer_via_ct_print_full() {
 /// per-struct-name TypeIds are registered lazily once.
 #[test]
 fn test_resources_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_resources_via_ct_print_full",
         "test_resources",
         flow_test_named_source("resources_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "resources_test");
 
@@ -2911,13 +2835,11 @@ fn test_resources_via_ct_print_full() {
 /// `TraceLogEvent` io entry.
 #[test]
 fn test_object_lifecycle_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_object_lifecycle_via_ct_print_full",
         "test_object_lifecycle",
         flow_test_named_source("object_lifecycle_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "object_lifecycle_test");
 
@@ -3078,13 +3000,11 @@ fn test_object_lifecycle_via_ct_print_full() {
 /// converter does not collapse them into the generic `struct` fallback.
 #[test]
 fn test_abilities_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_abilities_via_ct_print_full",
         "test_abilities",
         flow_test_named_source("abilities_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "abilities_test");
 
@@ -3223,13 +3143,11 @@ fn test_abilities_via_ct_print_full() {
 /// `ValueRecord::Reference` whose pointee is the borrowed `u64`.
 #[test]
 fn test_option_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_option_test_via_ct_print_full",
         "test_option",
         flow_test_named_source("option_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "option_test");
     let paths: Vec<&str> = doc["paths"]
@@ -3481,13 +3399,11 @@ fn test_option_test_via_ct_print_full() {
 /// native frame.
 #[test]
 fn test_event_emit_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_event_emit_test_via_ct_print_full",
         "test_event_emit",
         flow_test_named_source("event_emit_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "event_emit_test");
 
@@ -3609,13 +3525,11 @@ fn test_event_emit_test_via_ct_print_full() {
 /// form, base64 wrap, etc.) regresses the test.
 #[test]
 fn test_hash_builtins_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_hash_builtins_test_via_ct_print_full",
         "test_hash_builtins",
         flow_test_named_source("hash_builtins_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "hash_builtins_test");
 
@@ -3816,13 +3730,11 @@ fn test_hash_builtins_test_via_ct_print_full() {
 /// is recoverable byte-for-byte.
 #[test]
 fn test_string_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_string_test_via_ct_print_full",
         "test_string",
         flow_test_named_source("string_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "string_test");
 
@@ -3985,13 +3897,11 @@ fn test_string_test_via_ct_print_full() {
 /// `ValueRecord::Reference`s.
 #[test]
 fn test_vector_operations_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_vector_operations_test_via_ct_print_full",
         "test_vector_operations",
         flow_test_named_source("vector_operations_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "vector_operations_test");
 
@@ -4271,13 +4181,11 @@ fn base64_decode(s: &str) -> Option<Vec<u8>> {
 /// from the parameterised coin types.
 #[test]
 fn test_phantom_types_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_phantom_types_test_via_ct_print_full",
         "test_phantom_types",
         flow_test_named_source("phantom_types_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "phantom_types_test");
 
@@ -4483,13 +4391,11 @@ fn test_phantom_types_test_via_ct_print_full() {
 /// surface as a typed `ValueRecord::Bool`.
 #[test]
 fn test_signer_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_signer_test_via_ct_print_full",
         "test_signer",
         flow_test_named_source("signer_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "signer_test");
 
@@ -4656,13 +4562,11 @@ fn test_signer_test_via_ct_print_full() {
 /// `ID { bytes: address }` payload preserves the byte-vector identity.
 #[test]
 fn test_tx_context_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_tx_context_test_via_ct_print_full",
         "test_tx_context",
         flow_test_named_source("tx_context_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "tx_context_test");
 
@@ -4830,13 +4734,11 @@ fn test_tx_context_test_via_ct_print_full() {
 /// conventions stay intact.
 #[test]
 fn test_friend_visibility_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_friend_visibility_test_via_ct_print_full",
         "test_friend_visibility",
         flow_test_named_source("friend_visibility_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "friend_visibility_test");
 
@@ -4975,13 +4877,11 @@ fn test_friend_visibility_test_via_ct_print_full() {
 /// 5-byte input vector) surfaces as a typed `ValueRecord::Int`.
 #[test]
 fn test_native_fun_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_native_fun_test_via_ct_print_full",
         "test_native_fun",
         flow_test_named_source("native_fun_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "native_fun_test");
 
@@ -5130,13 +5030,11 @@ fn test_native_fun_test_via_ct_print_full() {
 /// inside `borrow`'s `Reference` pointee.
 #[test]
 fn test_dynamic_field_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_dynamic_field_test_via_ct_print_full",
         "test_dynamic_field",
         flow_test_named_source("dynamic_field_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "dynamic_field_test");
 
@@ -5364,13 +5262,11 @@ fn test_dynamic_field_test_via_ct_print_full() {
 /// any other `Table<K,V>` instantiation.
 #[test]
 fn test_table_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_table_test_via_ct_print_full",
         "test_table",
         flow_test_named_source("table_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "table_test");
 
@@ -5588,13 +5484,11 @@ fn test_table_test_via_ct_print_full() {
 /// the canonical `address` slot in the type table.
 #[test]
 fn test_address_literals_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_address_literals_test_via_ct_print_full",
         "test_address_literals",
         flow_test_named_source("address_literals_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "address_literals_test");
 
@@ -5757,13 +5651,11 @@ fn test_address_literals_test_via_ct_print_full() {
 #[test]
 fn test_multi_test_module_test_via_ct_print_full() {
     // ----- test_arithmetic: pure helper ----------------------------------
-    let Some((doc_a, _)) = record_and_dump_full_with_source(
+    let (doc_a, _) = record_and_dump_full_with_source(
         "test_multi_test_module_test_via_ct_print_full[arithmetic]",
         "test_arithmetic",
         flow_test_named_source("multi_test_module_test"),
-    ) else {
-        return;
-    };
+    );
     assert_metadata_program_is(&doc_a, "multi_test_module_test");
     let fns_a: Vec<&str> = doc_a["functions"]
         .as_array()
@@ -5815,13 +5707,11 @@ fn test_multi_test_module_test_via_ct_print_full() {
     assert_eq!(exits_a[1].1["kind"].as_str(), Some("Void"));
 
     // ----- test_resource_lifecycle: struct construction + destructure ----
-    let Some((doc_b, _)) = record_and_dump_full_with_source(
+    let (doc_b, _) = record_and_dump_full_with_source(
         "test_multi_test_module_test_via_ct_print_full[resource]",
         "test_resource_lifecycle",
         flow_test_named_source("multi_test_module_test"),
-    ) else {
-        return;
-    };
+    );
     assert_metadata_program_is(&doc_b, "multi_test_module_test");
     let fns_b: Vec<&str> = doc_b["functions"]
         .as_array()
@@ -5874,13 +5764,11 @@ fn test_multi_test_module_test_via_ct_print_full() {
     assert_eq!(exits_b[1].1["kind"].as_str(), Some("Void"));
 
     // ----- test_event_emit: sui::event::emit Sui native ------------------
-    let Some((doc_c, _)) = record_and_dump_full_with_source(
+    let (doc_c, _) = record_and_dump_full_with_source(
         "test_multi_test_module_test_via_ct_print_full[event]",
         "test_event_emit_multi",
         flow_test_named_source("multi_test_module_test"),
-    ) else {
-        return;
-    };
+    );
     assert_metadata_program_is(&doc_c, "multi_test_module_test");
     let fns_c: Vec<&str> = doc_c["functions"]
         .as_array()
@@ -5958,13 +5846,11 @@ fn test_multi_test_module_test_via_ct_print_full() {
 /// name and pushes the type identity into the value records).
 #[test]
 fn test_generic_constraints_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_generic_constraints_test_via_ct_print_full",
         "test_generic_constraints",
         flow_test_named_source("generic_constraints_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "generic_constraints_test");
 
@@ -6167,13 +6053,11 @@ fn test_generic_constraints_test_via_ct_print_full() {
 ///      `test_friend_visibility_test_via_ct_print_full`.
 #[test]
 fn test_public_package_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_public_package_test_via_ct_print_full",
         "test_public_package",
         flow_test_named_source("public_package_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "public_package_test");
 
@@ -6340,13 +6224,11 @@ fn test_public_package_test_via_ct_print_full() {
 ///      bootstrap frame in the call graph.
 #[test]
 fn test_module_init_test_via_ct_print_full() {
-    let Some((doc, _)) = record_and_dump_full_with_source(
+    let (doc, _) = record_and_dump_full_with_source(
         "test_module_init_test_via_ct_print_full",
         "test_module_init",
         flow_test_named_source("module_init_test"),
-    ) else {
-        return;
-    };
+    );
 
     assert_metadata_program_is(&doc, "module_init_test");
 

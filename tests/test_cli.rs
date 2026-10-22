@@ -6,8 +6,9 @@
 //! 2. **`ct print` content** — record a fixture and pipe the resulting
 //!    `.ct` container through `ct-print --json` from
 //!    `codetracer-trace-format-nim` to make content-level assertions.
-//!    Skips gracefully when `ct-print` is not present (i.e. when this
-//!    crate is built outside the metacraft workspace).
+//!    `ct-print` is required: when it has not been built, that test
+//!    fails with a message saying how to build it (see
+//!    `tests/common/prerequisites.rs`).
 //! 3. **CLI env-var contract** — exercise the post-2026-05-08
 //!    `CODETRACER_MOVE_RECORDER_OUT_DIR` /
 //!    `CODETRACER_MOVE_RECORDER_DISABLED` env vars and the
@@ -21,8 +22,12 @@
 //! `AUDIT-CTFS-2026-05.md` ("Convention compliance follow-up — 2026-05-08")
 //! for the full record.
 
+mod common;
+
 use std::path::PathBuf;
 use std::process::Command;
+
+use common::prerequisites::require_ct_print;
 
 /// CTFS magic bytes: C0 DE 72 AC E2.
 const CTFS_MAGIC: [u8; 5] = [0xC0, 0xDE, 0x72, 0xAC, 0xE2];
@@ -51,20 +56,6 @@ fn flow_test_source_path() -> PathBuf {
         env!("CARGO_MANIFEST_DIR"),
         "/test-programs/move/flow_test/sources/flow_test.move"
     ))
-}
-
-/// Path to the `ct-print` binary shipped with `codetracer-trace-format-nim`.
-///
-/// The Move recorder is CTFS-only; tests that need to make content-level
-/// assertions on a recorded trace pipe the `.ct` container through
-/// `ct-print --json` and assert on the resulting JSON.  This is the
-/// same workflow that `Recorder-CLI-Conventions.md` §4 prescribes for
-/// downstream tools / golden snapshots.
-fn ct_print_path() -> PathBuf {
-    PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .join("..")
-        .join("codetracer-trace-format-nim")
-        .join(format!("ct-print{}", std::env::consts::EXE_SUFFIX))
 }
 
 // ===========================================================================
@@ -200,24 +191,21 @@ fn record_creates_output_files() {
 /// before doing arithmetic comparisons.
 #[test]
 fn test_recorded_trace_via_ct_print_json() {
-    let ct_print = ct_print_path();
-    if !ct_print.exists() {
-        eprintln!(
-            "SKIP: ct-print not found at {} — only available within the \
-             metacraft workspace where codetracer-trace-format-nim is a sibling.",
-            ct_print.display()
-        );
-        return;
-    }
+    // The Move recorder is CTFS-only, so the content-level assertions below
+    // are made on `ct-print`'s decoding of the recorded `.ct` container --
+    // the workflow the recorder CLI conventions prescribe for downstream
+    // tools and golden snapshots.  Without ct-print the test cannot check
+    // anything, so it fails rather than passing.
+    let ct_print = require_ct_print("test_recorded_trace_via_ct_print_json");
 
+    // The fixture is checked in; its absence is a broken checkout, not a
+    // missing optional tool.
     let trace_fixture = flow_test_trace_fixture();
-    if !trace_fixture.exists() {
-        eprintln!(
-            "SKIP: flow_test trace fixture not found at {}.",
-            trace_fixture.display()
-        );
-        return;
-    }
+    assert!(
+        trace_fixture.is_file(),
+        "checked-in flow_test trace fixture is missing at {}",
+        trace_fixture.display()
+    );
 
     let tmp = tempfile::tempdir().expect("failed to create temp dir");
     let out_dir = tmp.path().join("traces");

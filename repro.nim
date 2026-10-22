@@ -125,6 +125,13 @@ package codetracer_move_recorder:
     # reprobuild-specs/Test-Edges-And-Parallel-Runner.milestones.org
     # §M4 — the whole-binary edge becomes a fan-out point without
     # changing this recipe.
+    #
+    # Prerequisite NOT modelled as an edge: the tests decode their traces
+    # with ``ct-print`` at the fixed sibling path
+    # ``../codetracer-trace-format-nim/ct-print`` and FAIL when it is
+    # missing. ``just test`` builds it first (``just build-ct-print``), and
+    # ``ci-reprobuild.yml`` builds it in a step before ``repro test``; this
+    # recipe does not, so a bare ``repro test`` needs it built beforehand.
 
     let testsBuild = cargo.test(
       locked = true,

@@ -25,6 +25,8 @@
 //! pattern from
 //! `codetracer_trace_writer_nim/tests/register_step_with_column_roundtrip.rs`.
 
+mod common;
+
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::sync::Mutex;
@@ -259,42 +261,17 @@ fn manifest_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
-fn ct_print_path() -> PathBuf {
-    manifest_dir()
-        .join("..")
-        .join("codetracer-trace-format-nim")
-        .join("ct-print")
-}
-
-fn sui_is_available() -> bool {
-    Command::new("sui")
-        .arg("--version")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
-}
-
 #[test]
 fn move_recorder_surfaces_distinct_columns_for_multi_statement_line() {
-    let _guard = NIM_TEST_LOCK.lock().unwrap();
+    // Both tools are required: a missing one fails the test instead of
+    // letting it pass without having checked anything.  Checked BEFORE
+    // taking `NIM_TEST_LOCK`, so that failure does not poison the lock and
+    // take the other tests in this binary down with it.
+    let test_name = "move_recorder_surfaces_distinct_columns_for_multi_statement_line";
+    let ct_print = common::prerequisites::require_ct_print(test_name);
+    common::prerequisites::require_sui(test_name);
 
-    let ct_print = ct_print_path();
-    if !ct_print.exists() {
-        eprintln!(
-            "SKIP: move_recorder_surfaces_distinct_columns_for_multi_statement_line \
-             requires ct-print at {} — only available within the metacraft workspace \
-             where codetracer-trace-format-nim is a sibling.",
-            ct_print.display()
-        );
-        return;
-    }
-    if !sui_is_available() {
-        eprintln!(
-            "SKIP: move_recorder_surfaces_distinct_columns_for_multi_statement_line \
-             requires the `sui` CLI on PATH (use the Nix dev shell)."
-        );
-        return;
-    }
+    let _guard = NIM_TEST_LOCK.lock().unwrap();
 
     // ---- 1. Build the column_aware package + run its #[test] fn -----------
     let package_dir = manifest_dir().join(COLUMN_AWARE_PACKAGE);

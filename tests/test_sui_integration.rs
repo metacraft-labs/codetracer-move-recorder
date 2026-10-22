@@ -2,14 +2,18 @@
 //! Move package and verifies the recorder converts the real NDJSON trace
 //! output into correct CodeTracer format.
 //!
-//! This test requires the `sui` CLI to be available in PATH. If `sui` is
-//! not found, the test is skipped with a clear message rather than failing.
+//! These tests require the `sui` CLI on PATH; the Nix dev shell provides
+//! it.  When `sui` is missing they fail with a message saying so, rather
+//! than passing without having run (see `tests/common/prerequisites.rs`).
+
+mod common;
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use codetracer_move_recorder::converter;
 use codetracer_move_recorder::source_map::SourceMapResolver;
+use common::prerequisites::require_sui;
 
 /// Canonical CTFS container magic bytes.  Mirrors the constant
 /// `CTFS_MAGIC` in `codetracer-trace-format-spec/src/container.rs`.
@@ -31,15 +35,6 @@ const FLOW_TEST_PACKAGE: &str = "test-programs/move/sui_flow_test";
 /// Find the project root by looking for Cargo.toml from CARGO_MANIFEST_DIR.
 fn project_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-}
-
-/// Check whether the `sui` CLI is available.
-fn sui_is_available() -> bool {
-    Command::new("sui")
-        .arg("--version")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
 }
 
 /// Run `sui move test --trace` on the given package directory.
@@ -155,15 +150,7 @@ fn read_ct_container(out_dir: &Path) -> Vec<u8> {
 
 #[test]
 fn test_sui_move_trace_integration() {
-    // Skip if sui is not available.
-    if !sui_is_available() {
-        eprintln!(
-            "SKIPPED: sui CLI not found in PATH. \
-             Install the Sui CLI to run this integration test. \
-             See: https://docs.sui.io/build/install"
-        );
-        return;
-    }
+    require_sui("test_sui_move_trace_integration");
 
     let root = project_root();
     let package_dir = root.join(FLOW_TEST_PACKAGE);
@@ -293,13 +280,7 @@ fn test_sui_move_trace_integration() {
 /// by our TraceEvent deserializer for every line.
 #[test]
 fn test_sui_trace_ndjson_parsing() {
-    if !sui_is_available() {
-        eprintln!(
-            "SKIPPED: sui CLI not found in PATH. \
-             Install the Sui CLI to run this integration test."
-        );
-        return;
-    }
+    require_sui("test_sui_trace_ndjson_parsing");
 
     let root = project_root();
     let package_dir = root.join(FLOW_TEST_PACKAGE);
