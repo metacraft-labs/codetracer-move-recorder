@@ -26,6 +26,14 @@
 import repro_project_dsl
 import repro_dsl_stdlib/foreign_env
 
+# The owning constructor of ``ct-print``, which the tests decode every
+# recorded trace with. It lives in the sibling checkout this repository's
+# cargo ``path`` dependencies and tests already resolve at
+# ``../codetracer-trace-format-nim``.
+import "../codetracer-trace-format-nim/build_writer_artifacts"
+
+const traceFormatNimRoot = "../codetracer-trace-format-nim"
+
 package codetracer_move_recorder:
   defaultToolProvisioning (when defined(windows): tarball else: path)
 
@@ -125,13 +133,6 @@ package codetracer_move_recorder:
     # reprobuild-specs/Test-Edges-And-Parallel-Runner.milestones.org
     # §M4 — the whole-binary edge becomes a fan-out point without
     # changing this recipe.
-    #
-    # Prerequisite NOT modelled as an edge: the tests decode their traces
-    # with ``ct-print`` at the fixed sibling path
-    # ``../codetracer-trace-format-nim/ct-print`` and FAIL when it is
-    # missing. ``just test`` builds it first (``just build-ct-print``), and
-    # ``ci-reprobuild.yml`` builds it in a step before ``repro test``; this
-    # recipe does not, so a bare ``repro test`` needs it built beforehand.
 
     let testsBuild = cargo.test(
       locked = true,
@@ -143,14 +144,32 @@ package codetracer_move_recorder:
       ],
       extraOutputs = @["target/debug/deps"])
 
+    # ``ct-print`` prerequisite: the tests decode their traces with
+    # ``ct-print`` at the fixed sibling path
+    # ``../codetracer-trace-format-nim/ct-print`` and FAIL when it is
+    # missing. ``just test`` builds it first (``just build-ct-print``); here
+    # it is an edge of the graph, constructed by the sibling's own
+    # ``buildCtPrint`` so the compile flags stay in the repository that
+    # owns them. The test-run edge orders after it and names the binary as
+    # an input, so a missing or rebuilt ``ct-print`` re-runs the tests.
+    #
+    # It runs after the test build because that build's
+    # ``codetracer_trace_writer_nim`` ``build.rs`` is what installs the
+    # sibling's nimble ``requires`` (``results``, ``stew``) into the nimble
+    # path the ct-print compile resolves them from. ``just build-ct-print``
+    # gets the same packages from ``nimble buildCtPrint``.
+    let ctPrintBuild = buildCtPrint(traceFormatNimRoot,
+                                    after = @[testsBuild.action])
+
     let testsRun = cargo.test(
       locked = true,
       actionId = "codetracer-move-recorder.cargo-test-run",
-      after = @[testsBuild.action],
+      after = @[testsBuild.action, ctPrintBuild],
       extraInputs = @[
         "Cargo.toml", "Cargo.lock",
         "src", "tests", "test-programs",
-        "target/debug/deps"
+        "target/debug/deps",
+        ctPrintPath(traceFormatNimRoot)
       ])
 
     # ---- CLI-convention verification edge -----------------------------

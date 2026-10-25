@@ -99,7 +99,8 @@ skip) when either is missing, so a green run always means the checks ran:
 - **`ct-print`**, the `.ct` container inspector from the
   [`codetracer-trace-format-nim`](https://github.com/metacraft-labs/codetracer-trace-format-nim)
   repository. The tests expect it at `../codetracer-trace-format-nim/ct-print`,
-  so check that repository out next to this one. `just test` builds it;
+  so check that repository out next to this one. `just test` and
+  `repro test` build it;
   to build it on its own, run `just build-ct-print` here, or
   `nimble buildCtPrint` in that checkout. A bare `cargo test` does not build it.
 - **`sui`**, which `tests/test_sui_integration.rs` and

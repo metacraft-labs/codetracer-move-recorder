@@ -140,20 +140,11 @@ jobs:
         # reprobuild engine identically to `just build`.
         run: dev-exec repro build
 
-      - name: Build ct-print (sibling artifact)
-        # The cargo tests in the `test` collection decode every recorded
-        # trace with ct-print, at the fixed sibling path
-        # `../codetracer-trace-format-nim/ct-print`, and fail when it is
-        # missing. `repro.nim` does not declare an edge that builds it (no
-        # recorder recipe does yet), so it is built here, the same way
-        # `just build-ct-print` builds it: through the sibling's own
-        # `buildCtPrint` nimble task, which also resolves that package's
-        # Nim dependencies.
-        shell: bash
-        run: dev-exec bash -c 'cd ../codetracer-trace-format-nim && nimble buildCtPrint'
-
       - name: repro test
-        # Materialises the `test` collection.
+        # Materialises the `test` collection. It also builds ct-print in the
+        # sibling `../codetracer-trace-format-nim`, which the cargo tests decode
+        # every recorded trace with: `repro.nim` declares that compile as an
+        # edge, through the sibling's own `buildCtPrint` constructor.
         run: dev-exec repro test
 
       # Diagnostics on failure. Three things below are load-bearing:
