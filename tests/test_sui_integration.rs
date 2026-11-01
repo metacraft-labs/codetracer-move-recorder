@@ -424,3 +424,47 @@ fn test_sui_trace_ndjson_parsing() {
     );
     assert!(total_effect > 0, "no Effect events across any trace");
 }
+
+/// `env.ps1` (the Windows dev environment) installs the same Sui release
+/// the Nix `move` shell packages.
+///
+/// The Nix shell's `sui` comes from nix-blockchain-development
+/// (`packages/sui/version.nix`) and is kept recent enough to replay current
+/// mainnet; `env.ps1` downloads its own release. Were the two to drift, the
+/// Windows recorder would run an older `sui` that refuses mainnet's newer
+/// protocol version. On Linux and macOS the `sui` on `PATH` is the Nix
+/// shell's, so this compares the Windows pin against it; on Windows, where
+/// `env.ps1` itself put `sui` on `PATH`, it checks that the installed binary
+/// is the pinned one.
+#[test]
+fn test_windows_sui_pin_matches_dev_shell() {
+    require_sui("test_windows_sui_pin_matches_dev_shell");
+
+    let env_ps1 =
+        std::fs::read_to_string(project_root().join("env.ps1")).expect("failed to read env.ps1");
+    let pinned = env_ps1
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("$suiVersion = \""))
+        .and_then(|rest| rest.strip_suffix('"'))
+        .expect("env.ps1 has no `$suiVersion = \"<version>\"` line");
+
+    let output = Command::new("sui")
+        .arg("--version")
+        .output()
+        .expect("failed to execute sui --version");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // `sui 1.82.3-bf4073918ed3` (release) or `sui 1.82.3-mainnet-v1.82.3`
+    // (built from the tag): the version is what precedes the first `-`.
+    let shell_version = stdout
+        .lines()
+        .find_map(|l| l.strip_prefix("sui "))
+        .and_then(|v| v.split('-').next())
+        .unwrap_or_else(|| panic!("unexpected `sui --version` output: {stdout}"));
+
+    assert_eq!(
+        pinned, shell_version,
+        "env.ps1 pins sui {pinned} but the dev shell's sui is {shell_version}; \
+         keep env.ps1's $suiVersion equal to nix-blockchain-development's \
+         packages/sui/version.nix"
+    );
+}
