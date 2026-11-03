@@ -1,0 +1,76 @@
+// Bytecode version v10
+module 0x1::event
+use 0x1::guid
+use 0x1::bcs
+friend 0x1::account
+friend 0x1::object
+struct EventHandle<phantom T0: drop + store> has store
+  counter: u64
+  guid: guid::GUID
+
+// Function definition at index 0
+#[persistent] public fun guid<T0: drop + store>(l0: &EventHandle<T0>): &guid::GUID
+    move_loc l0
+    borrow_field EventHandle<T0>, guid
+    ret
+
+// Function definition at index 1
+#[persistent] public fun counter<T0: drop + store>(l0: &EventHandle<T0>): u64
+    move_loc l0
+    borrow_field EventHandle<T0>, counter
+    read_ref
+    ret
+
+// Function definition at index 2
+#[persistent] public fun destroy_handle<T0: drop + store>(l0: EventHandle<T0>)
+    move_loc l0
+    unpack EventHandle<T0>
+    pop
+    pop
+    ret
+
+// Function definition at index 3
+#[persistent] public fun emit<T0: drop + store>(l0: T0)
+    move_loc l0
+    call write_module_event_to_store<T0>
+    ret
+
+// Function definition at index 4
+#[persistent] public fun emit_event<T0: drop + store>(l0: &mut EventHandle<T0>, l1: T0)
+    local l2: &mut u64
+    copy_loc l0
+    borrow_field EventHandle<T0>, guid
+    call bcs::to_bytes<guid::GUID>
+    copy_loc l0
+    borrow_field EventHandle<T0>, counter
+    // @5
+    read_ref
+    move_loc l1
+    call write_to_event_store<T0>
+    nop
+    move_loc l0
+    // @10
+    mut_borrow_field EventHandle<T0>, counter
+    st_loc l2
+    copy_loc l2
+    read_ref
+    ld_u64 1
+    // @15
+    add
+    move_loc l2
+    write_ref
+    ret
+
+// Function definition at index 5
+friend fun new_event_handle<T0: drop + store>(l0: guid::GUID): EventHandle<T0>
+    ld_u64 0
+    move_loc l0
+    pack EventHandle<T0>
+    ret
+
+// Function definition at index 6
+native fun write_module_event_to_store<T0: drop + store>(l0: T0)
+
+// Function definition at index 7
+native fun write_to_event_store<T0: drop + store>(l0: vector<u8>, l1: u64, l2: T0)
+

@@ -1,0 +1,12 @@
+// Bytecode version v10
+module 0x1::signer
+// Function definition at index 0
+#[persistent] public fun address_of(l0: &signer): address
+    move_loc l0
+    call borrow_address
+    read_ref
+    ret
+
+// Function definition at index 1
+#[persistent] public native fun borrow_address(l0: &signer): &address
+

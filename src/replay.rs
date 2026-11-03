@@ -168,8 +168,38 @@ pub fn convert_sui_replay_dir_bounded(
     max_trace_bytes: u64,
     recording_id: Option<&str>,
 ) -> Result<ReplayConversion> {
-    let trace_file = tx_dir.join("trace.json.zst");
-    if let Some(size) = decompressed_size_over(&trace_file, max_trace_bytes)? {
+    convert_replay_trace(
+        &tx_dir.join("trace.json.zst"),
+        out_dir,
+        max_trace_bytes,
+        recording_id,
+        || {
+            DebugInfo::from_sui_replay_dir(tx_dir)
+                .wrap_err_with(|| format!("Failed to read replay directory: {}", tx_dir.display()))
+        },
+        converter::ConverterOptions::default(),
+        "transaction.mvb",
+    )
+}
+
+/// Convert one replayed transaction's trace into a CTFS bundle in
+/// `out_dir`, with the debug info `load_debug_info` reads from the replay's
+/// artifacts.  Shared by the Sui and Aptos replay paths: the trace is
+/// bounded and checked for events before it is read, refused modules are
+/// reported on stderr and returned, and the bundle is written to a staging
+/// directory first so a failure leaves nothing that looks like a
+/// recording.  `fallback_source` is the relative primary path used when
+/// the first frame's module has no loaded disassembly.
+pub(crate) fn convert_replay_trace(
+    trace_file: &Path,
+    out_dir: &Path,
+    max_trace_bytes: u64,
+    recording_id: Option<&str>,
+    load_debug_info: impl FnOnce() -> Result<(DebugInfo, Vec<ReplayModuleRejection>)>,
+    options: converter::ConverterOptions,
+    fallback_source: &str,
+) -> Result<ReplayConversion> {
+    if let Some(size) = decompressed_size_over(trace_file, max_trace_bytes)? {
         bail!(
             "{TRACE_TOO_LARGE}: {} decompresses to more than {max_trace_bytes} bytes \
              (counted {size} before stopping); the converter holds a trace in memory, so it \
@@ -177,7 +207,7 @@ pub fn convert_sui_replay_dir_bounded(
             trace_file.display()
         );
     }
-    let trace_data = read_trace_file(&trace_file)?;
+    let trace_data = read_trace_file(trace_file)?;
     if trace_event_count(&trace_data) == 0 {
         // Sui protocol versions before 38 run on execution layers without
         // trace hooks (`sui-execution/v0`..`v2`); `sui replay` re-executes
@@ -190,8 +220,7 @@ pub fn convert_sui_replay_dir_bounded(
             trace_file.display()
         );
     }
-    let (debug_info, rejected) = DebugInfo::from_sui_replay_dir(tx_dir)
-        .wrap_err_with(|| format!("Failed to read replay directory: {}", tx_dir.display()))?;
+    let (debug_info, rejected) = load_debug_info()?;
     for rejection in &rejected {
         eprintln!("[codetracer-move-recorder] debug info refused: {rejection:?}");
     }
@@ -201,7 +230,7 @@ pub fn convert_sui_replay_dir_bounded(
     // A block of non-Move commands only has no first module; its primary path is then
     // the RELATIVE `transaction.mvb`, which names no file and no host directory.
     let source_path = first_frame_source(&trace_data, &debug_info)
-        .unwrap_or_else(|| PathBuf::from("transaction.mvb"));
+        .unwrap_or_else(|| PathBuf::from(fallback_source));
 
     fs::create_dir_all(out_dir)
         .wrap_err_with(|| format!("Failed to create output directory: {}", out_dir.display()))?;
@@ -218,7 +247,7 @@ pub fn convert_sui_replay_dir_bounded(
         &source_path,
         debug_info,
         staging.path(),
-        converter::ConverterOptions::default(),
+        options,
         recording_id,
     )?;
     for entry in fs::read_dir(staging.path())? {
@@ -286,7 +315,7 @@ fn first_frame_source(trace_data: &[u8], debug_info: &DebugInfo) -> Option<PathB
 }
 
 /// Read a trace file, decompressing it when it is `.zst`.
-fn read_trace_file(trace_file: &Path) -> Result<Vec<u8>> {
+pub(crate) fn read_trace_file(trace_file: &Path) -> Result<Vec<u8>> {
     let raw_bytes = fs::read(trace_file)
         .wrap_err_with(|| format!("Failed to read trace file: {}", trace_file.display()))?;
     if trace_file.extension().is_some_and(|ext| ext == "zst") {

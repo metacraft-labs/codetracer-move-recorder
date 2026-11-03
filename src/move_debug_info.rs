@@ -148,6 +148,10 @@ pub enum ReplayModuleRejection {
         expected: String,
         actual: String,
     },
+    /// An Aptos disassembly (`.mv.masm`) could not be read, does not name
+    /// the module its location says it holds, or its pc markers disagree
+    /// with the instructions counted, so its lines cannot be trusted.
+    Disassembly { path: PathBuf, reason: String },
 }
 
 /// Normalise a Move address to 64 lowercase hex digits without `0x`, the
@@ -287,6 +291,78 @@ impl DebugInfo {
         Ok((store, rejected))
     }
 
+    /// Load the disassembly of every module an Aptos replay entered.
+    ///
+    /// The layout mirrors a `sui replay` directory: one directory per
+    /// module address (`0x…`, 64 hex digits), each holding
+    /// `bytecode/<module>.mv` (the module's bytecode as it was on chain
+    /// when the transaction ran) and `bytecode/<module>.mv.masm` (what
+    /// `aptos move disassemble` prints for it).  On-chain Aptos modules
+    /// carry no source map, so the disassembly is the source text and pcs
+    /// map to its instruction lines; see [`parse_aptos_disassembly`].
+    /// Paths are recorded relative to `replay_dir`, as for Sui.
+    ///
+    /// The bytecode carries no local or parameter names, so frames keep
+    /// the converter's `arg<N>` / `local_<N>` names.
+    pub fn from_aptos_replay_dir(
+        replay_dir: &Path,
+    ) -> std::io::Result<(Self, Vec<ReplayModuleRejection>)> {
+        let mut store = Self::empty();
+        let mut rejected = Vec::new();
+        let mut packages: Vec<_> = fs::read_dir(replay_dir)?.collect::<Result<_, _>>()?;
+        packages.sort_by_key(|e| e.file_name());
+        for pkg in packages {
+            let pkg_name = pkg.file_name().to_string_lossy().into_owned();
+            let bytecode_dir = pkg.path().join("bytecode");
+            if !pkg_name.starts_with("0x") || !bytecode_dir.is_dir() {
+                continue;
+            }
+            let package = normalize_address(&pkg_name);
+            for entry in fs::read_dir(&bytecode_dir)? {
+                let path = entry?.path();
+                let Some(file_name) = path.file_name().and_then(|n| n.to_str()) else {
+                    continue;
+                };
+                let Some(module) = file_name.strip_suffix(".mv.masm") else {
+                    continue;
+                };
+                let reject = |reason: String| ReplayModuleRejection::Disassembly {
+                    path: path.clone(),
+                    reason,
+                };
+                let text = match fs::read_to_string(&path) {
+                    Ok(text) => text,
+                    Err(e) => {
+                        rejected.push(reject(e.to_string()));
+                        continue;
+                    }
+                };
+                match parse_aptos_disassembly(&text) {
+                    Ok(parsed)
+                        if normalize_address(&parsed.address) == package
+                            && parsed.module == module =>
+                    {
+                        let relative = Path::new(&pkg_name).join("bytecode").join(file_name);
+                        store.by_package.insert(
+                            (package.clone(), parsed.module),
+                            ModuleDebugInfo {
+                                functions: parsed.functions,
+                                source_path: Some(relative),
+                                line_lengths: compute_line_lengths(&text),
+                            },
+                        );
+                    }
+                    Ok(parsed) => rejected.push(reject(format!(
+                        "disassembles module {}::{}, not 0x{package}::{module}",
+                        parsed.address, parsed.module
+                    ))),
+                    Err(reason) => rejected.push(reject(reason)),
+                }
+            }
+        }
+        Ok((store, rejected))
+    }
+
     /// Look up a module, preferring the package-qualified entry (loaded
     /// from a `sui replay` directory) and falling back to the short-name
     /// entry (loaded from a local build).  `package` may be empty.
@@ -376,6 +452,203 @@ fn parse_replay_module(
         .map_err(|e| unreadable(format!("{}: {e}", mvb.display())))?;
     build_module(raw, &source_text, Some(recorded_path))
         .ok_or_else(|| unreadable("debug info names no module".to_string()))
+}
+
+/// A module's disassembly as [`parse_aptos_disassembly`] reads it.
+#[derive(Debug)]
+pub struct AptosDisassembly {
+    /// The module address as the disassembly prints it (`0x1`).
+    pub address: String,
+    pub module: String,
+    /// Per function definition index.
+    pub functions: HashMap<u64, FunctionDebugInfo>,
+}
+
+/// Map each instruction of an Aptos module disassembly to its line.
+///
+/// `aptos move disassemble` (Aptos CLI 7.x and the 1.49 node line) prints
+/// a module as `.masm` text:
+///
+/// ```text
+/// module 0x1::coin
+/// ...
+/// // Function definition at index 0
+/// #[persistent] public fun extract<T0>(l0: &mut Coin<T0>, l1: u64): Coin<T0>
+///     local l2: u64
+///     copy_loc l0
+///     borrow_field Coin<T0>, value
+///     ...
+///     // @5
+///     br_false l0
+///     ...
+/// l0: move_loc l0
+///     pop
+/// ```
+///
+/// The pc is not printed on each line; instead every instruction is one
+/// line, in pc order, after the function header and its `local`
+/// declarations (a branch target carries its label, `l0: `, in front of
+/// the instruction), and a `// @<pc>` comment precedes every fifth
+/// instruction.  So pcs are counted, and each `// @<pc>` marker is
+/// checked against the count: a disassembler whose output does not follow
+/// this shape is refused rather than mapped to the wrong lines.
+///
+/// A function's definition line is its header line; a native function
+/// has no instructions.  Columns point at the instruction mnemonic.
+pub fn parse_aptos_disassembly(text: &str) -> Result<AptosDisassembly, String> {
+    let mut module_id: Option<(String, String)> = None;
+    let mut functions: HashMap<u64, FunctionDebugInfo> = HashMap::new();
+
+    // The function being read: its index, its info, the next pc, and
+    // whether its header has been seen.
+    struct Current {
+        index: u64,
+        info: FunctionDebugInfo,
+        next_pc: u64,
+        header_seen: bool,
+        marker: Option<u64>,
+    }
+    let mut current: Option<Current> = None;
+    let finish = |current: Option<Current>,
+                  functions: &mut HashMap<u64, FunctionDebugInfo>|
+     -> Result<(), String> {
+        if let Some(c) = current {
+            if !c.header_seen {
+                return Err(format!("function definition {} has no header", c.index));
+            }
+            if let Some(pc) = c.marker {
+                return Err(format!(
+                    "marker // @{pc} in function {} is followed by no instruction",
+                    c.info.name
+                ));
+            }
+            functions.insert(c.index, c.info);
+        }
+        Ok(())
+    };
+
+    for (line_idx, raw) in text.lines().enumerate() {
+        let line_no = line_idx as u32 + 1;
+        let trimmed = raw.trim();
+
+        if module_id.is_none()
+            && let Some(rest) = trimmed.strip_prefix("module ")
+        {
+            let (address, name) = rest
+                .trim()
+                .rsplit_once("::")
+                .ok_or_else(|| format!("line {line_no}: module header {trimmed:?}"))?;
+            module_id = Some((address.to_string(), name.to_string()));
+            continue;
+        }
+
+        if let Some(index) = trimmed.strip_prefix("// Function definition at index ") {
+            finish(current.take(), &mut functions)?;
+            let index = index
+                .trim()
+                .parse::<u64>()
+                .map_err(|e| format!("line {line_no}: function index: {e}"))?;
+            current = Some(Current {
+                index,
+                info: FunctionDebugInfo {
+                    name: String::new(),
+                    locals: Vec::new(),
+                    parameters: Vec::new(),
+                    pc_to_line: HashMap::new(),
+                    pc_to_column: HashMap::new(),
+                    definition_line: line_no,
+                },
+                next_pc: 0,
+                header_seen: false,
+                marker: None,
+            });
+            continue;
+        }
+
+        let Some(cur) = current.as_mut() else {
+            continue;
+        };
+        if trimmed.is_empty() {
+            // A blank line ends a function body.
+            if cur.header_seen {
+                finish(current.take(), &mut functions)?;
+            }
+            continue;
+        }
+        if !cur.header_seen {
+            // The header is the first line after the marker comment that
+            // declares the function (attributes precede `fun` on it).
+            if let Some(name) = function_name_in_header(trimmed) {
+                cur.info.name = name;
+                cur.info.definition_line = line_no;
+                cur.header_seen = true;
+            }
+            continue;
+        }
+        if let Some(comment) = trimmed.strip_prefix("//") {
+            if let Some(pc) = comment.trim().strip_prefix('@') {
+                let pc = pc
+                    .trim()
+                    .parse::<u64>()
+                    .map_err(|e| format!("line {line_no}: pc marker: {e}"))?;
+                cur.marker = Some(pc);
+            }
+            continue;
+        }
+        if trimmed.starts_with("local ") {
+            continue;
+        }
+        // An instruction, possibly behind a branch label.
+        let instruction = strip_label(trimmed);
+        if let Some(expected) = cur.marker.take()
+            && expected != cur.next_pc
+        {
+            return Err(format!(
+                "line {line_no}: marker // @{expected} precedes instruction {} of function {}",
+                cur.next_pc, cur.info.name
+            ));
+        }
+        // `instruction` is a suffix slice of `raw`'s trimmed text.
+        let column = (instruction.as_ptr() as usize - raw.as_ptr() as usize) as u32 + 1;
+        cur.info.pc_to_line.insert(cur.next_pc, line_no);
+        cur.info.pc_to_column.insert(cur.next_pc, column);
+        cur.next_pc += 1;
+    }
+    finish(current.take(), &mut functions)?;
+
+    let (address, module) =
+        module_id.ok_or_else(|| "no `module <address>::<name>` header".to_string())?;
+    Ok(AptosDisassembly {
+        address,
+        module,
+        functions,
+    })
+}
+
+/// The function name a `.masm` function header declares
+/// (`#[persistent] public fun extract<T0>(...)` → `extract`), or `None`
+/// when the line declares no function.
+fn function_name_in_header(line: &str) -> Option<String> {
+    let after = line
+        .strip_prefix("fun ")
+        .or_else(|| line.split_once(" fun ").map(|(_, rest)| rest))?;
+    let name: String = after
+        .chars()
+        .take_while(|c| c.is_ascii_alphanumeric() || *c == '_')
+        .collect();
+    (!name.is_empty()).then_some(name)
+}
+
+/// The instruction on a `.masm` body line without its branch label
+/// (`l0: move_loc l0` → `move_loc l0`).
+fn strip_label(line: &str) -> &str {
+    if let Some((label, rest)) = line.split_once(": ")
+        && !label.is_empty()
+        && label.chars().all(|c| c.is_ascii_alphanumeric() || c == '_')
+    {
+        return rest.trim_start();
+    }
+    line
 }
 
 /// Parse a single `<Module>.json` debug-info file.  Returns

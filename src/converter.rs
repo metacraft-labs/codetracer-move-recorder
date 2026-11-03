@@ -11,7 +11,7 @@ use codetracer_trace_writer_nim::trace_writer::TraceWriter;
 use codetracer_trace_writer_nim::{NimTraceWriter, TraceEventsFileFormat, create_trace_writer};
 use eyre::{Result, eyre};
 
-use crate::move_debug_info::{DebugInfo, FunctionDebugInfo};
+use crate::move_debug_info::{DebugInfo, FunctionDebugInfo, normalize_address};
 use crate::move_types::{
     Effect, ExternalEffect, Location, RootLocation, SerializableMoveValue, TraceEvent, TraceValue,
     VersionHeader,
@@ -59,6 +59,27 @@ pub struct ConverterOptions {
     /// `SourceMapResolver::empty()` and expect exactly one step (the
     /// synthetic entry) — keep passing without per-test plumbing.
     pub resolve_pc_lines_from_debug_info: bool,
+
+    /// The chain whose transaction the trace records, which decides how
+    /// framework calls are recognised (event emission, transaction
+    /// phases) and how functions are named.  `None` detects it from the
+    /// trace: an Aptos transaction opens with
+    /// `0x1::transaction_validation`, a Sui one never does.
+    pub chain: Option<MoveChain>,
+}
+
+/// The chain a Move trace was recorded on.  Both write the same
+/// move-trace-format NDJSON, but their frameworks differ.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum MoveChain {
+    /// Sui: events are `0x2::event::emit`; a transaction is a programmable
+    /// transaction block whose commands are the top-level frames.
+    Sui,
+    /// Aptos: events are written by the natives
+    /// `0x1::event::write_module_event_to_store` (module events) and
+    /// `0x1::event::write_to_event_store` (handle events); a transaction
+    /// runs a prologue, its payload and an epilogue as top-level frames.
+    Aptos,
 }
 
 // The library-default is *off* so existing callers (the recorder's own
@@ -94,6 +115,12 @@ impl ConverterOptions {
     /// the full set without a per-flag enumeration.
     pub fn for_ct_record_flow(self) -> Self {
         self.with_test_entry_event().with_debug_info_source_lines()
+    }
+
+    /// Fix the chain instead of detecting it from the trace.
+    pub fn with_chain(mut self, chain: MoveChain) -> Self {
+        self.chain = Some(chain);
+        self
     }
 }
 
@@ -319,6 +346,13 @@ fn convert_events(
         events.push(event);
     }
 
+    let chain = options.chain.unwrap_or_else(|| detect_chain(&events));
+    // The role of each top-level frame of an Aptos transaction, by frame id.
+    let aptos_phases = match chain {
+        MoveChain::Aptos => aptos_transaction_phases(&events),
+        MoveChain::Sui => HashMap::new(),
+    };
+
     // -- 2. Start the trace ----------------------------------------------------
     //
     // Peek the first OpenFrame/Instruction pair in the event stream to
@@ -517,10 +551,7 @@ fn convert_events(
                 // printed form.  See
                 // `tests/test_full_coverage.rs::test_event_emit_test_via_ct_print_full`
                 // for the strict shape pin.
-                if is_sui_event_emit(&frame.module.name, &frame.module.address)
-                    && frame.function_name == "emit"
-                    && let Some(param) = frame.parameters.first()
-                {
+                if let Some(param) = event_emit_payload(chain, frame) {
                     let payload_text = render_move_event_payload(param.inner_value());
                     TraceWriter::register_special_event(
                         writer,
@@ -593,11 +624,37 @@ fn convert_events(
                         );
                     }
                 }
-                let display_name = qualified_function_name(
-                    outer_module.as_deref(),
-                    &frame.module,
-                    &frame.function_name,
-                );
+                // An Aptos transaction runs its prologue, any argument
+                // constructors, its payload and its epilogue as separate
+                // top-level frames.  Each is announced with its role, so
+                // the payload is found without knowing the framework's
+                // function names.
+                if let Some(phase) = aptos_phases.get(&frame.frame_id) {
+                    TraceWriter::register_special_event(
+                        writer,
+                        EventLogKind::TraceLogEvent,
+                        "MoveTransactionPhase",
+                        &format!(
+                            "{}: {}",
+                            phase.label(),
+                            aptos_function_id(&frame.module, &frame.function_name)
+                        ),
+                    );
+                }
+                // Aptos frames are named by their full function id
+                // (`0x1::coin::transfer`): framework modules share short
+                // function names (`transfer` exists in `coin`,
+                // `fungible_asset`, `aptos_account`, ...), and the first
+                // top-level frame is the prologue, so the outer-module
+                // rule below would name every frame by its bare name.
+                let display_name = match chain {
+                    MoveChain::Aptos => aptos_function_id(&frame.module, &frame.function_name),
+                    MoveChain::Sui => qualified_function_name(
+                        outer_module.as_deref(),
+                        &frame.module,
+                        &frame.function_name,
+                    ),
+                };
                 // A function is located in the file of the module that
                 // defines it, at its definition line, when debug info
                 // knows both; otherwise at the primary source, line 1.
@@ -920,6 +977,12 @@ pub struct TypeIds {
     pub u64_id: TypeId,
     pub u128_id: TypeId,
     pub u256_id: TypeId,
+    pub i8_id: TypeId,
+    pub i16_id: TypeId,
+    pub i32_id: TypeId,
+    pub i64_id: TypeId,
+    pub i128_id: TypeId,
+    pub i256_id: TypeId,
     pub bool_id: TypeId,
     pub address_id: TypeId,
     pub struct_id: TypeId,
@@ -963,6 +1026,14 @@ impl TypeIds {
             string_id: TraceWriter::ensure_type_id(writer, TypeKind::String, "string"),
             ref_id: TraceWriter::ensure_type_id(writer, TypeKind::Ref, "&"),
             mut_ref_id: TraceWriter::ensure_type_id(writer, TypeKind::Ref, "&mut"),
+            // Registered after every pre-existing type, so the ids that
+            // traces without signed integers record are unchanged.
+            i8_id: TraceWriter::ensure_type_id(writer, TypeKind::Int, "i8"),
+            i16_id: TraceWriter::ensure_type_id(writer, TypeKind::Int, "i16"),
+            i32_id: TraceWriter::ensure_type_id(writer, TypeKind::Int, "i32"),
+            i64_id: TraceWriter::ensure_type_id(writer, TypeKind::Int, "i64"),
+            i128_id: TraceWriter::ensure_type_id(writer, TypeKind::Int, "i128"),
+            i256_id: TraceWriter::ensure_type_id(writer, TypeKind::Int, "i256"),
             structs: HashMap::new(),
         }
     }
@@ -1156,19 +1227,138 @@ fn qualified_function_name(
     }
 }
 
-/// True when a `(module_name, module_address)` pair points at the Sui
-/// `0x2::event` module — the home of `sui::event::emit`.  Sui's address
-/// renders both as the short `"0x2"` (synthetic / hand-crafted traces)
-/// and as the 64-hex-digit zero-padded form (`"0000…0002"`) that the
-/// real Sui binary emits, so we accept either.
-fn is_sui_event_emit(module_name: &str, module_address: &str) -> bool {
-    if module_name != "event" {
-        return false;
+/// True when `address` is the account address `n`, in any of the forms
+/// traces write it (`0x2`, `0x02`, 64 zero-padded hex digits, with or
+/// without `0x`).
+fn is_address(address: &str, n: u8) -> bool {
+    normalize_address(address) == format!("{n:064x}")
+}
+
+/// The chain a trace was recorded on, judged from its first frame: every
+/// Aptos user transaction opens with `0x1::transaction_validation`'s
+/// prologue, a module Sui's framework does not have.
+pub fn detect_chain(events: &[TraceEvent]) -> MoveChain {
+    let first = events.iter().find_map(|event| match event {
+        TraceEvent::OpenFrame { frame, .. } => Some(frame),
+        _ => None,
+    });
+    match first {
+        Some(frame)
+            if is_address(&frame.module.address, 1)
+                && frame.module.name == "transaction_validation" =>
+        {
+            MoveChain::Aptos
+        }
+        _ => MoveChain::Sui,
     }
-    matches!(
-        module_address,
-        "0x2" | "0x02" | "0000000000000000000000000000000000000000000000000000000000000002"
-    )
+}
+
+/// The payload of the event a frame emits, when the frame is the chain's
+/// event-emission function.
+///
+/// * Sui: `0x2::event::emit<T>(event)`.
+/// * Aptos: the natives that store an event,
+///   `0x1::event::write_module_event_to_store<T>(msg)` (module events,
+///   called by `0x1::event::emit`) and
+///   `0x1::event::write_to_event_store<T>(guid, count, msg)` (handle
+///   events, called by `0x1::event::emit_event`).  The natives rather than
+///   `emit` / `emit_event` are matched because every event passes through
+///   exactly one of them, while matching the Move wrappers as well would
+///   report each event twice.  The payload is the last parameter.
+fn event_emit_payload(chain: MoveChain, frame: &crate::move_types::Frame) -> Option<&TraceValue> {
+    if frame.module.name != "event" {
+        return None;
+    }
+    match chain {
+        MoveChain::Sui => (is_address(&frame.module.address, 2) && frame.function_name == "emit")
+            .then(|| frame.parameters.first())
+            .flatten(),
+        MoveChain::Aptos => (is_address(&frame.module.address, 1)
+            && matches!(
+                frame.function_name.as_str(),
+                "write_module_event_to_store" | "write_to_event_store"
+            ))
+        .then(|| frame.parameters.last())
+        .flatten(),
+    }
+}
+
+/// The role of a top-level frame in an Aptos user transaction.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AptosPhase {
+    /// `0x1::transaction_validation::*prologue*`.
+    Prologue,
+    /// A call the VM makes to build an entry function's argument, such as
+    /// `0x1::object::address_to_object` for an `Object<T>` parameter.
+    Argument,
+    /// The transaction's entry function or script.
+    Payload,
+    /// `0x1::transaction_validation::*epilogue*`.
+    Epilogue,
+}
+
+impl AptosPhase {
+    pub fn label(self) -> &'static str {
+        match self {
+            AptosPhase::Prologue => "prologue",
+            AptosPhase::Argument => "argument",
+            AptosPhase::Payload => "payload",
+            AptosPhase::Epilogue => "epilogue",
+        }
+    }
+}
+
+/// Classify the top-level frames of an Aptos transaction trace, by frame
+/// id.  Frames of `0x1::transaction_validation` are the prologue and the
+/// epilogue; of the others, the payload is the LAST, because the VM
+/// constructs the entry function's arguments (each a top-level call of
+/// its own) before it calls the entry function.
+pub fn aptos_transaction_phases(events: &[TraceEvent]) -> HashMap<u64, AptosPhase> {
+    let mut phases = HashMap::new();
+    let mut depth = 0usize;
+    let mut payload = None;
+    for event in events {
+        match event {
+            TraceEvent::OpenFrame { frame, .. } => {
+                if depth == 0 {
+                    let phase = if is_address(&frame.module.address, 1)
+                        && frame.module.name == "transaction_validation"
+                    {
+                        if frame.function_name.contains("epilogue") {
+                            AptosPhase::Epilogue
+                        } else {
+                            AptosPhase::Prologue
+                        }
+                    } else {
+                        payload = Some(frame.frame_id);
+                        AptosPhase::Argument
+                    };
+                    phases.insert(frame.frame_id, phase);
+                }
+                depth += 1;
+            }
+            TraceEvent::CloseFrame { .. } => depth = depth.saturating_sub(1),
+            _ => {}
+        }
+    }
+    if let Some(id) = payload {
+        phases.insert(id, AptosPhase::Payload);
+    }
+    phases
+}
+
+/// An Aptos function id as the Aptos CLI prints it: the module address in
+/// short form for the special addresses `0x0`..`0xf` and in full (64 hex
+/// digits) otherwise, then `::module::function`.
+pub fn aptos_function_id(module: &crate::move_types::ModuleId, function_name: &str) -> String {
+    let full = normalize_address(&module.address);
+    let trimmed = full.trim_start_matches('0');
+    let address = if trimmed.len() <= 1 {
+        format!("0x{}", if trimmed.is_empty() { "0" } else { trimmed })
+    } else {
+        format!("0x{full}")
+    };
+    format!("{address}::{}::{function_name}", module.name)
 }
 
 /// Render the typed payload of a `sui::event::emit<T>(payload)` call
@@ -1225,6 +1415,15 @@ fn move_value_to_json(value: &SerializableMoveValue) -> serde_json::Value {
             }
         }
         SerializableMoveValue::U256 { value: v } => J::String(v.clone()),
+        SerializableMoveValue::I8 { value: v } => J::from(*v),
+        SerializableMoveValue::I16 { value: v } => J::from(*v),
+        SerializableMoveValue::I32 { value: v } => J::from(*v),
+        SerializableMoveValue::I64 { value: v } => J::from(*v),
+        SerializableMoveValue::I128 { value: v } => match i64::try_from(*v) {
+            Ok(small) => J::from(small),
+            Err(_) => J::String(v.to_string()),
+        },
+        SerializableMoveValue::I256 { value: v } => J::String(v.clone()),
         SerializableMoveValue::Bool { value: v } => J::from(*v),
         SerializableMoveValue::Address { value: v } => J::String(v.clone()),
         SerializableMoveValue::Struct { value: content } => {
@@ -1473,6 +1672,40 @@ pub fn convert_move_value(
         SerializableMoveValue::U256 { value: v } => ValueRecord::String {
             text: v.clone(),
             type_id: type_ids.u256_id,
+        },
+        SerializableMoveValue::I8 { value: v } => ValueRecord::Int {
+            i: (*v).into(),
+            type_id: type_ids.i8_id,
+        },
+        SerializableMoveValue::I16 { value: v } => ValueRecord::Int {
+            i: (*v).into(),
+            type_id: type_ids.i16_id,
+        },
+        SerializableMoveValue::I32 { value: v } => ValueRecord::Int {
+            i: (*v).into(),
+            type_id: type_ids.i32_id,
+        },
+        SerializableMoveValue::I64 { value: v } => ValueRecord::Int {
+            i: *v,
+            type_id: type_ids.i64_id,
+        },
+        // An i128 that fits in i64 is an `Int`; a wider one is a `BigInt`
+        // carrying its magnitude and sign, as a u128 above i64 is.
+        SerializableMoveValue::I128 { value: v } => match i64::try_from(*v) {
+            Ok(i) => ValueRecord::Int {
+                i,
+                type_id: type_ids.i128_id,
+            },
+            Err(_) => ValueRecord::BigInt {
+                b: u128_be_bytes_trimmed(v.unsigned_abs()),
+                negative: *v < 0,
+                type_id: type_ids.i128_id,
+            },
+        },
+        // Decimal text, as `U256` is.
+        SerializableMoveValue::I256 { value: v } => ValueRecord::String {
+            text: v.clone(),
+            type_id: type_ids.i256_id,
         },
         SerializableMoveValue::Bool { value: v } => ValueRecord::Bool {
             b: *v,

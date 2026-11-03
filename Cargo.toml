@@ -32,7 +32,7 @@ zstd = "0.13"
 eyre = "0.6"
 
 # CLI argument parsing
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 
 # Recursive directory walking (source file discovery)
 walkdir = "2"

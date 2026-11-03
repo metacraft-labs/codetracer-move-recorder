@@ -13,9 +13,10 @@
 //! * `replay`        — replay an on-chain Sui transaction via the local
 //!                     `sui replay` CLI and convert the resulting trace
 //!                     into a CodeTracer CTFS trace bundle.
-//! * `aptos-replay`  — replay an on-chain Aptos transaction via the local
-//!                     `aptos move replay` CLI (with optional gas
-//!                     profiling) and convert the resulting trace into a
+//! * `aptos-replay`  — replay an on-chain Aptos transaction with
+//!                     `aptos move replay --trace` (the CodeTracer build of
+//!                     the Aptos CLI) and convert the value trace, with
+//!                     steps on each module's disassembly, into a
 //!                     CodeTracer CTFS trace bundle.
 //!
 //! # Usage
@@ -169,16 +170,43 @@ enum Commands {
     /// Replay an on-chain Aptos transaction and produce a CodeTracer CTFS trace.
     AptosReplay {
         /// Transaction version (ledger version) to replay.
-        #[arg(long)]
+        #[arg(long, alias = "txn-id")]
         txn_version: u64,
 
-        /// Aptos REST API node URL.
-        #[arg(long, default_value = "https://fullnode.mainnet.aptoslabs.com/v1")]
-        node_url: String,
+        /// Network to replay on: `mainnet`, `testnet`, `devnet`, or a REST
+        /// endpoint URL (passed to `aptos move replay --network`; module
+        /// bytecode is fetched from the same node).
+        #[arg(long, alias = "node-url", default_value = "mainnet")]
+        network: String,
 
-        /// Directory containing Move source files.
+        /// The Aptos CLI to run.  It must support `aptos move replay
+        /// --trace`, which the CodeTracer build of the CLI adds
+        /// (metacraft-labs/aptos-core, branch codetracer/value-tracing).
+        #[arg(
+            long,
+            env = "CODETRACER_MOVE_RECORDER_APTOS_CLI",
+            default_value = "aptos"
+        )]
+        aptos_cli: PathBuf,
+
+        /// Node API key, to lift the public fullnodes' anonymous rate limit.
+        #[arg(long, env = "APTOS_NODE_API_KEY", hide_env_values = true)]
+        node_api_key: Option<String>,
+
+        /// Keep the replay's artifacts here: `trace.json` and, per module,
+        /// `0x<address>/bytecode/<module>.mv` and its `.mv.masm`
+        /// disassembly.  An existing trace is not replayed again and
+        /// existing modules are not fetched again.
         #[arg(long)]
-        source_dir: Option<PathBuf>,
+        replay_dir: Option<PathBuf>,
+
+        /// Refuse a trace larger than this many bytes (`TRACE-TOO-LARGE`).
+        #[arg(long, default_value_t = replay::DEFAULT_MAX_TRACE_BYTES)]
+        max_trace_bytes: u64,
+
+        /// The container's recording id (a UUID).
+        #[arg(long)]
+        recording_id: Option<String>,
 
         /// Output directory for trace files.
         ///
@@ -186,10 +214,6 @@ enum Commands {
         /// variable when the flag is omitted.
         #[arg(short, long)]
         out_dir: Option<PathBuf>,
-
-        /// Also run --profile-gas for additional gas data.
-        #[arg(long, default_value = "true")]
-        profile_gas: bool,
     },
 
     /// Show Aptos-specific limitations compared to Sui support.
@@ -609,10 +633,13 @@ fn main() -> eyre::Result<()> {
         }
         Commands::AptosReplay {
             txn_version,
-            node_url,
-            source_dir,
+            network,
+            aptos_cli,
+            node_api_key,
+            replay_dir,
+            max_trace_bytes,
+            recording_id,
             out_dir,
-            profile_gas,
         } => {
             if recording_disabled() {
                 eprintln!(
@@ -624,14 +651,22 @@ fn main() -> eyre::Result<()> {
             let out_dir = resolve_out_dir(out_dir);
 
             let config = AptosReplayConfig {
-                node_url,
+                network,
                 txn_version,
-                source_dir,
+                aptos_cli,
+                node_api_key,
+                replay_dir,
+                max_trace_bytes,
+                recording_id,
                 out_dir,
-                profile_gas,
             };
 
-            aptos_replay::aptos_replay_transaction(&config)?;
+            let conversion = aptos_replay::aptos_replay_transaction(&config)?;
+            eprintln!(
+                "Loaded the disassembly of {} module(s); refused {}.",
+                conversion.modules_loaded,
+                conversion.modules_rejected.len()
+            );
         }
         Commands::AptosLimitations => {
             println!("{}", aptos_adapter::aptos_limitations_summary());

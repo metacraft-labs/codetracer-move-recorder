@@ -1,31 +1,46 @@
 //! Aptos on-chain transaction replay pipeline.
 //!
 //! Orchestrates:
-//! 1. `aptos move replay --txn-version <VERSION>` with optional `--profile-gas`
-//! 2. Parse MOVE_VM_TRACE CSV output (requires `MOVE_VM_TRACE` env var pointing to output file)
-//! 3. Parse gas profiler JSON output (when `--profile-gas` is used)
-//! 4. Fetch historical account state via REST API
-//! 5. Merge trace + gas data and produce CodeTracer trace
+//! 1. `aptos move replay --network <NET> --txn-id <VERSION> --trace <FILE>`,
+//!    which re-executes the transaction against the state it ran on and
+//!    writes a value trace in the move-trace-format NDJSON (version 3) the
+//!    Sui converter reads: every frame, instruction and stack/local effect,
+//!    with typed values.  `--trace` is not in the stock Aptos CLI; it comes
+//!    from the CodeTracer fork (metacraft-labs/aptos-core, branch
+//!    `codetracer/value-tracing`).
+//! 2. For every module the trace entered, the module's bytecode as it was
+//!    on chain when the transaction ran, from the REST API
+//!    (`/v1/accounts/{addr}/module/{name}?ledger_version=<VERSION - 1>`),
+//!    and its disassembly from `aptos move disassemble`.
+//! 3. The conversion shared with the Sui replay path
+//!    ([`crate::replay::convert_replay_trace`]): each instruction becomes a
+//!    step on its disassembly line, and values attach to those steps.
 //!
-//! ## Differences from Sui replay
+//! The artifacts are laid out like a `sui replay` directory:
 //!
-//! Sui's `sui replay --trace` produces rich structured traces in a single step.
-//! Aptos replay requires combining multiple data sources:
-//! - MOVE_VM_TRACE env var for execution trace (minimal CSV)
-//! - --profile-gas for gas breakdown (JSON flamegraph)
-//! - REST API for historical state (account resources at ledger versions)
+//! ```text
+//! <replay-dir>/trace.json
+//! <replay-dir>/0x<address, 64 hex digits>/bytecode/<module>.mv
+//! <replay-dir>/0x<address, 64 hex digits>/bytecode/<module>.mv.masm
+//! ```
 //!
-//! None of these individually provides the depth of Sui's trace format.
+//! and the bundle records each disassembly's path relative to it.  With
+//! `--replay-dir` the directory is kept and reused: an existing trace is not
+//! replayed again and existing modules are not fetched again.
 
+use std::collections::BTreeSet;
 use std::fs;
+use std::io::Write;
 use std::path::{Path, PathBuf};
-use std::process::Command;
+use std::process::{Command, Stdio};
 
-use eyre::{Result, bail, eyre};
+use eyre::{Result, WrapErr, bail, eyre};
+use serde::Deserialize;
 
-use crate::aptos_adapter::{
-    self, AptosRestConfig, merge_trace_and_gas, parse_gas_profile_json, parse_move_vm_trace_csv,
-};
+use crate::aptos_adapter::{self, AptosRestConfig};
+use crate::converter::{ConverterOptions, MoveChain};
+use crate::move_debug_info::{DebugInfo, normalize_address};
+use crate::replay::{self, DEFAULT_MAX_TRACE_BYTES, ReplayConversion};
 
 /// Configuration for replaying an Aptos transaction.
 ///
@@ -35,259 +50,343 @@ use crate::aptos_adapter::{
 /// conversion of the produced bundle.
 #[derive(Debug, Clone)]
 pub struct AptosReplayConfig {
-    /// Aptos REST API base URL.
-    pub node_url: String,
+    /// Network to replay on: `mainnet`, `testnet`, `devnet`, or a REST
+    /// endpoint URL (passed to `aptos move replay --network`).
+    pub network: String,
     /// Transaction version (ledger version) to replay.
     pub txn_version: u64,
-    /// Directory containing Move source files (optional).
-    pub source_dir: Option<PathBuf>,
+    /// The Aptos CLI to run; it must support `aptos move replay --trace`.
+    pub aptos_cli: PathBuf,
+    /// API key for the node, sent as `Authorization: Bearer <key>` to lift
+    /// the anonymous rate limit of the public fullnodes.
+    pub node_api_key: Option<String>,
+    /// Where to keep the replay's artifacts.  `None` uses a scratch
+    /// directory that is removed afterwards.
+    pub replay_dir: Option<PathBuf>,
+    /// Refuse a trace that is larger than this many bytes.
+    pub max_trace_bytes: u64,
+    /// The container's recording id; `None` lets the writer mint one.
+    pub recording_id: Option<String>,
     /// Output directory for CodeTracer trace files.
     pub out_dir: PathBuf,
-    /// Whether to also run --profile-gas for additional data.
-    pub profile_gas: bool,
 }
 
 impl AptosReplayConfig {
     /// Create a config with sensible defaults.
     pub fn new(txn_version: u64) -> Self {
         Self {
-            node_url: "https://fullnode.mainnet.aptoslabs.com/v1".to_string(),
+            network: "mainnet".to_string(),
             txn_version,
-            source_dir: None,
+            aptos_cli: PathBuf::from("aptos"),
+            node_api_key: None,
+            replay_dir: None,
+            max_trace_bytes: DEFAULT_MAX_TRACE_BYTES,
+            recording_id: None,
             out_dir: PathBuf::from("./ct-traces/"),
-            profile_gas: true,
+        }
+    }
+}
+
+/// The REST API base (`…/v1`) of a network as `aptos move replay
+/// --network` names it.
+pub fn rest_base_url(network: &str) -> String {
+    match network {
+        "mainnet" | "testnet" | "devnet" => {
+            format!("https://fullnode.{network}.aptoslabs.com/v1")
+        }
+        url => {
+            let url = url.trim_end_matches('/');
+            if url.ends_with("/v1") {
+                url.to_string()
+            } else {
+                format!("{url}/v1")
+            }
         }
     }
 }
 
 /// Replay an Aptos transaction and produce a CodeTracer trace.
-///
-/// Steps:
-/// 1. Run `aptos move replay --txn-version <VERSION>` with MOVE_VM_TRACE env
-/// 2. Optionally run with `--profile-gas` for gas data
-/// 3. Parse the MOVE_VM_TRACE CSV and gas profile JSON
-/// 4. Merge and convert to CodeTracer format
-///
-/// Note: This requires the `aptos` CLI to be installed and in PATH.
-pub fn aptos_replay_transaction(config: &AptosReplayConfig) -> Result<()> {
-    // Check that aptos CLI is available.
-    let aptos_check = Command::new("aptos").arg("--version").output();
-    if aptos_check.is_err() {
-        bail!(
-            "aptos CLI not found. Please install the Aptos CLI and ensure it is in your PATH.\n\
-             See: https://aptos.dev/tools/aptos-cli/install-cli"
-        );
-    }
-
-    // A fresh scratch directory per run, deleted when `work_dir_guard` drops —
-    // on success and on every error return below.
-    let work_dir_guard = tempfile::Builder::new()
-        .prefix(&format!("aptos-replay-{}-", config.txn_version))
-        .tempdir()
-        .map_err(|e| eyre!("failed to create working directory: {e}"))?;
-    let work_dir = work_dir_guard.path().to_path_buf();
-
-    // Step 1: Run aptos move replay with MOVE_VM_TRACE
-    let trace_csv_path = work_dir.join("move_vm_trace.csv");
-    let trace_csv = run_aptos_replay_with_trace(
-        &config.node_url,
-        config.txn_version,
-        &trace_csv_path,
-        &work_dir,
-    )?;
-
-    // Step 2: Optionally get gas profile data.
-    let gas_profile = if config.profile_gas {
-        match run_aptos_replay_with_gas_profile(&config.node_url, config.txn_version, &work_dir) {
-            Ok(profile) => Some(profile),
-            Err(e) => {
-                eprintln!("warning: gas profiling failed (continuing without gas data): {e}");
-                None
-            }
+pub fn aptos_replay_transaction(config: &AptosReplayConfig) -> Result<ReplayConversion> {
+    let (dir, _scratch) = match &config.replay_dir {
+        Some(dir) => {
+            fs::create_dir_all(dir)
+                .wrap_err_with(|| format!("Failed to create {}", dir.display()))?;
+            // Absolute, because the CLI runs with this directory as its
+            // working directory and is handed paths inside it.
+            let dir = fs::canonicalize(dir)
+                .wrap_err_with(|| format!("Failed to resolve {}", dir.display()))?;
+            (dir, None)
         }
-    } else {
-        None
+        None => {
+            let scratch = tempfile::Builder::new()
+                .prefix(&format!("aptos-replay-{}-", config.txn_version))
+                .tempdir()
+                .wrap_err("Failed to create replay working directory")?;
+            (scratch.path().to_path_buf(), Some(scratch))
+        }
     };
 
-    // Step 3: Parse trace entries.
-    let trace_entries = parse_move_vm_trace_csv(&trace_csv);
-    if trace_entries.is_empty() {
-        bail!(
-            "MOVE_VM_TRACE produced no trace entries for transaction version {}.\n\
-             This may indicate the transaction did not execute any Move bytecode.",
-            config.txn_version
-        );
+    let trace_file = dir.join("trace.json");
+    if !trace_file.is_file() {
+        run_aptos_replay(config, &trace_file, &dir)?;
     }
 
-    // Step 4: Merge trace + gas data.
-    let enriched = merge_trace_and_gas(&trace_entries, gas_profile.as_ref());
+    let modules = executed_modules(&replay::read_trace_file(&trace_file)?)?;
+    let rest = rest_base_url(&config.network);
+    // The state the transaction ran on is the ledger state after the
+    // version before it; a module upgraded by the transaction itself must
+    // not be read back in its upgraded form.
+    let state_version = config.txn_version.saturating_sub(1);
+    for (address, module) in &modules {
+        let bytecode_dir = dir.join(format!("0x{address}")).join("bytecode");
+        let mv = bytecode_dir.join(format!("{module}.mv"));
+        if !mv.is_file() {
+            fs::create_dir_all(&bytecode_dir)?;
+            let bytes = fetch_module_bytecode(
+                &rest,
+                address,
+                module,
+                state_version,
+                config.node_api_key.as_deref(),
+            )?;
+            fs::write(&mv, bytes).wrap_err_with(|| format!("Failed to write {}", mv.display()))?;
+        }
+        if !bytecode_dir.join(format!("{module}.mv.masm")).is_file() {
+            disassemble(&config.aptos_cli, &mv, &bytecode_dir)?;
+        }
+    }
 
-    // Step 5: Determine source path.
-    let source_path = config
-        .source_dir
-        .as_ref()
-        .and_then(|dir| find_first_move_file(dir))
-        .unwrap_or_else(|| PathBuf::from("aptos_transaction.move"));
-
-    // Step 6: Convert to CodeTracer format.
-    fs::create_dir_all(&config.out_dir)
-        .map_err(|e| eyre!("failed to create output directory: {e}"))?;
-
-    aptos_adapter::convert_aptos_trace(&enriched, &source_path, &config.out_dir)?;
-
-    eprintln!(
-        "Aptos trace files written to {}\n\n{}",
-        config.out_dir.display(),
-        aptos_adapter::aptos_limitations_summary()
-    );
-
-    Ok(())
+    convert_aptos_replay_dir_bounded(
+        &dir,
+        &config.out_dir,
+        config.max_trace_bytes,
+        config.recording_id.as_deref(),
+    )
 }
 
-/// Process existing MOVE_VM_TRACE CSV data (bypassing the aptos CLI).
-///
-/// Useful for testing and for cases where trace data was collected separately.
-///
-/// The output format is fixed to CTFS — see
-/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.
-pub fn aptos_replay_from_existing_data(
-    trace_csv: &str,
-    gas_profile_json: Option<&str>,
-    source_path: &Path,
+/// Convert an Aptos replay directory (see the module docs for its layout;
+/// the trace may be `trace.json` or `trace.json.zst`) into a CTFS bundle in
+/// `out_dir`.  Modules whose disassembly is missing or refused keep their
+/// values and calls but have no line mapping; refusals are reported on
+/// stderr and returned.
+pub fn convert_aptos_replay_dir(dir: &Path, out_dir: &Path) -> Result<ReplayConversion> {
+    convert_aptos_replay_dir_bounded(dir, out_dir, DEFAULT_MAX_TRACE_BYTES, None)
+}
+
+/// [`convert_aptos_replay_dir`] with an explicit bound on the trace size
+/// and an optional fixed recording id.
+pub fn convert_aptos_replay_dir_bounded(
+    dir: &Path,
     out_dir: &Path,
-) -> Result<()> {
-    let trace_entries = parse_move_vm_trace_csv(trace_csv);
-    if trace_entries.is_empty() {
-        bail!("no trace entries in MOVE_VM_TRACE CSV data");
-    }
-
-    let gas_profile = match gas_profile_json {
-        Some(json) => Some(parse_gas_profile_json(json)?),
-        None => None,
-    };
-
-    let enriched = merge_trace_and_gas(&trace_entries, gas_profile.as_ref());
-
-    fs::create_dir_all(out_dir).map_err(|e| eyre!("failed to create output directory: {e}"))?;
-
-    aptos_adapter::convert_aptos_trace(&enriched, source_path, out_dir)?;
-
-    Ok(())
+    max_trace_bytes: u64,
+    recording_id: Option<&str>,
+) -> Result<ReplayConversion> {
+    let trace_file = ["trace.json", "trace.json.zst"]
+        .iter()
+        .map(|name| dir.join(name))
+        .find(|path| path.is_file())
+        .ok_or_else(|| eyre!("no trace.json or trace.json.zst in {}", dir.display()))?;
+    replay::convert_replay_trace(
+        &trace_file,
+        out_dir,
+        max_trace_bytes,
+        recording_id,
+        || {
+            DebugInfo::from_aptos_replay_dir(dir)
+                .wrap_err_with(|| format!("Failed to read replay directory: {}", dir.display()))
+        },
+        ConverterOptions::default().with_chain(MoveChain::Aptos),
+        "transaction.masm",
+    )
 }
 
-/// Run `aptos move replay` with `MOVE_VM_TRACE` env var set.
-fn run_aptos_replay_with_trace(
-    node_url: &str,
-    txn_version: u64,
-    trace_output_path: &Path,
-    work_dir: &Path,
-) -> Result<String> {
-    let output = Command::new("aptos")
-        .args([
-            "move",
-            "replay",
-            "--txn-version",
-            &txn_version.to_string(),
-            "--node-url",
-            node_url,
-        ])
-        .env("MOVE_VM_TRACE", trace_output_path.to_str().unwrap_or(""))
-        .current_dir(work_dir)
-        .output()
-        .map_err(|e| eyre!("failed to execute aptos move replay: {e}"))?;
+/// The `(address, module)` pairs — address as 64 hex digits — of every
+/// module a trace opened a frame in, in sorted order.
+pub fn executed_modules(trace_data: &[u8]) -> Result<BTreeSet<(String, String)>> {
+    #[derive(Deserialize)]
+    struct Line {
+        #[serde(rename = "OpenFrame")]
+        open_frame: Option<OpenFrame>,
+    }
+    #[derive(Deserialize)]
+    struct OpenFrame {
+        frame: FrameModule,
+    }
+    #[derive(Deserialize)]
+    struct FrameModule {
+        module: crate::move_types::ModuleId,
+    }
 
+    let text = std::str::from_utf8(trace_data).wrap_err("trace is not UTF-8")?;
+    let mut modules = BTreeSet::new();
+    for (i, line) in text.lines().enumerate().skip(1) {
+        if !line.starts_with("{\"OpenFrame\"") {
+            continue;
+        }
+        let parsed: Line = serde_json::from_str(line)
+            .wrap_err_with(|| format!("trace line {}: malformed OpenFrame", i + 1))?;
+        if let Some(open) = parsed.open_frame {
+            modules.insert((
+                normalize_address(&open.frame.module.address),
+                open.frame.module.name,
+            ));
+        }
+    }
+    Ok(modules)
+}
+
+/// Run `aptos move replay --trace`, writing the trace to `trace_file`.
+fn run_aptos_replay(config: &AptosReplayConfig, trace_file: &Path, work_dir: &Path) -> Result<()> {
+    let mut command = Command::new(&config.aptos_cli);
+    command
+        .args(["move", "replay", "--network", &config.network, "--txn-id"])
+        .arg(config.txn_version.to_string())
+        .arg("--trace")
+        .arg(trace_file)
+        .current_dir(work_dir);
+    if let Some(key) = &config.node_api_key {
+        command.args(["--node-api-key", key]);
+    }
+    let output = command.output().map_err(|e| {
+        eyre!(
+            "failed to run {} (an Aptos CLI with `move replay --trace` is required; \
+             see metacraft-labs/aptos-core, branch codetracer/value-tracing): {e}",
+            config.aptos_cli.display()
+        )
+    })?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        if stderr.contains("not found") || stderr.contains("does not exist") {
+        let stdout = String::from_utf8_lossy(&output.stdout);
+        if stderr.contains("--trace") && stderr.contains("unexpected argument") {
             bail!(
-                "Transaction version {txn_version} could not be replayed. \
-                 It may not exist or the node may not have the required data.\n\
-                 Node URL: {node_url}\nError: {stderr}"
+                "{} does not support `aptos move replay --trace`; use the CodeTracer \
+                 build of the Aptos CLI (metacraft-labs/aptos-core, branch \
+                 codetracer/value-tracing).\n{stderr}",
+                config.aptos_cli.display()
             );
         }
         bail!(
-            "aptos move replay failed with exit code {:?}\nstderr: {}",
+            "aptos move replay of version {} on {} failed with exit code {:?}\n\
+             stdout: {stdout}\nstderr: {stderr}",
+            config.txn_version,
+            config.network,
             output.status.code(),
-            stderr
         );
     }
-
-    // Read the trace CSV file produced by MOVE_VM_TRACE.
-    if trace_output_path.exists() {
-        fs::read_to_string(trace_output_path)
-            .map_err(|e| eyre!("failed to read MOVE_VM_TRACE output: {e}"))
-    } else {
-        // Some versions of the Aptos VM may not produce the trace file
-        // if MOVE_VM_TRACE is not supported or the feature is disabled.
+    if !trace_file.is_file() {
         bail!(
-            "MOVE_VM_TRACE output file was not created at {}.\n\
-             The Aptos CLI may not support MOVE_VM_TRACE, or the transaction \
-             did not execute any Move bytecode.",
-            trace_output_path.display()
+            "aptos move replay exited successfully but wrote no trace at {}",
+            trace_file.display()
         );
     }
+    Ok(())
 }
 
-/// Run `aptos move replay --profile-gas` and parse the JSON output.
-fn run_aptos_replay_with_gas_profile(
-    node_url: &str,
-    txn_version: u64,
-    work_dir: &Path,
-) -> Result<aptos_adapter::AptosGasProfile> {
-    let output = Command::new("aptos")
+/// Fetch a module's bytecode at `ledger_version` from the REST API.
+fn fetch_module_bytecode(
+    rest_base: &str,
+    address: &str,
+    module: &str,
+    ledger_version: u64,
+    api_key: Option<&str>,
+) -> Result<Vec<u8>> {
+    let url =
+        format!("{rest_base}/accounts/0x{address}/module/{module}?ledger_version={ledger_version}");
+    let mut command = Command::new("curl");
+    command
+        // The public fullnodes allow an anonymous client 40,000 compute
+        // units per 300 seconds and answer 429 beyond that; waiting out one
+        // window is enough, so retries span a little more than one.
         .args([
-            "move",
-            "replay",
-            "--txn-version",
-            &txn_version.to_string(),
-            "--node-url",
-            node_url,
-            "--profile-gas",
+            "-sS",
+            "--fail-with-body",
+            "--retry",
+            "12",
+            "--retry-delay",
+            "30",
         ])
-        .current_dir(work_dir)
-        .output()
-        .map_err(|e| eyre!("failed to execute aptos move replay --profile-gas: {e}"))?;
-
+        .arg(&url)
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped());
+    // The key is passed on stdin rather than in the argument list, which
+    // other users of the machine can read.
+    if api_key.is_some() {
+        command.args(["-H", "@-"]).stdin(Stdio::piped());
+    }
+    let mut child = command
+        .spawn()
+        .map_err(|e| eyre!("failed to run curl for {url}: {e}"))?;
+    if let Some(key) = api_key
+        && let Some(mut stdin) = child.stdin.take()
+    {
+        writeln!(stdin, "Authorization: Bearer {key}")?;
+    }
+    let output = child.wait_with_output()?;
     if !output.status.success() {
         let stderr = String::from_utf8_lossy(&output.stderr);
-        bail!("aptos move replay --profile-gas failed: {stderr}");
+        let hint = if stderr.contains("429") {
+            "\nThe node is rate-limiting this client: pass --node-api-key, or rerun later \
+             with --replay-dir to reuse what was already fetched."
+        } else {
+            ""
+        };
+        bail!(
+            "fetching {url} failed: {stderr}{}{hint}",
+            String::from_utf8_lossy(&output.stdout)
+        );
     }
-
-    // The gas profiler writes output files to the working directory.
-    // Look for a JSON file with gas profile data.
-    let gas_json_path = find_gas_profile_json(work_dir)?;
-    let json_data = fs::read_to_string(&gas_json_path)
-        .map_err(|e| eyre!("failed to read gas profile JSON: {e}"))?;
-
-    parse_gas_profile_json(&json_data)
+    #[derive(Deserialize)]
+    struct MoveModuleBytecode {
+        bytecode: String,
+    }
+    let body: MoveModuleBytecode = serde_json::from_slice(&output.stdout)
+        .wrap_err_with(|| format!("{url} did not return a module"))?;
+    decode_hex(&body.bytecode).wrap_err_with(|| format!("{url}: bytecode is not hex"))
 }
 
-/// Find the gas profile JSON file in the work directory.
-fn find_gas_profile_json(dir: &Path) -> Result<PathBuf> {
-    let entries =
-        fs::read_dir(dir).map_err(|e| eyre!("failed to read directory {}: {e}", dir.display()))?;
-
-    for entry in entries.filter_map(|e| e.ok()) {
-        let path = entry.path();
-        let name = path.file_name().unwrap_or_default().to_string_lossy();
-        if name.ends_with(".json") && name.contains("gas") {
-            return Ok(path);
-        }
+/// Decode `0x`-prefixed (or bare) hex.
+fn decode_hex(text: &str) -> Result<Vec<u8>> {
+    let hex = text.strip_prefix("0x").unwrap_or(text);
+    if !hex.len().is_multiple_of(2) {
+        bail!("odd number of hex digits");
     }
-
-    Err(eyre!("no gas profile JSON file found in {}", dir.display()))
+    (0..hex.len())
+        .step_by(2)
+        .map(|i| u8::from_str_radix(&hex[i..i + 2], 16).map_err(|e| eyre!("at offset {i}: {e}")))
+        .collect()
 }
 
-/// Find the first .move file in a directory (recursively).
-fn find_first_move_file(dir: &Path) -> Option<PathBuf> {
-    if !dir.exists() {
-        return None;
+/// Run `aptos move disassemble` on `mv`, writing `<module>.mv.masm` to
+/// `out_dir`.
+fn disassemble(aptos_cli: &Path, mv: &Path, out_dir: &Path) -> Result<()> {
+    let output = Command::new(aptos_cli)
+        .args(["move", "disassemble", "--assume-yes", "--bytecode-path"])
+        .arg(mv)
+        .arg("--output-dir")
+        .arg(out_dir)
+        .current_dir(out_dir)
+        .output()
+        .map_err(|e| {
+            eyre!(
+                "failed to run {} move disassemble: {e}",
+                aptos_cli.display()
+            )
+        })?;
+    let masm = out_dir.join(format!(
+        "{}.masm",
+        mv.file_name().unwrap_or_default().to_string_lossy()
+    ));
+    if !output.status.success() || !masm.is_file() {
+        bail!(
+            "aptos move disassemble of {} did not write {} (exit code {:?})\nstdout: {}\nstderr: {}",
+            mv.display(),
+            masm.display(),
+            output.status.code(),
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        );
     }
-    walkdir::WalkDir::new(dir)
-        .into_iter()
-        .filter_map(|e| e.ok())
-        .find(|e| e.path().extension().is_some_and(|ext| ext == "move"))
-        .map(|e| e.path().to_path_buf())
+    Ok(())
 }
 
 /// Fetch historical account resources from the Aptos REST API.
@@ -317,4 +416,36 @@ pub fn fetch_historical_resources(
 
     let body = String::from_utf8_lossy(&output.stdout);
     aptos_adapter::parse_resources_response(&body)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn rest_base_follows_the_network_name() {
+        assert_eq!(
+            rest_base_url("mainnet"),
+            "https://fullnode.mainnet.aptoslabs.com/v1"
+        );
+        assert_eq!(
+            rest_base_url("http://localhost:8080"),
+            "http://localhost:8080/v1"
+        );
+        assert_eq!(
+            rest_base_url("http://localhost:8080/v1/"),
+            "http://localhost:8080/v1"
+        );
+    }
+
+    #[test]
+    fn hex_decodes_with_and_without_prefix() {
+        assert_eq!(
+            decode_hex("0xa11ceb0b").unwrap(),
+            vec![0xa1, 0x1c, 0xeb, 0x0b]
+        );
+        assert_eq!(decode_hex("00ff").unwrap(), vec![0, 255]);
+        assert!(decode_hex("0xabc").is_err());
+        assert!(decode_hex("zz").is_err());
+    }
 }

@@ -1,0 +1,2364 @@
+// Bytecode version v10
+module 0x1::transaction_validation
+use 0x1::transaction_fee
+use 0x1::option
+use 0x1::transaction_limits
+use 0x1::system_addresses
+use 0x1::timestamp
+use 0x1::nonce_validation
+use 0x1::account
+use 0x1::features
+use 0x1::signer
+use 0x1::aptos_account
+use 0x1::create_signer
+use 0x1::vector
+use 0x1::account_abstraction
+use 0x1::chain_id
+use 0x1::bcs
+friend 0x1::genesis
+enum EpilogueArgs
+  V1
+    fee_statement: transaction_fee::FeeStatement
+    txn_gas_price: u64
+    txn_max_gas_units: u64
+    gas_units_remaining: u64
+    is_simulation: bool
+    is_orderless_txn: bool
+
+struct GasPermission has copy + drop + store
+  dummy_field: bool
+
+enum PrologueArgs
+  V1
+    needs_fee_payer_auth_check: bool
+    txn_sender_public_key: option::Option<vector<u8>>
+    fee_payer_public_key_hash: option::Option<vector<u8>>
+    replay_protector: ReplayProtector
+    secondary_signer_addresses: vector<address>
+    secondary_signer_public_key_hashes: vector<option::Option<vector<u8>>>
+    txn_gas_price: u64
+    txn_max_gas_units: u64
+    txn_expiration_time: u64
+    chain_id: u8
+    is_simulation: bool
+    txn_limits_request: option::Option<transaction_limits::UserTxnLimitsRequest>
+
+enum ReplayProtector
+  Nonce
+    _0: u64
+  SequenceNumber
+    _0: u64
+
+struct TransactionValidation has key
+  module_addr: address
+  module_name: vector<u8>
+  script_prologue_name: vector<u8>
+  module_prologue_name: vector<u8>
+  multi_agent_prologue_name: vector<u8>
+  user_epilogue_name: vector<u8>
+
+// Function definition at index 0
+friend fun initialize(l0: &signer, l1: vector<u8>, l2: vector<u8>, l3: vector<u8>, l4: vector<u8>)
+    copy_loc l0
+    call system_addresses::assert_aptos_framework
+    move_loc l0
+    ld_const<address> 1
+    ld_const<vector<u8>> [116, 114, 97, 110, 115, 97, 99, 116, 105, 111, 110, 95, 118, 97, 108, 105, 100, 97, 116, 105, 111, 110]
+    // @5
+    move_loc l1
+    move_loc l2
+    move_loc l3
+    move_loc l4
+    pack TransactionValidation
+    // @10
+    move_to TransactionValidation
+    ret
+
+// Function definition at index 1
+fun check_for_replay_protection_orderless_txn(l0: address, l1: u64, l2: u64)
+    copy_loc l2
+    call timestamp::now_microseconds
+    ld_u64 1000000
+    div
+    ld_u64 100
+    // @5
+    add
+    le
+    br_false l0
+    move_loc l0
+    move_loc l1
+    // @10
+    move_loc l2
+    call nonce_validation::check_and_insert_nonce
+    br_false l1
+    ret
+l1: ld_u64 66548
+    // @15
+    abort
+l0: ld_u64 66549
+    abort
+
+// Function definition at index 2
+fun check_for_replay_protection_regular_txn(l0: address, l1: address, l2: u64)
+    local l3: bool
+    local l4: bool
+    local l5: bool
+    local l6: u64
+    copy_loc l0
+    move_loc l1
+    eq
+    br_false l0
+    ld_true
+    // @5
+    st_loc l3
+l11: move_loc l3
+    br_false l1
+    ld_true
+    st_loc l4
+    // @10
+l10: move_loc l4
+    br_false l2
+    ld_true
+    st_loc l5
+l9: move_loc l5
+    // @15
+    br_false l3
+    copy_loc l0
+    call account::exists_at
+    br_false l4
+    move_loc l0
+    // @20
+    call account::get_sequence_number
+    st_loc l6
+    copy_loc l2
+    ld_u64 9223372036854775808
+    lt
+    // @25
+    br_false l5
+    copy_loc l2
+    copy_loc l6
+    ge
+    br_false l6
+    // @30
+    move_loc l2
+    move_loc l6
+    eq
+    br_false l7
+    ret
+    // @35
+l7: ld_u64 66539
+    abort
+l6: ld_u64 66538
+    abort
+l5: ld_u64 132080
+    // @40
+    abort
+l4: ld_u64 66540
+    abort
+l3: move_loc l2
+    ld_u64 0
+    // @45
+    eq
+    br_false l8
+    ret
+l8: ld_u64 66539
+    abort
+    // @50
+l2: copy_loc l2
+    ld_u64 0
+    gt
+    st_loc l5
+    branch l9
+    // @55
+l1: ld_u64 34
+    call features::is_enabled
+    not
+    st_loc l4
+    branch l10
+    // @60
+l0: copy_loc l0
+    call account::exists_at
+    st_loc l3
+    branch l11
+
+// Function definition at index 3
+fun epilogue(l0: signer, l1: u64, l2: u64, l3: u64, l4: u64)
+    local l5: address
+    local l6: signer
+    local l7: u64
+    local l8: u64
+    local l9: address
+    local l10: bool
+    local l11: u64
+    borrow_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l5
+    move_loc l0
+    // @5
+    st_loc l6
+    copy_loc l3
+    copy_loc l4
+    ge
+    br_false l0
+    // @10
+    move_loc l3
+    move_loc l4
+    sub
+    st_loc l7
+    copy_loc l2
+    // @15
+    cast_u128
+    copy_loc l7
+    cast_u128
+    mul
+    ld_u128 18446744073709551615
+    // @20
+    le
+    br_false l1
+    move_loc l2
+    move_loc l7
+    mul
+    // @25
+    st_loc l8
+    copy_loc l5
+    st_loc l9
+    branch l2
+    move_loc l9
+    // @30
+    ld_const<address> 0
+    eq
+    st_loc l10
+l8: move_loc l10
+    br_false l3
+    // @35
+    branch l4
+l3: copy_loc l5
+    copy_loc l8
+    call aptos_account::is_fungible_balance_at_least
+    br_false l5
+    // @40
+    copy_loc l8
+    copy_loc l1
+    gt
+    br_false l6
+    move_loc l8
+    // @45
+    move_loc l1
+    sub
+    st_loc l11
+    move_loc l5
+    move_loc l11
+    // @50
+    call transaction_fee::burn_fee
+l4: borrow_loc l6
+    call signer::borrow_address
+    read_ref
+    call account::increment_sequence_number
+    // @55
+    ret
+l6: copy_loc l8
+    copy_loc l1
+    lt
+    br_true l7
+    // @60
+    branch l4
+l7: move_loc l1
+    move_loc l8
+    sub
+    st_loc l11
+    // @65
+    move_loc l5
+    move_loc l11
+    call transaction_fee::mint_and_refund
+    branch l4
+l5: ld_u64 132077
+    // @70
+    abort
+l2: ld_false
+    st_loc l10
+    branch l8
+l1: ld_u64 131078
+    // @75
+    abort
+l0: ld_u64 65542
+    abort
+
+// Function definition at index 4
+fun epilogue_extended(l0: signer, l1: u64, l2: u64, l3: u64, l4: u64, l5: bool)
+    local l6: address
+    local l7: signer
+    local l8: u64
+    local l9: u64
+    local l10: address
+    local l11: bool
+    local l12: u64
+    borrow_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l6
+    move_loc l0
+    // @5
+    st_loc l7
+    copy_loc l3
+    copy_loc l4
+    ge
+    br_false l0
+    // @10
+    move_loc l3
+    move_loc l4
+    sub
+    st_loc l8
+    copy_loc l2
+    // @15
+    cast_u128
+    copy_loc l8
+    cast_u128
+    mul
+    ld_u128 18446744073709551615
+    // @20
+    le
+    br_false l1
+    move_loc l2
+    move_loc l8
+    mul
+    // @25
+    st_loc l9
+    move_loc l5
+    copy_loc l6
+    st_loc l10
+    br_false l2
+    // @30
+    move_loc l10
+    ld_const<address> 0
+    eq
+    st_loc l11
+l8: move_loc l11
+    // @35
+    br_false l3
+    branch l4
+l3: copy_loc l6
+    copy_loc l9
+    call aptos_account::is_fungible_balance_at_least
+    // @40
+    br_false l5
+    copy_loc l9
+    copy_loc l1
+    gt
+    br_false l6
+    // @45
+    move_loc l9
+    move_loc l1
+    sub
+    st_loc l12
+    move_loc l6
+    // @50
+    move_loc l12
+    call transaction_fee::burn_fee
+l4: borrow_loc l7
+    call signer::borrow_address
+    read_ref
+    // @55
+    call account::increment_sequence_number
+    ret
+l6: copy_loc l9
+    copy_loc l1
+    lt
+    // @60
+    br_true l7
+    branch l4
+l7: move_loc l1
+    move_loc l9
+    sub
+    // @65
+    st_loc l12
+    move_loc l6
+    move_loc l12
+    call transaction_fee::mint_and_refund
+    branch l4
+    // @70
+l5: ld_u64 132077
+    abort
+l2: ld_false
+    st_loc l11
+    branch l8
+    // @75
+l1: ld_u64 131078
+    abort
+l0: ld_u64 65542
+    abort
+
+// Function definition at index 5
+fun epilogue_gas_payer(l0: signer, l1: address, l2: u64, l3: u64, l4: u64, l5: u64)
+    local l6: signer
+    local l7: u64
+    local l8: u64
+    local l9: address
+    local l10: bool
+    local l11: u64
+    move_loc l0
+    st_loc l6
+    copy_loc l4
+    copy_loc l5
+    ge
+    // @5
+    br_false l0
+    move_loc l4
+    move_loc l5
+    sub
+    st_loc l7
+    // @10
+    copy_loc l3
+    cast_u128
+    copy_loc l7
+    cast_u128
+    mul
+    // @15
+    ld_u128 18446744073709551615
+    le
+    br_false l1
+    move_loc l3
+    move_loc l7
+    // @20
+    mul
+    st_loc l8
+    copy_loc l1
+    st_loc l9
+    branch l2
+    // @25
+    move_loc l9
+    ld_const<address> 0
+    eq
+    st_loc l10
+l8: move_loc l10
+    // @30
+    br_false l3
+    branch l4
+l3: copy_loc l1
+    copy_loc l8
+    call aptos_account::is_fungible_balance_at_least
+    // @35
+    br_false l5
+    copy_loc l8
+    copy_loc l2
+    gt
+    br_false l6
+    // @40
+    move_loc l8
+    move_loc l2
+    sub
+    st_loc l11
+    move_loc l1
+    // @45
+    move_loc l11
+    call transaction_fee::burn_fee
+l4: borrow_loc l6
+    call signer::borrow_address
+    read_ref
+    // @50
+    call account::increment_sequence_number
+    ret
+l6: copy_loc l8
+    copy_loc l2
+    lt
+    // @55
+    br_true l7
+    branch l4
+l7: move_loc l2
+    move_loc l8
+    sub
+    // @60
+    st_loc l11
+    move_loc l1
+    move_loc l11
+    call transaction_fee::mint_and_refund
+    branch l4
+    // @65
+l5: ld_u64 132077
+    abort
+l2: ld_false
+    st_loc l10
+    branch l8
+    // @70
+l1: ld_u64 131078
+    abort
+l0: ld_u64 65542
+    abort
+
+// Function definition at index 6
+fun epilogue_gas_payer_extended(l0: signer, l1: address, l2: u64, l3: u64, l4: u64, l5: u64, l6: bool)
+    local l7: u64
+    local l8: u64
+    local l9: address
+    local l10: bool
+    local l11: u64
+    copy_loc l4
+    copy_loc l5
+    ge
+    br_false l0
+    move_loc l4
+    // @5
+    move_loc l5
+    sub
+    st_loc l7
+    copy_loc l3
+    cast_u128
+    // @10
+    copy_loc l7
+    cast_u128
+    mul
+    ld_u128 18446744073709551615
+    le
+    // @15
+    br_false l1
+    move_loc l3
+    move_loc l7
+    mul
+    st_loc l8
+    // @20
+    move_loc l6
+    copy_loc l1
+    st_loc l9
+    br_false l2
+    move_loc l9
+    // @25
+    ld_const<address> 0
+    eq
+    st_loc l10
+l8: move_loc l10
+    br_false l3
+    // @30
+    branch l4
+l3: copy_loc l1
+    copy_loc l8
+    call aptos_account::is_fungible_balance_at_least
+    br_false l5
+    // @35
+    copy_loc l8
+    copy_loc l2
+    gt
+    br_false l6
+    move_loc l8
+    // @40
+    move_loc l2
+    sub
+    st_loc l11
+    move_loc l1
+    move_loc l11
+    // @45
+    call transaction_fee::burn_fee
+l4: borrow_loc l0
+    call signer::borrow_address
+    read_ref
+    call account::increment_sequence_number
+    // @50
+    ret
+l6: copy_loc l8
+    copy_loc l2
+    lt
+    br_true l7
+    // @55
+    branch l4
+l7: move_loc l2
+    move_loc l8
+    sub
+    st_loc l11
+    // @60
+    move_loc l1
+    move_loc l11
+    call transaction_fee::mint_and_refund
+    branch l4
+l5: ld_u64 132077
+    // @65
+    abort
+l2: ld_false
+    st_loc l10
+    branch l8
+l1: ld_u64 131078
+    // @70
+    abort
+l0: ld_u64 65542
+    abort
+
+// Function definition at index 7
+fun fee_payer_script_prologue(l0: signer, l1: u64, l2: vector<u8>, l3: vector<address>, l4: vector<vector<u8>>, l5: address, l6: vector<u8>, l7: u64, l8: u64, l9: u64, l10: u8)
+    local l11: signer
+    local l12: vector<address>
+    local l13: vector<option::Option<vector<u8>>>
+    local l14: vector<vector<u8>>
+    local l15: &mut vector<vector<u8>>
+    local l16: vector<vector<u8>>
+    local l17: vector<option::Option<vector<u8>>>
+    local l18: address
+    local l19: &option::Option<vector<u8>>
+    local l20: option::Option<vector<u8>>
+    local l21: bool
+    local l22: address
+    local l23: bool
+    borrow_loc l0
+    copy_loc l5
+    call create_signer::create_signer
+    st_loc l11
+    borrow_loc l11
+    // @5
+    move_loc l1
+    pack_variant ReplayProtector, SequenceNumber
+    move_loc l2
+    call option::some<vector<u8>>
+    move_loc l7
+    // @10
+    move_loc l8
+    move_loc l9
+    move_loc l10
+    ld_false
+    call option::none<transaction_limits::UserTxnLimitsRequest>
+    // @15
+    call prologue_common
+    move_loc l3
+    st_loc l12
+    vec_pack <option::Option<vector<u8>>>, 0
+    st_loc l13
+    // @20
+    move_loc l4
+    st_loc l14
+    mut_borrow_loc l14
+    st_loc l15
+    copy_loc l15
+    // @25
+    freeze_ref
+    vec_len <vector<u8>>
+    st_loc l1
+    move_loc l15
+    ld_u64 0
+    // @30
+    move_loc l1
+    call vector::reverse_slice<vector<u8>>
+    move_loc l14
+    st_loc l16
+    borrow_loc l16
+    // @35
+    vec_len <vector<u8>>
+    st_loc l1
+l1: copy_loc l1
+    ld_u64 0
+    gt
+    // @40
+    br_false l0
+    mut_borrow_loc l16
+    vec_pop_back <vector<u8>>
+    st_loc l2
+    mut_borrow_loc l13
+    // @45
+    move_loc l2
+    call option::some<vector<u8>>
+    vec_push_back <option::Option<vector<u8>>>
+    move_loc l1
+    ld_u64 1
+    // @50
+    sub
+    st_loc l1
+    branch l1
+l0: move_loc l16
+    vec_unpack <vector<u8>>, 0
+    // @55
+    move_loc l13
+    st_loc l17
+    borrow_loc l12
+    vec_len <address>
+    st_loc l1
+    // @60
+    borrow_loc l17
+    vec_len <option::Option<vector<u8>>>
+    copy_loc l1
+    eq
+    br_false l2
+    // @65
+    ld_u64 0
+    st_loc l7
+l11: copy_loc l7
+    copy_loc l1
+    lt
+    // @70
+    br_false l3
+    borrow_loc l12
+    copy_loc l7
+    vec_borrow <address>
+    read_ref
+    // @75
+    st_loc l18
+    copy_loc l18
+    call account::exists_at
+    br_false l4
+    borrow_loc l17
+    // @80
+    copy_loc l7
+    vec_borrow <option::Option<vector<u8>>>
+    read_ref
+    st_loc l20
+    borrow_loc l20
+    // @85
+    st_loc l19
+    branch l5
+    copy_loc l19
+    call option::is_none<vector<u8>>
+    br_false l6
+    // @90
+    move_loc l19
+    pop
+    ld_true
+    st_loc l21
+l16: move_loc l21
+    // @95
+    br_false l7
+    branch l8
+l7: borrow_loc l20
+    call option::is_some<vector<u8>>
+    br_false l9
+    // @100
+    move_loc l20
+    move_loc l18
+    call account::get_authentication_key
+    call option::some<vector<u8>>
+    eq
+    // @105
+    br_false l10
+    branch l8
+l8: move_loc l7
+    ld_u64 1
+    add
+    // @110
+    st_loc l7
+    branch l11
+l10: ld_u64 66537
+    abort
+l9: move_loc l18
+    // @115
+    st_loc l22
+    ld_u64 88
+    call features::is_enabled
+    br_false l12
+    ld_true
+    // @120
+    st_loc l23
+l15: move_loc l23
+    br_false l13
+    branch l8
+l13: ld_u64 66537
+    // @125
+    abort
+l12: ld_u64 85
+    call features::is_enabled
+    br_false l14
+    move_loc l22
+    // @130
+    call account_abstraction::using_dispatchable_authenticator
+    st_loc l23
+    branch l15
+l14: ld_false
+    st_loc l23
+    // @135
+    branch l15
+l6: move_loc l19
+    call option::borrow<vector<u8>>
+    vec_len <u8>
+    ld_u64 0
+    // @140
+    eq
+    st_loc l21
+    branch l16
+l5: move_loc l19
+    pop
+    // @145
+    ld_false
+    st_loc l21
+    branch l16
+l4: ld_u64 66540
+    abort
+    // @150
+l3: move_loc l6
+    move_loc l5
+    call account::get_authentication_key
+    eq
+    br_false l17
+    // @155
+    ret
+l17: ld_u64 66537
+    abort
+l2: ld_u64 66545
+    abort
+
+// Function definition at index 8
+fun fee_payer_script_prologue_extended(l0: signer, l1: u64, l2: vector<u8>, l3: vector<address>, l4: vector<vector<u8>>, l5: address, l6: vector<u8>, l7: u64, l8: u64, l9: u64, l10: u8, l11: bool)
+    local l12: signer
+    local l13: vector<address>
+    local l14: vector<option::Option<vector<u8>>>
+    local l15: vector<vector<u8>>
+    local l16: &mut vector<vector<u8>>
+    local l17: vector<vector<u8>>
+    local l18: vector<option::Option<vector<u8>>>
+    local l19: bool
+    local l20: address
+    local l21: &option::Option<vector<u8>>
+    local l22: option::Option<vector<u8>>
+    local l23: bool
+    local l24: address
+    local l25: bool
+    local l26: option::Option<vector<u8>>
+    borrow_loc l0
+    copy_loc l5
+    call create_signer::create_signer
+    st_loc l12
+    borrow_loc l12
+    // @5
+    move_loc l1
+    pack_variant ReplayProtector, SequenceNumber
+    move_loc l2
+    call option::some<vector<u8>>
+    move_loc l7
+    // @10
+    move_loc l8
+    move_loc l9
+    move_loc l10
+    copy_loc l11
+    call option::none<transaction_limits::UserTxnLimitsRequest>
+    // @15
+    call prologue_common
+    move_loc l3
+    st_loc l13
+    vec_pack <option::Option<vector<u8>>>, 0
+    st_loc l14
+    // @20
+    move_loc l4
+    st_loc l15
+    mut_borrow_loc l15
+    st_loc l16
+    copy_loc l16
+    // @25
+    freeze_ref
+    vec_len <vector<u8>>
+    st_loc l1
+    move_loc l16
+    ld_u64 0
+    // @30
+    move_loc l1
+    call vector::reverse_slice<vector<u8>>
+    move_loc l15
+    st_loc l17
+    borrow_loc l17
+    // @35
+    vec_len <vector<u8>>
+    st_loc l1
+l1: copy_loc l1
+    ld_u64 0
+    gt
+    // @40
+    br_false l0
+    mut_borrow_loc l17
+    vec_pop_back <vector<u8>>
+    st_loc l2
+    mut_borrow_loc l14
+    // @45
+    move_loc l2
+    call option::some<vector<u8>>
+    vec_push_back <option::Option<vector<u8>>>
+    move_loc l1
+    ld_u64 1
+    // @50
+    sub
+    st_loc l1
+    branch l1
+l0: move_loc l17
+    vec_unpack <vector<u8>>, 0
+    // @55
+    move_loc l14
+    st_loc l18
+    copy_loc l11
+    st_loc l19
+    borrow_loc l13
+    // @60
+    vec_len <address>
+    st_loc l1
+    borrow_loc l18
+    vec_len <option::Option<vector<u8>>>
+    copy_loc l1
+    // @65
+    eq
+    br_false l2
+    ld_u64 0
+    st_loc l7
+l11: copy_loc l7
+    // @70
+    copy_loc l1
+    lt
+    br_false l3
+    borrow_loc l13
+    copy_loc l7
+    // @75
+    vec_borrow <address>
+    read_ref
+    st_loc l20
+    copy_loc l20
+    call account::exists_at
+    // @80
+    br_false l4
+    borrow_loc l18
+    copy_loc l7
+    vec_borrow <option::Option<vector<u8>>>
+    read_ref
+    // @85
+    st_loc l22
+    copy_loc l19
+    borrow_loc l22
+    st_loc l21
+    br_false l5
+    // @90
+    copy_loc l21
+    call option::is_none<vector<u8>>
+    br_false l6
+    move_loc l21
+    pop
+    // @95
+    ld_true
+    st_loc l23
+l16: move_loc l23
+    br_false l7
+    branch l8
+    // @100
+l7: borrow_loc l22
+    call option::is_some<vector<u8>>
+    br_false l9
+    move_loc l22
+    move_loc l20
+    // @105
+    call account::get_authentication_key
+    call option::some<vector<u8>>
+    eq
+    br_false l10
+    branch l8
+    // @110
+l8: move_loc l7
+    ld_u64 1
+    add
+    st_loc l7
+    branch l11
+    // @115
+l10: ld_u64 66537
+    abort
+l9: move_loc l20
+    st_loc l24
+    ld_u64 88
+    // @120
+    call features::is_enabled
+    br_false l12
+    ld_true
+    st_loc l25
+l15: move_loc l25
+    // @125
+    br_false l13
+    branch l8
+l13: ld_u64 66537
+    abort
+l12: ld_u64 85
+    // @130
+    call features::is_enabled
+    br_false l14
+    move_loc l24
+    call account_abstraction::using_dispatchable_authenticator
+    st_loc l25
+    // @135
+    branch l15
+l14: ld_false
+    st_loc l25
+    branch l15
+l6: move_loc l21
+    // @140
+    call option::borrow<vector<u8>>
+    vec_len <u8>
+    ld_u64 0
+    eq
+    st_loc l23
+    // @145
+    branch l16
+l5: move_loc l21
+    pop
+    ld_false
+    st_loc l23
+    // @150
+    branch l16
+l4: ld_u64 66540
+    abort
+l3: move_loc l11
+    copy_loc l6
+    // @155
+    call option::some<vector<u8>>
+    st_loc l26
+    borrow_loc l26
+    st_loc l21
+    br_false l17
+    // @160
+    copy_loc l21
+    call option::is_none<vector<u8>>
+    br_false l18
+    move_loc l21
+    pop
+    // @165
+    ld_true
+    st_loc l23
+l21: move_loc l23
+    br_true l19
+    move_loc l6
+    // @170
+    move_loc l5
+    call account::get_authentication_key
+    eq
+    br_false l20
+    ret
+    // @175
+l20: ld_u64 66537
+    abort
+l19: ret
+l18: move_loc l21
+    call option::borrow<vector<u8>>
+    // @180
+    vec_len <u8>
+    ld_u64 0
+    eq
+    st_loc l23
+    branch l21
+    // @185
+l17: move_loc l21
+    pop
+    ld_false
+    st_loc l23
+    branch l21
+    // @190
+l2: ld_u64 66545
+    abort
+
+// Function definition at index 9
+#[persistent] public fun grant_gas_permission(l0: &signer, l1: &signer, l2: u64)
+    ld_u64 851975
+    move_loc l0
+    pop
+    move_loc l1
+    pop
+    // @5
+    abort
+
+// Function definition at index 10
+fun multi_agent_common_prologue(l0: vector<address>, l1: vector<option::Option<vector<u8>>>, l2: bool)
+    local l3: u64
+    local l4: u64
+    local l5: address
+    local l6: &option::Option<vector<u8>>
+    local l7: option::Option<vector<u8>>
+    local l8: bool
+    local l9: address
+    local l10: bool
+    borrow_loc l0
+    vec_len <address>
+    st_loc l3
+    borrow_loc l1
+    vec_len <option::Option<vector<u8>>>
+    // @5
+    copy_loc l3
+    eq
+    br_false l0
+    ld_u64 0
+    st_loc l4
+    // @10
+l9: copy_loc l4
+    copy_loc l3
+    lt
+    br_false l1
+    borrow_loc l0
+    // @15
+    copy_loc l4
+    vec_borrow <address>
+    read_ref
+    st_loc l5
+    copy_loc l5
+    // @20
+    call account::exists_at
+    br_false l2
+    borrow_loc l1
+    copy_loc l4
+    vec_borrow <option::Option<vector<u8>>>
+    // @25
+    read_ref
+    st_loc l7
+    copy_loc l2
+    borrow_loc l7
+    st_loc l6
+    // @30
+    br_false l3
+    copy_loc l6
+    call option::is_none<vector<u8>>
+    br_false l4
+    move_loc l6
+    // @35
+    pop
+    ld_true
+    st_loc l8
+l14: move_loc l8
+    br_false l5
+    // @40
+    branch l6
+l5: borrow_loc l7
+    call option::is_some<vector<u8>>
+    br_false l7
+    move_loc l7
+    // @45
+    move_loc l5
+    call account::get_authentication_key
+    call option::some<vector<u8>>
+    eq
+    br_false l8
+    // @50
+    branch l6
+l6: move_loc l4
+    ld_u64 1
+    add
+    st_loc l4
+    // @55
+    branch l9
+l8: ld_u64 66537
+    abort
+l7: move_loc l5
+    st_loc l9
+    // @60
+    ld_u64 88
+    call features::is_enabled
+    br_false l10
+    ld_true
+    st_loc l10
+    // @65
+l13: move_loc l10
+    br_false l11
+    branch l6
+l11: ld_u64 66537
+    abort
+    // @70
+l10: ld_u64 85
+    call features::is_enabled
+    br_false l12
+    move_loc l9
+    call account_abstraction::using_dispatchable_authenticator
+    // @75
+    st_loc l10
+    branch l13
+l12: ld_false
+    st_loc l10
+    branch l13
+    // @80
+l4: move_loc l6
+    call option::borrow<vector<u8>>
+    vec_len <u8>
+    ld_u64 0
+    eq
+    // @85
+    st_loc l8
+    branch l14
+l3: move_loc l6
+    pop
+    ld_false
+    // @90
+    st_loc l8
+    branch l14
+l2: ld_u64 66540
+    abort
+l1: ret
+    // @95
+l0: ld_u64 66545
+    abort
+
+// Function definition at index 11
+fun multi_agent_script_prologue(l0: signer, l1: u64, l2: vector<u8>, l3: vector<address>, l4: vector<vector<u8>>, l5: u64, l6: u64, l7: u64, l8: u8)
+    local l9: vector<option::Option<vector<u8>>>
+    local l10: vector<vector<u8>>
+    local l11: &mut vector<vector<u8>>
+    local l12: vector<vector<u8>>
+    local l13: bool
+    local l14: vector<option::Option<vector<u8>>>
+    borrow_loc l0
+    borrow_loc l0
+    move_loc l1
+    pack_variant ReplayProtector, SequenceNumber
+    move_loc l2
+    // @5
+    call option::some<vector<u8>>
+    move_loc l5
+    move_loc l6
+    move_loc l7
+    move_loc l8
+    // @10
+    ld_false
+    call option::none<transaction_limits::UserTxnLimitsRequest>
+    call prologue_common
+    vec_pack <option::Option<vector<u8>>>, 0
+    st_loc l9
+    // @15
+    move_loc l4
+    st_loc l10
+    mut_borrow_loc l10
+    st_loc l11
+    copy_loc l11
+    // @20
+    freeze_ref
+    vec_len <vector<u8>>
+    st_loc l1
+    move_loc l11
+    ld_u64 0
+    // @25
+    move_loc l1
+    call vector::reverse_slice<vector<u8>>
+    move_loc l10
+    st_loc l12
+    borrow_loc l12
+    // @30
+    vec_len <vector<u8>>
+    st_loc l1
+l1: copy_loc l1
+    ld_u64 0
+    gt
+    // @35
+    br_false l0
+    mut_borrow_loc l12
+    vec_pop_back <vector<u8>>
+    st_loc l2
+    mut_borrow_loc l9
+    // @40
+    move_loc l2
+    call option::some<vector<u8>>
+    vec_push_back <option::Option<vector<u8>>>
+    move_loc l1
+    ld_u64 1
+    // @45
+    sub
+    st_loc l1
+    branch l1
+l0: move_loc l12
+    vec_unpack <vector<u8>>, 0
+    // @50
+    move_loc l9
+    st_loc l14
+    move_loc l3
+    move_loc l14
+    ld_false
+    // @55
+    call multi_agent_common_prologue
+    ret
+
+// Function definition at index 12
+fun multi_agent_script_prologue_extended(l0: signer, l1: u64, l2: vector<u8>, l3: vector<address>, l4: vector<vector<u8>>, l5: u64, l6: u64, l7: u64, l8: u8, l9: bool)
+    local l10: vector<option::Option<vector<u8>>>
+    local l11: vector<vector<u8>>
+    local l12: &mut vector<vector<u8>>
+    local l13: vector<vector<u8>>
+    local l14: vector<option::Option<vector<u8>>>
+    borrow_loc l0
+    borrow_loc l0
+    move_loc l1
+    pack_variant ReplayProtector, SequenceNumber
+    move_loc l2
+    // @5
+    call option::some<vector<u8>>
+    move_loc l5
+    move_loc l6
+    move_loc l7
+    move_loc l8
+    // @10
+    copy_loc l9
+    call option::none<transaction_limits::UserTxnLimitsRequest>
+    call prologue_common
+    vec_pack <option::Option<vector<u8>>>, 0
+    st_loc l10
+    // @15
+    move_loc l4
+    st_loc l11
+    mut_borrow_loc l11
+    st_loc l12
+    copy_loc l12
+    // @20
+    freeze_ref
+    vec_len <vector<u8>>
+    st_loc l1
+    move_loc l12
+    ld_u64 0
+    // @25
+    move_loc l1
+    call vector::reverse_slice<vector<u8>>
+    move_loc l11
+    st_loc l13
+    borrow_loc l13
+    // @30
+    vec_len <vector<u8>>
+    st_loc l1
+l1: copy_loc l1
+    ld_u64 0
+    gt
+    // @35
+    br_false l0
+    mut_borrow_loc l13
+    vec_pop_back <vector<u8>>
+    st_loc l2
+    mut_borrow_loc l10
+    // @40
+    move_loc l2
+    call option::some<vector<u8>>
+    vec_push_back <option::Option<vector<u8>>>
+    move_loc l1
+    ld_u64 1
+    // @45
+    sub
+    st_loc l1
+    branch l1
+l0: move_loc l13
+    vec_unpack <vector<u8>>, 0
+    // @50
+    move_loc l10
+    st_loc l14
+    move_loc l3
+    move_loc l14
+    move_loc l9
+    // @55
+    call multi_agent_common_prologue
+    ret
+
+// Function definition at index 13
+fun prologue_common(l0: &signer, l1: &signer, l2: ReplayProtector, l3: option::Option<vector<u8>>, l4: u64, l5: u64, l6: u64, l7: u8, l8: bool, l9: option::Option<transaction_limits::UserTxnLimitsRequest>)
+    local l10: address
+    local l11: address
+    local l12: &option::Option<vector<u8>>
+    local l13: bool
+    local l14: bool
+    local l15: bool
+    local l16: vector<u8>
+    local l17: &ReplayProtector
+    local l18: u64
+    local l19: address
+    local l20: bool
+    local l21: u64
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l10
+    move_loc l1
+    // @5
+    call signer::borrow_address
+    read_ref
+    st_loc l11
+    call timestamp::now_microseconds
+    ld_u64 1000000
+    // @10
+    div
+    copy_loc l6
+    lt
+    br_false l0
+    call chain_id::get
+    // @15
+    move_loc l7
+    eq
+    br_false l1
+    copy_loc l8
+    borrow_loc l3
+    // @20
+    st_loc l12
+    br_false l2
+    copy_loc l12
+    call option::is_none<vector<u8>>
+    br_false l3
+    // @25
+    move_loc l12
+    pop
+    ld_true
+    st_loc l13
+l29: move_loc l13
+    // @30
+    br_false l4
+    branch l5
+l4: borrow_loc l3
+    call option::is_some<vector<u8>>
+    br_false l6
+    // @35
+    copy_loc l10
+    copy_loc l11
+    neq
+    br_false l7
+    copy_loc l10
+    // @40
+    call account::exists_at
+    not
+    st_loc l14
+l24: move_loc l14
+    br_false l8
+    // @45
+    ld_u64 34
+    call features::is_enabled
+    st_loc l15
+l23: move_loc l15
+    br_false l9
+    // @50
+    borrow_loc l10
+    call bcs::to_bytes<address>
+    st_loc l16
+l22: move_loc l3
+    call option::destroy_some<vector<u8>>
+    // @55
+    move_loc l16
+    eq
+    br_false l10
+    branch l5
+l5: borrow_loc l2
+    // @60
+    st_loc l17
+    copy_loc l17
+    test_variant ReplayProtector, SequenceNumber
+    br_false l11
+    move_loc l17
+    // @65
+    pop
+    move_loc l2
+    unpack_variant ReplayProtector, SequenceNumber
+    st_loc l18
+    move_loc l10
+    // @70
+    copy_loc l11
+    move_loc l18
+    call check_for_replay_protection_regular_txn
+l21: borrow_loc l9
+    call option::is_some<transaction_limits::UserTxnLimitsRequest>
+    // @75
+    br_true l12
+    branch l13
+l12: copy_loc l11
+    move_loc l9
+    call option::destroy_some<transaction_limits::UserTxnLimitsRequest>
+    // @80
+    call transaction_limits::validate_high_txn_limits
+l13: move_loc l4
+    move_loc l5
+    mul
+    st_loc l18
+    // @85
+    move_loc l8
+    copy_loc l11
+    st_loc l19
+    br_false l14
+    move_loc l19
+    // @90
+    ld_const<address> 0
+    eq
+    st_loc l20
+l17: move_loc l20
+    br_true l15
+    // @95
+    move_loc l11
+    move_loc l18
+    call aptos_account::is_fungible_balance_at_least
+    br_false l16
+    ret
+    // @100
+l16: ld_u64 66541
+    abort
+l15: ret
+l14: ld_false
+    st_loc l20
+    // @105
+    branch l17
+l11: move_loc l17
+    test_variant ReplayProtector, Nonce
+    br_false l18
+    move_loc l2
+    // @110
+    unpack_variant ReplayProtector, Nonce
+    st_loc l18
+    move_loc l10
+    st_loc l19
+    move_loc l6
+    // @115
+    st_loc l21
+    copy_loc l21
+    call timestamp::now_microseconds
+    ld_u64 1000000
+    div
+    // @120
+    ld_u64 100
+    add
+    le
+    br_false l19
+    move_loc l19
+    // @125
+    move_loc l18
+    move_loc l21
+    call nonce_validation::check_and_insert_nonce
+    br_false l20
+    branch l21
+    // @130
+l20: ld_u64 66548
+    abort
+l19: ld_u64 66549
+    abort
+l18: ld_u64 14566554180833181697
+    // @135
+    abort
+l10: ld_u64 66537
+    abort
+l9: copy_loc l10
+    call account::get_authentication_key
+    // @140
+    st_loc l16
+    branch l22
+l8: ld_false
+    st_loc l15
+    branch l23
+    // @145
+l7: ld_false
+    st_loc l14
+    branch l24
+l6: copy_loc l10
+    st_loc l19
+    // @150
+    ld_u64 88
+    call features::is_enabled
+    br_false l25
+    ld_true
+    st_loc l14
+    // @155
+l28: move_loc l14
+    br_false l26
+    branch l5
+l26: ld_u64 66537
+    abort
+    // @160
+l25: ld_u64 85
+    call features::is_enabled
+    br_false l27
+    move_loc l19
+    call account_abstraction::using_dispatchable_authenticator
+    // @165
+    st_loc l14
+    branch l28
+l27: ld_false
+    st_loc l14
+    branch l28
+    // @170
+l3: move_loc l12
+    call option::borrow<vector<u8>>
+    vec_len <u8>
+    ld_u64 0
+    eq
+    // @175
+    st_loc l13
+    branch l29
+l2: move_loc l12
+    pop
+    ld_false
+    // @180
+    st_loc l13
+    branch l29
+l1: ld_u64 66543
+    abort
+l0: ld_u64 66542
+    // @185
+    abort
+
+// Function definition at index 14
+#[persistent] public fun revoke_gas_permission(l0: &signer)
+    ld_u64 851975
+    move_loc l0
+    pop
+    abort
+
+// Function definition at index 15
+fun script_prologue(l0: signer, l1: u64, l2: vector<u8>, l3: u64, l4: u64, l5: u64, l6: u8, l7: vector<u8>)
+    borrow_loc l0
+    borrow_loc l0
+    move_loc l1
+    pack_variant ReplayProtector, SequenceNumber
+    move_loc l2
+    // @5
+    call option::some<vector<u8>>
+    move_loc l3
+    move_loc l4
+    move_loc l5
+    move_loc l6
+    // @10
+    ld_false
+    call option::none<transaction_limits::UserTxnLimitsRequest>
+    call prologue_common
+    ret
+
+// Function definition at index 16
+fun script_prologue_extended(l0: signer, l1: u64, l2: vector<u8>, l3: u64, l4: u64, l5: u64, l6: u8, l7: vector<u8>, l8: bool)
+    borrow_loc l0
+    borrow_loc l0
+    move_loc l1
+    pack_variant ReplayProtector, SequenceNumber
+    move_loc l2
+    // @5
+    call option::some<vector<u8>>
+    move_loc l3
+    move_loc l4
+    move_loc l5
+    move_loc l6
+    // @10
+    move_loc l8
+    call option::none<transaction_limits::UserTxnLimitsRequest>
+    call prologue_common
+    ret
+
+// Function definition at index 17
+fun unified_epilogue(l0: signer, l1: signer, l2: u64, l3: u64, l4: u64, l5: u64, l6: bool)
+    local l7: signer
+    local l8: signer
+    local l9: u64
+    local l10: u64
+    local l11: address
+    local l12: address
+    local l13: bool
+    local l14: u64
+    move_loc l0
+    st_loc l7
+    move_loc l1
+    st_loc l8
+    copy_loc l4
+    // @5
+    copy_loc l5
+    ge
+    br_false l0
+    move_loc l4
+    move_loc l5
+    // @10
+    sub
+    st_loc l9
+    copy_loc l3
+    cast_u128
+    copy_loc l9
+    // @15
+    cast_u128
+    mul
+    ld_u128 18446744073709551615
+    le
+    br_false l1
+    // @20
+    move_loc l3
+    move_loc l9
+    mul
+    st_loc l10
+    borrow_loc l8
+    // @25
+    call signer::borrow_address
+    read_ref
+    st_loc l11
+    move_loc l6
+    copy_loc l11
+    // @30
+    st_loc l12
+    br_false l2
+    move_loc l12
+    ld_const<address> 0
+    eq
+    // @35
+    st_loc l13
+l8: move_loc l13
+    br_false l3
+    branch l4
+l3: copy_loc l11
+    // @40
+    copy_loc l10
+    call aptos_account::is_fungible_balance_at_least
+    br_false l5
+    copy_loc l10
+    copy_loc l2
+    // @45
+    gt
+    br_false l6
+    move_loc l10
+    move_loc l2
+    sub
+    // @50
+    st_loc l14
+    move_loc l11
+    move_loc l14
+    call transaction_fee::burn_fee
+l4: borrow_loc l7
+    // @55
+    call signer::borrow_address
+    read_ref
+    call account::increment_sequence_number
+    ret
+l6: copy_loc l10
+    // @60
+    copy_loc l2
+    lt
+    br_true l7
+    branch l4
+l7: move_loc l2
+    // @65
+    move_loc l10
+    sub
+    st_loc l14
+    move_loc l11
+    move_loc l14
+    // @70
+    call transaction_fee::mint_and_refund
+    branch l4
+l5: ld_u64 132077
+    abort
+l2: ld_false
+    // @75
+    st_loc l13
+    branch l8
+l1: ld_u64 131078
+    abort
+l0: ld_u64 65542
+    // @80
+    abort
+
+// Function definition at index 18
+fun unified_epilogue_v2(l0: signer, l1: signer, l2: u64, l3: u64, l4: u64, l5: u64, l6: bool, l7: bool)
+    local l8: u64
+    local l9: u64
+    local l10: address
+    local l11: address
+    local l12: bool
+    local l13: u64
+    copy_loc l4
+    copy_loc l5
+    ge
+    br_false l0
+    move_loc l4
+    // @5
+    move_loc l5
+    sub
+    st_loc l8
+    copy_loc l3
+    cast_u128
+    // @10
+    copy_loc l8
+    cast_u128
+    mul
+    ld_u128 18446744073709551615
+    le
+    // @15
+    br_false l1
+    move_loc l3
+    move_loc l8
+    mul
+    st_loc l9
+    // @20
+    borrow_loc l1
+    call signer::borrow_address
+    read_ref
+    st_loc l10
+    move_loc l6
+    // @25
+    copy_loc l10
+    st_loc l11
+    br_false l2
+    move_loc l11
+    ld_const<address> 0
+    // @30
+    eq
+    st_loc l12
+l9: move_loc l12
+    br_false l3
+    branch l4
+    // @35
+l3: copy_loc l10
+    copy_loc l9
+    call aptos_account::is_fungible_balance_at_least
+    br_false l5
+    copy_loc l9
+    // @40
+    copy_loc l2
+    gt
+    br_false l6
+    move_loc l9
+    move_loc l2
+    // @45
+    sub
+    st_loc l13
+    move_loc l10
+    move_loc l13
+    call transaction_fee::burn_fee
+    // @50
+l4: move_loc l7
+    br_true l7
+    borrow_loc l0
+    call signer::borrow_address
+    read_ref
+    // @55
+    call account::increment_sequence_number
+    ret
+l7: ret
+l6: copy_loc l9
+    copy_loc l2
+    // @60
+    lt
+    br_true l8
+    branch l4
+l8: move_loc l2
+    move_loc l9
+    // @65
+    sub
+    st_loc l13
+    move_loc l10
+    move_loc l13
+    call transaction_fee::mint_and_refund
+    // @70
+    branch l4
+l5: ld_u64 132077
+    abort
+l2: ld_false
+    st_loc l12
+    // @75
+    branch l9
+l1: ld_u64 131078
+    abort
+l0: ld_u64 65542
+    abort
+
+// Function definition at index 19
+fun unified_prologue(l0: signer, l1: option::Option<vector<u8>>, l2: u64, l3: vector<address>, l4: vector<option::Option<vector<u8>>>, l5: u64, l6: u64, l7: u64, l8: u8, l9: bool)
+    local l10: signer
+    local l11: ReplayProtector
+    move_loc l0
+    st_loc l10
+    move_loc l2
+    pack_variant ReplayProtector, SequenceNumber
+    st_loc l11
+    // @5
+    borrow_loc l10
+    borrow_loc l10
+    move_loc l11
+    move_loc l1
+    move_loc l5
+    // @10
+    move_loc l6
+    move_loc l7
+    move_loc l8
+    copy_loc l9
+    call option::none<transaction_limits::UserTxnLimitsRequest>
+    // @15
+    call prologue_common
+    move_loc l3
+    move_loc l4
+    move_loc l9
+    call multi_agent_common_prologue
+    // @20
+    ret
+
+// Function definition at index 20
+fun unified_prologue_fee_payer(l0: signer, l1: signer, l2: option::Option<vector<u8>>, l3: option::Option<vector<u8>>, l4: u64, l5: vector<address>, l6: vector<option::Option<vector<u8>>>, l7: u64, l8: u64, l9: u64, l10: u8, l11: bool)
+    local l12: signer
+    local l13: signer
+    local l14: option::Option<vector<u8>>
+    local l15: ReplayProtector
+    local l16: &option::Option<vector<u8>>
+    local l17: address
+    local l18: bool
+    move_loc l0
+    st_loc l12
+    move_loc l1
+    st_loc l13
+    move_loc l3
+    // @5
+    st_loc l14
+    move_loc l4
+    pack_variant ReplayProtector, SequenceNumber
+    st_loc l15
+    borrow_loc l12
+    // @10
+    borrow_loc l13
+    move_loc l15
+    move_loc l2
+    move_loc l7
+    move_loc l8
+    // @15
+    move_loc l9
+    move_loc l10
+    copy_loc l11
+    call option::none<transaction_limits::UserTxnLimitsRequest>
+    call prologue_common
+    // @20
+    move_loc l5
+    move_loc l6
+    copy_loc l11
+    call multi_agent_common_prologue
+    borrow_loc l14
+    // @25
+    st_loc l16
+    move_loc l11
+    br_false l0
+    copy_loc l16
+    call option::is_none<vector<u8>>
+    // @30
+    br_false l1
+    move_loc l16
+    pop
+    ld_true
+    st_loc l11
+    // @35
+l10: move_loc l11
+    br_true l2
+    borrow_loc l13
+    call signer::borrow_address
+    read_ref
+    // @40
+    st_loc l17
+    borrow_loc l14
+    call option::is_some<vector<u8>>
+    br_false l3
+    move_loc l14
+    // @45
+    move_loc l17
+    call account::get_authentication_key
+    call option::some<vector<u8>>
+    eq
+    br_false l4
+    // @50
+    branch l5
+l5: ret
+l4: ld_u64 66537
+    abort
+l3: ld_u64 88
+    // @55
+    call features::is_enabled
+    br_false l6
+    ld_true
+    st_loc l18
+l9: move_loc l18
+    // @60
+    br_false l7
+    branch l5
+l7: ld_u64 66537
+    abort
+l6: ld_u64 85
+    // @65
+    call features::is_enabled
+    br_false l8
+    move_loc l17
+    call account_abstraction::using_dispatchable_authenticator
+    st_loc l18
+    // @70
+    branch l9
+l8: ld_false
+    st_loc l18
+    branch l9
+l2: ret
+    // @75
+l1: move_loc l16
+    call option::borrow<vector<u8>>
+    vec_len <u8>
+    ld_u64 0
+    eq
+    // @80
+    st_loc l11
+    branch l10
+l0: move_loc l16
+    pop
+    ld_false
+    // @85
+    st_loc l11
+    branch l10
+
+// Function definition at index 21
+fun unified_prologue_fee_payer_v2(l0: signer, l1: signer, l2: option::Option<vector<u8>>, l3: option::Option<vector<u8>>, l4: ReplayProtector, l5: vector<address>, l6: vector<option::Option<vector<u8>>>, l7: u64, l8: u64, l9: u64, l10: u8, l11: bool)
+    local l12: &option::Option<vector<u8>>
+    local l13: address
+    local l14: bool
+    borrow_loc l0
+    borrow_loc l1
+    move_loc l4
+    move_loc l2
+    move_loc l7
+    // @5
+    move_loc l8
+    move_loc l9
+    move_loc l10
+    copy_loc l11
+    call option::none<transaction_limits::UserTxnLimitsRequest>
+    // @10
+    call prologue_common
+    move_loc l5
+    move_loc l6
+    copy_loc l11
+    call multi_agent_common_prologue
+    // @15
+    borrow_loc l3
+    st_loc l12
+    move_loc l11
+    br_false l0
+    copy_loc l12
+    // @20
+    call option::is_none<vector<u8>>
+    br_false l1
+    move_loc l12
+    pop
+    ld_true
+    // @25
+    st_loc l11
+l10: move_loc l11
+    br_true l2
+    borrow_loc l1
+    call signer::borrow_address
+    // @30
+    read_ref
+    st_loc l13
+    borrow_loc l3
+    call option::is_some<vector<u8>>
+    br_false l3
+    // @35
+    move_loc l3
+    move_loc l13
+    call account::get_authentication_key
+    call option::some<vector<u8>>
+    eq
+    // @40
+    br_false l4
+    branch l5
+l5: ret
+l4: ld_u64 66537
+    abort
+    // @45
+l3: ld_u64 88
+    call features::is_enabled
+    br_false l6
+    ld_true
+    st_loc l14
+    // @50
+l9: move_loc l14
+    br_false l7
+    branch l5
+l7: ld_u64 66537
+    abort
+    // @55
+l6: ld_u64 85
+    call features::is_enabled
+    br_false l8
+    move_loc l13
+    call account_abstraction::using_dispatchable_authenticator
+    // @60
+    st_loc l14
+    branch l9
+l8: ld_false
+    st_loc l14
+    branch l9
+    // @65
+l2: ret
+l1: move_loc l12
+    call option::borrow<vector<u8>>
+    vec_len <u8>
+    ld_u64 0
+    // @70
+    eq
+    st_loc l11
+    branch l10
+l0: move_loc l12
+    pop
+    // @75
+    ld_false
+    st_loc l11
+    branch l10
+
+// Function definition at index 22
+fun unified_prologue_v2(l0: signer, l1: option::Option<vector<u8>>, l2: ReplayProtector, l3: vector<address>, l4: vector<option::Option<vector<u8>>>, l5: u64, l6: u64, l7: u64, l8: u8, l9: bool)
+    borrow_loc l0
+    borrow_loc l0
+    move_loc l2
+    move_loc l1
+    move_loc l5
+    // @5
+    move_loc l6
+    move_loc l7
+    move_loc l8
+    copy_loc l9
+    call option::none<transaction_limits::UserTxnLimitsRequest>
+    // @10
+    call prologue_common
+    move_loc l3
+    move_loc l4
+    move_loc l9
+    call multi_agent_common_prologue
+    // @15
+    ret
+
+// Function definition at index 23
+fun versioned_epilogue(l0: signer, l1: signer, l2: EpilogueArgs)
+    local l3: bool
+    local l4: bool
+    local l5: u64
+    local l6: u64
+    local l7: u64
+    local l8: transaction_fee::FeeStatement
+    local l9: signer
+    local l10: signer
+    local l11: u64
+    local l12: u64
+    local l13: u64
+    local l14: address
+    local l15: address
+    local l16: bool
+    local l17: u64
+    borrow_loc l2
+    test_variant EpilogueArgs, V1
+    br_false l0
+    move_loc l2
+    unpack_variant EpilogueArgs, V1
+    // @5
+    st_loc l3
+    st_loc l4
+    st_loc l5
+    st_loc l6
+    st_loc l7
+    // @10
+    st_loc l8
+    move_loc l0
+    st_loc l9
+    move_loc l1
+    st_loc l10
+    // @15
+    borrow_loc l8
+    call transaction_fee::storage_fee_refund_octas
+    st_loc l11
+    copy_loc l6
+    copy_loc l5
+    // @20
+    ge
+    br_false l1
+    move_loc l6
+    move_loc l5
+    sub
+    // @25
+    st_loc l12
+    copy_loc l7
+    cast_u128
+    copy_loc l12
+    cast_u128
+    // @30
+    mul
+    ld_u128 18446744073709551615
+    le
+    br_false l2
+    move_loc l7
+    // @35
+    move_loc l12
+    mul
+    st_loc l13
+    borrow_loc l10
+    call signer::borrow_address
+    // @40
+    read_ref
+    st_loc l14
+    move_loc l4
+    copy_loc l14
+    st_loc l15
+    // @45
+    br_false l3
+    move_loc l15
+    ld_const<address> 0
+    eq
+    st_loc l16
+    // @50
+l11: move_loc l16
+    br_false l4
+    branch l5
+l4: copy_loc l14
+    copy_loc l13
+    // @55
+    call aptos_account::is_fungible_balance_at_least
+    br_false l6
+    copy_loc l13
+    copy_loc l11
+    gt
+    // @60
+    br_false l7
+    move_loc l13
+    move_loc l11
+    sub
+    st_loc l17
+    // @65
+    move_loc l14
+    move_loc l17
+    call transaction_fee::burn_fee
+l5: move_loc l3
+    br_false l8
+    // @70
+    branch l9
+l8: borrow_loc l9
+    call signer::borrow_address
+    read_ref
+    call account::increment_sequence_number
+    // @75
+l9: move_loc l8
+    call transaction_fee::emit_fee_statement
+    ret
+l7: copy_loc l13
+    copy_loc l11
+    // @80
+    lt
+    br_true l10
+    branch l5
+l10: move_loc l11
+    move_loc l13
+    // @85
+    sub
+    st_loc l17
+    move_loc l14
+    move_loc l17
+    call transaction_fee::mint_and_refund
+    // @90
+    branch l5
+l6: ld_u64 132077
+    abort
+l3: ld_false
+    st_loc l16
+    // @95
+    branch l11
+l2: ld_u64 131078
+    abort
+l1: ld_u64 65542
+    abort
+    // @100
+l0: ld_u64 14566554180833181697
+    abort
+
+// Function definition at index 24
+fun versioned_prologue(l0: signer, l1: signer, l2: PrologueArgs)
+    local l3: option::Option<transaction_limits::UserTxnLimitsRequest>
+    local l4: bool
+    local l5: u8
+    local l6: u64
+    local l7: u64
+    local l8: u64
+    local l9: vector<option::Option<vector<u8>>>
+    local l10: vector<address>
+    local l11: ReplayProtector
+    local l12: option::Option<vector<u8>>
+    local l13: option::Option<vector<u8>>
+    local l14: address
+    local l15: &option::Option<vector<u8>>
+    local l16: bool
+    local l17: address
+    borrow_loc l2
+    test_variant PrologueArgs, V1
+    br_false l0
+    move_loc l2
+    unpack_variant PrologueArgs, V1
+    // @5
+    st_loc l3
+    st_loc l4
+    st_loc l5
+    st_loc l6
+    st_loc l7
+    // @10
+    st_loc l8
+    st_loc l9
+    st_loc l10
+    st_loc l11
+    st_loc l12
+    // @15
+    st_loc l13
+    borrow_loc l0
+    borrow_loc l1
+    move_loc l11
+    move_loc l13
+    // @20
+    move_loc l8
+    move_loc l7
+    move_loc l6
+    move_loc l5
+    copy_loc l4
+    // @25
+    move_loc l3
+    call prologue_common
+    move_loc l10
+    move_loc l9
+    copy_loc l4
+    // @30
+    call multi_agent_common_prologue
+    br_true l1
+    branch l2
+l1: borrow_loc l1
+    call signer::borrow_address
+    // @35
+    read_ref
+    st_loc l14
+    borrow_loc l12
+    st_loc l15
+    move_loc l4
+    // @40
+    br_false l3
+    copy_loc l15
+    call option::is_none<vector<u8>>
+    br_false l4
+    move_loc l15
+    // @45
+    pop
+    ld_true
+    st_loc l16
+l12: move_loc l16
+    br_false l5
+    // @50
+    branch l2
+l5: borrow_loc l12
+    call option::is_some<vector<u8>>
+    br_false l6
+    move_loc l12
+    // @55
+    call option::destroy_some<vector<u8>>
+    move_loc l14
+    call account::get_authentication_key
+    eq
+    br_false l7
+    // @60
+    branch l2
+l2: ret
+l7: ld_u64 66537
+    abort
+l6: move_loc l14
+    // @65
+    st_loc l17
+    ld_u64 88
+    call features::is_enabled
+    br_false l8
+    ld_true
+    // @70
+    st_loc l4
+l11: move_loc l4
+    br_false l9
+    branch l2
+l9: ld_u64 66537
+    // @75
+    abort
+l8: ld_u64 85
+    call features::is_enabled
+    br_false l10
+    move_loc l17
+    // @80
+    call account_abstraction::using_dispatchable_authenticator
+    st_loc l4
+    branch l11
+l10: ld_false
+    st_loc l4
+    // @85
+    branch l11
+l4: move_loc l15
+    call option::borrow<vector<u8>>
+    vec_len <u8>
+    ld_u64 0
+    // @90
+    eq
+    st_loc l16
+    branch l12
+l3: move_loc l15
+    pop
+    // @95
+    ld_false
+    st_loc l16
+    branch l12
+l0: ld_u64 14566554180833181697
+    abort
+

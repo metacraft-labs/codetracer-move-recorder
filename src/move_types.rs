@@ -218,6 +218,36 @@ pub enum SerializableMoveValue {
         #[serde(deserialize_with = "deserialize_u256_to_decimal")]
         value: String,
     },
+    /// Signed integers (Aptos Move 2.3; Sui has none).  The Aptos tracer
+    /// writes `I8`..`I64` as JSON numbers and `I128` / `I256` as decimal
+    /// strings, so that JSON readers do not round them; both forms are
+    /// accepted for every width.
+    I8 {
+        #[serde(deserialize_with = "deserialize_signed")]
+        value: i8,
+    },
+    I16 {
+        #[serde(deserialize_with = "deserialize_signed")]
+        value: i16,
+    },
+    I32 {
+        #[serde(deserialize_with = "deserialize_signed")]
+        value: i32,
+    },
+    I64 {
+        #[serde(deserialize_with = "deserialize_signed")]
+        value: i64,
+    },
+    I128 {
+        #[serde(deserialize_with = "deserialize_signed")]
+        value: i128,
+    },
+    /// Decimal digits with an optional leading `-`; wider than any Rust
+    /// integer, so kept as text after its syntax is checked.
+    I256 {
+        #[serde(deserialize_with = "deserialize_i256_to_decimal")]
+        value: String,
+    },
     Bool {
         value: bool,
     },
@@ -387,6 +417,84 @@ where
     deserializer.deserialize_any(U128Visitor)
 }
 
+/// Deserialize a signed integer of width `T` from a JSON number or a
+/// decimal string, refusing a value outside `T`'s range rather than
+/// truncating it.  Like [`deserialize_u128_from_number`], it also accepts
+/// the single-entry map serde_json's `arbitrary_precision` feature leaves
+/// a number as inside an internally tagged enum.
+fn deserialize_signed<'de, D, T>(deserializer: D) -> Result<T, D::Error>
+where
+    D: de::Deserializer<'de>,
+    T: TryFrom<i128>,
+{
+    struct I128Visitor;
+
+    impl<'de> de::Visitor<'de> for I128Visitor {
+        type Value = i128;
+
+        fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+            formatter.write_str("a signed integer as a number or a decimal string")
+        }
+
+        fn visit_i64<E: de::Error>(self, v: i64) -> Result<i128, E> {
+            Ok(v.into())
+        }
+
+        fn visit_u64<E: de::Error>(self, v: u64) -> Result<i128, E> {
+            Ok(v.into())
+        }
+
+        fn visit_str<E: de::Error>(self, v: &str) -> Result<i128, E> {
+            v.parse::<i128>().map_err(de::Error::custom)
+        }
+
+        fn visit_map<A: de::MapAccess<'de>>(self, mut map: A) -> Result<i128, A::Error> {
+            let mut value: Option<String> = None;
+            while let Some(key) = map.next_key::<String>()? {
+                if key.contains("Number") || key.starts_with('$') {
+                    value = Some(map.next_value()?);
+                } else {
+                    let _: de::IgnoredAny = map.next_value()?;
+                }
+            }
+            match value {
+                Some(s) => s.parse::<i128>().map_err(de::Error::custom),
+                None => Err(de::Error::custom("expected a number value in map")),
+            }
+        }
+    }
+
+    let wide = deserializer.deserialize_any(I128Visitor)?;
+    T::try_from(wide).map_err(|_| {
+        de::Error::custom(format!(
+            "{wide} is out of range for a {}-bit signed integer",
+            8 * std::mem::size_of::<T>()
+        ))
+    })
+}
+
+/// Deserialize an `I256` as checked decimal text (`-?[0-9]+`), from a
+/// string or a JSON number.
+fn deserialize_i256_to_decimal<'de, D>(deserializer: D) -> Result<String, D::Error>
+where
+    D: de::Deserializer<'de>,
+{
+    let text = match serde_json::Value::deserialize(deserializer)? {
+        serde_json::Value::String(s) => s,
+        serde_json::Value::Number(n) => n.to_string(),
+        other => {
+            return Err(de::Error::custom(format!(
+                "expected an I256 as a decimal string, got {other}"
+            )));
+        }
+    };
+    let digits = text.strip_prefix('-').unwrap_or(&text);
+    if digits.is_empty() || !digits.bytes().all(|b| b.is_ascii_digit()) {
+        return Err(de::Error::custom(format!("{text:?} is not a decimal I256")));
+    }
+    Ok(text)
+}
+
 fn deserialize_u256_to_decimal<'de, D>(deserializer: D) -> Result<String, D::Error>
 where
     D: de::Deserializer<'de>,
@@ -552,6 +660,56 @@ mod tests {
             serde_json::from_str::<SerializableMoveValue>(r#"{"type":"U256","value":[1,2,3]}"#)
                 .is_err()
         );
+    }
+
+    #[test]
+    fn signed_integers_parse_in_the_aptos_wire_form() {
+        let parse = |json: &str| serde_json::from_str::<SerializableMoveValue>(json);
+        // As the Aptos tracer writes them: numbers up to 64 bits, decimal
+        // strings above.
+        assert!(matches!(
+            parse(r#"{"type":"I8","value":-128}"#).unwrap(),
+            SerializableMoveValue::I8 { value: -128 }
+        ));
+        assert!(matches!(
+            parse(r#"{"type":"I16","value":-300}"#).unwrap(),
+            SerializableMoveValue::I16 { value: -300 }
+        ));
+        assert!(matches!(
+            parse(r#"{"type":"I32","value":2147483647}"#).unwrap(),
+            SerializableMoveValue::I32 { value: 2147483647 }
+        ));
+        assert!(matches!(
+            parse(r#"{"type":"I64","value":-5}"#).unwrap(),
+            SerializableMoveValue::I64 { value: -5 }
+        ));
+        assert!(matches!(
+            parse(r#"{"type":"I128","value":"-170141183460469231731687303715884105728"}"#).unwrap(),
+            SerializableMoveValue::I128 { value: i128::MIN }
+        ));
+        match parse(r#"{"type":"I256","value":"-57896044618658097711785492504343953926634992332820282019728792003956564819968"}"#).unwrap() {
+            SerializableMoveValue::I256 { value } => assert_eq!(
+                value,
+                "-57896044618658097711785492504343953926634992332820282019728792003956564819968"
+            ),
+            other => panic!("expected I256, got {other:?}"),
+        }
+        // Inside a struct, as values usually arrive.
+        let nested = parse(
+            r#"{"type":"Struct","value":{"type_":{"name":"P"},"fields":[["x",{"type":"I64","value":-9}]]}}"#,
+        )
+        .unwrap();
+        let SerializableMoveValue::Struct { value } = nested else {
+            panic!("expected a struct")
+        };
+        assert!(matches!(
+            value.fields[0].1,
+            SerializableMoveValue::I64 { value: -9 }
+        ));
+        // CONTROL: a value outside the width is refused, not truncated, and
+        // an I256 that is not decimal is refused.
+        assert!(parse(r#"{"type":"I8","value":128}"#).is_err());
+        assert!(parse(r#"{"type":"I256","value":"0x10"}"#).is_err());
     }
 
     #[test]
