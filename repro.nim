@@ -64,8 +64,12 @@ package codetracer_move_recorder:
     # static library into the cargo build.
     "zstd"
 
-    # libzstd is also consumed directly by ct-print's linkage; declared
-    # once above under ``zstd``.
+    # zstd.h + libzstd for the sibling ct-print edge
+    # (``build_writer_artifacts.buildCtPrint`` compiles and links against
+    # them; ``zstd`` is the CLI only). The constructor cannot provision a
+    # tool from inside ``build:`` and refuses a recipe that omits it.
+    when not defined(windows):
+      "zstd-dev"
 
     # Cap'n Proto is declared above; the writer's build.rs invokes capnp.
 
