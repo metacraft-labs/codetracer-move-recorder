@@ -445,7 +445,7 @@ pub fn convert_aptos_trace(
 pub fn aptos_limitations_summary() -> &'static str {
     "\
 Aptos recording (`aptos-replay`) needs the CodeTracer build of the Aptos CLI
-(metacraft-labs/aptos-core, branch codetracer/value-tracing), whose
+(metacraft-labs/aptos-core, branch codetracer/value-tracing-aptos-node-v1.49.8), whose
 `aptos move replay --trace` writes the same structured value trace as Sui:
 frames, instructions, and typed stack and local values. With it:
 

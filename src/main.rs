@@ -181,7 +181,7 @@ enum Commands {
 
         /// The Aptos CLI to run.  It must support `aptos move replay
         /// --trace`, which the CodeTracer build of the CLI adds
-        /// (metacraft-labs/aptos-core, branch codetracer/value-tracing).
+        /// (metacraft-labs/aptos-core, branch codetracer/value-tracing-aptos-node-v1.49.8).
         #[arg(
             long,
             env = "CODETRACER_MOVE_RECORDER_APTOS_CLI",

@@ -7,7 +7,7 @@
 //!    Sui converter reads: every frame, instruction and stack/local effect,
 //!    with typed values.  `--trace` is not in the stock Aptos CLI; it comes
 //!    from the CodeTracer fork (metacraft-labs/aptos-core, branch
-//!    `codetracer/value-tracing`).
+//!    `codetracer/value-tracing-aptos-node-v1.49.8`).
 //! 2. For every module the trace entered, the module's bytecode as it was
 //!    on chain when the transaction ran, from the REST API
 //!    (`/v1/accounts/{addr}/module/{name}?ledger_version=<VERSION - 1>`),
@@ -250,7 +250,7 @@ fn run_aptos_replay(config: &AptosReplayConfig, trace_file: &Path, work_dir: &Pa
     let output = command.output().map_err(|e| {
         eyre!(
             "failed to run {} (an Aptos CLI with `move replay --trace` is required; \
-             see metacraft-labs/aptos-core, branch codetracer/value-tracing): {e}",
+             see metacraft-labs/aptos-core, branch codetracer/value-tracing-aptos-node-v1.49.8): {e}",
             config.aptos_cli.display()
         )
     })?;
@@ -261,7 +261,7 @@ fn run_aptos_replay(config: &AptosReplayConfig, trace_file: &Path, work_dir: &Pa
             bail!(
                 "{} does not support `aptos move replay --trace`; use the CodeTracer \
                  build of the Aptos CLI (metacraft-labs/aptos-core, branch \
-                 codetracer/value-tracing).\n{stderr}",
+                 codetracer/value-tracing-aptos-node-v1.49.8).\n{stderr}",
                 config.aptos_cli.display()
             );
         }

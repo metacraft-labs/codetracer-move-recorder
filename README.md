@@ -19,7 +19,7 @@ emits a CodeTracer CTFS multi-stream trace bundle:
   full parameter values, stack snapshots).
 * **Aptos** — `aptos move replay --trace`, from the CodeTracer build of the
   Aptos CLI ([metacraft-labs/aptos-core](https://github.com/metacraft-labs/aptos-core),
-  branch `codetracer/value-tracing`), writes the same Move trace format v3
+  branch `codetracer/value-tracing-aptos-node-v1.49.8`), writes the same Move trace format v3
   NDJSON with typed values. On-chain Aptos modules carry no source map, so
   the recorder fetches each executed module's bytecode at the transaction's
   version and steps on its `aptos move disassemble` text. The stock CLI's

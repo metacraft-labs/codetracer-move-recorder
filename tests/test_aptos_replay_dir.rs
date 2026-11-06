@@ -5,7 +5,7 @@
 //! transaction — version 7,881,330,395, an APT transfer through
 //! `0x1::aptos_account::transfer` — replayed with the CodeTracer build of
 //! the Aptos CLI (metacraft-labs/aptos-core, branch
-//! `codetracer/value-tracing`):
+//! `codetracer/value-tracing-aptos-node-v1.49.8`):
 //!
 //! * `trace.json.zst`: the trace (`--trace`), zstd-compressed;
 //! * `0x…01/bytecode/<module>.mv.masm`: `aptos move disassemble` of each of
