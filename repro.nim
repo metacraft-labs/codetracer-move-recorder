@@ -48,11 +48,23 @@ package codetracer_move_recorder:
     "cargo >=1.85"
     # C compiler driver — rustc links through `cc`, and build scripts
     # (cc-rs, the Nim FFI) compile C. Declaring it puts its directory on
-    # every cargo edge's PATH. Windows links with MSVC instead.
-    when defined(linux):
-      "gcc"
-    elif defined(macosx):
+    # every cargo edge's PATH. Windows links with MSVC instead, so its
+    # cargo edges are not given a C compiler (see the tool refs at the end
+    # of ``build:``).
+    #
+    # Windows still declares ``gcc``: the ct-print edge that
+    # ``build_writer_artifacts.buildCtPrint`` constructs compiles with
+    # ``nim c``'s gcc back-end on every host but macOS
+    # (``CtPrintBackendSelectors``) and names ``gcc`` on its edge itself.
+    # That ref provisions nothing unless the package declares the tool in
+    # ``uses:`` (the module's "Native tool contract"; it is checked on POSIX
+    # only), and without it the Windows ct-print compile fails with
+    # ``Requested command not found: 'gcc.exe'``. The sibling's own recipe
+    # declares the same ``gcc`` for its Windows build.
+    when defined(macosx):
       "clang"
+    else:
+      "gcc"
 
     # Nim toolchain — codetracer_trace_writer_nim's build.rs compiles
     # a static library at cargo build time.
