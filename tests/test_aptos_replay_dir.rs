@@ -606,3 +606,199 @@ fn event_kind_is_a_structured_trace_event() {
         BTreeSet::from([format!("{:?}", EventLogKind::TraceLogEvent)])
     );
 }
+
+// ── A module positioned on its published source ──────────────────────────
+//
+// A source provider that proved a module's published source against its
+// bytes writes, beside them, `source/<module>.move` and a source map
+// (`source/<module>.json`, `codetracer/aptos-source-map@1`).  These tests
+// give `0x1::chain_id` such a map in a copy of the fixture.  The texts and
+// the map are written here and are NOT the chain's: what is under test is
+// that the recorder positions steps by a map only when the map is bound to
+// the module bytes and texts beside it, and how it positions them.
+
+/// `0x1::chain_id`, as the map below positions it.  `get` is definition 0.
+const CHAIN_ID_MOVE: &str = "module 0x1::chain_id {\n    public fun get(): u8 acquires ChainId {\n        borrow_global<ChainId>(@aptos_framework).id\n    }\n}\n";
+/// A second file, standing for a module whose code the compiler inlined.
+const INLINED_MOVE: &str = "module 0x1::inlined {\n    // read through a reference\n    inline fun read(r: &u8): u8 { *r }\n}\n";
+const CHAIN_ID_BYTES: &[u8] = b"the module bytes the map is bound to";
+
+fn sha256_hex(bytes: &[u8]) -> String {
+    use sha2::{Digest, Sha256};
+    Sha256::digest(bytes)
+        .iter()
+        .map(|b| format!("{b:02x}"))
+        .collect()
+}
+
+fn copy_dir(from: &Path, to: &Path) {
+    fs::create_dir_all(to).unwrap();
+    for entry in fs::read_dir(from).unwrap() {
+        let entry = entry.unwrap();
+        let target = to.join(entry.file_name());
+        if entry.file_type().unwrap().is_dir() {
+            copy_dir(&entry.path(), &target);
+        } else {
+            fs::copy(entry.path(), target).unwrap();
+        }
+    }
+}
+
+fn source_rel(module: &str) -> PathBuf {
+    Path::new(FRAMEWORK)
+        .join("source")
+        .join(format!("{module}.move"))
+}
+
+/// A copy of the fixture whose `0x1::chain_id` has a published-source map.
+/// `get`'s five instructions (`ld_const`, `borrow_global`, `borrow_field`,
+/// `read_ref`, `ret`) are mapped: pcs 0–1 to line 3 of `chain_id.move`, pcs
+/// 2–3 to line 3 of `inlined.move` (the SAME line number in another file),
+/// pc 4 to line 4 of `chain_id.move`.  `edit` may break a binding.
+fn fixture_with_source_map(edit: impl Fn(&Path, &mut serde_json::Value)) -> tempfile::TempDir {
+    let dir = tempfile::tempdir().unwrap();
+    copy_dir(&fixture(), dir.path());
+    let pkg = dir.path().join(FRAMEWORK);
+    fs::write(pkg.join("bytecode/chain_id.mv"), CHAIN_ID_BYTES).unwrap();
+    fs::create_dir_all(pkg.join("source")).unwrap();
+    fs::write(dir.path().join(source_rel("chain_id")), CHAIN_ID_MOVE).unwrap();
+    fs::write(dir.path().join(source_rel("inlined")), INLINED_MOVE).unwrap();
+    let own = sha256_hex(CHAIN_ID_MOVE.as_bytes());
+    let other = sha256_hex(INLINED_MOVE.as_bytes());
+    let at = |hash: &str, text: &str, needle: &str| {
+        let start = text.find(needle).unwrap();
+        serde_json::json!({"file_hash": hash, "start": start, "end": start + needle.len()})
+    };
+    let line3 = at(
+        &own,
+        CHAIN_ID_MOVE,
+        "borrow_global<ChainId>(@aptos_framework).id",
+    );
+    let inlined3 = at(&other, INLINED_MOVE, "*r");
+    let line4 = at(&own, CHAIN_ID_MOVE, "    }\n}");
+    let mut map = serde_json::json!({
+        "format": "codetracer/aptos-source-map@1",
+        "module_name": ["0x1", "chain_id"],
+        "bytecode_sha256": sha256_hex(CHAIN_ID_BYTES),
+        "definition_location": at(&own, CHAIN_ID_MOVE, "chain_id"),
+        "source_files": {
+            own.clone(): source_rel("chain_id").to_str().unwrap(),
+            other.clone(): source_rel("inlined").to_str().unwrap(),
+        },
+        "function_map": {
+            "0": {
+                "definition_location": at(&own, CHAIN_ID_MOVE, "get"),
+                "parameters": [],
+                "locals": [],
+                "code_map": {"0": line3, "1": line3, "2": inlined3, "3": inlined3, "4": line4},
+            }
+        }
+    });
+    edit(dir.path(), &mut map);
+    fs::write(pkg.join("source/chain_id.json"), map.to_string()).unwrap();
+    dir
+}
+
+/// The steps a conversion of `dir` recorded, and what it refused.
+fn convert_dir(dir: &Path) -> (Bundle, Vec<String>) {
+    let out = tempfile::tempdir().unwrap();
+    let conversion = convert_aptos_replay_dir(dir, out.path()).unwrap();
+    let rejected = conversion
+        .modules_rejected
+        .iter()
+        .map(|r| format!("{r:?}"))
+        .collect();
+    (read_bundle(&container(out.path())), rejected)
+}
+
+#[test]
+fn a_bound_source_map_positions_the_module_on_its_source() {
+    let _nim = NIM_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let dir = fixture_with_source_map(|_, _| {});
+    let (bundle, rejected) = convert_dir(dir.path());
+    assert!(rejected.is_empty(), "{rejected:?}");
+    let own = source_rel("chain_id");
+    let other = source_rel("inlined");
+    // No step of `chain_id` is on its disassembly any more…
+    assert!(
+        !bundle
+            .steps
+            .iter()
+            .any(|(p, _)| *p == masm_path("chain_id")),
+        "a step is still on the disassembly"
+    );
+    // …and `get` steps through its source: line 3, then the inlined code at
+    // line 3 of ANOTHER file (a new step although the line number is the
+    // same), then line 4.  Five instructions, three positions.
+    let on_source: Vec<(PathBuf, u64)> = bundle
+        .steps
+        .iter()
+        .filter(|(p, _)| *p == own || *p == other)
+        .cloned()
+        .collect();
+    let get = vec![(own.clone(), 3), (other.clone(), 3), (own.clone(), 4)];
+    assert!(!on_source.is_empty(), "no step on the source");
+    assert_eq!(on_source.len() % 3, 0, "{on_source:?}");
+    for call in on_source.chunks(3) {
+        assert_eq!(call, get.as_slice());
+    }
+    // Every other module still steps on its disassembly.
+    assert!(
+        bundle
+            .steps
+            .iter()
+            .any(|(p, _)| *p == masm_path("timestamp"))
+    );
+}
+
+#[test]
+fn control_a_map_of_other_bytes_is_refused_and_the_module_stays_on_its_disassembly() {
+    let _nim = NIM_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    let dir = fixture_with_source_map(|_, map| {
+        map["bytecode_sha256"] = serde_json::json!(sha256_hex(b"some other module bytes"));
+    });
+    let (bundle, rejected) = convert_dir(dir.path());
+    assert_eq!(rejected.len(), 1, "{rejected:?}");
+    assert!(rejected[0].contains("SourceMap") && rejected[0].contains("is the map of bytecode"));
+    assert!(
+        !bundle
+            .steps
+            .iter()
+            .any(|(p, _)| *p == source_rel("chain_id"))
+    );
+    // The same five instructions are five disassembly lines again.
+    assert!(
+        bundle
+            .steps
+            .iter()
+            .any(|(p, _)| *p == masm_path("chain_id"))
+    );
+}
+
+#[test]
+fn control_a_text_the_map_was_not_made_for_is_refused() {
+    let _nim = NIM_TEST_LOCK.lock().unwrap_or_else(|e| e.into_inner());
+    // The inlined file is edited after the map named its hash.
+    let dir = fixture_with_source_map(|root, _| {
+        fs::write(
+            root.join(source_rel("inlined")),
+            INLINED_MOVE.replace("*r", "0u8"),
+        )
+        .unwrap();
+    });
+    let (bundle, rejected) = convert_dir(dir.path());
+    assert_eq!(rejected.len(), 1, "{rejected:?}");
+    assert!(rejected[0].contains("inlined.move"), "{rejected:?}");
+    assert!(
+        !bundle
+            .steps
+            .iter()
+            .any(|(p, _)| *p == source_rel("chain_id"))
+    );
+    assert!(
+        bundle
+            .steps
+            .iter()
+            .any(|(p, _)| *p == masm_path("chain_id"))
+    );
+}
