@@ -101,6 +101,15 @@ package codetracer_move_recorder:
       "dirname"
       "grep"
 
+    # The test run's replay tests (``tests/test_replay_temp_dirs.rs``, unix
+    # only) stand in for the ``sui`` and ``aptos`` CLIs with ``/bin/sh``
+    # scripts that run ``mkdir``, ``cp`` and ``basename``. Without them on
+    # the edge's PATH the scripts cannot write their traces.
+    when not defined(windows):
+      "cp"
+      "mkdir"
+      "basename"
+
     # The Sui CLI: the Move tests compile their packages and capture their
     # traces with ``sui move test --trace`` and fail without it
     # (``tests/common/prerequisites.rs``). Declared in ``sui_tools.nim``.
@@ -232,9 +241,14 @@ package codetracer_move_recorder:
     # on it (plus the sub-tools of the typed constructor that built it): the
     # cargo edges run rustc, the C compiler, and the build scripts' nim,
     # nimble, git, capnp and zstd; the CLI-convention script runs ``cargo
-    # build`` itself; the test run also drives ``sui``. On Linux path
-    # provisioning the dev shell's PATH happens to hide an omission here;
-    # Windows tarball provisioning does not.
+    # build`` itself; the test run also drives ``sui``, and on POSIX the
+    # fake ``sui`` / ``aptos`` scripts of its replay tests run ``sh``,
+    # ``mkdir``, ``cp`` and ``basename``. Path provisioning also passes the
+    # caller's PATH through, so a ``repro test`` run from a shell that has
+    # coreutils (the dev shell, a workstation) hides an omission here; the CI
+    # runner and Windows tarball provisioning do not. (CI
+    # once reported "sui replay exited successfully but wrote no trace"
+    # because ``cp`` was missing from this edge.)
     for action in [recorderBuild, testsBuild.action, testsRun.action, cliVerify]:
       appendRegisteredActionToolIdentityRefs(action.id,
         ["cargo", "rustc", "nim", "nimble", "git", "capnp", "zstd"])
@@ -245,6 +259,9 @@ package codetracer_move_recorder:
         appendRegisteredActionToolIdentityRefs(action.id,
           ["clang", "pkg-config", "openssl"])
     appendRegisteredActionToolIdentityRefs(testsRun.action.id, ["sui"])
+    when not defined(windows):
+      appendRegisteredActionToolIdentityRefs(testsRun.action.id,
+        ["sh", "mkdir", "cp", "basename"])
     appendRegisteredActionToolIdentityRefs(cliVerify.id, ["sh", "bash"])
     when not defined(windows):
       appendRegisteredActionToolIdentityRefs(cliVerify.id, ["dirname", "grep"])

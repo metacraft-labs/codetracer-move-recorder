@@ -33,9 +33,12 @@ fn manifest_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
+/// Writes an executable `/bin/sh` script. `set -e` makes a command the
+/// script cannot run (a `cp` missing from `PATH`, say) fail the script, so a
+/// fake replay can never report success without having written its trace.
 fn write_script(dir: &Path, name: &str, body: &str) {
     let path = dir.join(name);
-    fs::write(&path, format!("#!/bin/sh\n{body}")).unwrap();
+    fs::write(&path, format!("#!/bin/sh\nset -e\n{body}")).unwrap();
     fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
 }
 
@@ -106,7 +109,8 @@ fn fake_sui(sandbox: &Sandbox, replay_exit: i32) {
                  case \"$1\" in -o) out=\"$2\"; shift ;; --digest) digest=\"$2\"; shift ;; esac\n\
                  shift\n\
                done\n\
-               mkdir -p \"$out/$digest\" && cp '{}' \"$out/$digest/trace.json.zst\"\n\
+               mkdir -p \"$out/$digest\"\n\
+               cp '{}' \"$out/$digest/trace.json.zst\"\n\
                exit {replay_exit} ;;\n\
              esac\nexit 2\n",
             sui_fixture().display()
