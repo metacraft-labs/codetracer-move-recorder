@@ -1,0 +1,17 @@
+// Bytecode version v10
+module 0x1::create_signer
+friend 0x1::account
+friend 0x1::object
+friend 0x1::account_abstraction
+friend 0x1::fungible_asset
+friend 0x1::coin
+friend 0x1::aptos_account
+friend 0x1::stake
+friend 0x1::reconfiguration_with_dkg
+friend 0x1::init
+friend 0x1::transaction_validation
+friend 0x1::genesis
+friend 0x1::multisig_account
+// Function definition at index 0
+friend native fun create_signer(l0: address): signer
+

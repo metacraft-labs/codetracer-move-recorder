@@ -1,0 +1,82 @@
+// Bytecode version v10
+module 0x1::guid
+friend 0x1::account
+friend 0x1::object
+struct GUID has drop + store
+  id: ID
+
+struct ID has copy + drop + store
+  creation_num: u64
+  addr: address
+
+// Function definition at index 0
+friend fun create(l0: address, l1: &mut u64): GUID
+    local l2: u64
+    copy_loc l1
+    read_ref
+    st_loc l2
+    copy_loc l2
+    ld_u64 1
+    // @5
+    add
+    move_loc l1
+    write_ref
+    move_loc l2
+    move_loc l0
+    // @10
+    pack ID
+    pack GUID
+    ret
+
+// Function definition at index 1
+#[persistent] public fun create_id(l0: address, l1: u64): ID
+    move_loc l1
+    move_loc l0
+    pack ID
+    ret
+
+// Function definition at index 2
+#[persistent] public fun creation_num(l0: &GUID): u64
+    move_loc l0
+    borrow_field GUID, id
+    borrow_field ID, creation_num
+    read_ref
+    ret
+
+// Function definition at index 3
+#[persistent] public fun creator_address(l0: &GUID): address
+    move_loc l0
+    borrow_field GUID, id
+    borrow_field ID, addr
+    read_ref
+    ret
+
+// Function definition at index 4
+#[persistent] public fun eq_id(l0: &GUID, l1: &ID): bool
+    move_loc l0
+    borrow_field GUID, id
+    move_loc l1
+    eq
+    ret
+
+// Function definition at index 5
+#[persistent] public fun id(l0: &GUID): ID
+    move_loc l0
+    borrow_field GUID, id
+    read_ref
+    ret
+
+// Function definition at index 6
+#[persistent] public fun id_creation_num(l0: &ID): u64
+    move_loc l0
+    borrow_field ID, creation_num
+    read_ref
+    ret
+
+// Function definition at index 7
+#[persistent] public fun id_creator_address(l0: &ID): address
+    move_loc l0
+    borrow_field ID, addr
+    read_ref
+    ret
+

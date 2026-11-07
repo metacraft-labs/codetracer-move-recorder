@@ -10,7 +10,9 @@ use codetracer_trace_types::TraceLowLevelEvent;
 use codetracer_trace_writer_nim::non_streaming_trace_writer::NonStreamingTraceWriter;
 
 use codetracer_move_recorder::converter;
-use codetracer_move_recorder::move_types::{SerializableMoveValue, TraceEvent, TraceValue};
+use codetracer_move_recorder::move_types::{
+    RootLocation, SerializableMoveValue, TraceEvent, TraceValue,
+};
 use codetracer_move_recorder::source_map::SourceMapResolver;
 
 // ============================================================================
@@ -288,10 +290,10 @@ fn test_value_variant() {
     )
     .unwrap();
     match v {
-        SerializableMoveValue::Variant { tag, fields, type_ } => {
-            assert_eq!(tag, 1);
-            assert_eq!(type_, "0x1::option::Option");
-            assert_eq!(fields.len(), 1);
+        SerializableMoveValue::Variant(v) => {
+            assert_eq!(v.tag, 1);
+            assert_eq!(v.type_name(), "0x1::option::Option");
+            assert_eq!(v.fields.len(), 1);
         }
         _ => panic!("expected Variant"),
     }
@@ -304,9 +306,9 @@ fn test_value_variant_no_fields() {
     )
     .unwrap();
     match v {
-        SerializableMoveValue::Variant { tag, fields, .. } => {
-            assert_eq!(tag, 0);
-            assert!(fields.is_empty());
+        SerializableMoveValue::Variant(v) => {
+            assert_eq!(v.tag, 0);
+            assert!(v.fields.is_empty());
         }
         _ => panic!("expected Variant"),
     }
@@ -740,7 +742,10 @@ fn test_effect_mut_ref_tracking() {
         TraceEvent::Effect(effect) => match effect {
             codetracer_move_recorder::move_types::Effect::Push(value) => match &value {
                 TraceValue::MutRef { location, snapshot } => {
-                    assert_eq!(location.local_index(), 0);
+                    assert!(matches!(
+                        location.root(),
+                        RootLocation::Local { local_index: 0, .. }
+                    ));
                     match snapshot {
                         SerializableMoveValue::U64 { value } => assert_eq!(*value, 10),
                         _ => panic!("expected U64 snapshot"),
@@ -784,7 +789,10 @@ fn test_effect_imm_ref_tracking() {
         TraceEvent::Effect(effect) => match effect {
             codetracer_move_recorder::move_types::Effect::Push(value) => match &value {
                 TraceValue::ImmRef { location, snapshot } => {
-                    assert_eq!(location.local_index(), 0);
+                    assert!(matches!(
+                        location.root(),
+                        RootLocation::Local { local_index: 0, .. }
+                    ));
                     match snapshot {
                         SerializableMoveValue::U64 { value } => assert_eq!(*value, 77),
                         _ => panic!("expected U64 snapshot"),
@@ -1563,9 +1571,9 @@ fn test_variant_with_no_type_name() {
     )
     .unwrap();
     match v {
-        SerializableMoveValue::Variant { tag, type_, .. } => {
-            assert_eq!(tag, 0);
-            assert!(type_.is_empty());
+        SerializableMoveValue::Variant(v) => {
+            assert_eq!(v.tag, 0);
+            assert!(v.type_name().is_empty());
         }
         _ => panic!("expected Variant"),
     }

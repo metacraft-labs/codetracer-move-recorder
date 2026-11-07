@@ -1,0 +1,2366 @@
+// Bytecode version v10
+module 0x1::object
+use 0x1::event
+use 0x1::signer
+use 0x1::guid
+use 0x1::create_signer
+use 0x1::bcs
+use 0x1::hash
+use 0x1::from_bcs
+use 0x1::vector
+use 0x1::error
+use 0x1::transaction_context
+use 0x1::account
+friend 0x1::primary_fungible_store
+friend 0x1::coin
+struct ConstructorRef has drop
+  self: address
+  can_delete: bool
+
+struct DeleteRef has drop + store
+  self: address
+
+struct DeriveRef has drop + store
+  self: address
+
+struct ExtendRef has drop + store
+  self: address
+
+struct LinearTransferRef has drop
+  self: address
+  owner: address
+
+struct Object<phantom T0> has copy + drop + store
+  inner: address
+
+struct ObjectCore has key
+  guid_creation_num: u64
+  owner: address
+  allow_ungated_transfer: bool
+  transfer_events: event::EventHandle<TransferEvent>
+
+struct ObjectGroup
+  dummy_field: bool
+
+struct TombStone has key
+  original_owner: address
+
+struct Transfer has drop + store
+  object: address
+  from: address
+  to: address
+
+struct TransferEvent has drop + store
+  object: address
+  from: address
+  to: address
+
+struct TransferPermission has copy + drop + store
+  object: address
+
+struct TransferRef has drop + store
+  self: address
+
+struct Untransferable has key
+  dummy_field: bool
+
+// Function definition at index 0
+#[persistent] public fun new_event_handle<T0: drop + store>(l0: &signer): event::EventHandle<T0> acquires ObjectCore
+    local l1: address
+    local l2: &mut ObjectCore
+    local l3: &mut u64
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l1
+    copy_loc l1
+    // @5
+    mut_borrow_global ObjectCore
+    mut_borrow_field ObjectCore, guid_creation_num
+    st_loc l3
+    move_loc l1
+    move_loc l3
+    // @10
+    call guid::create
+    call event::new_event_handle<T0>
+    ret
+
+// Function definition at index 1
+#[persistent] public fun create_guid(l0: &signer): guid::GUID acquires ObjectCore
+    local l1: address
+    local l2: &mut ObjectCore
+    local l3: &mut u64
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l1
+    copy_loc l1
+    // @5
+    mut_borrow_global ObjectCore
+    mut_borrow_field ObjectCore, guid_creation_num
+    st_loc l3
+    move_loc l1
+    move_loc l3
+    // @10
+    call guid::create
+    ret
+
+// Function definition at index 2
+native fun exists_at<T0: key>(l0: address): bool
+
+// Function definition at index 3
+#[persistent] public fun address_from_constructor_ref(l0: &ConstructorRef): address
+    move_loc l0
+    borrow_field ConstructorRef, self
+    read_ref
+    ret
+
+// Function definition at index 4
+#[persistent] public fun address_from_delete_ref(l0: &DeleteRef): address
+    move_loc l0
+    borrow_field DeleteRef, self
+    read_ref
+    ret
+
+// Function definition at index 5
+#[persistent] public fun address_from_extend_ref(l0: &ExtendRef): address
+    move_loc l0
+    borrow_field ExtendRef, self
+    read_ref
+    ret
+
+// Function definition at index 6
+#[persistent] public fun address_to_object<T0: key>(l0: address): Object<T0>
+    copy_loc l0
+    exists ObjectCore
+    br_false l0
+    copy_loc l0
+    call exists_at<T0>
+    // @5
+    br_false l1
+    move_loc l0
+    pack Object<T0>
+    ret
+l1: ld_u64 393223
+    // @10
+    abort
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 7
+#[persistent] entry public fun burn<T0: key>(l0: &signer, l1: Object<T0>) acquires ObjectCore
+    local l2: address
+    local l3: address
+    local l4: Object<T0>
+    local l5: address
+    local l6: signer
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l2
+    copy_loc l1
+    // @5
+    copy_loc l2
+    st_loc l3
+    st_loc l4
+    borrow_loc l4
+    borrow_field Object<T0>, inner
+    // @10
+    read_ref
+    exists ObjectCore
+    br_false l0
+    borrow_loc l4
+    borrow_field Object<T0>, inner
+    // @15
+    read_ref
+    borrow_global ObjectCore
+    borrow_field ObjectCore, owner
+    read_ref
+    move_loc l3
+    // @20
+    eq
+    br_false l1
+    borrow_loc l1
+    borrow_field Object<T0>, inner
+    read_ref
+    // @25
+    st_loc l5
+    copy_loc l5
+    exists TombStone
+    br_true l2
+    move_loc l5
+    // @30
+    call create_signer::create_signer
+    st_loc l6
+    borrow_loc l6
+    move_loc l2
+    pack TombStone
+    // @35
+    move_to TombStone
+    ret
+l2: ld_u64 10
+    abort
+l1: ld_u64 327684
+    // @40
+    abort
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 8
+#[persistent] public fun owner<T0: key>(l0: Object<T0>): address acquires ObjectCore
+    borrow_loc l0
+    borrow_field Object<T0>, inner
+    read_ref
+    exists ObjectCore
+    br_false l0
+    // @5
+    borrow_loc l0
+    borrow_field Object<T0>, inner
+    read_ref
+    borrow_global ObjectCore
+    borrow_field ObjectCore, owner
+    // @10
+    read_ref
+    ret
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 9
+#[persistent] public fun can_generate_delete_ref(l0: &ConstructorRef): bool
+    move_loc l0
+    borrow_field ConstructorRef, can_delete
+    read_ref
+    ret
+
+// Function definition at index 10
+#[persistent] public fun convert<T0: key, T1: key>(l0: Object<T0>): Object<T1>
+    local l1: address
+    borrow_loc l0
+    borrow_field Object<T0>, inner
+    read_ref
+    st_loc l1
+    copy_loc l1
+    // @5
+    exists ObjectCore
+    br_false l0
+    copy_loc l1
+    call exists_at<T1>
+    br_false l1
+    // @10
+    move_loc l1
+    pack Object<T1>
+    ret
+l1: ld_u64 393223
+    abort
+    // @15
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 11
+#[persistent] public fun create_guid_object_address(l0: address, l1: u64): address
+    local l2: guid::ID
+    local l3: vector<u8>
+    move_loc l0
+    move_loc l1
+    call guid::create_id
+    st_loc l2
+    borrow_loc l2
+    // @5
+    call bcs::to_bytes<guid::ID>
+    st_loc l3
+    mut_borrow_loc l3
+    ld_u8 253
+    vec_push_back <u8>
+    // @10
+    move_loc l3
+    call hash::sha3_256
+    call from_bcs::to_address
+    ret
+
+// Function definition at index 12
+#[persistent] public fun create_named_object(l0: &signer, l1: vector<u8>): ConstructorRef
+    local l2: address
+    local l3: vector<u8>
+    local l4: &mut vector<u8>
+    local l5: vector<u8>
+    local l6: u64
+    local l7: u64
+    local l8: address
+    local l9: address
+    local l10: signer
+    local l11: u64
+    local l12: guid::GUID
+    local l13: &mut vector<u8>
+    local l14: vector<u8>
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l2
+    borrow_loc l2
+    // @5
+    call bcs::to_bytes<address>
+    st_loc l3
+    mut_borrow_loc l3
+    st_loc l4
+    move_loc l1
+    // @10
+    st_loc l5
+    copy_loc l4
+    freeze_ref
+    vec_len <u8>
+    st_loc l6
+    // @15
+    borrow_loc l5
+    vec_len <u8>
+    st_loc l7
+    mut_borrow_loc l5
+    ld_u64 0
+    // @20
+    move_loc l7
+    move_loc l4
+    move_loc l6
+    call vector::move_range<u8>
+    move_loc l5
+    // @25
+    vec_unpack <u8>, 0
+l3: mut_borrow_loc l3
+    ld_u8 254
+    vec_push_back <u8>
+    move_loc l3
+    // @30
+    call hash::sha3_256
+    call from_bcs::to_address
+    st_loc l8
+    move_loc l2
+    st_loc l9
+    // @35
+    copy_loc l8
+    exists ObjectCore
+    br_true l0
+    copy_loc l8
+    call create_signer::create_signer
+    // @40
+    st_loc l10
+    ld_u64 1125899906842624
+    st_loc l11
+    copy_loc l8
+    mut_borrow_loc l11
+    // @45
+    call guid::create
+    st_loc l12
+    borrow_loc l10
+    move_loc l11
+    move_loc l9
+    // @50
+    ld_true
+    move_loc l12
+    call event::new_event_handle<TransferEvent>
+    pack ObjectCore
+    move_to ObjectCore
+    // @55
+    move_loc l8
+    ld_false
+    pack ConstructorRef
+    ret
+l0: ld_u64 524289
+    // @60
+    abort
+    mut_borrow_loc l5
+    st_loc l13
+    copy_loc l13
+    freeze_ref
+    // @65
+    vec_len <u8>
+    st_loc l6
+    move_loc l13
+    ld_u64 0
+    move_loc l6
+    // @70
+    call vector::reverse_slice<u8>
+    move_loc l5
+    st_loc l14
+    borrow_loc l14
+    vec_len <u8>
+    // @75
+    st_loc l6
+l2: copy_loc l6
+    ld_u64 0
+    gt
+    br_false l1
+    // @80
+    copy_loc l4
+    mut_borrow_loc l14
+    vec_pop_back <u8>
+    vec_push_back <u8>
+    move_loc l6
+    // @85
+    ld_u64 1
+    sub
+    st_loc l6
+    branch l2
+l1: move_loc l4
+    // @90
+    pop
+    move_loc l14
+    vec_unpack <u8>, 0
+    branch l3
+
+// Function definition at index 13
+#[persistent] public fun create_named_unowned_onchain_signer(l0: &signer, l1: vector<u8>): ExtendRef acquires ObjectCore, TombStone
+    local l2: address
+    local l3: vector<u8>
+    local l4: address
+    local l5: address
+    local l6: signer
+    local l7: u64
+    local l8: guid::GUID
+    local l9: ConstructorRef
+    local l10: &ConstructorRef
+    local l11: ExtendRef
+    local l12: TransferRef
+    local l13: &TransferRef
+    local l14: address
+    local l15: LinearTransferRef
+    local l16: &mut ObjectCore
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l2
+    borrow_loc l2
+    // @5
+    call bcs::to_bytes<address>
+    st_loc l3
+    mut_borrow_loc l3
+    move_loc l1
+    call vector::append<u8>
+    // @10
+    mut_borrow_loc l3
+    ld_u8 254
+    vec_push_back <u8>
+    move_loc l3
+    call hash::sha3_256
+    // @15
+    call from_bcs::to_address
+    st_loc l4
+    move_loc l2
+    st_loc l5
+    copy_loc l4
+    // @20
+    exists ObjectCore
+    br_true l0
+    copy_loc l4
+    call create_signer::create_signer
+    st_loc l6
+    // @25
+    ld_u64 1125899906842624
+    st_loc l7
+    copy_loc l4
+    mut_borrow_loc l7
+    call guid::create
+    // @30
+    st_loc l8
+    borrow_loc l6
+    move_loc l7
+    move_loc l5
+    ld_true
+    // @35
+    move_loc l8
+    call event::new_event_handle<TransferEvent>
+    pack ObjectCore
+    move_to ObjectCore
+    move_loc l4
+    // @40
+    ld_false
+    pack ConstructorRef
+    st_loc l9
+    borrow_loc l9
+    borrow_field ConstructorRef, self
+    // @45
+    read_ref
+    pack ExtendRef
+    st_loc l11
+    borrow_loc l9
+    st_loc l10
+    // @50
+    copy_loc l10
+    borrow_field ConstructorRef, self
+    read_ref
+    exists Untransferable
+    br_true l1
+    // @55
+    move_loc l10
+    borrow_field ConstructorRef, self
+    read_ref
+    pack TransferRef
+    st_loc l12
+    // @60
+    borrow_loc l12
+    st_loc l13
+    copy_loc l13
+    borrow_field TransferRef, self
+    read_ref
+    // @65
+    exists Untransferable
+    br_true l2
+    copy_loc l13
+    borrow_field TransferRef, self
+    read_ref
+    // @70
+    pack Object<ObjectCore>
+    call owner<ObjectCore>
+    st_loc l14
+    move_loc l13
+    borrow_field TransferRef, self
+    // @75
+    read_ref
+    move_loc l14
+    pack LinearTransferRef
+    st_loc l15
+    borrow_loc l15
+    // @80
+    borrow_field LinearTransferRef, self
+    read_ref
+    exists Untransferable
+    br_true l3
+    borrow_loc l15
+    // @85
+    borrow_field LinearTransferRef, self
+    read_ref
+    exists TombStone
+    br_true l4
+    branch l5
+    // @90
+l4: borrow_loc l15
+    borrow_field LinearTransferRef, self
+    read_ref
+    move_from TombStone
+    unpack TombStone
+    // @95
+    pop
+l5: borrow_loc l15
+    borrow_field LinearTransferRef, self
+    read_ref
+    mut_borrow_global ObjectCore
+    // @100
+    st_loc l16
+    copy_loc l16
+    borrow_field ObjectCore, owner
+    read_ref
+    borrow_loc l15
+    // @105
+    borrow_field LinearTransferRef, owner
+    read_ref
+    eq
+    br_false l6
+    borrow_loc l15
+    // @110
+    borrow_field LinearTransferRef, self
+    read_ref
+    copy_loc l16
+    borrow_field ObjectCore, owner
+    read_ref
+    // @115
+    ld_const<address> 0
+    pack Transfer
+    call event::emit<Transfer>
+    ld_const<address> 0
+    move_loc l16
+    // @120
+    mut_borrow_field ObjectCore, owner
+    write_ref
+    move_loc l11
+    ret
+l6: move_loc l16
+    // @125
+    pop
+    ld_u64 327684
+    abort
+l3: ld_u64 327689
+    abort
+    // @130
+l2: move_loc l13
+    pop
+    ld_u64 327689
+    abort
+l1: move_loc l10
+    // @135
+    pop
+    ld_u64 327689
+    abort
+l0: ld_u64 1
+    call error::already_exists
+    // @140
+    abort
+
+// Function definition at index 14
+#[persistent] public fun create_object(l0: address): ConstructorRef
+    local l1: address
+    local l2: signer
+    local l3: u64
+    local l4: guid::GUID
+    call transaction_context::generate_auid_address
+    st_loc l1
+    copy_loc l1
+    exists ObjectCore
+    br_true l0
+    // @5
+    copy_loc l1
+    call create_signer::create_signer
+    st_loc l2
+    ld_u64 1125899906842624
+    st_loc l3
+    // @10
+    copy_loc l1
+    mut_borrow_loc l3
+    call guid::create
+    st_loc l4
+    borrow_loc l2
+    // @15
+    move_loc l3
+    move_loc l0
+    ld_true
+    move_loc l4
+    call event::new_event_handle<TransferEvent>
+    // @20
+    pack ObjectCore
+    move_to ObjectCore
+    move_loc l1
+    ld_true
+    pack ConstructorRef
+    // @25
+    ret
+l0: ld_u64 524289
+    abort
+
+// Function definition at index 15
+#[persistent] public fun create_object_address(l0: &address, l1: vector<u8>): address
+    local l2: vector<u8>
+    local l3: &mut vector<u8>
+    local l4: vector<u8>
+    local l5: u64
+    local l6: u64
+    local l7: &mut vector<u8>
+    local l8: vector<u8>
+    move_loc l0
+    call bcs::to_bytes<address>
+    st_loc l2
+    mut_borrow_loc l2
+    st_loc l3
+    // @5
+    move_loc l1
+    st_loc l4
+    copy_loc l3
+    freeze_ref
+    vec_len <u8>
+    // @10
+    st_loc l5
+    borrow_loc l4
+    vec_len <u8>
+    st_loc l6
+    mut_borrow_loc l4
+    // @15
+    ld_u64 0
+    move_loc l6
+    move_loc l3
+    move_loc l5
+    call vector::move_range<u8>
+    // @20
+    move_loc l4
+    vec_unpack <u8>, 0
+l2: mut_borrow_loc l2
+    ld_u8 254
+    vec_push_back <u8>
+    // @25
+    move_loc l2
+    call hash::sha3_256
+    call from_bcs::to_address
+    ret
+    mut_borrow_loc l4
+    // @30
+    st_loc l7
+    copy_loc l7
+    freeze_ref
+    vec_len <u8>
+    st_loc l5
+    // @35
+    move_loc l7
+    ld_u64 0
+    move_loc l5
+    call vector::reverse_slice<u8>
+    move_loc l4
+    // @40
+    st_loc l8
+    borrow_loc l8
+    vec_len <u8>
+    st_loc l5
+l1: copy_loc l5
+    // @45
+    ld_u64 0
+    gt
+    br_false l0
+    copy_loc l3
+    mut_borrow_loc l8
+    // @50
+    vec_pop_back <u8>
+    vec_push_back <u8>
+    move_loc l5
+    ld_u64 1
+    sub
+    // @55
+    st_loc l5
+    branch l1
+l0: move_loc l3
+    pop
+    move_loc l8
+    // @60
+    vec_unpack <u8>, 0
+    branch l2
+
+// Function definition at index 16
+#[persistent] public fun create_object_from_account(l0: &signer): ConstructorRef
+    local l1: address
+    local l2: guid::GUID
+    local l3: vector<u8>
+    local l4: address
+    local l5: signer
+    local l6: u64
+    local l7: guid::GUID
+    copy_loc l0
+    call account::create_guid
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    // @5
+    st_loc l1
+    st_loc l2
+    borrow_loc l2
+    call bcs::to_bytes<guid::GUID>
+    st_loc l3
+    // @10
+    mut_borrow_loc l3
+    ld_u8 253
+    vec_push_back <u8>
+    move_loc l3
+    call hash::sha3_256
+    // @15
+    call from_bcs::to_address
+    st_loc l4
+    copy_loc l4
+    exists ObjectCore
+    br_true l0
+    // @20
+    copy_loc l4
+    call create_signer::create_signer
+    st_loc l5
+    ld_u64 1125899906842624
+    st_loc l6
+    // @25
+    copy_loc l4
+    mut_borrow_loc l6
+    call guid::create
+    st_loc l7
+    borrow_loc l5
+    // @30
+    move_loc l6
+    move_loc l1
+    ld_true
+    move_loc l7
+    call event::new_event_handle<TransferEvent>
+    // @35
+    pack ObjectCore
+    move_to ObjectCore
+    move_loc l4
+    ld_true
+    pack ConstructorRef
+    // @40
+    ret
+l0: ld_u64 524289
+    abort
+
+// Function definition at index 17
+fun create_object_from_guid(l0: address, l1: guid::GUID): ConstructorRef
+    local l2: vector<u8>
+    local l3: address
+    local l4: signer
+    local l5: u64
+    local l6: guid::GUID
+    borrow_loc l1
+    call bcs::to_bytes<guid::GUID>
+    st_loc l2
+    mut_borrow_loc l2
+    ld_u8 253
+    // @5
+    vec_push_back <u8>
+    move_loc l2
+    call hash::sha3_256
+    call from_bcs::to_address
+    st_loc l3
+    // @10
+    copy_loc l3
+    exists ObjectCore
+    br_true l0
+    copy_loc l3
+    call create_signer::create_signer
+    // @15
+    st_loc l4
+    ld_u64 1125899906842624
+    st_loc l5
+    copy_loc l3
+    mut_borrow_loc l5
+    // @20
+    call guid::create
+    st_loc l6
+    borrow_loc l4
+    move_loc l5
+    move_loc l0
+    // @25
+    ld_true
+    move_loc l6
+    call event::new_event_handle<TransferEvent>
+    pack ObjectCore
+    move_to ObjectCore
+    // @30
+    move_loc l3
+    ld_true
+    pack ConstructorRef
+    ret
+l0: ld_u64 524289
+    // @35
+    abort
+
+// Function definition at index 18
+#[persistent] public fun create_object_from_object(l0: &signer): ConstructorRef acquires ObjectCore
+    local l1: address
+    local l2: &mut ObjectCore
+    local l3: &mut u64
+    local l4: guid::GUID
+    local l5: vector<u8>
+    local l6: address
+    local l7: signer
+    local l8: u64
+    local l9: guid::GUID
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l1
+    copy_loc l1
+    // @5
+    mut_borrow_global ObjectCore
+    mut_borrow_field ObjectCore, guid_creation_num
+    st_loc l3
+    move_loc l1
+    move_loc l3
+    // @10
+    call guid::create
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l1
+    // @15
+    st_loc l4
+    borrow_loc l4
+    call bcs::to_bytes<guid::GUID>
+    st_loc l5
+    mut_borrow_loc l5
+    // @20
+    ld_u8 253
+    vec_push_back <u8>
+    move_loc l5
+    call hash::sha3_256
+    call from_bcs::to_address
+    // @25
+    st_loc l6
+    copy_loc l6
+    exists ObjectCore
+    br_true l0
+    copy_loc l6
+    // @30
+    call create_signer::create_signer
+    st_loc l7
+    ld_u64 1125899906842624
+    st_loc l8
+    copy_loc l6
+    // @35
+    mut_borrow_loc l8
+    call guid::create
+    st_loc l9
+    borrow_loc l7
+    move_loc l8
+    // @40
+    move_loc l1
+    ld_true
+    move_loc l9
+    call event::new_event_handle<TransferEvent>
+    pack ObjectCore
+    // @45
+    move_to ObjectCore
+    move_loc l6
+    ld_true
+    pack ConstructorRef
+    ret
+    // @50
+l0: ld_u64 524289
+    abort
+
+// Function definition at index 19
+fun create_object_internal(l0: address, l1: address, l2: bool): ConstructorRef
+    local l3: signer
+    local l4: u64
+    local l5: guid::GUID
+    copy_loc l1
+    exists ObjectCore
+    br_true l0
+    copy_loc l1
+    call create_signer::create_signer
+    // @5
+    st_loc l3
+    ld_u64 1125899906842624
+    st_loc l4
+    copy_loc l1
+    mut_borrow_loc l4
+    // @10
+    call guid::create
+    st_loc l5
+    borrow_loc l3
+    move_loc l4
+    move_loc l0
+    // @15
+    ld_true
+    move_loc l5
+    call event::new_event_handle<TransferEvent>
+    pack ObjectCore
+    move_to ObjectCore
+    // @20
+    move_loc l1
+    move_loc l2
+    pack ConstructorRef
+    ret
+l0: ld_u64 524289
+    // @25
+    abort
+
+// Function definition at index 20
+#[persistent] public fun create_sticky_object(l0: address): ConstructorRef
+    local l1: address
+    local l2: signer
+    local l3: u64
+    local l4: guid::GUID
+    call transaction_context::generate_auid_address
+    st_loc l1
+    copy_loc l1
+    exists ObjectCore
+    br_true l0
+    // @5
+    copy_loc l1
+    call create_signer::create_signer
+    st_loc l2
+    ld_u64 1125899906842624
+    st_loc l3
+    // @10
+    copy_loc l1
+    mut_borrow_loc l3
+    call guid::create
+    st_loc l4
+    borrow_loc l2
+    // @15
+    move_loc l3
+    move_loc l0
+    ld_true
+    move_loc l4
+    call event::new_event_handle<TransferEvent>
+    // @20
+    pack ObjectCore
+    move_to ObjectCore
+    move_loc l1
+    ld_false
+    pack ConstructorRef
+    // @25
+    ret
+l0: ld_u64 524289
+    abort
+
+// Function definition at index 21
+friend fun create_sticky_object_at_address(l0: address, l1: address): ConstructorRef
+    local l2: signer
+    local l3: u64
+    local l4: guid::GUID
+    copy_loc l1
+    exists ObjectCore
+    br_true l0
+    copy_loc l1
+    call create_signer::create_signer
+    // @5
+    st_loc l2
+    ld_u64 1125899906842624
+    st_loc l3
+    copy_loc l1
+    mut_borrow_loc l3
+    // @10
+    call guid::create
+    st_loc l4
+    borrow_loc l2
+    move_loc l3
+    move_loc l0
+    // @15
+    ld_true
+    move_loc l4
+    call event::new_event_handle<TransferEvent>
+    pack ObjectCore
+    move_to ObjectCore
+    // @20
+    move_loc l1
+    ld_false
+    pack ConstructorRef
+    ret
+l0: ld_u64 524289
+    // @25
+    abort
+
+// Function definition at index 22
+#[persistent] public fun object_address<T0: key>(l0: &Object<T0>): address
+    move_loc l0
+    borrow_field Object<T0>, inner
+    read_ref
+    ret
+
+// Function definition at index 23
+#[persistent] public fun create_unique_onchain_signer(): ExtendRef
+    call transaction_context::generate_auid_address
+    pack ExtendRef
+    ret
+
+// Function definition at index 24
+friend fun create_user_derived_object(l0: address, l1: &DeriveRef): ConstructorRef
+    local l2: address
+    local l3: address
+    local l4: signer
+    local l5: u64
+    local l6: guid::GUID
+    copy_loc l0
+    move_loc l1
+    borrow_field DeriveRef, self
+    read_ref
+    call create_user_derived_object_address_impl
+    // @5
+    st_loc l3
+    copy_loc l3
+    exists ObjectCore
+    br_true l0
+    copy_loc l3
+    // @10
+    call create_signer::create_signer
+    st_loc l4
+    ld_u64 1125899906842624
+    st_loc l5
+    copy_loc l3
+    // @15
+    mut_borrow_loc l5
+    call guid::create
+    st_loc l6
+    borrow_loc l4
+    move_loc l5
+    // @20
+    move_loc l0
+    ld_true
+    move_loc l6
+    call event::new_event_handle<TransferEvent>
+    pack ObjectCore
+    // @25
+    move_to ObjectCore
+    move_loc l3
+    ld_false
+    pack ConstructorRef
+    ret
+    // @30
+l0: ld_u64 524289
+    abort
+
+// Function definition at index 25
+#[persistent] public fun create_user_derived_object_address(l0: address, l1: address): address
+    move_loc l0
+    move_loc l1
+    call create_user_derived_object_address_impl
+    ret
+
+// Function definition at index 26
+native fun create_user_derived_object_address_impl(l0: address, l1: address): address
+
+// Function definition at index 27
+#[persistent] public fun delete(l0: DeleteRef) acquires ObjectCore, Untransferable
+    local l1: event::EventHandle<TransferEvent>
+    borrow_loc l0
+    borrow_field DeleteRef, self
+    read_ref
+    move_from ObjectCore
+    unpack ObjectCore
+    // @5
+    st_loc l1
+    pop
+    pop
+    pop
+    borrow_loc l0
+    // @10
+    borrow_field DeleteRef, self
+    read_ref
+    exists Untransferable
+    br_true l0
+    branch l1
+    // @15
+l0: borrow_loc l0
+    borrow_field DeleteRef, self
+    read_ref
+    move_from Untransferable
+    unpack Untransferable
+    // @20
+    pop
+l1: move_loc l1
+    call event::destroy_handle<TransferEvent>
+    ret
+
+// Function definition at index 28
+#[persistent] public fun disable_ungated_transfer(l0: &TransferRef) acquires ObjectCore
+    local l1: &mut ObjectCore
+    move_loc l0
+    borrow_field TransferRef, self
+    read_ref
+    mut_borrow_global ObjectCore
+    st_loc l1
+    // @5
+    ld_false
+    move_loc l1
+    mut_borrow_field ObjectCore, allow_ungated_transfer
+    write_ref
+    ret
+
+// Function definition at index 29
+#[persistent] public fun enable_ungated_transfer(l0: &TransferRef) acquires ObjectCore
+    local l1: &mut ObjectCore
+    copy_loc l0
+    borrow_field TransferRef, self
+    read_ref
+    exists Untransferable
+    br_true l0
+    // @5
+    move_loc l0
+    borrow_field TransferRef, self
+    read_ref
+    mut_borrow_global ObjectCore
+    st_loc l1
+    // @10
+    ld_true
+    move_loc l1
+    mut_borrow_field ObjectCore, allow_ungated_transfer
+    write_ref
+    ret
+    // @15
+l0: move_loc l0
+    pop
+    ld_u64 327689
+    abort
+
+// Function definition at index 30
+#[persistent] public fun generate_delete_ref(l0: &ConstructorRef): DeleteRef
+    copy_loc l0
+    borrow_field ConstructorRef, can_delete
+    read_ref
+    br_false l0
+    move_loc l0
+    // @5
+    borrow_field ConstructorRef, self
+    read_ref
+    pack DeleteRef
+    ret
+l0: move_loc l0
+    // @10
+    pop
+    ld_u64 327685
+    abort
+
+// Function definition at index 31
+#[persistent] public fun generate_derive_ref(l0: &ConstructorRef): DeriveRef
+    move_loc l0
+    borrow_field ConstructorRef, self
+    read_ref
+    pack DeriveRef
+    ret
+
+// Function definition at index 32
+#[persistent] public fun generate_extend_ref(l0: &ConstructorRef): ExtendRef
+    move_loc l0
+    borrow_field ConstructorRef, self
+    read_ref
+    pack ExtendRef
+    ret
+
+// Function definition at index 33
+#[persistent] public fun generate_linear_transfer_ref(l0: &TransferRef): LinearTransferRef acquires ObjectCore
+    local l1: Object<ObjectCore>
+    local l2: address
+    copy_loc l0
+    borrow_field TransferRef, self
+    read_ref
+    exists Untransferable
+    br_true l0
+    // @5
+    copy_loc l0
+    borrow_field TransferRef, self
+    read_ref
+    pack Object<ObjectCore>
+    st_loc l1
+    // @10
+    borrow_loc l1
+    borrow_field Object<ObjectCore>, inner
+    read_ref
+    exists ObjectCore
+    br_false l1
+    // @15
+    borrow_loc l1
+    borrow_field Object<ObjectCore>, inner
+    read_ref
+    borrow_global ObjectCore
+    borrow_field ObjectCore, owner
+    // @20
+    read_ref
+    st_loc l2
+    move_loc l0
+    borrow_field TransferRef, self
+    read_ref
+    // @25
+    move_loc l2
+    pack LinearTransferRef
+    ret
+l1: move_loc l0
+    pop
+    // @30
+    ld_u64 393218
+    abort
+l0: move_loc l0
+    pop
+    ld_u64 327689
+    // @35
+    abort
+
+// Function definition at index 34
+#[persistent] public fun generate_signer(l0: &ConstructorRef): signer
+    move_loc l0
+    borrow_field ConstructorRef, self
+    read_ref
+    call create_signer::create_signer
+    ret
+
+// Function definition at index 35
+#[persistent] public fun generate_signer_for_extending(l0: &ExtendRef): signer
+    move_loc l0
+    borrow_field ExtendRef, self
+    read_ref
+    call create_signer::create_signer
+    ret
+
+// Function definition at index 36
+#[persistent] public fun generate_transfer_ref(l0: &ConstructorRef): TransferRef
+    copy_loc l0
+    borrow_field ConstructorRef, self
+    read_ref
+    exists Untransferable
+    br_true l0
+    // @5
+    move_loc l0
+    borrow_field ConstructorRef, self
+    read_ref
+    pack TransferRef
+    ret
+    // @10
+l0: move_loc l0
+    pop
+    ld_u64 327689
+    abort
+
+// Function definition at index 37
+#[persistent] public fun grant_permission<T0>(l0: &signer, l1: &signer, l2: Object<T0>)
+    ld_u64 851980
+    move_loc l0
+    pop
+    move_loc l1
+    pop
+    // @5
+    abort
+
+// Function definition at index 38
+#[persistent] public fun grant_permission_with_transfer_ref(l0: &signer, l1: &TransferRef)
+    ld_u64 851980
+    move_loc l0
+    pop
+    move_loc l1
+    pop
+    // @5
+    abort
+
+// Function definition at index 39
+#[persistent] public fun is_burnt<T0: key>(l0: Object<T0>): bool
+    borrow_loc l0
+    borrow_field Object<T0>, inner
+    read_ref
+    exists TombStone
+    ret
+
+// Function definition at index 40
+#[persistent] public fun is_object(l0: address): bool
+    move_loc l0
+    exists ObjectCore
+    ret
+
+// Function definition at index 41
+#[persistent] public fun is_owner<T0: key>(l0: Object<T0>, l1: address): bool acquires ObjectCore
+    local l2: Object<T0>
+    move_loc l0
+    st_loc l2
+    borrow_loc l2
+    borrow_field Object<T0>, inner
+    read_ref
+    // @5
+    exists ObjectCore
+    br_false l0
+    borrow_loc l2
+    borrow_field Object<T0>, inner
+    read_ref
+    // @10
+    borrow_global ObjectCore
+    borrow_field ObjectCore, owner
+    read_ref
+    move_loc l1
+    eq
+    // @15
+    ret
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 42
+#[persistent] public fun is_untransferable<T0: key>(l0: Object<T0>): bool
+    borrow_loc l0
+    borrow_field Object<T0>, inner
+    read_ref
+    exists Untransferable
+    ret
+
+// Function definition at index 43
+#[persistent] public fun object_exists<T0: key>(l0: address): bool
+    copy_loc l0
+    exists ObjectCore
+    br_false l0
+    move_loc l0
+    call exists_at<T0>
+    // @5
+    ret
+l0: ld_false
+    ret
+
+// Function definition at index 44
+#[persistent] public fun object_from_constructor_ref<T0: key>(l0: &ConstructorRef): Object<T0>
+    local l1: address
+    move_loc l0
+    borrow_field ConstructorRef, self
+    read_ref
+    st_loc l1
+    copy_loc l1
+    // @5
+    exists ObjectCore
+    br_false l0
+    copy_loc l1
+    call exists_at<T0>
+    br_false l1
+    // @10
+    move_loc l1
+    pack Object<T0>
+    ret
+l1: ld_u64 393223
+    abort
+    // @15
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 45
+#[persistent] public fun object_from_delete_ref<T0: key>(l0: &DeleteRef): Object<T0>
+    local l1: address
+    move_loc l0
+    borrow_field DeleteRef, self
+    read_ref
+    st_loc l1
+    copy_loc l1
+    // @5
+    exists ObjectCore
+    br_false l0
+    copy_loc l1
+    call exists_at<T0>
+    br_false l1
+    // @10
+    move_loc l1
+    pack Object<T0>
+    ret
+l1: ld_u64 393223
+    abort
+    // @15
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 46
+#[persistent] public fun owns<T0: key>(l0: Object<T0>, l1: address): bool acquires ObjectCore
+    local l2: address
+    local l3: address
+    local l4: u8
+    borrow_loc l0
+    borrow_field Object<T0>, inner
+    read_ref
+    st_loc l2
+    copy_loc l2
+    // @5
+    exists ObjectCore
+    br_false l0
+    copy_loc l2
+    copy_loc l1
+    eq
+    // @10
+    br_false l1
+    ld_true
+    ret
+l1: move_loc l2
+    borrow_global ObjectCore
+    // @15
+    borrow_field ObjectCore, owner
+    read_ref
+    st_loc l3
+    ld_u8 0
+    st_loc l4
+    // @20
+l5: copy_loc l1
+    copy_loc l3
+    neq
+    br_false l2
+    move_loc l4
+    // @25
+    ld_u8 1
+    add
+    st_loc l4
+    copy_loc l4
+    ld_u8 8
+    // @30
+    lt
+    br_false l3
+    copy_loc l3
+    exists ObjectCore
+    br_true l4
+    // @35
+    ld_false
+    ret
+l4: move_loc l3
+    borrow_global ObjectCore
+    borrow_field ObjectCore, owner
+    // @40
+    read_ref
+    st_loc l3
+    branch l5
+l3: ld_u64 131078
+    abort
+    // @45
+l2: ld_true
+    ret
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 47
+#[persistent] public fun root_owner<T0: key>(l0: Object<T0>): address acquires ObjectCore
+    local l1: Object<T0>
+    local l2: address
+    local l3: address
+    local l4: Object<ObjectCore>
+    move_loc l0
+    st_loc l1
+    borrow_loc l1
+    borrow_field Object<T0>, inner
+    read_ref
+    // @5
+    exists ObjectCore
+    br_false l0
+    borrow_loc l1
+    borrow_field Object<T0>, inner
+    read_ref
+    // @10
+    borrow_global ObjectCore
+    borrow_field ObjectCore, owner
+    read_ref
+    st_loc l2
+l5: copy_loc l2
+    // @15
+    exists ObjectCore
+    br_false l1
+    move_loc l2
+    st_loc l3
+    copy_loc l3
+    // @20
+    exists ObjectCore
+    br_false l2
+    copy_loc l3
+    call exists_at<ObjectCore>
+    br_false l3
+    // @25
+    move_loc l3
+    pack Object<ObjectCore>
+    st_loc l4
+    borrow_loc l4
+    borrow_field Object<ObjectCore>, inner
+    // @30
+    read_ref
+    exists ObjectCore
+    br_false l4
+    borrow_loc l4
+    borrow_field Object<ObjectCore>, inner
+    // @35
+    read_ref
+    borrow_global ObjectCore
+    borrow_field ObjectCore, owner
+    read_ref
+    st_loc l2
+    // @40
+    branch l5
+l4: ld_u64 393218
+    abort
+l3: ld_u64 393223
+    abort
+    // @45
+l2: ld_u64 393218
+    abort
+l1: move_loc l2
+    ret
+l0: ld_u64 393218
+    // @50
+    abort
+
+// Function definition at index 48
+#[persistent] public fun set_untransferable(l0: &ConstructorRef) acquires ObjectCore
+    local l1: &mut ObjectCore
+    local l2: signer
+    copy_loc l0
+    borrow_field ConstructorRef, self
+    read_ref
+    mut_borrow_global ObjectCore
+    st_loc l1
+    // @5
+    ld_false
+    move_loc l1
+    mut_borrow_field ObjectCore, allow_ungated_transfer
+    write_ref
+    move_loc l0
+    // @10
+    borrow_field ConstructorRef, self
+    read_ref
+    call create_signer::create_signer
+    st_loc l2
+    borrow_loc l2
+    // @15
+    ld_false
+    pack Untransferable
+    move_to Untransferable
+    ret
+
+// Function definition at index 49
+#[persistent] entry public fun transfer<T0: key>(l0: &signer, l1: Object<T0>, l2: address) acquires ObjectCore
+    local l3: address
+    local l4: address
+    local l5: address
+    local l6: &ObjectCore
+    local l7: address
+    local l8: u8
+    local l9: &ObjectCore
+    local l10: address
+    local l11: &mut ObjectCore
+    local l12: &mut address
+    borrow_loc l1
+    borrow_field Object<T0>, inner
+    read_ref
+    st_loc l3
+    move_loc l0
+    // @5
+    call signer::borrow_address
+    read_ref
+    st_loc l4
+    copy_loc l3
+    st_loc l5
+    // @10
+    copy_loc l5
+    exists ObjectCore
+    br_false l0
+    move_loc l5
+    borrow_global ObjectCore
+    // @15
+    st_loc l6
+    copy_loc l6
+    borrow_field ObjectCore, allow_ungated_transfer
+    read_ref
+    br_false l1
+    // @20
+    move_loc l6
+    borrow_field ObjectCore, owner
+    read_ref
+    st_loc l7
+    ld_u8 0
+    // @25
+    st_loc l8
+l6: copy_loc l4
+    copy_loc l7
+    neq
+    br_false l2
+    // @30
+    move_loc l8
+    ld_u8 1
+    add
+    st_loc l8
+    copy_loc l8
+    // @35
+    ld_u8 8
+    lt
+    br_false l3
+    copy_loc l7
+    exists ObjectCore
+    // @40
+    br_false l4
+    move_loc l7
+    borrow_global ObjectCore
+    st_loc l9
+    copy_loc l9
+    // @45
+    borrow_field ObjectCore, allow_ungated_transfer
+    read_ref
+    br_false l5
+    move_loc l9
+    borrow_field ObjectCore, owner
+    // @50
+    read_ref
+    st_loc l7
+    branch l6
+l5: move_loc l9
+    pop
+    // @55
+    ld_u64 327683
+    abort
+l4: ld_u64 327684
+    abort
+l3: ld_u64 131078
+    // @60
+    abort
+l2: move_loc l3
+    st_loc l7
+    move_loc l2
+    st_loc l10
+    // @65
+    copy_loc l7
+    mut_borrow_global ObjectCore
+    st_loc l11
+    copy_loc l11
+    borrow_field ObjectCore, owner
+    // @70
+    read_ref
+    copy_loc l10
+    neq
+    br_false l7
+    move_loc l7
+    // @75
+    copy_loc l11
+    borrow_field ObjectCore, owner
+    read_ref
+    copy_loc l10
+    pack Transfer
+    // @80
+    call event::emit<Transfer>
+    move_loc l11
+    mut_borrow_field ObjectCore, owner
+    st_loc l12
+    move_loc l10
+    // @85
+    move_loc l12
+    write_ref
+    ret
+l7: move_loc l11
+    pop
+    // @90
+    ret
+l1: move_loc l6
+    pop
+    ld_u64 327683
+    abort
+    // @95
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 50
+#[persistent] entry public fun transfer_call(l0: &signer, l1: address, l2: address) acquires ObjectCore
+    local l3: address
+    local l4: address
+    local l5: &ObjectCore
+    local l6: address
+    local l7: u8
+    local l8: &ObjectCore
+    local l9: address
+    local l10: &mut ObjectCore
+    local l11: &mut address
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l3
+    copy_loc l1
+    // @5
+    st_loc l4
+    copy_loc l4
+    exists ObjectCore
+    br_false l0
+    move_loc l4
+    // @10
+    borrow_global ObjectCore
+    st_loc l5
+    copy_loc l5
+    borrow_field ObjectCore, allow_ungated_transfer
+    read_ref
+    // @15
+    br_false l1
+    move_loc l5
+    borrow_field ObjectCore, owner
+    read_ref
+    st_loc l6
+    // @20
+    ld_u8 0
+    st_loc l7
+l6: copy_loc l3
+    copy_loc l6
+    neq
+    // @25
+    br_false l2
+    move_loc l7
+    ld_u8 1
+    add
+    st_loc l7
+    // @30
+    copy_loc l7
+    ld_u8 8
+    lt
+    br_false l3
+    copy_loc l6
+    // @35
+    exists ObjectCore
+    br_false l4
+    move_loc l6
+    borrow_global ObjectCore
+    st_loc l8
+    // @40
+    copy_loc l8
+    borrow_field ObjectCore, allow_ungated_transfer
+    read_ref
+    br_false l5
+    move_loc l8
+    // @45
+    borrow_field ObjectCore, owner
+    read_ref
+    st_loc l6
+    branch l6
+l5: move_loc l8
+    // @50
+    pop
+    ld_u64 327683
+    abort
+l4: ld_u64 327684
+    abort
+    // @55
+l3: ld_u64 131078
+    abort
+l2: move_loc l1
+    st_loc l6
+    move_loc l2
+    // @60
+    st_loc l9
+    copy_loc l6
+    mut_borrow_global ObjectCore
+    st_loc l10
+    copy_loc l10
+    // @65
+    borrow_field ObjectCore, owner
+    read_ref
+    copy_loc l9
+    neq
+    br_false l7
+    // @70
+    move_loc l6
+    copy_loc l10
+    borrow_field ObjectCore, owner
+    read_ref
+    copy_loc l9
+    // @75
+    pack Transfer
+    call event::emit<Transfer>
+    move_loc l10
+    mut_borrow_field ObjectCore, owner
+    st_loc l11
+    // @80
+    move_loc l9
+    move_loc l11
+    write_ref
+    ret
+l7: move_loc l10
+    // @85
+    pop
+    ret
+l1: move_loc l5
+    pop
+    ld_u64 327683
+    // @90
+    abort
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 51
+#[persistent] public fun transfer_raw(l0: &signer, l1: address, l2: address) acquires ObjectCore
+    local l3: address
+    local l4: address
+    local l5: &ObjectCore
+    local l6: address
+    local l7: u8
+    local l8: &ObjectCore
+    local l9: address
+    local l10: &mut ObjectCore
+    local l11: &mut address
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l3
+    copy_loc l1
+    // @5
+    st_loc l4
+    copy_loc l4
+    exists ObjectCore
+    br_false l0
+    move_loc l4
+    // @10
+    borrow_global ObjectCore
+    st_loc l5
+    copy_loc l5
+    borrow_field ObjectCore, allow_ungated_transfer
+    read_ref
+    // @15
+    br_false l1
+    move_loc l5
+    borrow_field ObjectCore, owner
+    read_ref
+    st_loc l6
+    // @20
+    ld_u8 0
+    st_loc l7
+l6: copy_loc l3
+    copy_loc l6
+    neq
+    // @25
+    br_false l2
+    move_loc l7
+    ld_u8 1
+    add
+    st_loc l7
+    // @30
+    copy_loc l7
+    ld_u8 8
+    lt
+    br_false l3
+    copy_loc l6
+    // @35
+    exists ObjectCore
+    br_false l4
+    move_loc l6
+    borrow_global ObjectCore
+    st_loc l8
+    // @40
+    copy_loc l8
+    borrow_field ObjectCore, allow_ungated_transfer
+    read_ref
+    br_false l5
+    move_loc l8
+    // @45
+    borrow_field ObjectCore, owner
+    read_ref
+    st_loc l6
+    branch l6
+l5: move_loc l8
+    // @50
+    pop
+    ld_u64 327683
+    abort
+l4: ld_u64 327684
+    abort
+    // @55
+l3: ld_u64 131078
+    abort
+l2: move_loc l1
+    st_loc l6
+    move_loc l2
+    // @60
+    st_loc l9
+    copy_loc l6
+    mut_borrow_global ObjectCore
+    st_loc l10
+    copy_loc l10
+    // @65
+    borrow_field ObjectCore, owner
+    read_ref
+    copy_loc l9
+    neq
+    br_false l7
+    // @70
+    move_loc l6
+    copy_loc l10
+    borrow_field ObjectCore, owner
+    read_ref
+    copy_loc l9
+    // @75
+    pack Transfer
+    call event::emit<Transfer>
+    move_loc l10
+    mut_borrow_field ObjectCore, owner
+    st_loc l11
+    // @80
+    move_loc l9
+    move_loc l11
+    write_ref
+    ret
+l7: move_loc l10
+    // @85
+    pop
+    ret
+l1: move_loc l5
+    pop
+    ld_u64 327683
+    // @90
+    abort
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 52
+#[persistent] entry public fun transfer_to_object<T0: key, T1: key>(l0: &signer, l1: Object<T0>, l2: Object<T1>) acquires ObjectCore
+    local l3: Object<T0>
+    local l4: address
+    move_loc l1
+    st_loc l3
+    borrow_loc l2
+    borrow_field Object<T1>, inner
+    read_ref
+    // @5
+    st_loc l4
+    move_loc l0
+    borrow_loc l3
+    borrow_field Object<T0>, inner
+    read_ref
+    // @10
+    move_loc l4
+    call transfer_raw
+    ret
+
+// Function definition at index 53
+#[persistent] public fun transfer_with_constructor_ref(l0: &ConstructorRef, l1: address) acquires ObjectCore, TombStone
+    local l2: TransferRef
+    local l3: &TransferRef
+    local l4: Object<ObjectCore>
+    local l5: address
+    local l6: LinearTransferRef
+    local l7: &mut ObjectCore
+    local l8: &mut address
+    copy_loc l0
+    borrow_field ConstructorRef, self
+    read_ref
+    exists Untransferable
+    br_true l0
+    // @5
+    move_loc l0
+    borrow_field ConstructorRef, self
+    read_ref
+    pack TransferRef
+    st_loc l2
+    // @10
+    borrow_loc l2
+    st_loc l3
+    copy_loc l3
+    borrow_field TransferRef, self
+    read_ref
+    // @15
+    exists Untransferable
+    br_true l1
+    copy_loc l3
+    borrow_field TransferRef, self
+    read_ref
+    // @20
+    pack Object<ObjectCore>
+    st_loc l4
+    borrow_loc l4
+    borrow_field Object<ObjectCore>, inner
+    read_ref
+    // @25
+    exists ObjectCore
+    br_false l2
+    borrow_loc l4
+    borrow_field Object<ObjectCore>, inner
+    read_ref
+    // @30
+    borrow_global ObjectCore
+    borrow_field ObjectCore, owner
+    read_ref
+    st_loc l5
+    move_loc l3
+    // @35
+    borrow_field TransferRef, self
+    read_ref
+    move_loc l5
+    pack LinearTransferRef
+    st_loc l6
+    // @40
+    move_loc l1
+    st_loc l5
+    borrow_loc l6
+    borrow_field LinearTransferRef, self
+    read_ref
+    // @45
+    exists Untransferable
+    br_true l3
+    borrow_loc l6
+    borrow_field LinearTransferRef, self
+    read_ref
+    // @50
+    exists TombStone
+    br_true l4
+    branch l5
+l4: borrow_loc l6
+    borrow_field LinearTransferRef, self
+    // @55
+    read_ref
+    move_from TombStone
+    unpack TombStone
+    pop
+l5: borrow_loc l6
+    // @60
+    borrow_field LinearTransferRef, self
+    read_ref
+    mut_borrow_global ObjectCore
+    st_loc l7
+    copy_loc l7
+    // @65
+    borrow_field ObjectCore, owner
+    read_ref
+    borrow_loc l6
+    borrow_field LinearTransferRef, owner
+    read_ref
+    // @70
+    eq
+    br_false l6
+    borrow_loc l6
+    borrow_field LinearTransferRef, self
+    read_ref
+    // @75
+    copy_loc l7
+    borrow_field ObjectCore, owner
+    read_ref
+    copy_loc l5
+    pack Transfer
+    // @80
+    call event::emit<Transfer>
+    move_loc l7
+    mut_borrow_field ObjectCore, owner
+    st_loc l8
+    move_loc l5
+    // @85
+    move_loc l8
+    write_ref
+    ret
+l6: move_loc l7
+    pop
+    // @90
+    ld_u64 327684
+    abort
+l3: ld_u64 327689
+    abort
+l2: move_loc l3
+    // @95
+    pop
+    ld_u64 393218
+    abort
+l1: move_loc l3
+    pop
+    // @100
+    ld_u64 327689
+    abort
+l0: move_loc l0
+    pop
+    ld_u64 327689
+    // @105
+    abort
+
+// Function definition at index 54
+#[persistent] public fun transfer_with_ref(l0: LinearTransferRef, l1: address) acquires ObjectCore, TombStone
+    local l2: &mut ObjectCore
+    local l3: &mut address
+    borrow_loc l0
+    borrow_field LinearTransferRef, self
+    read_ref
+    exists Untransferable
+    br_true l0
+    // @5
+    borrow_loc l0
+    borrow_field LinearTransferRef, self
+    read_ref
+    exists TombStone
+    br_true l1
+    // @10
+    branch l2
+l1: borrow_loc l0
+    borrow_field LinearTransferRef, self
+    read_ref
+    move_from TombStone
+    // @15
+    unpack TombStone
+    pop
+l2: borrow_loc l0
+    borrow_field LinearTransferRef, self
+    read_ref
+    // @20
+    mut_borrow_global ObjectCore
+    st_loc l2
+    copy_loc l2
+    borrow_field ObjectCore, owner
+    read_ref
+    // @25
+    borrow_loc l0
+    borrow_field LinearTransferRef, owner
+    read_ref
+    eq
+    br_false l3
+    // @30
+    borrow_loc l0
+    borrow_field LinearTransferRef, self
+    read_ref
+    copy_loc l2
+    borrow_field ObjectCore, owner
+    // @35
+    read_ref
+    copy_loc l1
+    pack Transfer
+    call event::emit<Transfer>
+    move_loc l2
+    // @40
+    mut_borrow_field ObjectCore, owner
+    st_loc l3
+    move_loc l1
+    move_loc l3
+    write_ref
+    // @45
+    ret
+l3: move_loc l2
+    pop
+    ld_u64 327684
+    abort
+    // @50
+l0: ld_u64 327689
+    abort
+
+// Function definition at index 55
+#[persistent] entry public fun unburn<T0: key>(l0: &signer, l1: Object<T0>) acquires ObjectCore, TombStone
+    local l2: address
+    local l3: &ObjectCore
+    local l4: address
+    local l5: address
+    local l6: address
+    local l7: &mut ObjectCore
+    local l8: &mut address
+    borrow_loc l1
+    borrow_field Object<T0>, inner
+    read_ref
+    st_loc l2
+    copy_loc l2
+    // @5
+    exists TombStone
+    br_false l0
+    copy_loc l2
+    borrow_global ObjectCore
+    st_loc l3
+    // @10
+    copy_loc l3
+    borrow_field ObjectCore, owner
+    read_ref
+    copy_loc l0
+    call signer::borrow_address
+    // @15
+    read_ref
+    eq
+    br_false l1
+    move_loc l0
+    pop
+    // @20
+    move_loc l3
+    pop
+    move_loc l2
+    move_from TombStone
+    unpack TombStone
+    // @25
+    pop
+    ret
+l1: move_loc l3
+    borrow_field ObjectCore, owner
+    read_ref
+    // @30
+    ld_const<address> 115792089237316195423570985008687907853269984665640564039457584007913129639935
+    eq
+    br_false l2
+    copy_loc l2
+    move_from TombStone
+    // @35
+    unpack TombStone
+    st_loc l4
+    copy_loc l4
+    move_loc l0
+    call signer::borrow_address
+    // @40
+    read_ref
+    eq
+    br_false l3
+    move_loc l2
+    st_loc l5
+    // @45
+    move_loc l4
+    st_loc l6
+    copy_loc l5
+    mut_borrow_global ObjectCore
+    st_loc l7
+    // @50
+    copy_loc l7
+    borrow_field ObjectCore, owner
+    read_ref
+    copy_loc l6
+    neq
+    // @55
+    br_false l4
+    move_loc l5
+    copy_loc l7
+    borrow_field ObjectCore, owner
+    read_ref
+    // @60
+    copy_loc l6
+    pack Transfer
+    call event::emit<Transfer>
+    move_loc l7
+    mut_borrow_field ObjectCore, owner
+    // @65
+    st_loc l8
+    move_loc l6
+    move_loc l8
+    write_ref
+    ret
+    // @70
+l4: move_loc l7
+    pop
+    ret
+l3: ld_u64 327684
+    abort
+    // @75
+l2: move_loc l0
+    pop
+    ld_u64 327684
+    abort
+l0: move_loc l0
+    // @80
+    pop
+    ld_u64 65544
+    abort
+
+// Function definition at index 56
+#[persistent] public fun ungated_transfer_allowed<T0: key>(l0: Object<T0>): bool acquires ObjectCore
+    borrow_loc l0
+    borrow_field Object<T0>, inner
+    read_ref
+    exists ObjectCore
+    br_false l0
+    // @5
+    borrow_loc l0
+    borrow_field Object<T0>, inner
+    read_ref
+    borrow_global ObjectCore
+    borrow_field ObjectCore, allow_ungated_transfer
+    // @10
+    read_ref
+    ret
+l0: ld_u64 393218
+    abort
+
+// Function definition at index 57
+fun verify_ungated_and_descendant(l0: address, l1: address) acquires ObjectCore
+    local l2: &ObjectCore
+    local l3: address
+    local l4: u8
+    local l5: &ObjectCore
+    copy_loc l1
+    exists ObjectCore
+    br_false l0
+    move_loc l1
+    borrow_global ObjectCore
+    // @5
+    st_loc l2
+    copy_loc l2
+    borrow_field ObjectCore, allow_ungated_transfer
+    read_ref
+    br_false l1
+    // @10
+    move_loc l2
+    borrow_field ObjectCore, owner
+    read_ref
+    st_loc l3
+    ld_u8 0
+    // @15
+    st_loc l4
+l6: copy_loc l0
+    copy_loc l3
+    neq
+    br_false l2
+    // @20
+    move_loc l4
+    ld_u8 1
+    add
+    st_loc l4
+    copy_loc l4
+    // @25
+    ld_u8 8
+    lt
+    br_false l3
+    copy_loc l3
+    exists ObjectCore
+    // @30
+    br_false l4
+    move_loc l3
+    borrow_global ObjectCore
+    st_loc l5
+    copy_loc l5
+    // @35
+    borrow_field ObjectCore, allow_ungated_transfer
+    read_ref
+    br_false l5
+    move_loc l5
+    borrow_field ObjectCore, owner
+    // @40
+    read_ref
+    st_loc l3
+    branch l6
+l5: move_loc l5
+    pop
+    // @45
+    ld_u64 327683
+    abort
+l4: ld_u64 327684
+    abort
+l3: ld_u64 131078
+    // @50
+    abort
+l2: ret
+l1: move_loc l2
+    pop
+    ld_u64 327683
+    // @55
+    abort
+l0: ld_u64 393218
+    abort
+

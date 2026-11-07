@@ -17,9 +17,14 @@ emits a CodeTracer CTFS multi-stream trace bundle:
   rich [Move trace format v3](https://github.com/MystenLabs/sui/blob/main/external-crates/move/crates/move-trace-format)
   NDJSON file (per-instruction `OpenFrame` / `CloseFrame` / `Effect` records,
   full parameter values, stack snapshots).
-* **Aptos** — `aptos move replay` with the `MOVE_VM_TRACE` env var and
-  `--profile-gas` flag produces a thinner skeleton (function name + PC pairs,
-  plus a gas flamegraph) which the recorder merges into a CodeTracer trace.
+* **Aptos** — `aptos move replay --trace`, from the CodeTracer build of the
+  Aptos CLI ([metacraft-labs/aptos-core](https://github.com/metacraft-labs/aptos-core),
+  branch `codetracer/value-tracing-aptos-node-v1.49.8`), writes the same Move trace format v3
+  NDJSON with typed values. On-chain Aptos modules carry no source map, so
+  the recorder fetches each executed module's bytecode at the transaction's
+  version and steps on its `aptos move disassemble` text. The stock CLI's
+  `MOVE_VM_TRACE` CSV (function + pc, no values) is still accepted by
+  `aptos_adapter::convert_aptos_trace`.
 
 ### Building
 
@@ -42,11 +47,18 @@ Replay an on-chain Sui transaction (requires the `sui` CLI in `$PATH`):
 codetracer-move-recorder replay --digest <DIGEST> --out-dir <dir>
 ```
 
-Replay an on-chain Aptos transaction (requires the `aptos` CLI in `$PATH`):
+Replay an on-chain Aptos transaction (requires an Aptos CLI with
+`move replay --trace`, as `aptos` on `$PATH` or given with `--aptos-cli`):
 
 ```bash
-codetracer-move-recorder aptos-replay --txn-version <VERSION> --out-dir <dir>
+codetracer-move-recorder aptos-replay --txn-version <VERSION> --network mainnet \
+  [--aptos-cli <path>] [--replay-dir <dir>] --out-dir <dir>
 ```
+
+The bundle names each module's disassembly relative to the replay directory
+(`0x<address>/bytecode/<module>.mv.masm`); keep it with `--replay-dir`. The
+public fullnodes rate-limit anonymous clients; `--node-api-key` (or
+`APTOS_NODE_API_KEY`) lifts the limit.
 
 The recorder always writes traces in the canonical CodeTracer CTFS multi-stream
 format. There is no `--format` flag — see "Converting traces" below for
@@ -72,9 +84,12 @@ interop with non-CodeTracer tools.
 The recorder is organized into the following modules:
 
 * `converter.rs` — Sui Move trace v3 NDJSON → CodeTracer event conversion
-* `aptos_adapter.rs` — Aptos `MOVE_VM_TRACE` CSV + `--profile-gas` JSON → CodeTracer
+* `aptos_adapter.rs` — stock Aptos `MOVE_VM_TRACE` CSV + `--profile-gas` JSON → CodeTracer
 * `replay.rs` — Sui `sui replay --trace` orchestration
-* `aptos_replay.rs` — Aptos `aptos move replay` orchestration
+* `aptos_replay.rs` — Aptos `aptos move replay --trace` orchestration (module
+  bytecode fetch + disassembly)
+* `move_debug_info.rs` — per-pc lines and local names from Sui debug info and
+  Aptos disassembly
 * `move_types.rs` — Sui Move trace v3 schema types
 * `source_map.rs` / `source_lookup.rs` — Move source-map + filesystem source discovery
 
@@ -87,15 +102,26 @@ lines.
 
 ### Testing
 
-Run the test suite with:
+Run the test suite inside the Nix dev shell (`nix develop`):
 
 ```bash
-cargo test
-just test     # also runs verify-cli-convention-no-silent-skip.sh
+just test     # builds ct-print, runs cargo test, then verify-cli-convention-no-silent-skip.sh
 ```
 
-`tests/test_sui_integration.rs` exercises a real `sui move test --trace-execution`
-run when the `sui` CLI is available; it skips gracefully otherwise.
+The tests need two tools from outside this crate, and **fail** (they do not
+skip) when either is missing, so a green run always means the checks ran:
+
+- **`ct-print`**, the `.ct` container inspector from the
+  [`codetracer-trace-format-nim`](https://github.com/metacraft-labs/codetracer-trace-format-nim)
+  repository. The tests expect it at `../codetracer-trace-format-nim/ct-print`,
+  so check that repository out next to this one. `just test` and
+  `repro test` build it;
+  to build it on its own, run `just build-ct-print` here, or
+  `nimble buildCtPrint` in that checkout. A bare `cargo test` does not build it.
+- **`sui`**, which `tests/test_sui_integration.rs` and
+  `tests/test_column_aware.rs` use to compile the Move test packages and
+  capture real `sui move test --trace` runs. The dev shell provides it.
+
 `tests/test_aptos.rs` covers the Aptos data adapters, REST API parsing and
 trace merging without requiring the `aptos` CLI.
 

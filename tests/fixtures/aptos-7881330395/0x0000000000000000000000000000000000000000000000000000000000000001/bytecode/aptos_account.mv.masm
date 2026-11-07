@@ -1,0 +1,1268 @@
+// Bytecode version v10
+module 0x1::aptos_account
+use 0x1::event
+use 0x1::account
+use 0x1::signer
+use 0x1::object
+use 0x1::fungible_asset
+use 0x1::primary_fungible_store
+use 0x1::aptos_coin
+use 0x1::coin
+use 0x1::create_signer
+use 0x1::dispatchable_fungible_asset
+friend 0x1::transaction_fee
+friend 0x1::transaction_validation
+friend 0x1::genesis
+friend 0x1::resource_account
+struct DirectCoinTransferConfigUpdated has drop + store
+  account: address
+  new_allow_direct_transfers: bool
+
+struct DirectCoinTransferConfigUpdatedEvent has drop + store
+  new_allow_direct_transfers: bool
+
+struct DirectTransferConfig has key
+  allow_arbitrary_coin_transfers: bool
+  update_coin_transfer_events: event::EventHandle<DirectCoinTransferConfigUpdatedEvent>
+
+// Function definition at index 0
+#[persistent] entry public fun create_account(l0: address)
+    local l1: signer
+    local l2: object::Object<fungible_asset::FungibleStore>
+    move_loc l0
+    call account::create_account
+    st_loc l1
+    borrow_loc l1
+    call signer::borrow_address
+    // @5
+    read_ref
+    st_loc l0
+    copy_loc l0
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    // @10
+    call fungible_asset::store_exists
+    br_false l0
+    ret
+l0: move_loc l0
+    ld_const<address> 10
+    // @15
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l2
+    borrow_loc l2
+    call object::object_address<fungible_asset::FungibleStore>
+    // @20
+    pop
+    ret
+
+// Function definition at index 1
+#[persistent] entry public fun transfer(l0: &signer, l1: address, l2: u64)
+    local l3: signer
+    local l4: address
+    local l5: address
+    local l6: u64
+    local l7: address
+    local l8: address
+    local l9: address
+    local l10: address
+    local l11: address
+    local l12: address
+    local l13: object::Object<fungible_asset::FungibleStore>
+    local l14: object::Object<fungible_asset::FungibleStore>
+    local l15: object::Object<fungible_asset::FungibleStore>
+    copy_loc l1
+    call account::exists_at
+    br_false l0
+    branch l1
+l0: copy_loc l1
+    // @5
+    call account::create_account
+    st_loc l3
+    borrow_loc l3
+    call signer::borrow_address
+    read_ref
+    // @10
+    st_loc l4
+    copy_loc l4
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    // @15
+    br_false l2
+l1: move_loc l0
+    move_loc l1
+    st_loc l5
+    move_loc l2
+    // @20
+    st_loc l6
+    call signer::borrow_address
+    read_ref
+    st_loc l7
+    copy_loc l7
+    // @25
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    st_loc l8
+    copy_loc l8
+    call fungible_asset::store_exists
+    // @30
+    br_false l3
+    move_loc l8
+    st_loc l9
+l6: move_loc l5
+    st_loc l10
+    // @35
+    copy_loc l10
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    st_loc l11
+    copy_loc l11
+    // @40
+    call fungible_asset::store_exists
+    br_false l4
+    move_loc l11
+    st_loc l12
+l5: move_loc l12
+    // @45
+    move_loc l9
+    move_loc l6
+    call fungible_asset::unchecked_withdraw
+    call fungible_asset::unchecked_deposit
+    ret
+    // @50
+l4: move_loc l10
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l13
+    // @55
+    borrow_loc l13
+    call object::object_address<fungible_asset::FungibleStore>
+    st_loc l12
+    branch l5
+l3: move_loc l7
+    // @60
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l14
+    borrow_loc l14
+    // @65
+    call object::object_address<fungible_asset::FungibleStore>
+    st_loc l9
+    branch l6
+l2: move_loc l4
+    ld_const<address> 10
+    // @70
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l15
+    borrow_loc l15
+    call object::object_address<fungible_asset::FungibleStore>
+    // @75
+    pop
+    branch l1
+
+// Function definition at index 2
+#[persistent] public fun assert_account_exists(l0: address)
+    move_loc l0
+    call account::exists_at
+    br_false l0
+    ret
+l0: ld_u64 393217
+    // @5
+    abort
+
+// Function definition at index 3
+#[persistent] public fun assert_account_is_registered_for_apt(l0: address)
+    copy_loc l0
+    call account::exists_at
+    br_false l0
+    move_loc l0
+    call coin::is_account_registered<aptos_coin::AptosCoin>
+    // @5
+    br_false l1
+    ret
+l1: ld_u64 393218
+    abort
+l0: ld_u64 393217
+    // @10
+    abort
+
+// Function definition at index 4
+#[persistent] entry public fun batch_transfer(l0: &signer, l1: vector<address>, l2: vector<u64>)
+    local l3: &vector<address>
+    local l4: u64
+    local l5: u64
+    local l6: u64
+    local l7: &signer
+    local l8: address
+    local l9: signer
+    local l10: address
+    local l11: address
+    local l12: u64
+    local l13: address
+    local l14: address
+    local l15: address
+    local l16: address
+    local l17: address
+    local l18: address
+    local l19: object::Object<fungible_asset::FungibleStore>
+    local l20: object::Object<fungible_asset::FungibleStore>
+    local l21: object::Object<fungible_asset::FungibleStore>
+    borrow_loc l1
+    vec_len <address>
+    borrow_loc l2
+    vec_len <u64>
+    eq
+    // @5
+    br_false l0
+    borrow_loc l1
+    st_loc l3
+    ld_u64 0
+    st_loc l4
+    // @10
+    copy_loc l3
+    vec_len <address>
+    st_loc l5
+l7: copy_loc l4
+    copy_loc l5
+    // @15
+    lt
+    br_false l1
+    copy_loc l4
+    st_loc l6
+    copy_loc l3
+    // @20
+    copy_loc l4
+    vec_borrow <address>
+    borrow_loc l2
+    move_loc l6
+    vec_borrow <u64>
+    // @25
+    read_ref
+    st_loc l6
+    copy_loc l0
+    st_loc l7
+    read_ref
+    // @30
+    st_loc l8
+    copy_loc l8
+    call account::exists_at
+    br_false l2
+    branch l3
+    // @35
+l2: copy_loc l8
+    call account::create_account
+    st_loc l9
+    borrow_loc l9
+    call signer::borrow_address
+    // @40
+    read_ref
+    st_loc l10
+    copy_loc l10
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    // @45
+    call fungible_asset::store_exists
+    br_false l4
+l3: move_loc l7
+    move_loc l8
+    st_loc l11
+    // @50
+    move_loc l6
+    st_loc l12
+    call signer::borrow_address
+    read_ref
+    st_loc l13
+    // @55
+    copy_loc l13
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    st_loc l14
+    copy_loc l14
+    // @60
+    call fungible_asset::store_exists
+    br_false l5
+    move_loc l14
+    st_loc l15
+l9: move_loc l11
+    // @65
+    st_loc l16
+    copy_loc l16
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    st_loc l17
+    // @70
+    copy_loc l17
+    call fungible_asset::store_exists
+    br_false l6
+    move_loc l17
+    st_loc l18
+    // @75
+l8: move_loc l18
+    move_loc l15
+    move_loc l12
+    call fungible_asset::unchecked_withdraw
+    call fungible_asset::unchecked_deposit
+    // @80
+    move_loc l4
+    ld_u64 1
+    add
+    st_loc l4
+    branch l7
+    // @85
+l6: move_loc l16
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l19
+    // @90
+    borrow_loc l19
+    call object::object_address<fungible_asset::FungibleStore>
+    st_loc l18
+    branch l8
+l5: move_loc l13
+    // @95
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l20
+    borrow_loc l20
+    // @100
+    call object::object_address<fungible_asset::FungibleStore>
+    st_loc l15
+    branch l9
+l4: move_loc l10
+    ld_const<address> 10
+    // @105
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l21
+    borrow_loc l21
+    call object::object_address<fungible_asset::FungibleStore>
+    // @110
+    pop
+    branch l3
+l1: move_loc l0
+    pop
+    move_loc l3
+    // @115
+    pop
+    ret
+l0: move_loc l0
+    pop
+    ld_u64 65541
+    // @120
+    abort
+
+// Function definition at index 5
+#[persistent] entry public fun batch_transfer_coins<T0>(l0: &signer, l1: vector<address>, l2: vector<u64>) acquires DirectTransferConfig
+    local l3: &vector<address>
+    local l4: u64
+    local l5: u64
+    local l6: u64
+    local l7: &address
+    local l8: address
+    local l9: coin::Coin<T0>
+    local l10: signer
+    local l11: address
+    local l12: address
+    local l13: bool
+    local l14: signer
+    local l15: coin::Coin<T0>
+    local l16: address
+    local l17: object::Object<fungible_asset::FungibleStore>
+    borrow_loc l1
+    vec_len <address>
+    borrow_loc l2
+    vec_len <u64>
+    eq
+    // @5
+    br_false l0
+    borrow_loc l1
+    st_loc l3
+    ld_u64 0
+    st_loc l4
+    // @10
+    copy_loc l3
+    vec_len <address>
+    st_loc l5
+l9: copy_loc l4
+    copy_loc l5
+    // @15
+    lt
+    br_false l1
+    copy_loc l4
+    st_loc l6
+    copy_loc l3
+    // @20
+    copy_loc l4
+    vec_borrow <address>
+    st_loc l7
+    borrow_loc l2
+    move_loc l6
+    // @25
+    vec_borrow <u64>
+    read_ref
+    st_loc l6
+    copy_loc l0
+    move_loc l7
+    // @30
+    read_ref
+    st_loc l8
+    move_loc l6
+    call coin::withdraw<T0>
+    st_loc l9
+    // @35
+    copy_loc l8
+    call account::exists_at
+    br_false l2
+    branch l3
+l2: copy_loc l8
+    // @40
+    call account::create_account
+    st_loc l10
+    borrow_loc l10
+    call signer::borrow_address
+    read_ref
+    // @45
+    st_loc l11
+    copy_loc l11
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    // @50
+    br_false l4
+l11: nop
+l3: copy_loc l8
+    call coin::is_account_registered<T0>
+    br_false l5
+    // @55
+    branch l6
+l5: copy_loc l8
+    st_loc l12
+    copy_loc l12
+    exists DirectTransferConfig
+    // @60
+    br_true l7
+    ld_true
+    st_loc l13
+l10: move_loc l13
+    br_false l8
+    // @65
+    copy_loc l8
+    call create_signer::create_signer
+    st_loc l14
+    borrow_loc l14
+    call coin::register<T0>
+    // @70
+l6: move_loc l8
+    move_loc l9
+    call coin::coin_to_fungible_asset<T0>
+    call primary_fungible_store::deposit
+    move_loc l4
+    // @75
+    ld_u64 1
+    add
+    st_loc l4
+    branch l9
+l8: move_loc l0
+    // @80
+    pop
+    move_loc l3
+    pop
+    ld_u64 327683
+    abort
+    // @85
+l7: move_loc l12
+    borrow_global DirectTransferConfig
+    borrow_field DirectTransferConfig, allow_arbitrary_coin_transfers
+    read_ref
+    st_loc l13
+    // @90
+    branch l10
+l4: move_loc l11
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    // @95
+    st_loc l17
+    borrow_loc l17
+    call object::object_address<fungible_asset::FungibleStore>
+    pop
+    branch l11
+    // @100
+l1: move_loc l0
+    pop
+    move_loc l3
+    pop
+    ret
+    // @105
+l0: move_loc l0
+    pop
+    ld_u64 65541
+    abort
+
+// Function definition at index 6
+#[persistent] entry public fun batch_transfer_fungible_assets(l0: &signer, l1: object::Object<fungible_asset::Metadata>, l2: vector<address>, l3: vector<u64>)
+    local l4: &vector<address>
+    local l5: u64
+    local l6: u64
+    local l7: u64
+    local l8: &address
+    local l9: address
+    local l10: object::Object<fungible_asset::Metadata>
+    local l11: &signer
+    local l12: fungible_asset::FungibleAsset
+    local l13: signer
+    local l14: address
+    local l15: address
+    local l16: fungible_asset::FungibleAsset
+    local l17: object::Object<fungible_asset::Metadata>
+    local l18: address
+    local l19: address
+    local l20: object::Object<fungible_asset::FungibleStore>
+    local l21: object::Object<fungible_asset::FungibleStore>
+    borrow_loc l2
+    vec_len <address>
+    borrow_loc l3
+    vec_len <u64>
+    eq
+    // @5
+    br_false l0
+    borrow_loc l2
+    st_loc l4
+    ld_u64 0
+    st_loc l5
+    // @10
+    copy_loc l4
+    vec_len <address>
+    st_loc l6
+l6: copy_loc l5
+    copy_loc l6
+    // @15
+    lt
+    br_false l1
+    copy_loc l5
+    st_loc l7
+    copy_loc l4
+    // @20
+    copy_loc l5
+    vec_borrow <address>
+    st_loc l8
+    borrow_loc l3
+    move_loc l7
+    // @25
+    vec_borrow <u64>
+    read_ref
+    st_loc l7
+    copy_loc l0
+    copy_loc l1
+    // @30
+    move_loc l8
+    read_ref
+    st_loc l9
+    move_loc l7
+    call primary_fungible_store::withdraw<fungible_asset::Metadata>
+    // @35
+    st_loc l12
+    copy_loc l9
+    call account::exists_at
+    br_false l2
+    branch l3
+    // @40
+l2: copy_loc l9
+    call account::create_account
+    st_loc l13
+    borrow_loc l13
+    call signer::borrow_address
+    // @45
+    read_ref
+    st_loc l14
+    copy_loc l14
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    // @50
+    call fungible_asset::store_exists
+    br_false l4
+l3: move_loc l9
+    st_loc l15
+    move_loc l12
+    // @55
+    st_loc l16
+    borrow_loc l16
+    call fungible_asset::asset_metadata
+    st_loc l10
+    copy_loc l15
+    // @60
+    copy_loc l10
+    st_loc l17
+    borrow_loc l17
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    // @65
+    st_loc l19
+    copy_loc l19
+    call fungible_asset::store_exists
+    br_false l5
+    move_loc l19
+    // @70
+    call object::address_to_object<fungible_asset::FungibleStore>
+    st_loc l20
+l7: move_loc l20
+    move_loc l16
+    call dispatchable_fungible_asset::deposit<fungible_asset::FungibleStore>
+    // @75
+    move_loc l5
+    ld_u64 1
+    add
+    st_loc l5
+    branch l6
+    // @80
+l5: move_loc l15
+    move_loc l10
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l20
+    branch l7
+    // @85
+l4: move_loc l14
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l21
+    // @90
+    borrow_loc l21
+    call object::object_address<fungible_asset::FungibleStore>
+    pop
+    branch l3
+l1: move_loc l0
+    // @95
+    pop
+    move_loc l4
+    pop
+    ret
+l0: move_loc l0
+    // @100
+    pop
+    ld_u64 65541
+    abort
+
+// Function definition at index 7
+friend fun burn_from_fungible_store_for_gas(l0: &fungible_asset::BurnRef, l1: address, l2: u64)
+    local l3: address
+    copy_loc l2
+    ld_u64 0
+    neq
+    br_false l0
+    move_loc l1
+    // @5
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    st_loc l3
+    move_loc l0
+    move_loc l3
+    // @10
+    move_loc l2
+    call fungible_asset::address_burn_from_for_gas
+    ret
+l0: move_loc l0
+    pop
+    // @15
+    ret
+
+// Function definition at index 8
+#[persistent] public fun can_receive_direct_coin_transfers(l0: address): bool acquires DirectTransferConfig
+    copy_loc l0
+    exists DirectTransferConfig
+    br_true l0
+    ld_true
+    ret
+    // @5
+l0: move_loc l0
+    borrow_global DirectTransferConfig
+    borrow_field DirectTransferConfig, allow_arbitrary_coin_transfers
+    read_ref
+    ret
+
+// Function definition at index 9
+#[persistent] public fun deposit_coins<T0>(l0: address, l1: coin::Coin<T0>) acquires DirectTransferConfig
+    local l2: signer
+    local l3: address
+    local l4: address
+    local l5: bool
+    local l6: signer
+    local l7: address
+    local l8: fungible_asset::FungibleAsset
+    local l9: object::Object<fungible_asset::Metadata>
+    local l10: object::Object<fungible_asset::Metadata>
+    local l11: address
+    local l12: address
+    local l13: object::Object<fungible_asset::FungibleStore>
+    local l14: object::Object<fungible_asset::FungibleStore>
+    copy_loc l0
+    call account::exists_at
+    br_false l0
+    branch l1
+l0: copy_loc l0
+    // @5
+    call account::create_account
+    st_loc l2
+    borrow_loc l2
+    call signer::borrow_address
+    read_ref
+    // @10
+    st_loc l3
+    copy_loc l3
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    // @15
+    br_false l2
+l10: nop
+l1: copy_loc l0
+    call coin::is_account_registered<T0>
+    br_false l3
+    // @20
+    branch l4
+l3: copy_loc l0
+    st_loc l4
+    copy_loc l4
+    exists DirectTransferConfig
+    // @25
+    br_true l5
+    ld_true
+    st_loc l5
+l9: move_loc l5
+    br_false l6
+    // @30
+    copy_loc l0
+    call create_signer::create_signer
+    st_loc l6
+    borrow_loc l6
+    call coin::register<T0>
+    // @35
+l4: move_loc l0
+    st_loc l7
+    move_loc l1
+    call coin::coin_to_fungible_asset<T0>
+    st_loc l8
+    // @40
+    borrow_loc l8
+    call fungible_asset::asset_metadata
+    st_loc l9
+    copy_loc l7
+    copy_loc l9
+    // @45
+    st_loc l10
+    borrow_loc l10
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    st_loc l12
+    // @50
+    copy_loc l12
+    call fungible_asset::store_exists
+    br_false l7
+    move_loc l12
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @55
+    st_loc l13
+l8: move_loc l13
+    move_loc l8
+    call dispatchable_fungible_asset::deposit<fungible_asset::FungibleStore>
+    ret
+    // @60
+l7: move_loc l7
+    move_loc l9
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l13
+    branch l8
+    // @65
+l6: ld_u64 327683
+    abort
+l5: move_loc l4
+    borrow_global DirectTransferConfig
+    borrow_field DirectTransferConfig, allow_arbitrary_coin_transfers
+    // @70
+    read_ref
+    st_loc l5
+    branch l9
+l2: move_loc l3
+    ld_const<address> 10
+    // @75
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l14
+    borrow_loc l14
+    call object::object_address<fungible_asset::FungibleStore>
+    // @80
+    pop
+    branch l10
+
+// Function definition at index 10
+#[persistent] public fun deposit_fungible_assets(l0: address, l1: fungible_asset::FungibleAsset)
+    local l2: signer
+    local l3: address
+    local l4: address
+    local l5: fungible_asset::FungibleAsset
+    local l6: object::Object<fungible_asset::Metadata>
+    local l7: object::Object<fungible_asset::Metadata>
+    local l8: address
+    local l9: address
+    local l10: object::Object<fungible_asset::FungibleStore>
+    local l11: object::Object<fungible_asset::FungibleStore>
+    copy_loc l0
+    call account::exists_at
+    br_false l0
+    branch l1
+l0: copy_loc l0
+    // @5
+    call account::create_account
+    st_loc l2
+    borrow_loc l2
+    call signer::borrow_address
+    read_ref
+    // @10
+    st_loc l3
+    copy_loc l3
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    // @15
+    br_false l2
+l1: move_loc l0
+    st_loc l4
+    move_loc l1
+    st_loc l5
+    // @20
+    borrow_loc l5
+    call fungible_asset::asset_metadata
+    st_loc l6
+    copy_loc l4
+    copy_loc l6
+    // @25
+    st_loc l7
+    borrow_loc l7
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    st_loc l9
+    // @30
+    copy_loc l9
+    call fungible_asset::store_exists
+    br_false l3
+    move_loc l9
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @35
+    st_loc l10
+l4: move_loc l10
+    move_loc l5
+    call dispatchable_fungible_asset::deposit<fungible_asset::FungibleStore>
+    ret
+    // @40
+l3: move_loc l4
+    move_loc l6
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l10
+    branch l4
+    // @45
+l2: move_loc l3
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l11
+    // @50
+    borrow_loc l11
+    call object::object_address<fungible_asset::FungibleStore>
+    pop
+    branch l1
+
+// Function definition at index 11
+entry friend fun fungible_transfer_only(l0: &signer, l1: address, l2: u64)
+    local l3: address
+    local l4: address
+    local l5: address
+    local l6: address
+    local l7: address
+    local l8: address
+    local l9: object::Object<fungible_asset::FungibleStore>
+    local l10: object::Object<fungible_asset::FungibleStore>
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l3
+    copy_loc l3
+    // @5
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    st_loc l4
+    copy_loc l4
+    call fungible_asset::store_exists
+    // @10
+    br_false l0
+    move_loc l4
+    st_loc l5
+l3: move_loc l1
+    st_loc l6
+    // @15
+    copy_loc l6
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    st_loc l7
+    copy_loc l7
+    // @20
+    call fungible_asset::store_exists
+    br_false l1
+    move_loc l7
+    st_loc l8
+l2: move_loc l8
+    // @25
+    move_loc l5
+    move_loc l2
+    call fungible_asset::unchecked_withdraw
+    call fungible_asset::unchecked_deposit
+    ret
+    // @30
+l1: move_loc l6
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l9
+    // @35
+    borrow_loc l9
+    call object::object_address<fungible_asset::FungibleStore>
+    st_loc l8
+    branch l2
+l0: move_loc l3
+    // @40
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l10
+    borrow_loc l10
+    // @45
+    call object::object_address<fungible_asset::FungibleStore>
+    st_loc l5
+    branch l3
+
+// Function definition at index 12
+friend fun is_fungible_balance_at_least(l0: address, l1: u64): bool
+    move_loc l0
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    move_loc l1
+    call fungible_asset::is_address_balance_at_least
+    // @5
+    ret
+
+// Function definition at index 13
+friend fun mint_to_fungible_store_for_gas(l0: &fungible_asset::MintRef, l1: address, l2: u64)
+    local l3: address
+    local l4: address
+    local l5: address
+    local l6: fungible_asset::FungibleAsset
+    local l7: object::Object<fungible_asset::FungibleStore>
+    copy_loc l2
+    ld_u64 0
+    neq
+    br_false l0
+    move_loc l1
+    // @5
+    st_loc l3
+    copy_loc l3
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    st_loc l4
+    // @10
+    copy_loc l4
+    call fungible_asset::store_exists
+    br_false l1
+    move_loc l4
+    st_loc l5
+    // @15
+l2: move_loc l0
+    move_loc l2
+    call fungible_asset::mint
+    st_loc l6
+    move_loc l5
+    // @20
+    move_loc l6
+    call fungible_asset::unchecked_deposit_with_no_events
+    ret
+l1: move_loc l3
+    ld_const<address> 10
+    // @25
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l7
+    borrow_loc l7
+    call object::object_address<fungible_asset::FungibleStore>
+    // @30
+    st_loc l5
+    branch l2
+l0: move_loc l0
+    pop
+    ret
+
+// Function definition at index 14
+friend fun register_apt(l0: &signer)
+    local l1: address
+    local l2: object::Object<fungible_asset::FungibleStore>
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l1
+    copy_loc l1
+    // @5
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    br_false l0
+    ret
+    // @10
+l0: move_loc l1
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l2
+    // @15
+    borrow_loc l2
+    call object::object_address<fungible_asset::FungibleStore>
+    pop
+    ret
+
+// Function definition at index 15
+#[persistent] entry public fun set_allow_direct_coin_transfers(l0: &signer, l1: bool) acquires DirectTransferConfig
+    local l2: address
+    local l3: &mut DirectTransferConfig
+    local l4: &mut bool
+    local l5: DirectTransferConfig
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l2
+    copy_loc l2
+    // @5
+    exists DirectTransferConfig
+    br_false l0
+    move_loc l0
+    pop
+    copy_loc l2
+    // @10
+    mut_borrow_global DirectTransferConfig
+    st_loc l3
+    copy_loc l3
+    borrow_field DirectTransferConfig, allow_arbitrary_coin_transfers
+    read_ref
+    // @15
+    copy_loc l1
+    eq
+    br_false l1
+    move_loc l3
+    pop
+    // @20
+    ret
+l1: move_loc l3
+    mut_borrow_field DirectTransferConfig, allow_arbitrary_coin_transfers
+    st_loc l4
+    copy_loc l1
+    // @25
+    move_loc l4
+    write_ref
+    move_loc l2
+    move_loc l1
+    pack DirectCoinTransferConfigUpdated
+    // @30
+    call event::emit<DirectCoinTransferConfigUpdated>
+    ret
+l0: copy_loc l1
+    copy_loc l0
+    call account::new_event_handle<DirectCoinTransferConfigUpdatedEvent>
+    // @35
+    pack DirectTransferConfig
+    st_loc l5
+    move_loc l2
+    move_loc l1
+    pack DirectCoinTransferConfigUpdated
+    // @40
+    call event::emit<DirectCoinTransferConfigUpdated>
+    move_loc l0
+    move_loc l5
+    move_to DirectTransferConfig
+    ret
+
+// Function definition at index 16
+#[persistent] entry public fun transfer_coins<T0>(l0: &signer, l1: address, l2: u64) acquires DirectTransferConfig
+    local l3: coin::Coin<T0>
+    local l4: signer
+    local l5: address
+    local l6: address
+    local l7: bool
+    local l8: signer
+    local l9: fungible_asset::FungibleAsset
+    local l10: object::Object<fungible_asset::Metadata>
+    local l11: address
+    local l12: object::Object<fungible_asset::FungibleStore>
+    move_loc l0
+    move_loc l2
+    call coin::withdraw<T0>
+    st_loc l3
+    copy_loc l1
+    // @5
+    call account::exists_at
+    br_false l0
+    branch l1
+l0: copy_loc l1
+    call account::create_account
+    // @10
+    st_loc l4
+    borrow_loc l4
+    call signer::borrow_address
+    read_ref
+    st_loc l5
+    // @15
+    copy_loc l5
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    br_false l2
+    // @20
+l8: nop
+l1: copy_loc l1
+    call coin::is_account_registered<T0>
+    br_false l3
+    branch l4
+    // @25
+l3: copy_loc l1
+    st_loc l6
+    copy_loc l6
+    exists DirectTransferConfig
+    br_true l5
+    // @30
+    ld_true
+    st_loc l7
+l7: move_loc l7
+    br_false l6
+    copy_loc l1
+    // @35
+    call create_signer::create_signer
+    st_loc l8
+    borrow_loc l8
+    call coin::register<T0>
+l4: move_loc l1
+    // @40
+    move_loc l3
+    call coin::coin_to_fungible_asset<T0>
+    st_loc l9
+    borrow_loc l9
+    call fungible_asset::asset_metadata
+    // @45
+    call primary_fungible_store::ensure_primary_store_exists<fungible_asset::Metadata>
+    move_loc l9
+    call dispatchable_fungible_asset::deposit<fungible_asset::FungibleStore>
+    ret
+l6: ld_u64 327683
+    // @50
+    abort
+l5: move_loc l6
+    borrow_global DirectTransferConfig
+    borrow_field DirectTransferConfig, allow_arbitrary_coin_transfers
+    read_ref
+    // @55
+    st_loc l7
+    branch l7
+l2: move_loc l5
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    // @60
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l12
+    borrow_loc l12
+    call object::object_address<fungible_asset::FungibleStore>
+    pop
+    // @65
+    branch l8
+
+// Function definition at index 17
+#[persistent] entry public fun transfer_fungible_assets(l0: &signer, l1: object::Object<fungible_asset::Metadata>, l2: address, l3: u64)
+    local l4: fungible_asset::FungibleAsset
+    local l5: signer
+    local l6: address
+    local l7: address
+    local l8: fungible_asset::FungibleAsset
+    local l9: object::Object<fungible_asset::Metadata>
+    local l10: address
+    local l11: address
+    local l12: object::Object<fungible_asset::FungibleStore>
+    local l13: object::Object<fungible_asset::FungibleStore>
+    move_loc l0
+    move_loc l1
+    move_loc l3
+    call primary_fungible_store::withdraw<fungible_asset::Metadata>
+    st_loc l4
+    // @5
+    copy_loc l2
+    call account::exists_at
+    br_false l0
+    branch l1
+l0: copy_loc l2
+    // @10
+    call account::create_account
+    st_loc l5
+    borrow_loc l5
+    call signer::borrow_address
+    read_ref
+    // @15
+    st_loc l6
+    copy_loc l6
+    ld_const<address> 10
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    // @20
+    br_false l2
+l1: move_loc l2
+    st_loc l7
+    move_loc l4
+    st_loc l8
+    // @25
+    borrow_loc l8
+    call fungible_asset::asset_metadata
+    st_loc l1
+    copy_loc l7
+    copy_loc l1
+    // @30
+    st_loc l9
+    borrow_loc l9
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    st_loc l11
+    // @35
+    copy_loc l11
+    call fungible_asset::store_exists
+    br_false l3
+    move_loc l11
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @40
+    st_loc l12
+l4: move_loc l12
+    move_loc l8
+    call dispatchable_fungible_asset::deposit<fungible_asset::FungibleStore>
+    ret
+    // @45
+l3: move_loc l7
+    move_loc l1
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l12
+    branch l4
+    // @50
+l2: move_loc l6
+    ld_const<address> 10
+    call object::address_to_object<fungible_asset::Metadata>
+    call primary_fungible_store::create_primary_store<fungible_asset::Metadata>
+    st_loc l13
+    // @55
+    borrow_loc l13
+    call object::object_address<fungible_asset::FungibleStore>
+    pop
+    branch l1
+

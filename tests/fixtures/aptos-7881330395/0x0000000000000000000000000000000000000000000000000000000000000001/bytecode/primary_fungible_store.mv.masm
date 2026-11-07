@@ -1,0 +1,1306 @@
+// Bytecode version v10
+module 0x1::primary_fungible_store
+use 0x1::object
+use 0x1::fungible_asset
+use 0x1::signer
+use 0x1::dispatchable_fungible_asset
+use 0x1::option
+use 0x1::string
+struct DeriveRefPod has key
+  metadata_derive_ref: object::DeriveRef
+
+// Function definition at index 0
+#[persistent] public fun burn(l0: &fungible_asset::BurnRef, l1: address, l2: u64)
+    local l3: object::Object<fungible_asset::Metadata>
+    local l4: address
+    local l5: object::Object<fungible_asset::FungibleStore>
+    copy_loc l0
+    call fungible_asset::burn_ref_metadata
+    st_loc l3
+    borrow_loc l3
+    call object::object_address<fungible_asset::Metadata>
+    // @5
+    st_loc l4
+    move_loc l1
+    move_loc l4
+    call object::create_user_derived_object_address
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @10
+    st_loc l5
+    move_loc l0
+    borrow_loc l5
+    call object::object_address<fungible_asset::FungibleStore>
+    move_loc l2
+    // @15
+    call fungible_asset::unchecked_withdraw
+    call fungible_asset::burn
+    ret
+
+// Function definition at index 1
+#[persistent] public fun grant_permission<T0: key>(l0: &signer, l1: &signer, l2: object::Object<T0>, l3: u64)
+    ld_u64 851969
+    move_loc l0
+    pop
+    move_loc l1
+    pop
+    // @5
+    abort
+
+// Function definition at index 2
+#[persistent] entry public fun transfer<T0: key>(l0: &signer, l1: object::Object<T0>, l2: address, l3: u64) acquires DeriveRefPod
+    local l4: &signer
+    local l5: address
+    local l6: object::Object<T0>
+    local l7: object::Object<T0>
+    local l8: address
+    local l9: address
+    local l10: object::Object<fungible_asset::FungibleStore>
+    local l11: object::Object<fungible_asset::FungibleStore>
+    local l12: object::Object<T0>
+    local l13: object::Object<T0>
+    local l14: address
+    local l15: address
+    local l16: object::Object<fungible_asset::FungibleStore>
+    local l17: u64
+    local l18: object::Object<fungible_asset::FungibleStore>
+    local l19: object::Object<fungible_asset::FungibleStore>
+    local l20: &signer
+    local l21: fungible_asset::FungibleAsset
+    local l22: object::Object<T0>
+    local l23: &object::DeriveRef
+    local l24: object::ConstructorRef
+    local l25: &object::ConstructorRef
+    local l26: object::TransferRef
+    local l27: object::Object<T0>
+    local l28: object::ConstructorRef
+    local l29: object::TransferRef
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l5
+    copy_loc l1
+    // @5
+    st_loc l6
+    copy_loc l5
+    copy_loc l6
+    st_loc l7
+    borrow_loc l7
+    // @10
+    call object::object_address<T0>
+    call object::create_user_derived_object_address
+    st_loc l9
+    copy_loc l9
+    call fungible_asset::store_exists
+    // @15
+    br_false l0
+    move_loc l9
+    call object::address_to_object<fungible_asset::FungibleStore>
+    st_loc l10
+l5: copy_loc l0
+    // @20
+    st_loc l4
+    copy_loc l10
+    st_loc l11
+    copy_loc l11
+    call object::is_burnt<fungible_asset::FungibleStore>
+    // @25
+    br_false l1
+    move_loc l4
+    move_loc l11
+    call object::unburn<fungible_asset::FungibleStore>
+l4: move_loc l2
+    // @30
+    st_loc l8
+    move_loc l1
+    st_loc l12
+    copy_loc l8
+    copy_loc l12
+    // @35
+    st_loc l13
+    borrow_loc l13
+    call object::object_address<T0>
+    call object::create_user_derived_object_address
+    st_loc l15
+    // @40
+    copy_loc l15
+    call fungible_asset::store_exists
+    br_false l2
+    move_loc l15
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @45
+    st_loc l16
+l3: move_loc l0
+    move_loc l10
+    move_loc l16
+    move_loc l3
+    // @50
+    st_loc l17
+    st_loc l18
+    move_loc l17
+    call dispatchable_fungible_asset::withdraw<fungible_asset::FungibleStore>
+    st_loc l21
+    // @55
+    move_loc l18
+    move_loc l21
+    call dispatchable_fungible_asset::deposit<fungible_asset::FungibleStore>
+    ret
+l2: move_loc l12
+    // @60
+    st_loc l22
+    borrow_loc l22
+    call object::object_address<T0>
+    st_loc l15
+    copy_loc l15
+    // @65
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l15
+    borrow_global DeriveRefPod
+    borrow_field DeriveRefPod, metadata_derive_ref
+    // @70
+    st_loc l23
+    move_loc l8
+    move_loc l23
+    call object::create_user_derived_object
+    st_loc l24
+    // @75
+    borrow_loc l24
+    st_loc l25
+    copy_loc l25
+    call object::generate_transfer_ref
+    st_loc l26
+    // @80
+    borrow_loc l26
+    call object::disable_ungated_transfer
+    move_loc l25
+    move_loc l22
+    call fungible_asset::create_store<T0>
+    // @85
+    st_loc l16
+    branch l3
+l1: move_loc l4
+    pop
+    branch l4
+    // @90
+l0: move_loc l6
+    st_loc l27
+    borrow_loc l27
+    call object::object_address<T0>
+    st_loc l9
+    // @95
+    copy_loc l9
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l9
+    borrow_global DeriveRefPod
+    // @100
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l23
+    move_loc l5
+    move_loc l23
+    call object::create_user_derived_object
+    // @105
+    st_loc l28
+    borrow_loc l28
+    st_loc l25
+    copy_loc l25
+    call object::generate_transfer_ref
+    // @110
+    st_loc l29
+    borrow_loc l29
+    call object::disable_ungated_transfer
+    move_loc l25
+    move_loc l27
+    // @115
+    call fungible_asset::create_store<T0>
+    st_loc l10
+    branch l5
+
+// Function definition at index 3
+#[persistent] public fun transfer_with_ref(l0: &fungible_asset::TransferRef, l1: address, l2: address, l3: u64) acquires DeriveRefPod
+    local l4: object::Object<fungible_asset::Metadata>
+    local l5: address
+    local l6: object::Object<fungible_asset::FungibleStore>
+    local l7: object::Object<fungible_asset::Metadata>
+    local l8: object::Object<fungible_asset::Metadata>
+    local l9: object::Object<fungible_asset::FungibleStore>
+    local l10: &fungible_asset::TransferRef
+    local l11: object::Object<fungible_asset::FungibleStore>
+    local l12: u64
+    local l13: fungible_asset::FungibleAsset
+    local l14: object::Object<fungible_asset::FungibleStore>
+    local l15: object::Object<fungible_asset::Metadata>
+    local l16: &object::DeriveRef
+    local l17: object::ConstructorRef
+    local l18: &object::ConstructorRef
+    local l19: object::TransferRef
+    copy_loc l0
+    call fungible_asset::transfer_ref_metadata
+    st_loc l4
+    borrow_loc l4
+    call object::object_address<fungible_asset::Metadata>
+    // @5
+    st_loc l5
+    move_loc l1
+    move_loc l5
+    call object::create_user_derived_object_address
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @10
+    st_loc l6
+    copy_loc l0
+    call fungible_asset::transfer_ref_metadata
+    st_loc l7
+    copy_loc l2
+    // @15
+    copy_loc l7
+    st_loc l8
+    borrow_loc l8
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    // @20
+    st_loc l1
+    copy_loc l1
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l1
+    // @25
+    call object::address_to_object<fungible_asset::FungibleStore>
+    st_loc l9
+l1: move_loc l0
+    st_loc l10
+    move_loc l6
+    // @30
+    st_loc l11
+    move_loc l9
+    move_loc l3
+    st_loc l12
+    copy_loc l10
+    // @35
+    move_loc l11
+    move_loc l12
+    call fungible_asset::withdraw_with_ref<fungible_asset::FungibleStore>
+    st_loc l13
+    st_loc l14
+    // @40
+    move_loc l10
+    move_loc l14
+    move_loc l13
+    call fungible_asset::deposit_with_ref<fungible_asset::FungibleStore>
+    ret
+    // @45
+l0: move_loc l7
+    st_loc l15
+    borrow_loc l15
+    call object::object_address<fungible_asset::Metadata>
+    st_loc l1
+    // @50
+    copy_loc l1
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l1
+    borrow_global DeriveRefPod
+    // @55
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l16
+    move_loc l2
+    move_loc l16
+    call object::create_user_derived_object
+    // @60
+    st_loc l17
+    borrow_loc l17
+    st_loc l18
+    copy_loc l18
+    call object::generate_transfer_ref
+    // @65
+    st_loc l19
+    borrow_loc l19
+    call object::disable_ungated_transfer
+    move_loc l18
+    move_loc l15
+    // @70
+    call fungible_asset::create_store<fungible_asset::Metadata>
+    st_loc l9
+    branch l1
+
+// Function definition at index 4
+#[persistent] public fun balance<T0: key>(l0: address, l1: object::Object<T0>): u64
+    local l2: object::Object<T0>
+    local l3: address
+    local l4: address
+    local l5: object::Object<T0>
+    copy_loc l0
+    copy_loc l1
+    st_loc l2
+    borrow_loc l2
+    call object::object_address<T0>
+    // @5
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l0
+    move_loc l1
+    // @10
+    st_loc l5
+    borrow_loc l5
+    call object::object_address<T0>
+    call object::create_user_derived_object_address
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @15
+    call dispatchable_fungible_asset::derived_balance<fungible_asset::FungibleStore>
+    ret
+l0: ld_u64 0
+    ret
+
+// Function definition at index 5
+#[persistent] public fun deposit(l0: address, l1: fungible_asset::FungibleAsset) acquires DeriveRefPod
+    local l2: object::Object<fungible_asset::Metadata>
+    local l3: object::Object<fungible_asset::Metadata>
+    local l4: address
+    local l5: address
+    local l6: object::Object<fungible_asset::FungibleStore>
+    local l7: object::Object<fungible_asset::Metadata>
+    local l8: &object::DeriveRef
+    local l9: object::ConstructorRef
+    local l10: &object::ConstructorRef
+    local l11: object::TransferRef
+    borrow_loc l1
+    call fungible_asset::asset_metadata
+    st_loc l2
+    copy_loc l0
+    copy_loc l2
+    // @5
+    st_loc l3
+    borrow_loc l3
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    st_loc l5
+    // @10
+    copy_loc l5
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l5
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @15
+    st_loc l6
+l1: move_loc l6
+    move_loc l1
+    call dispatchable_fungible_asset::deposit<fungible_asset::FungibleStore>
+    ret
+    // @20
+l0: move_loc l2
+    st_loc l7
+    borrow_loc l7
+    call object::object_address<fungible_asset::Metadata>
+    st_loc l5
+    // @25
+    copy_loc l5
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l5
+    borrow_global DeriveRefPod
+    // @30
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l8
+    move_loc l0
+    move_loc l8
+    call object::create_user_derived_object
+    // @35
+    st_loc l9
+    borrow_loc l9
+    st_loc l10
+    copy_loc l10
+    call object::generate_transfer_ref
+    // @40
+    st_loc l11
+    borrow_loc l11
+    call object::disable_ungated_transfer
+    move_loc l10
+    move_loc l7
+    // @45
+    call fungible_asset::create_store<fungible_asset::Metadata>
+    st_loc l6
+    branch l1
+
+// Function definition at index 6
+#[persistent] public fun deposit_with_ref(l0: &fungible_asset::TransferRef, l1: address, l2: fungible_asset::FungibleAsset) acquires DeriveRefPod
+    local l3: object::Object<fungible_asset::Metadata>
+    local l4: object::Object<fungible_asset::Metadata>
+    local l5: address
+    local l6: address
+    local l7: object::Object<fungible_asset::FungibleStore>
+    local l8: object::Object<fungible_asset::Metadata>
+    local l9: &object::DeriveRef
+    local l10: object::ConstructorRef
+    local l11: &object::ConstructorRef
+    local l12: object::TransferRef
+    copy_loc l0
+    call fungible_asset::transfer_ref_metadata
+    st_loc l3
+    copy_loc l1
+    copy_loc l3
+    // @5
+    st_loc l4
+    borrow_loc l4
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    st_loc l6
+    // @10
+    copy_loc l6
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l6
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @15
+    st_loc l7
+l1: move_loc l0
+    move_loc l7
+    move_loc l2
+    call fungible_asset::deposit_with_ref<fungible_asset::FungibleStore>
+    // @20
+    ret
+l0: move_loc l3
+    st_loc l8
+    borrow_loc l8
+    call object::object_address<fungible_asset::Metadata>
+    // @25
+    st_loc l6
+    copy_loc l6
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l6
+    // @30
+    borrow_global DeriveRefPod
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l9
+    move_loc l1
+    move_loc l9
+    // @35
+    call object::create_user_derived_object
+    st_loc l10
+    borrow_loc l10
+    st_loc l11
+    copy_loc l11
+    // @40
+    call object::generate_transfer_ref
+    st_loc l12
+    borrow_loc l12
+    call object::disable_ungated_transfer
+    move_loc l11
+    // @45
+    move_loc l8
+    call fungible_asset::create_store<fungible_asset::Metadata>
+    st_loc l7
+    branch l1
+
+// Function definition at index 7
+#[persistent] public fun is_balance_at_least<T0: key>(l0: address, l1: object::Object<T0>, l2: u64): bool
+    local l3: object::Object<T0>
+    local l4: address
+    local l5: address
+    local l6: object::Object<T0>
+    copy_loc l0
+    copy_loc l1
+    st_loc l3
+    borrow_loc l3
+    call object::object_address<T0>
+    // @5
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l0
+    move_loc l1
+    // @10
+    st_loc l6
+    borrow_loc l6
+    call object::object_address<T0>
+    call object::create_user_derived_object_address
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @15
+    move_loc l2
+    call dispatchable_fungible_asset::is_derived_balance_at_least<fungible_asset::FungibleStore>
+    ret
+l0: move_loc l2
+    ld_u64 0
+    // @20
+    eq
+    ret
+
+// Function definition at index 8
+#[persistent] public fun is_frozen<T0: key>(l0: address, l1: object::Object<T0>): bool
+    local l2: object::Object<T0>
+    local l3: address
+    local l4: address
+    local l5: object::Object<T0>
+    copy_loc l0
+    copy_loc l1
+    st_loc l2
+    borrow_loc l2
+    call object::object_address<T0>
+    // @5
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l0
+    move_loc l1
+    // @10
+    st_loc l5
+    borrow_loc l5
+    call object::object_address<T0>
+    call object::create_user_derived_object_address
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @15
+    call fungible_asset::is_frozen<fungible_asset::FungibleStore>
+    ret
+l0: ld_false
+    ret
+
+// Function definition at index 9
+#[persistent] public fun mint(l0: &fungible_asset::MintRef, l1: address, l2: u64) acquires DeriveRefPod
+    local l3: object::Object<fungible_asset::Metadata>
+    local l4: object::Object<fungible_asset::Metadata>
+    local l5: address
+    local l6: address
+    local l7: object::Object<fungible_asset::FungibleStore>
+    local l8: object::Object<fungible_asset::Metadata>
+    local l9: &object::DeriveRef
+    local l10: object::ConstructorRef
+    local l11: &object::ConstructorRef
+    local l12: object::TransferRef
+    copy_loc l0
+    call fungible_asset::mint_ref_metadata
+    st_loc l3
+    copy_loc l1
+    copy_loc l3
+    // @5
+    st_loc l4
+    borrow_loc l4
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    st_loc l6
+    // @10
+    copy_loc l6
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l6
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @15
+    st_loc l7
+l1: move_loc l0
+    move_loc l7
+    move_loc l2
+    call fungible_asset::mint_to<fungible_asset::FungibleStore>
+    // @20
+    ret
+l0: move_loc l3
+    st_loc l8
+    borrow_loc l8
+    call object::object_address<fungible_asset::Metadata>
+    // @25
+    st_loc l6
+    copy_loc l6
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l6
+    // @30
+    borrow_global DeriveRefPod
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l9
+    move_loc l1
+    move_loc l9
+    // @35
+    call object::create_user_derived_object
+    st_loc l10
+    borrow_loc l10
+    st_loc l11
+    copy_loc l11
+    // @40
+    call object::generate_transfer_ref
+    st_loc l12
+    borrow_loc l12
+    call object::disable_ungated_transfer
+    move_loc l11
+    // @45
+    move_loc l8
+    call fungible_asset::create_store<fungible_asset::Metadata>
+    st_loc l7
+    branch l1
+
+// Function definition at index 10
+#[persistent] public fun set_frozen_flag(l0: &fungible_asset::TransferRef, l1: address, l2: bool) acquires DeriveRefPod
+    local l3: object::Object<fungible_asset::Metadata>
+    local l4: object::Object<fungible_asset::Metadata>
+    local l5: address
+    local l6: address
+    local l7: object::Object<fungible_asset::FungibleStore>
+    local l8: object::Object<fungible_asset::Metadata>
+    local l9: &object::DeriveRef
+    local l10: object::ConstructorRef
+    local l11: &object::ConstructorRef
+    local l12: object::TransferRef
+    copy_loc l0
+    call fungible_asset::transfer_ref_metadata
+    st_loc l3
+    copy_loc l1
+    copy_loc l3
+    // @5
+    st_loc l4
+    borrow_loc l4
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    st_loc l6
+    // @10
+    copy_loc l6
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l6
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @15
+    st_loc l7
+l1: move_loc l0
+    move_loc l7
+    move_loc l2
+    call fungible_asset::set_frozen_flag<fungible_asset::FungibleStore>
+    // @20
+    ret
+l0: move_loc l3
+    st_loc l8
+    borrow_loc l8
+    call object::object_address<fungible_asset::Metadata>
+    // @25
+    st_loc l6
+    copy_loc l6
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l6
+    // @30
+    borrow_global DeriveRefPod
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l9
+    move_loc l1
+    move_loc l9
+    // @35
+    call object::create_user_derived_object
+    st_loc l10
+    borrow_loc l10
+    st_loc l11
+    copy_loc l11
+    // @40
+    call object::generate_transfer_ref
+    st_loc l12
+    borrow_loc l12
+    call object::disable_ungated_transfer
+    move_loc l11
+    // @45
+    move_loc l8
+    call fungible_asset::create_store<fungible_asset::Metadata>
+    st_loc l7
+    branch l1
+
+// Function definition at index 11
+#[persistent] entry public fun upgrade_to_concurrent(l0: &signer, l1: object::Object<fungible_asset::Metadata>) acquires DeriveRefPod
+    local l2: address
+    local l3: object::Object<fungible_asset::Metadata>
+    local l4: address
+    local l5: address
+    local l6: object::Object<fungible_asset::FungibleStore>
+    local l7: object::Object<fungible_asset::Metadata>
+    local l8: &object::DeriveRef
+    local l9: object::ConstructorRef
+    local l10: &object::ConstructorRef
+    local l11: object::TransferRef
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l2
+    copy_loc l2
+    // @5
+    copy_loc l1
+    st_loc l3
+    borrow_loc l3
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    // @10
+    st_loc l5
+    copy_loc l5
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l5
+    // @15
+    call object::address_to_object<fungible_asset::FungibleStore>
+    st_loc l6
+l1: move_loc l0
+    move_loc l6
+    call fungible_asset::upgrade_store_to_concurrent<fungible_asset::FungibleStore>
+    // @20
+    ret
+l0: move_loc l1
+    st_loc l7
+    borrow_loc l7
+    call object::object_address<fungible_asset::Metadata>
+    // @25
+    st_loc l5
+    copy_loc l5
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l5
+    // @30
+    borrow_global DeriveRefPod
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l8
+    move_loc l2
+    move_loc l8
+    // @35
+    call object::create_user_derived_object
+    st_loc l9
+    borrow_loc l9
+    st_loc l10
+    copy_loc l10
+    // @40
+    call object::generate_transfer_ref
+    st_loc l11
+    borrow_loc l11
+    call object::disable_ungated_transfer
+    move_loc l10
+    // @45
+    move_loc l7
+    call fungible_asset::create_store<fungible_asset::Metadata>
+    st_loc l6
+    branch l1
+
+// Function definition at index 12
+#[persistent] public fun withdraw<T0: key>(l0: &signer, l1: object::Object<T0>, l2: u64): fungible_asset::FungibleAsset acquires DeriveRefPod
+    local l3: &signer
+    local l4: address
+    local l5: object::Object<T0>
+    local l6: address
+    local l7: address
+    local l8: object::Object<fungible_asset::FungibleStore>
+    local l9: object::Object<fungible_asset::FungibleStore>
+    local l10: object::Object<T0>
+    local l11: &object::DeriveRef
+    local l12: object::ConstructorRef
+    local l13: &object::ConstructorRef
+    local l14: object::TransferRef
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l4
+    copy_loc l4
+    // @5
+    copy_loc l1
+    st_loc l5
+    borrow_loc l5
+    call object::object_address<T0>
+    call object::create_user_derived_object_address
+    // @10
+    st_loc l7
+    copy_loc l7
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l7
+    // @15
+    call object::address_to_object<fungible_asset::FungibleStore>
+    st_loc l8
+l3: copy_loc l0
+    st_loc l3
+    copy_loc l8
+    // @20
+    st_loc l9
+    copy_loc l9
+    call object::is_burnt<fungible_asset::FungibleStore>
+    br_false l1
+    move_loc l3
+    // @25
+    move_loc l9
+    call object::unburn<fungible_asset::FungibleStore>
+l2: move_loc l0
+    move_loc l8
+    move_loc l2
+    // @30
+    call dispatchable_fungible_asset::withdraw<fungible_asset::FungibleStore>
+    ret
+l1: move_loc l3
+    pop
+    branch l2
+    // @35
+l0: move_loc l1
+    st_loc l10
+    borrow_loc l10
+    call object::object_address<T0>
+    st_loc l7
+    // @40
+    copy_loc l7
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l7
+    borrow_global DeriveRefPod
+    // @45
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l11
+    move_loc l4
+    move_loc l11
+    call object::create_user_derived_object
+    // @50
+    st_loc l12
+    borrow_loc l12
+    st_loc l13
+    copy_loc l13
+    call object::generate_transfer_ref
+    // @55
+    st_loc l14
+    borrow_loc l14
+    call object::disable_ungated_transfer
+    move_loc l13
+    move_loc l10
+    // @60
+    call fungible_asset::create_store<T0>
+    st_loc l8
+    branch l3
+
+// Function definition at index 13
+#[persistent] public fun withdraw_with_ref(l0: &fungible_asset::TransferRef, l1: address, l2: u64): fungible_asset::FungibleAsset
+    local l3: object::Object<fungible_asset::Metadata>
+    local l4: address
+    local l5: object::Object<fungible_asset::FungibleStore>
+    copy_loc l0
+    call fungible_asset::transfer_ref_metadata
+    st_loc l3
+    borrow_loc l3
+    call object::object_address<fungible_asset::Metadata>
+    // @5
+    st_loc l4
+    move_loc l1
+    move_loc l4
+    call object::create_user_derived_object_address
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @10
+    st_loc l5
+    move_loc l0
+    move_loc l5
+    move_loc l2
+    call fungible_asset::withdraw_with_ref<fungible_asset::FungibleStore>
+    // @15
+    ret
+
+// Function definition at index 14
+#[persistent] entry public fun transfer_assert_minimum_deposit<T0: key>(l0: &signer, l1: object::Object<T0>, l2: address, l3: u64, l4: u64) acquires DeriveRefPod
+    local l5: &signer
+    local l6: address
+    local l7: object::Object<T0>
+    local l8: object::Object<T0>
+    local l9: address
+    local l10: address
+    local l11: object::Object<fungible_asset::FungibleStore>
+    local l12: object::Object<fungible_asset::FungibleStore>
+    local l13: object::Object<T0>
+    local l14: object::Object<T0>
+    local l15: address
+    local l16: address
+    local l17: object::Object<fungible_asset::FungibleStore>
+    local l18: object::Object<T0>
+    local l19: &object::DeriveRef
+    local l20: object::ConstructorRef
+    local l21: &object::ConstructorRef
+    local l22: object::TransferRef
+    local l23: object::Object<T0>
+    local l24: object::ConstructorRef
+    local l25: object::TransferRef
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l6
+    copy_loc l1
+    // @5
+    st_loc l7
+    copy_loc l6
+    copy_loc l7
+    st_loc l8
+    borrow_loc l8
+    // @10
+    call object::object_address<T0>
+    call object::create_user_derived_object_address
+    st_loc l10
+    copy_loc l10
+    call fungible_asset::store_exists
+    // @15
+    br_false l0
+    move_loc l10
+    call object::address_to_object<fungible_asset::FungibleStore>
+    st_loc l11
+l5: copy_loc l0
+    // @20
+    st_loc l5
+    copy_loc l11
+    st_loc l12
+    copy_loc l12
+    call object::is_burnt<fungible_asset::FungibleStore>
+    // @25
+    br_false l1
+    move_loc l5
+    move_loc l12
+    call object::unburn<fungible_asset::FungibleStore>
+l4: move_loc l2
+    // @30
+    st_loc l9
+    move_loc l1
+    st_loc l13
+    copy_loc l9
+    copy_loc l13
+    // @35
+    st_loc l14
+    borrow_loc l14
+    call object::object_address<T0>
+    call object::create_user_derived_object_address
+    st_loc l16
+    // @40
+    copy_loc l16
+    call fungible_asset::store_exists
+    br_false l2
+    move_loc l16
+    call object::address_to_object<fungible_asset::FungibleStore>
+    // @45
+    st_loc l17
+l3: move_loc l0
+    move_loc l11
+    move_loc l17
+    move_loc l3
+    // @50
+    move_loc l4
+    call dispatchable_fungible_asset::transfer_assert_minimum_deposit<fungible_asset::FungibleStore>
+    ret
+l2: move_loc l13
+    st_loc l18
+    // @55
+    borrow_loc l18
+    call object::object_address<T0>
+    st_loc l16
+    copy_loc l16
+    call object::address_to_object<fungible_asset::Metadata>
+    // @60
+    pop
+    move_loc l16
+    borrow_global DeriveRefPod
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l19
+    // @65
+    move_loc l9
+    move_loc l19
+    call object::create_user_derived_object
+    st_loc l20
+    borrow_loc l20
+    // @70
+    st_loc l21
+    copy_loc l21
+    call object::generate_transfer_ref
+    st_loc l22
+    borrow_loc l22
+    // @75
+    call object::disable_ungated_transfer
+    move_loc l21
+    move_loc l18
+    call fungible_asset::create_store<T0>
+    st_loc l17
+    // @80
+    branch l3
+l1: move_loc l5
+    pop
+    branch l4
+l0: move_loc l7
+    // @85
+    st_loc l23
+    borrow_loc l23
+    call object::object_address<T0>
+    st_loc l10
+    copy_loc l10
+    // @90
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l10
+    borrow_global DeriveRefPod
+    borrow_field DeriveRefPod, metadata_derive_ref
+    // @95
+    st_loc l19
+    move_loc l6
+    move_loc l19
+    call object::create_user_derived_object
+    st_loc l24
+    // @100
+    borrow_loc l24
+    st_loc l21
+    copy_loc l21
+    call object::generate_transfer_ref
+    st_loc l25
+    // @105
+    borrow_loc l25
+    call object::disable_ungated_transfer
+    move_loc l21
+    move_loc l23
+    call fungible_asset::create_store<T0>
+    // @110
+    st_loc l11
+    branch l5
+
+// Function definition at index 15
+#[persistent] public fun create_primary_store<T0: key>(l0: address, l1: object::Object<T0>): object::Object<fungible_asset::FungibleStore> acquires DeriveRefPod
+    local l2: address
+    local l3: &object::DeriveRef
+    local l4: object::ConstructorRef
+    local l5: &object::ConstructorRef
+    local l6: object::TransferRef
+    borrow_loc l1
+    call object::object_address<T0>
+    st_loc l2
+    copy_loc l2
+    call object::address_to_object<fungible_asset::Metadata>
+    // @5
+    pop
+    move_loc l2
+    borrow_global DeriveRefPod
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l3
+    // @10
+    move_loc l0
+    move_loc l3
+    call object::create_user_derived_object
+    st_loc l4
+    borrow_loc l4
+    // @15
+    st_loc l5
+    copy_loc l5
+    call object::generate_transfer_ref
+    st_loc l6
+    borrow_loc l6
+    // @20
+    call object::disable_ungated_transfer
+    move_loc l5
+    move_loc l1
+    call fungible_asset::create_store<T0>
+    ret
+
+// Function definition at index 16
+#[persistent] public fun create_primary_store_enabled_fungible_asset(l0: &object::ConstructorRef, l1: option::Option<u128>, l2: string::String, l3: string::String, l4: u8, l5: string::String, l6: string::String)
+    local l7: signer
+    copy_loc l0
+    move_loc l1
+    move_loc l2
+    move_loc l3
+    move_loc l4
+    // @5
+    move_loc l5
+    move_loc l6
+    call fungible_asset::add_fungibility
+    pop
+    copy_loc l0
+    // @10
+    call object::generate_signer
+    st_loc l7
+    borrow_loc l7
+    move_loc l0
+    call object::generate_derive_ref
+    // @15
+    pack DeriveRefPod
+    move_to DeriveRefPod
+    ret
+
+// Function definition at index 17
+#[persistent] public fun deposit_with_signer(l0: &signer, l1: fungible_asset::FungibleAsset) acquires DeriveRefPod
+    local l2: object::Object<fungible_asset::Metadata>
+    local l3: address
+    local l4: object::Object<fungible_asset::Metadata>
+    local l5: address
+    local l6: address
+    local l7: object::Object<fungible_asset::FungibleStore>
+    local l8: object::Object<fungible_asset::Metadata>
+    local l9: &object::DeriveRef
+    local l10: object::ConstructorRef
+    local l11: &object::ConstructorRef
+    local l12: object::TransferRef
+    borrow_loc l1
+    call fungible_asset::asset_metadata
+    st_loc l2
+    move_loc l0
+    call signer::borrow_address
+    // @5
+    read_ref
+    st_loc l3
+    copy_loc l3
+    copy_loc l2
+    st_loc l4
+    // @10
+    borrow_loc l4
+    call object::object_address<fungible_asset::Metadata>
+    call object::create_user_derived_object_address
+    st_loc l6
+    copy_loc l6
+    // @15
+    call fungible_asset::store_exists
+    br_false l0
+    move_loc l6
+    call object::address_to_object<fungible_asset::FungibleStore>
+    st_loc l7
+    // @20
+l1: move_loc l7
+    move_loc l1
+    call dispatchable_fungible_asset::deposit<fungible_asset::FungibleStore>
+    ret
+l0: move_loc l2
+    // @25
+    st_loc l8
+    borrow_loc l8
+    call object::object_address<fungible_asset::Metadata>
+    st_loc l6
+    copy_loc l6
+    // @30
+    call object::address_to_object<fungible_asset::Metadata>
+    pop
+    move_loc l6
+    borrow_global DeriveRefPod
+    borrow_field DeriveRefPod, metadata_derive_ref
+    // @35
+    st_loc l9
+    move_loc l3
+    move_loc l9
+    call object::create_user_derived_object
+    st_loc l10
+    // @40
+    borrow_loc l10
+    st_loc l11
+    copy_loc l11
+    call object::generate_transfer_ref
+    st_loc l12
+    // @45
+    borrow_loc l12
+    call object::disable_ungated_transfer
+    move_loc l11
+    move_loc l8
+    call fungible_asset::create_store<fungible_asset::Metadata>
+    // @50
+    st_loc l7
+    branch l1
+
+// Function definition at index 18
+#[persistent] public fun ensure_primary_store_exists<T0: key>(l0: address, l1: object::Object<T0>): object::Object<fungible_asset::FungibleStore> acquires DeriveRefPod
+    local l2: object::Object<T0>
+    local l3: address
+    local l4: address
+    local l5: object::Object<T0>
+    local l6: &object::DeriveRef
+    local l7: object::ConstructorRef
+    local l8: &object::ConstructorRef
+    local l9: object::TransferRef
+    copy_loc l0
+    copy_loc l1
+    st_loc l2
+    borrow_loc l2
+    call object::object_address<T0>
+    // @5
+    call object::create_user_derived_object_address
+    st_loc l4
+    copy_loc l4
+    call fungible_asset::store_exists
+    br_false l0
+    // @10
+    move_loc l4
+    call object::address_to_object<fungible_asset::FungibleStore>
+    ret
+l0: move_loc l1
+    st_loc l5
+    // @15
+    borrow_loc l5
+    call object::object_address<T0>
+    st_loc l4
+    copy_loc l4
+    call object::address_to_object<fungible_asset::Metadata>
+    // @20
+    pop
+    move_loc l4
+    borrow_global DeriveRefPod
+    borrow_field DeriveRefPod, metadata_derive_ref
+    st_loc l6
+    // @25
+    move_loc l0
+    move_loc l6
+    call object::create_user_derived_object
+    st_loc l7
+    borrow_loc l7
+    // @30
+    st_loc l8
+    copy_loc l8
+    call object::generate_transfer_ref
+    st_loc l9
+    borrow_loc l9
+    // @35
+    call object::disable_ungated_transfer
+    move_loc l8
+    move_loc l5
+    call fungible_asset::create_store<T0>
+    ret
+
+// Function definition at index 19
+#[persistent] public fun grant_apt_permission(l0: &signer, l1: &signer, l2: u64)
+    ld_u64 851969
+    move_loc l0
+    pop
+    move_loc l1
+    pop
+    // @5
+    abort
+
+// Function definition at index 20
+fun may_be_unburn(l0: &signer, l1: object::Object<fungible_asset::FungibleStore>)
+    copy_loc l1
+    call object::is_burnt<fungible_asset::FungibleStore>
+    br_false l0
+    move_loc l0
+    move_loc l1
+    // @5
+    call object::unburn<fungible_asset::FungibleStore>
+    ret
+l0: move_loc l0
+    pop
+    ret
+
+// Function definition at index 21
+#[persistent] public fun primary_store<T0: key>(l0: address, l1: object::Object<T0>): object::Object<fungible_asset::FungibleStore>
+    local l2: object::Object<T0>
+    local l3: address
+    move_loc l1
+    st_loc l2
+    borrow_loc l2
+    call object::object_address<T0>
+    st_loc l3
+    // @5
+    move_loc l0
+    move_loc l3
+    call object::create_user_derived_object_address
+    call object::address_to_object<fungible_asset::FungibleStore>
+    ret
+
+// Function definition at index 22
+#[persistent] public fun primary_store_address<T0: key>(l0: address, l1: object::Object<T0>): address
+    local l2: address
+    borrow_loc l1
+    call object::object_address<T0>
+    st_loc l2
+    move_loc l0
+    move_loc l2
+    // @5
+    call object::create_user_derived_object_address
+    ret
+
+// Function definition at index 23
+#[persistent] public fun primary_store_exists<T0: key>(l0: address, l1: object::Object<T0>): bool
+    local l2: object::Object<T0>
+    local l3: address
+    move_loc l1
+    st_loc l2
+    borrow_loc l2
+    call object::object_address<T0>
+    st_loc l3
+    // @5
+    move_loc l0
+    move_loc l3
+    call object::create_user_derived_object_address
+    call fungible_asset::store_exists
+    ret
+

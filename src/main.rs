@@ -13,9 +13,10 @@
 //! * `replay`        — replay an on-chain Sui transaction via the local
 //!                     `sui replay` CLI and convert the resulting trace
 //!                     into a CodeTracer CTFS trace bundle.
-//! * `aptos-replay`  — replay an on-chain Aptos transaction via the local
-//!                     `aptos move replay` CLI (with optional gas
-//!                     profiling) and convert the resulting trace into a
+//! * `aptos-replay`  — replay an on-chain Aptos transaction with
+//!                     `aptos move replay --trace` (the CodeTracer build of
+//!                     the Aptos CLI) and convert the value trace, with
+//!                     steps on each module's disassembly, into a
 //!                     CodeTracer CTFS trace bundle.
 //!
 //! # Usage
@@ -126,11 +127,35 @@ enum Commands {
         #[arg(long)]
         digest: String,
 
-        /// Sui RPC endpoint URL.
-        #[arg(long, default_value = "http://localhost:9000")]
-        rpc_url: String,
+        /// Network to replay against: `mainnet`, `testnet`, `devnet`, or
+        /// a GraphQL service URL (passed to `sui replay --node`).
+        /// `--rpc-url` is accepted as an alias for older callers.
+        #[arg(long, alias = "rpc-url", default_value = "mainnet")]
+        node: String,
 
-        /// Directory containing Move source files.
+        /// Keep `sui replay`'s artifacts here (`<DIR>/<DIGEST>/`).  When it
+        /// already holds the transaction's trace, the transaction is
+        /// converted without replaying it again.
+        #[arg(long)]
+        replay_dir: Option<PathBuf>,
+
+        /// Refuse a trace that decompresses to more than this many bytes
+        /// (`TRACE-TOO-LARGE`), measured by streaming before it is read.
+        #[arg(long, default_value_t = replay::DEFAULT_MAX_TRACE_BYTES)]
+        max_trace_bytes: u64,
+
+        /// The container's recording id: a UUID, or `derive` to build one
+        /// from the digest and `--recording-time-ms`, so that converting the
+        /// same replay twice writes identical bytes.
+        #[arg(long)]
+        recording_id: Option<String>,
+
+        /// The checkpoint's timestamp in milliseconds, for `--recording-id derive`.
+        #[arg(long)]
+        recording_time_ms: Option<u64>,
+
+        /// Directory containing Move source files.  Without it, steps map
+        /// to the disassembly `sui replay` writes for every package.
         #[arg(long)]
         source_dir: Option<PathBuf>,
 
@@ -145,16 +170,43 @@ enum Commands {
     /// Replay an on-chain Aptos transaction and produce a CodeTracer CTFS trace.
     AptosReplay {
         /// Transaction version (ledger version) to replay.
-        #[arg(long)]
+        #[arg(long, alias = "txn-id")]
         txn_version: u64,
 
-        /// Aptos REST API node URL.
-        #[arg(long, default_value = "https://fullnode.mainnet.aptoslabs.com/v1")]
-        node_url: String,
+        /// Network to replay on: `mainnet`, `testnet`, `devnet`, or a REST
+        /// endpoint URL (passed to `aptos move replay --network`; module
+        /// bytecode is fetched from the same node).
+        #[arg(long, alias = "node-url", default_value = "mainnet")]
+        network: String,
 
-        /// Directory containing Move source files.
+        /// The Aptos CLI to run.  It must support `aptos move replay
+        /// --trace`, which the CodeTracer build of the CLI adds
+        /// (metacraft-labs/aptos-core, branch codetracer/value-tracing-aptos-node-v1.49.8).
+        #[arg(
+            long,
+            env = "CODETRACER_MOVE_RECORDER_APTOS_CLI",
+            default_value = "aptos"
+        )]
+        aptos_cli: PathBuf,
+
+        /// Node API key, to lift the public fullnodes' anonymous rate limit.
+        #[arg(long, env = "APTOS_NODE_API_KEY", hide_env_values = true)]
+        node_api_key: Option<String>,
+
+        /// Keep the replay's artifacts here: `trace.json` and, per module,
+        /// `0x<address>/bytecode/<module>.mv` and its `.mv.masm`
+        /// disassembly.  An existing trace is not replayed again and
+        /// existing modules are not fetched again.
         #[arg(long)]
-        source_dir: Option<PathBuf>,
+        replay_dir: Option<PathBuf>,
+
+        /// Refuse a trace larger than this many bytes (`TRACE-TOO-LARGE`).
+        #[arg(long, default_value_t = replay::DEFAULT_MAX_TRACE_BYTES)]
+        max_trace_bytes: u64,
+
+        /// The container's recording id (a UUID).
+        #[arg(long)]
+        recording_id: Option<String>,
 
         /// Output directory for trace files.
         ///
@@ -162,14 +214,21 @@ enum Commands {
         /// variable when the flag is omitted.
         #[arg(short, long)]
         out_dir: Option<PathBuf>,
-
-        /// Also run --profile-gas for additional gas data.
-        #[arg(long, default_value = "true")]
-        profile_gas: bool,
     },
 
     /// Show Aptos-specific limitations compared to Sui support.
     AptosLimitations,
+
+    /// Write a recorded container's step positions and call frames as JSON,
+    /// read from its streams without decoding any value.
+    Positions {
+        /// The `.ct` container to read.
+        container: PathBuf,
+
+        /// Where to write the JSON document.
+        #[arg(long)]
+        out: PathBuf,
+    },
 
     /// Print version information.
     Version,
@@ -534,7 +593,11 @@ fn main() -> eyre::Result<()> {
         }
         Commands::Replay {
             digest,
-            rpc_url,
+            node,
+            replay_dir,
+            max_trace_bytes,
+            recording_id,
+            recording_time_ms,
             source_dir,
             out_dir,
         } => {
@@ -545,9 +608,23 @@ fn main() -> eyre::Result<()> {
 
             let out_dir = resolve_out_dir(out_dir);
 
+            let recording_id = match recording_id.as_deref() {
+                Some("derive") => {
+                    let Some(ms) = recording_time_ms else {
+                        bail!(
+                            "--recording-id derive needs --recording-time-ms (the checkpoint's timestamp)"
+                        );
+                    };
+                    Some(replay::derived_recording_id(ms, &digest))
+                }
+                other => other.map(str::to_string),
+            };
             let config = ReplayConfig {
-                rpc_url,
+                node,
                 digest,
+                replay_dir,
+                max_trace_bytes,
+                recording_id,
                 source_dir,
                 out_dir,
             };
@@ -556,10 +633,13 @@ fn main() -> eyre::Result<()> {
         }
         Commands::AptosReplay {
             txn_version,
-            node_url,
-            source_dir,
+            network,
+            aptos_cli,
+            node_api_key,
+            replay_dir,
+            max_trace_bytes,
+            recording_id,
             out_dir,
-            profile_gas,
         } => {
             if recording_disabled() {
                 eprintln!(
@@ -571,17 +651,30 @@ fn main() -> eyre::Result<()> {
             let out_dir = resolve_out_dir(out_dir);
 
             let config = AptosReplayConfig {
-                node_url,
+                network,
                 txn_version,
-                source_dir,
+                aptos_cli,
+                node_api_key,
+                replay_dir,
+                max_trace_bytes,
+                recording_id,
                 out_dir,
-                profile_gas,
             };
 
-            aptos_replay::aptos_replay_transaction(&config)?;
+            let conversion = aptos_replay::aptos_replay_transaction(&config)?;
+            eprintln!(
+                "Loaded the disassembly of {} module(s); refused {}.",
+                conversion.modules_loaded,
+                conversion.modules_rejected.len()
+            );
         }
         Commands::AptosLimitations => {
             println!("{}", aptos_adapter::aptos_limitations_summary());
+        }
+        Commands::Positions { container, out } => {
+            let doc = codetracer_move_recorder::positions::container_positions(&container)?;
+            fs::write(&out, serde_json::to_vec(&doc)?)
+                .wrap_err_with(|| format!("Failed to write {}", out.display()))?;
         }
         Commands::Version => {
             println!("codetracer-move-recorder {}", env!("CARGO_PKG_VERSION"));

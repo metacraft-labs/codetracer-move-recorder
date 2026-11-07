@@ -354,47 +354,23 @@ fn test_historical_state_fetching() {
 fn test_aptos_vs_sui_limitations() {
     let summary = aptos_adapter::aptos_limitations_summary();
 
-    // Verify all key limitations are documented.
-    assert!(
-        summary.contains("NO VARIABLE VALUES"),
-        "should document no variable values limitation"
-    );
-    assert!(
-        summary.contains("NO STRUCTURED TRACE FORMAT"),
-        "should document no structured trace format"
-    );
-    assert!(
-        summary.contains("GAS-CENTRIC PROFILING"),
-        "should document gas-centric profiling"
-    );
-    assert!(
-        summary.contains("LIMITED SOURCE MAPPING"),
-        "should document limited source mapping"
-    );
-    assert!(
-        summary.contains("HISTORICAL STATE"),
-        "should document historical state access"
-    );
-
-    // Verify it mentions Sui as the alternative.
-    assert!(
-        summary.contains("Sui"),
-        "should reference Sui as the alternative for full debugging"
-    );
-
-    // Verify it mentions key technical details.
-    assert!(
-        summary.contains("MOVE_VM_TRACE"),
-        "should mention MOVE_VM_TRACE"
-    );
-    assert!(
-        summary.contains("flamegraph"),
-        "should mention flamegraph format"
-    );
-    assert!(
-        summary.contains("/v1/accounts/"),
-        "should mention REST API endpoint"
-    );
+    // What recording needs, and what it still lacks.
+    for needle in [
+        "move replay --trace",
+        "codetracer/value-tracing",
+        "STEPS ARE ON DISASSEMBLY",
+        "NO LOCAL NAMES",
+        "ENUM VALUES ARE UNNAMED",
+        "MoveTransactionPhase",
+        "MOVE_VM_TRACE",
+    ] {
+        assert!(
+            summary.contains(needle),
+            "summary should mention {needle:?}"
+        );
+    }
+    // CONTROL: the claims the value trace made obsolete are gone.
+    assert!(!summary.contains("NO VARIABLE VALUES"));
 }
 
 // ---------------------------------------------------------------------------
@@ -405,30 +381,16 @@ fn test_aptos_vs_sui_limitations() {
 fn test_aptos_replay_config() {
     let config = AptosReplayConfig::new(123456789);
 
-    assert_eq!(config.node_url, "https://fullnode.mainnet.aptoslabs.com/v1");
+    assert_eq!(config.network, "mainnet");
     assert_eq!(config.txn_version, 123456789);
-    assert!(config.source_dir.is_none());
+    assert_eq!(config.aptos_cli, std::path::PathBuf::from("aptos"));
+    assert!(config.replay_dir.is_none());
+    assert!(config.node_api_key.is_none());
     assert_eq!(config.out_dir, std::path::PathBuf::from("./ct-traces/"));
-    assert!(config.profile_gas, "profile_gas should default to true");
-}
-
-#[test]
-fn test_aptos_replay_config_custom() {
-    let config = AptosReplayConfig {
-        node_url: "http://localhost:8080/v1".to_string(),
-        txn_version: 42,
-        source_dir: Some(std::path::PathBuf::from("/tmp/sources")),
-        out_dir: std::path::PathBuf::from("/tmp/output"),
-        profile_gas: false,
-    };
-
-    assert_eq!(config.node_url, "http://localhost:8080/v1");
-    assert_eq!(config.txn_version, 42);
     assert_eq!(
-        config.source_dir.as_ref().unwrap().to_str().unwrap(),
-        "/tmp/sources"
+        aptos_replay::rest_base_url(&config.network),
+        "https://fullnode.mainnet.aptoslabs.com/v1"
     );
-    assert!(!config.profile_gas);
 }
 
 // ---------------------------------------------------------------------------
@@ -525,106 +487,4 @@ fn test_aptos_merge_gas_and_trace_no_gas() {
     assert_eq!(enriched.len(), 1);
     assert!(enriched[0].gas_cost.is_none());
     assert!(enriched[0].total_gas.is_none());
-}
-
-#[test]
-fn test_aptos_replay_from_existing_data() {
-    let trace_csv = "\
-0x1::module::init,0
-0x1::module::init,1
-0x1::module::init,2
-0x1::module::process,0
-0x1::module::process,1
-";
-
-    let gas_json = r#"{
-        "gas_used": 1000,
-        "call_tree": {
-            "name": "0x1::module::init",
-            "gas_cost": 300,
-            "total_gas": 600,
-            "children": [
-                {
-                    "name": "0x1::module::process",
-                    "gas_cost": 300,
-                    "total_gas": 300,
-                    "children": []
-                }
-            ]
-        }
-    }"#;
-
-    let tmp = tempfile::TempDir::new().expect("failed to create temp dir");
-    let out_dir = tmp.path().join("ct-out");
-    let source_path = Path::new("aptos_module.move");
-
-    // Test with gas data.
-    aptos_replay::aptos_replay_from_existing_data(trace_csv, Some(gas_json), source_path, &out_dir)
-        .expect("aptos_replay_from_existing_data should succeed");
-
-    // Verify .ct output with CTFS magic bytes.
-    let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
-        .expect("read output dir")
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| p.extension().is_some_and(|ext| ext == "ct"))
-        .collect();
-    assert!(
-        !ct_files.is_empty(),
-        "expected at least one .ct file in output dir"
-    );
-    let content = std::fs::read(&ct_files[0]).expect("read .ct file");
-    assert!(content.len() >= 5, ".ct file too small");
-    assert_eq!(
-        &content[..5],
-        &[0xC0, 0xDE, 0x72, 0xAC, 0xE2],
-        "CTFS magic bytes mismatch"
-    );
-}
-
-#[test]
-fn test_aptos_replay_from_existing_data_no_gas() {
-    let trace_csv = "0x1::simple::call,0\n0x1::simple::call,1\n";
-
-    let tmp = tempfile::TempDir::new().expect("failed to create temp dir");
-    let out_dir = tmp.path().join("ct-out-no-gas");
-    let source_path = Path::new("simple.move");
-
-    // Test without gas data.
-    aptos_replay::aptos_replay_from_existing_data(trace_csv, None, source_path, &out_dir)
-        .expect("should succeed without gas data");
-
-    let ct_files: Vec<_> = std::fs::read_dir(&out_dir)
-        .expect("read output dir")
-        .filter_map(|e| e.ok())
-        .map(|e| e.path())
-        .filter(|p| p.extension().is_some_and(|ext| ext == "ct"))
-        .collect();
-    assert!(
-        !ct_files.is_empty(),
-        "expected at least one .ct file in output dir"
-    );
-    let content = std::fs::read(&ct_files[0]).expect("read .ct file");
-    assert!(content.len() >= 5, ".ct file too small");
-    assert_eq!(
-        &content[..5],
-        &[0xC0, 0xDE, 0x72, 0xAC, 0xE2],
-        "CTFS magic bytes mismatch"
-    );
-}
-
-#[test]
-fn test_aptos_replay_from_existing_data_empty_trace() {
-    let tmp = tempfile::TempDir::new().expect("failed to create temp dir");
-    let out_dir = tmp.path().join("ct-out-empty");
-    let source_path = Path::new("empty.move");
-
-    let result = aptos_replay::aptos_replay_from_existing_data("", None, source_path, &out_dir);
-
-    assert!(result.is_err(), "should fail with empty trace");
-    let err_msg = result.unwrap_err().to_string();
-    assert!(
-        err_msg.contains("no trace entries"),
-        "error should mention no entries, got: {err_msg}"
-    );
 }

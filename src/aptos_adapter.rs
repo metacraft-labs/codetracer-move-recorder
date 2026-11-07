@@ -438,35 +438,31 @@ pub fn convert_aptos_trace(
     Ok(())
 }
 
-/// Return a human-readable summary of Aptos limitations compared to Sui.
+/// Return a human-readable summary of what Aptos recording supports and
+/// where it falls short of Sui.
 ///
 /// This is used in CLI output and error messages to set user expectations.
 pub fn aptos_limitations_summary() -> &'static str {
     "\
-Aptos trace support has significant limitations compared to Sui:
+Aptos recording (`aptos-replay`) needs the CodeTracer build of the Aptos CLI
+(metacraft-labs/aptos-core, branch codetracer/value-tracing-aptos-node-v1.49.8), whose
+`aptos move replay --trace` writes the same structured value trace as Sui:
+frames, instructions, and typed stack and local values. With it:
 
-1. NO VARIABLE VALUES: Aptos MOVE_VM_TRACE only records function names and
-   program counters. Variable values, stack state, and reference tracking
-   are not available. CodeTracer steps will show execution flow but not
-   variable state.
+1. STEPS ARE ON DISASSEMBLY: on-chain Aptos modules carry no source map, so
+   each instruction steps on its line of the module's disassembly
+   (`aptos move disassemble`), not on Move source.
 
-2. NO STRUCTURED TRACE FORMAT: Unlike Sui's rich NDJSON trace format (v3)
-   with OpenFrame/CloseFrame/Effect events, Aptos produces minimal CSV.
-   The trace provides execution skeleton only.
+2. NO LOCAL NAMES: the bytecode names no locals or parameters; they appear
+   as arg<N> / local_<N>.
 
-3. GAS-CENTRIC PROFILING: Aptos's --profile-gas produces flamegraph data
-   focused on gas consumption, not execution state. Gas costs are included
-   as annotations when available.
+3. ENUM VALUES ARE UNNAMED: the tracer gives enum values their tag and
+   fields but no type or variant name.
 
-4. LIMITED SOURCE MAPPING: Without .mvsm-equivalent source map files,
-   source location resolution is function-level only (no line-level mapping
-   within functions).
+4. WHOLE TRANSACTION: the trace covers the prologue, the payload and the
+   epilogue; each is announced by a MoveTransactionPhase event.
 
-5. HISTORICAL STATE: Account resources can be fetched via the REST API at
-   specific ledger versions (GET /v1/accounts/{addr}/resources?ledger_version=N),
-   but this provides account-level state snapshots, not per-instruction state
-   changes.
-
-For full debugging with variable inspection, consider using Sui's trace
-infrastructure instead."
+The stock Aptos CLI has no value trace. Its MOVE_VM_TRACE output is a CSV
+of (function, pc) pairs, which `aptos_adapter::convert_aptos_trace` can
+still convert into a trace with steps and calls but no values."
 }
