@@ -468,3 +468,42 @@ fn test_windows_sui_pin_matches_dev_shell() {
          packages/sui/version.nix"
     );
 }
+
+/// `sui_tools.nim` (the `sui` that `repro test` provisions on Windows) pins
+/// the same Sui release `env.ps1` installs.
+///
+/// `repro test` on Windows downloads MystenLabs' prebuilt archive named in
+/// `sui_tools.nim`, while a `just test` there runs the `sui` `env.ps1` put on
+/// `PATH`. The previous test ties `env.ps1` to the Nix shell; this one ties
+/// `sui_tools.nim` to `env.ps1`, so all three name one release. It reads only
+/// the two files and needs no `sui` binary.
+#[test]
+fn test_repro_sui_pin_matches_env_ps1() {
+    let env_ps1 =
+        std::fs::read_to_string(project_root().join("env.ps1")).expect("failed to read env.ps1");
+    let pinned = env_ps1
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("$suiVersion = \""))
+        .and_then(|rest| rest.strip_suffix('"'))
+        .expect("env.ps1 has no `$suiVersion = \"<version>\"` line");
+
+    let sui_tools = std::fs::read_to_string(project_root().join("sui_tools.nim"))
+        .expect("failed to read sui_tools.nim");
+    let tarball_version = sui_tools
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("version = \""))
+        .and_then(|rest| rest.strip_suffix("\","))
+        .expect("sui_tools.nim has no `version = \"<version>\",` line");
+    assert_eq!(
+        pinned, tarball_version,
+        "env.ps1 pins sui {pinned} but sui_tools.nim provisions sui {tarball_version}"
+    );
+    let expected_url = format!(
+        "https://github.com/MystenLabs/sui/releases/download/mainnet-v{pinned}/\
+         sui-mainnet-v{pinned}-windows-x86_64.tgz"
+    );
+    assert!(
+        sui_tools.contains(&expected_url),
+        "sui_tools.nim does not download the env.ps1 release {expected_url}"
+    );
+}
