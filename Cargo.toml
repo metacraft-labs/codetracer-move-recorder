@@ -32,10 +32,14 @@ zstd = "0.13"
 eyre = "0.6"
 
 # CLI argument parsing
-clap = { version = "4", features = ["derive"] }
+clap = { version = "4", features = ["derive", "env"] }
 
 # Recursive directory walking (source file discovery)
 walkdir = "2"
+
+# Validates a `sui replay` disassembly against the SHA-256 its debug info
+# names, before any step is attributed to it.
+sha2 = "0.10"
 
 # Scratch directories for the chain CLIs run by `replay` / `aptos-replay`,
 # removed when the command finishes.

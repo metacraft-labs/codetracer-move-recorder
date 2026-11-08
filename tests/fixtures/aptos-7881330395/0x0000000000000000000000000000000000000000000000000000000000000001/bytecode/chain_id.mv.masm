@@ -1,0 +1,26 @@
+// Bytecode version v10
+module 0x1::chain_id
+use 0x1::system_addresses
+friend 0x1::genesis
+struct ChainId has key
+  id: u8
+
+// Function definition at index 0
+#[persistent] public fun get(): u8 acquires ChainId
+    ld_const<address> 1
+    borrow_global ChainId
+    borrow_field ChainId, id
+    read_ref
+    ret
+
+// Function definition at index 1
+friend fun initialize(l0: &signer, l1: u8)
+    copy_loc l0
+    call system_addresses::assert_aptos_framework
+    move_loc l0
+    move_loc l1
+    pack ChainId
+    // @5
+    move_to ChainId
+    ret
+

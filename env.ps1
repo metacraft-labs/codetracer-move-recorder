@@ -20,7 +20,11 @@
 #      `move_types::TraceEvent` parser targets the externally-tagged v3
 #      trace events emitted by Sui >= 1.68, so a recent release is pinned;
 #      it is the official prebuilt `sui-*-windows-x86_64.tgz` from
-#      `MystenLabs/sui`.
+#      `MystenLabs/sui`.  Keep `$suiVersion` equal to the version the Nix
+#      `move` shell packages (nix-blockchain-development
+#      `packages/sui/version.nix`), so `sui replay --trace` of a current
+#      mainnet transaction works on Windows as it does on Linux and macOS:
+#      an older binary refuses mainnet's newer protocol version.
 #      (The Aptos data-adapter tests parse committed fixtures and do not
 #      shell out to an `aptos` binary, so none is provisioned here.)
 
@@ -61,7 +65,7 @@ $devDepsRoot = if ($env:WINDOWS_DIY_INSTALL_ROOT) { $env:WINDOWS_DIY_INSTALL_ROO
                elseif (Test-Path "D:\") { "D:\metacraft-dev-deps" }
                else { Join-Path $env:LOCALAPPDATA "codetracer\windows-diy" }
 
-$suiVersion = "1.72.2"
+$suiVersion = "1.82.3"
 $suiDir = Join-Path $devDepsRoot "sui\$suiVersion"
 $suiExe = Join-Path $suiDir "sui.exe"
 if (Test-Path $suiExe) {

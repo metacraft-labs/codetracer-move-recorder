@@ -2,14 +2,18 @@
 //! Move package and verifies the recorder converts the real NDJSON trace
 //! output into correct CodeTracer format.
 //!
-//! This test requires the `sui` CLI to be available in PATH. If `sui` is
-//! not found, the test is skipped with a clear message rather than failing.
+//! These tests require the `sui` CLI on PATH; the Nix dev shell provides
+//! it.  When `sui` is missing they fail with a message saying so, rather
+//! than passing without having run (see `tests/common/prerequisites.rs`).
+
+mod common;
 
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
 use codetracer_move_recorder::converter;
 use codetracer_move_recorder::source_map::SourceMapResolver;
+use common::prerequisites::require_sui;
 
 /// Canonical CTFS container magic bytes.  Mirrors the constant
 /// `CTFS_MAGIC` in `codetracer-trace-format-spec/src/container.rs`.
@@ -31,15 +35,6 @@ const FLOW_TEST_PACKAGE: &str = "test-programs/move/sui_flow_test";
 /// Find the project root by looking for Cargo.toml from CARGO_MANIFEST_DIR.
 fn project_root() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-}
-
-/// Check whether the `sui` CLI is available.
-fn sui_is_available() -> bool {
-    Command::new("sui")
-        .arg("--version")
-        .output()
-        .map(|o| o.status.success())
-        .unwrap_or(false)
 }
 
 /// Run `sui move test --trace` on the given package directory.
@@ -155,15 +150,7 @@ fn read_ct_container(out_dir: &Path) -> Vec<u8> {
 
 #[test]
 fn test_sui_move_trace_integration() {
-    // Skip if sui is not available.
-    if !sui_is_available() {
-        eprintln!(
-            "SKIPPED: sui CLI not found in PATH. \
-             Install the Sui CLI to run this integration test. \
-             See: https://docs.sui.io/build/install"
-        );
-        return;
-    }
+    require_sui("test_sui_move_trace_integration");
 
     let root = project_root();
     let package_dir = root.join(FLOW_TEST_PACKAGE);
@@ -293,13 +280,7 @@ fn test_sui_move_trace_integration() {
 /// by our TraceEvent deserializer for every line.
 #[test]
 fn test_sui_trace_ndjson_parsing() {
-    if !sui_is_available() {
-        eprintln!(
-            "SKIPPED: sui CLI not found in PATH. \
-             Install the Sui CLI to run this integration test."
-        );
-        return;
-    }
+    require_sui("test_sui_trace_ndjson_parsing");
 
     let root = project_root();
     let package_dir = root.join(FLOW_TEST_PACKAGE);
@@ -442,4 +423,87 @@ fn test_sui_trace_ndjson_parsing() {
         "no Instruction events across any trace"
     );
     assert!(total_effect > 0, "no Effect events across any trace");
+}
+
+/// `env.ps1` (the Windows dev environment) installs the same Sui release
+/// the Nix `move` shell packages.
+///
+/// The Nix shell's `sui` comes from nix-blockchain-development
+/// (`packages/sui/version.nix`) and is kept recent enough to replay current
+/// mainnet; `env.ps1` downloads its own release. Were the two to drift, the
+/// Windows recorder would run an older `sui` that refuses mainnet's newer
+/// protocol version. On Linux and macOS the `sui` on `PATH` is the Nix
+/// shell's, so this compares the Windows pin against it; on Windows, where
+/// `env.ps1` itself put `sui` on `PATH`, it checks that the installed binary
+/// is the pinned one.
+#[test]
+fn test_windows_sui_pin_matches_dev_shell() {
+    require_sui("test_windows_sui_pin_matches_dev_shell");
+
+    let env_ps1 =
+        std::fs::read_to_string(project_root().join("env.ps1")).expect("failed to read env.ps1");
+    let pinned = env_ps1
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("$suiVersion = \""))
+        .and_then(|rest| rest.strip_suffix('"'))
+        .expect("env.ps1 has no `$suiVersion = \"<version>\"` line");
+
+    let output = Command::new("sui")
+        .arg("--version")
+        .output()
+        .expect("failed to execute sui --version");
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    // `sui 1.82.3-bf4073918ed3` (release) or `sui 1.82.3-mainnet-v1.82.3`
+    // (built from the tag): the version is what precedes the first `-`.
+    let shell_version = stdout
+        .lines()
+        .find_map(|l| l.strip_prefix("sui "))
+        .and_then(|v| v.split('-').next())
+        .unwrap_or_else(|| panic!("unexpected `sui --version` output: {stdout}"));
+
+    assert_eq!(
+        pinned, shell_version,
+        "env.ps1 pins sui {pinned} but the dev shell's sui is {shell_version}; \
+         keep env.ps1's $suiVersion equal to nix-blockchain-development's \
+         packages/sui/version.nix"
+    );
+}
+
+/// `sui_tools.nim` (the `sui` that `repro test` provisions on Windows) pins
+/// the same Sui release `env.ps1` installs.
+///
+/// `repro test` on Windows downloads MystenLabs' prebuilt archive named in
+/// `sui_tools.nim`, while a `just test` there runs the `sui` `env.ps1` put on
+/// `PATH`. The previous test ties `env.ps1` to the Nix shell; this one ties
+/// `sui_tools.nim` to `env.ps1`, so all three name one release. It reads only
+/// the two files and needs no `sui` binary.
+#[test]
+fn test_repro_sui_pin_matches_env_ps1() {
+    let env_ps1 =
+        std::fs::read_to_string(project_root().join("env.ps1")).expect("failed to read env.ps1");
+    let pinned = env_ps1
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("$suiVersion = \""))
+        .and_then(|rest| rest.strip_suffix('"'))
+        .expect("env.ps1 has no `$suiVersion = \"<version>\"` line");
+
+    let sui_tools = std::fs::read_to_string(project_root().join("sui_tools.nim"))
+        .expect("failed to read sui_tools.nim");
+    let tarball_version = sui_tools
+        .lines()
+        .find_map(|l| l.trim().strip_prefix("version = \""))
+        .and_then(|rest| rest.strip_suffix("\","))
+        .expect("sui_tools.nim has no `version = \"<version>\",` line");
+    assert_eq!(
+        pinned, tarball_version,
+        "env.ps1 pins sui {pinned} but sui_tools.nim provisions sui {tarball_version}"
+    );
+    let expected_url = format!(
+        "https://github.com/MystenLabs/sui/releases/download/mainnet-v{pinned}/\
+         sui-mainnet-v{pinned}-windows-x86_64.tgz"
+    );
+    assert!(
+        sui_tools.contains(&expected_url),
+        "sui_tools.nim does not download the env.ps1 release {expected_url}"
+    );
 }

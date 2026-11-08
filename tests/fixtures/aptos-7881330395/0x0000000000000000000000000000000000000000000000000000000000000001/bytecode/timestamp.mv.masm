@@ -1,0 +1,90 @@
+// Bytecode version v10
+module 0x1::timestamp
+use 0x1::system_addresses
+friend 0x1::genesis
+struct CurrentTimeMicroseconds has key
+  microseconds: u64
+
+// Function definition at index 0
+#[persistent] public fun now_microseconds(): u64 acquires CurrentTimeMicroseconds
+    ld_const<address> 1
+    borrow_global CurrentTimeMicroseconds
+    borrow_field CurrentTimeMicroseconds, microseconds
+    read_ref
+    ret
+
+// Function definition at index 1
+#[persistent] public fun now_seconds(): u64 acquires CurrentTimeMicroseconds
+    ld_const<address> 1
+    borrow_global CurrentTimeMicroseconds
+    borrow_field CurrentTimeMicroseconds, microseconds
+    read_ref
+    ld_u64 1000000
+    // @5
+    div
+    ret
+
+// Function definition at index 2
+friend fun set_time_has_started(l0: &signer)
+    local l1: CurrentTimeMicroseconds
+    copy_loc l0
+    call system_addresses::assert_aptos_framework
+    ld_u64 0
+    pack CurrentTimeMicroseconds
+    st_loc l1
+    // @5
+    move_loc l0
+    move_loc l1
+    move_to CurrentTimeMicroseconds
+    ret
+
+// Function definition at index 3
+#[persistent] public fun update_global_time(l0: &signer, l1: address, l2: u64) acquires CurrentTimeMicroseconds
+    local l3: &mut CurrentTimeMicroseconds
+    local l4: u64
+    local l5: &mut u64
+    move_loc l0
+    call system_addresses::assert_vm
+    ld_const<address> 1
+    mut_borrow_global CurrentTimeMicroseconds
+    st_loc l3
+    // @5
+    copy_loc l3
+    borrow_field CurrentTimeMicroseconds, microseconds
+    read_ref
+    st_loc l4
+    move_loc l1
+    // @10
+    ld_const<address> 0
+    eq
+    br_false l0
+    move_loc l3
+    pop
+    // @15
+    move_loc l4
+    move_loc l2
+    eq
+    br_false l1
+    ret
+    // @20
+l1: ld_u64 65538
+    abort
+l0: move_loc l4
+    copy_loc l2
+    lt
+    // @25
+    br_false l2
+    move_loc l3
+    mut_borrow_field CurrentTimeMicroseconds, microseconds
+    st_loc l5
+    move_loc l2
+    // @30
+    move_loc l5
+    write_ref
+    ret
+l2: move_loc l3
+    pop
+    // @35
+    ld_u64 65538
+    abort
+

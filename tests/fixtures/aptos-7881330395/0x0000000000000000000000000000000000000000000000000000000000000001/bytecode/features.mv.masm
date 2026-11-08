@@ -1,0 +1,3442 @@
+// Bytecode version v10
+module 0x1::features
+use 0x1::vector
+use 0x1::signer
+struct Features has key
+  features: vector<u8>
+
+struct PendingFeatures has key
+  features: vector<u8>
+
+// Function definition at index 0
+fun contains(l0: &vector<u8>, l1: u64): bool
+    local l2: u64
+    local l3: u8
+    copy_loc l1
+    ld_u64 8
+    div
+    st_loc l2
+    ld_u8 1
+    // @5
+    move_loc l1
+    ld_u64 8
+    mod
+    cast_u8
+    shl
+    // @10
+    st_loc l3
+    copy_loc l2
+    copy_loc l0
+    vec_len <u8>
+    lt
+    // @15
+    br_false l0
+    move_loc l0
+    move_loc l2
+    vec_borrow <u8>
+    read_ref
+    // @20
+    move_loc l3
+    bit_and
+    ld_u8 0
+    neq
+    ret
+    // @25
+l0: move_loc l0
+    pop
+    ld_false
+    ret
+
+// Function definition at index 1
+fun set(l0: &mut vector<u8>, l1: u64, l2: bool)
+    local l3: u64
+    local l4: u8
+    local l5: u8
+    local l6: &mut u8
+    copy_loc l1
+    ld_u64 8
+    div
+    st_loc l3
+    ld_u8 1
+    // @5
+    move_loc l1
+    ld_u64 8
+    mod
+    cast_u8
+    shl
+    // @10
+    st_loc l4
+l1: copy_loc l0
+    freeze_ref
+    vec_len <u8>
+    copy_loc l3
+    // @15
+    le
+    br_false l0
+    copy_loc l0
+    ld_u8 0
+    vec_push_back <u8>
+    // @20
+    branch l1
+l0: move_loc l2
+    br_false l2
+    move_loc l4
+    st_loc l5
+    // @25
+    move_loc l0
+    move_loc l3
+    vec_mut_borrow <u8>
+    st_loc l6
+    copy_loc l6
+    // @30
+    read_ref
+    move_loc l5
+    bit_or
+    move_loc l6
+    write_ref
+    // @35
+    ret
+l2: ld_u8 255
+    move_loc l4
+    xor
+    st_loc l4
+    // @40
+    move_loc l0
+    move_loc l3
+    vec_mut_borrow <u8>
+    st_loc l6
+    copy_loc l6
+    // @45
+    read_ref
+    move_loc l4
+    bit_and
+    move_loc l6
+    write_ref
+    // @50
+    ret
+
+// Function definition at index 2
+#[persistent] public fun abort_if_multisig_payload_mismatch_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 8
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 8
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 64
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 3
+#[persistent] public fun aggregator_snapshots_enabled(): bool
+    ld_u64 65537
+    abort
+
+// Function definition at index 4
+#[persistent] public fun aggregator_v2_api_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 5
+#[persistent] public fun aggregator_v2_is_at_least_api_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 6
+#[persistent] public fun allow_vm_binary_format_v6(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 0
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 0
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 32
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 7
+fun apply_diff(l0: &mut vector<u8>, l1: vector<u64>, l2: vector<u64>)
+    local l3: vector<u64>
+    local l4: &mut vector<u64>
+    local l5: u64
+    local l6: vector<u64>
+    local l7: u64
+    local l8: &mut vector<u8>
+    local l9: u64
+    local l10: u8
+    local l11: u8
+    local l12: &mut u8
+    local l13: vector<u64>
+    local l14: vector<u64>
+    move_loc l1
+    st_loc l3
+    mut_borrow_loc l3
+    st_loc l4
+    copy_loc l4
+    // @5
+    freeze_ref
+    vec_len <u64>
+    st_loc l5
+    move_loc l4
+    ld_u64 0
+    // @10
+    move_loc l5
+    call vector::reverse_slice<u64>
+    move_loc l3
+    st_loc l6
+    borrow_loc l6
+    // @15
+    vec_len <u64>
+    st_loc l5
+l3: copy_loc l5
+    ld_u64 0
+    gt
+    // @20
+    br_false l0
+    mut_borrow_loc l6
+    vec_pop_back <u64>
+    st_loc l7
+    copy_loc l0
+    // @25
+    st_loc l8
+    copy_loc l7
+    ld_u64 8
+    div
+    st_loc l9
+    // @30
+    ld_u8 1
+    move_loc l7
+    ld_u64 8
+    mod
+    cast_u8
+    // @35
+    shl
+    st_loc l10
+l2: copy_loc l8
+    freeze_ref
+    vec_len <u8>
+    // @40
+    copy_loc l9
+    le
+    br_false l1
+    copy_loc l8
+    ld_u8 0
+    // @45
+    vec_push_back <u8>
+    branch l2
+l1: move_loc l10
+    st_loc l11
+    move_loc l8
+    // @50
+    move_loc l9
+    vec_mut_borrow <u8>
+    st_loc l12
+    copy_loc l12
+    read_ref
+    // @55
+    move_loc l11
+    bit_or
+    move_loc l12
+    write_ref
+l4: move_loc l5
+    // @60
+    ld_u64 1
+    sub
+    st_loc l5
+    branch l3
+    ld_u8 255
+    // @65
+    move_loc l10
+    xor
+    st_loc l10
+    move_loc l8
+    move_loc l9
+    // @70
+    vec_mut_borrow <u8>
+    st_loc l12
+    copy_loc l12
+    read_ref
+    move_loc l10
+    // @75
+    bit_and
+    move_loc l12
+    write_ref
+    branch l4
+l0: move_loc l6
+    // @80
+    vec_unpack <u64>, 0
+    move_loc l2
+    st_loc l13
+    mut_borrow_loc l13
+    st_loc l4
+    // @85
+    copy_loc l4
+    freeze_ref
+    vec_len <u64>
+    st_loc l5
+    move_loc l4
+    // @90
+    ld_u64 0
+    move_loc l5
+    call vector::reverse_slice<u64>
+    move_loc l13
+    st_loc l14
+    // @95
+    borrow_loc l14
+    vec_len <u64>
+    st_loc l5
+l9: copy_loc l5
+    ld_u64 0
+    // @100
+    gt
+    br_false l5
+    mut_borrow_loc l14
+    vec_pop_back <u64>
+    st_loc l7
+    // @105
+    copy_loc l0
+    st_loc l8
+    copy_loc l7
+    ld_u64 8
+    div
+    // @110
+    st_loc l9
+    ld_u8 1
+    move_loc l7
+    ld_u64 8
+    mod
+    // @115
+    cast_u8
+    shl
+    st_loc l10
+l7: copy_loc l8
+    freeze_ref
+    // @120
+    vec_len <u8>
+    copy_loc l9
+    le
+    br_false l6
+    copy_loc l8
+    // @125
+    ld_u8 0
+    vec_push_back <u8>
+    branch l7
+l6: branch l8
+    move_loc l10
+    // @130
+    st_loc l11
+    move_loc l8
+    move_loc l9
+    vec_mut_borrow <u8>
+    st_loc l12
+    // @135
+    copy_loc l12
+    read_ref
+    move_loc l11
+    bit_or
+    move_loc l12
+    // @140
+    write_ref
+l10: move_loc l5
+    ld_u64 1
+    sub
+    st_loc l5
+    // @145
+    branch l9
+l8: ld_u8 255
+    move_loc l10
+    xor
+    st_loc l10
+    // @150
+    move_loc l8
+    move_loc l9
+    vec_mut_borrow <u8>
+    st_loc l12
+    copy_loc l12
+    // @155
+    read_ref
+    move_loc l10
+    bit_and
+    move_loc l12
+    write_ref
+    // @160
+    branch l10
+l5: move_loc l0
+    pop
+    move_loc l14
+    vec_unpack <u64>, 0
+    // @165
+    ret
+
+// Function definition at index 8
+#[persistent] public fun aptos_stdlib_chain_id_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 0
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 0
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 16
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 9
+#[persistent] public fun auids_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 10
+#[persistent] public fun blake2b_256_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 1
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 1
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 1
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 11
+#[persistent] public fun bls12_381_structures_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 1
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 1
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 32
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 12
+#[persistent] public fun bn254_structures_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 5
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 5
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 8
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 13
+#[persistent] public fun bulletproofs_batch_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 10
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 10
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 128
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 14
+#[persistent] public fun bulletproofs_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 3
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 3
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 1
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 15
+#[persistent] public fun change_feature_flags(l0: &signer, l1: vector<u64>, l2: vector<u64>)
+    ld_u64 196610
+    move_loc l0
+    pop
+    abort
+
+// Function definition at index 16
+#[persistent] public fun change_feature_flags_for_next_epoch(l0: &signer, l1: vector<u64>, l2: vector<u64>) acquires Features, PendingFeatures
+    local l3: vector<u8>
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    ld_const<address> 1
+    eq
+    // @5
+    br_false l0
+    ld_const<address> 1
+    exists PendingFeatures
+    br_false l1
+    ld_const<address> 1
+    // @10
+    move_from PendingFeatures
+    unpack PendingFeatures
+    st_loc l3
+l3: mut_borrow_loc l3
+    move_loc l1
+    // @15
+    move_loc l2
+    call apply_diff
+    move_loc l0
+    move_loc l3
+    pack PendingFeatures
+    // @20
+    move_to PendingFeatures
+    ret
+l1: ld_const<address> 1
+    exists Features
+    br_false l2
+    // @25
+    ld_const<address> 1
+    borrow_global Features
+    borrow_field Features, features
+    read_ref
+    st_loc l3
+    // @30
+    branch l3
+l2: vec_pack <u8>, 0
+    st_loc l3
+    branch l3
+l0: move_loc l0
+    // @35
+    pop
+    ld_u64 327681
+    abort
+
+// Function definition at index 17
+fun change_feature_flags_internal(l0: &signer, l1: vector<u64>, l2: vector<u64>) acquires Features
+    local l3: &mut vector<u8>
+    local l4: &vector<u64>
+    local l5: u64
+    local l6: u64
+    local l7: &mut vector<u8>
+    local l8: u64
+    local l9: u64
+    local l10: u8
+    local l11: u8
+    local l12: &mut u8
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    ld_const<address> 1
+    eq
+    // @5
+    br_false l0
+    ld_const<address> 1
+    exists Features
+    br_true l1
+    move_loc l0
+    // @10
+    vec_pack <u8>, 0
+    pack Features
+    move_to Features
+l13: ld_const<address> 1
+    mut_borrow_global Features
+    // @15
+    mut_borrow_field Features, features
+    st_loc l3
+    borrow_loc l1
+    st_loc l4
+    ld_u64 0
+    // @20
+    st_loc l5
+    copy_loc l4
+    vec_len <u64>
+    st_loc l6
+l5: copy_loc l5
+    // @25
+    copy_loc l6
+    lt
+    br_false l2
+    copy_loc l4
+    copy_loc l5
+    // @30
+    vec_borrow <u64>
+    copy_loc l3
+    st_loc l7
+    read_ref
+    st_loc l8
+    // @35
+    copy_loc l8
+    ld_u64 8
+    div
+    st_loc l9
+    ld_u8 1
+    // @40
+    move_loc l8
+    ld_u64 8
+    mod
+    cast_u8
+    shl
+    // @45
+    st_loc l10
+l4: copy_loc l7
+    freeze_ref
+    vec_len <u8>
+    copy_loc l9
+    // @50
+    le
+    br_false l3
+    copy_loc l7
+    ld_u8 0
+    vec_push_back <u8>
+    // @55
+    branch l4
+l3: move_loc l10
+    st_loc l11
+    move_loc l7
+    move_loc l9
+    // @60
+    vec_mut_borrow <u8>
+    st_loc l12
+    copy_loc l12
+    read_ref
+    move_loc l11
+    // @65
+    bit_or
+    move_loc l12
+    write_ref
+l6: move_loc l5
+    ld_u64 1
+    // @70
+    add
+    st_loc l5
+    branch l5
+    ld_u8 255
+    move_loc l10
+    // @75
+    xor
+    st_loc l10
+    move_loc l7
+    move_loc l9
+    vec_mut_borrow <u8>
+    // @80
+    st_loc l12
+    copy_loc l12
+    read_ref
+    move_loc l10
+    bit_and
+    // @85
+    move_loc l12
+    write_ref
+    branch l6
+l2: move_loc l4
+    pop
+    // @90
+    borrow_loc l2
+    st_loc l4
+    ld_u64 0
+    st_loc l5
+    copy_loc l4
+    // @95
+    vec_len <u64>
+    st_loc l6
+l11: copy_loc l5
+    copy_loc l6
+    lt
+    // @100
+    br_false l7
+    copy_loc l4
+    copy_loc l5
+    vec_borrow <u64>
+    copy_loc l3
+    // @105
+    st_loc l7
+    read_ref
+    st_loc l8
+    copy_loc l8
+    ld_u64 8
+    // @110
+    div
+    st_loc l9
+    ld_u8 1
+    move_loc l8
+    ld_u64 8
+    // @115
+    mod
+    cast_u8
+    shl
+    st_loc l10
+l9: copy_loc l7
+    // @120
+    freeze_ref
+    vec_len <u8>
+    copy_loc l9
+    le
+    br_false l8
+    // @125
+    copy_loc l7
+    ld_u8 0
+    vec_push_back <u8>
+    branch l9
+l8: branch l10
+    // @130
+    move_loc l10
+    st_loc l11
+    move_loc l7
+    move_loc l9
+    vec_mut_borrow <u8>
+    // @135
+    st_loc l12
+    copy_loc l12
+    read_ref
+    move_loc l11
+    bit_or
+    // @140
+    move_loc l12
+    write_ref
+l12: move_loc l5
+    ld_u64 1
+    add
+    // @145
+    st_loc l5
+    branch l11
+l10: ld_u8 255
+    move_loc l10
+    xor
+    // @150
+    st_loc l10
+    move_loc l7
+    move_loc l9
+    vec_mut_borrow <u8>
+    st_loc l12
+    // @155
+    copy_loc l12
+    read_ref
+    move_loc l10
+    bit_and
+    move_loc l12
+    // @160
+    write_ref
+    branch l12
+l7: move_loc l3
+    pop
+    move_loc l4
+    // @165
+    pop
+    ret
+l1: move_loc l0
+    pop
+    branch l13
+    // @170
+l0: move_loc l0
+    pop
+    ld_u64 327681
+    abort
+
+// Function definition at index 18
+#[persistent] public fun code_dependency_check_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 0
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 0
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 19
+#[persistent] public fun coin_to_fungible_asset_migration_feature_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 7
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 7
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 16
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 20
+#[persistent] public fun collect_and_distribute_gas_fees(): bool
+    ld_false
+    ret
+
+// Function definition at index 21
+#[persistent] public fun commission_change_delegation_pool_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 5
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 5
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 4
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 22
+#[persistent] public fun concurrent_assets_enabled(): bool
+    ld_u64 65539
+    abort
+
+// Function definition at index 23
+#[persistent] public fun concurrent_fungible_assets_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 6
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 6
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 4
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 24
+#[persistent] public fun concurrent_fungible_balance_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 8
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 8
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 8
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 25
+#[persistent] public fun concurrent_token_v2_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 26
+#[persistent] public fun cryptography_algebra_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 1
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 1
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 16
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 27
+#[persistent] public fun default_to_concurrent_fungible_balance_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 8
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 8
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 16
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 28
+#[persistent] public fun delegation_pool_allowlisting_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 7
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 7
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 1
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 29
+#[persistent] public fun delegation_pool_partial_governance_voting_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 2
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 2
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 32
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 30
+#[persistent] public fun delegation_pools_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 1
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 1
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 8
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 31
+#[persistent] public fun dispatchable_fungible_asset_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 32
+fun ensure_framework_signer(l0: &signer)
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    ld_const<address> 1
+    eq
+    // @5
+    br_false l0
+    ret
+l0: ld_u64 327681
+    abort
+
+// Function definition at index 33
+#[persistent] public fun fee_payer_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 2
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 2
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 64
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 34
+#[persistent] public fun gas_refund_fa_mint_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 15
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 15
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 16
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 35
+#[persistent] public fun get_abort_if_multisig_payload_mismatch_feature(): u64
+    ld_u64 70
+    ret
+
+// Function definition at index 36
+#[persistent] public fun get_account_abstraction_feature(): u64
+    ld_u64 85
+    ret
+
+// Function definition at index 37
+#[persistent] public fun get_aggregator_snapshots_feature(): u64
+    ld_u64 65537
+    abort
+
+// Function definition at index 38
+#[persistent] public fun get_aggregator_v2_api_feature(): u64
+    ld_u64 65539
+    abort
+
+// Function definition at index 39
+#[persistent] public fun get_aptos_stdlib_chain_id_feature(): u64
+    ld_u64 4
+    ret
+
+// Function definition at index 40
+#[persistent] public fun get_auids(): u64
+    ld_u64 65539
+    ret
+
+// Function definition at index 41
+#[persistent] public fun get_blake2b_256_feature(): u64
+    ld_u64 8
+    ret
+
+// Function definition at index 42
+#[persistent] public fun get_bls12_381_strutures_feature(): u64
+    ld_u64 13
+    ret
+
+// Function definition at index 43
+#[persistent] public fun get_bn254_strutures_feature(): u64
+    ld_u64 43
+    ret
+
+// Function definition at index 44
+#[persistent] public fun get_bulletproofs_batch_feature(): u64
+    ld_u64 87
+    ret
+
+// Function definition at index 45
+#[persistent] public fun get_bulletproofs_feature(): u64
+    ld_u64 24
+    ret
+
+// Function definition at index 46
+#[persistent] public fun get_calculate_transaction_fee_for_distribution_feature(): u64
+    ld_u64 96
+    ret
+
+// Function definition at index 47
+#[persistent] public fun get_coin_to_fungible_asset_migration_feature(): u64
+    ld_u64 60
+    ret
+
+// Function definition at index 48
+#[persistent] public fun get_collect_and_distribute_gas_fees_feature(): u64
+    ld_u64 65537
+    abort
+
+// Function definition at index 49
+#[persistent] public fun get_collection_owner_feature(): u64
+    ld_u64 79
+    ret
+
+// Function definition at index 50
+#[persistent] public fun get_commission_change_delegation_pool_feature(): u64
+    ld_u64 42
+    ret
+
+// Function definition at index 51
+#[persistent] public fun get_concurrent_assets_feature(): u64
+    ld_u64 65539
+    abort
+
+// Function definition at index 52
+#[persistent] public fun get_concurrent_fungible_assets_feature(): u64
+    ld_u64 50
+    ret
+
+// Function definition at index 53
+#[persistent] public fun get_concurrent_fungible_balance_feature(): u64
+    ld_u64 67
+    ret
+
+// Function definition at index 54
+#[persistent] public fun get_concurrent_token_v2_feature(): u64
+    ld_u64 65539
+    ret
+
+// Function definition at index 55
+#[persistent] public fun get_cryptography_algebra_natives_feature(): u64
+    ld_u64 12
+    ret
+
+// Function definition at index 56
+#[persistent] public fun get_default_account_resource_feature(): u64
+    ld_u64 91
+    ret
+
+// Function definition at index 57
+#[persistent] public fun get_default_to_concurrent_fungible_balance_feature(): u64
+    ld_u64 68
+    ret
+
+// Function definition at index 58
+#[persistent] public fun get_delegation_pool_allowlisting_feature(): u64
+    ld_u64 56
+    ret
+
+// Function definition at index 59
+#[persistent] public fun get_delegation_pool_partial_governance_voting(): u64
+    ld_u64 21
+    ret
+
+// Function definition at index 60
+#[persistent] public fun get_delegation_pools_feature(): u64
+    ld_u64 11
+    ret
+
+// Function definition at index 61
+#[persistent] public fun get_dispatchable_fungible_asset_feature(): u64
+    ld_u64 65537
+    abort
+
+// Function definition at index 62
+#[persistent] public fun get_distribute_transaction_fee_feature(): u64
+    ld_u64 97
+    ret
+
+// Function definition at index 63
+#[persistent] public fun get_encrypted_transactions_feature(): u64
+    ld_u64 108
+    ret
+
+// Function definition at index 64
+#[persistent] public fun get_function_reflection_feature(): u64
+    ld_u64 105
+    ret
+
+// Function definition at index 65
+#[persistent] public fun get_function_value_dispatch_feature(): u64
+    ld_u64 125
+    ret
+
+// Function definition at index 66
+#[persistent] public fun get_jwk_consensus_feature(): u64
+    ld_u64 49
+    ret
+
+// Function definition at index 67
+#[persistent] public fun get_jwk_consensus_per_key_mode_feature(): u64
+    ld_u64 92
+    ret
+
+// Function definition at index 68
+#[persistent] public fun get_keyless_accounts_feature(): u64
+    ld_u64 46
+    ret
+
+// Function definition at index 69
+#[persistent] public fun get_keyless_accounts_with_passkeys_feature(): u64
+    ld_u64 54
+    ret
+
+// Function definition at index 70
+#[persistent] public fun get_keyless_but_zkless_accounts_feature(): u64
+    ld_u64 47
+    ret
+
+// Function definition at index 71
+#[persistent] public fun get_max_object_nesting_check_feature(): u64
+    ld_u64 53
+    ret
+
+// Function definition at index 72
+#[persistent] public fun get_module_event_feature(): u64
+    ld_u64 26
+    ret
+
+// Function definition at index 73
+#[persistent] public fun get_module_event_migration_feature(): u64
+    ld_u64 57
+    ret
+
+// Function definition at index 74
+#[persistent] public fun get_monotonically_increasing_counter_feature(): u64
+    ld_u64 65537
+    abort
+
+// Function definition at index 75
+#[persistent] public fun get_multisig_accounts_feature(): u64
+    ld_u64 10
+    ret
+
+// Function definition at index 76
+#[persistent] public fun get_multisig_script_feature(): u64
+    ld_u64 110
+    ret
+
+// Function definition at index 77
+#[persistent] public fun get_multisig_timelock_feature(): u64
+    ld_u64 115
+    ret
+
+// Function definition at index 78
+#[persistent] public fun get_multisig_v2_enhancement_feature(): u64
+    ld_u64 55
+    ret
+
+// Function definition at index 79
+#[persistent] public fun get_native_collateral_feature(): u64
+    ld_u64 121
+    ret
+
+// Function definition at index 80
+#[persistent] public fun get_native_memory_operations_feature(): u64
+    ld_u64 80
+    ret
+
+// Function definition at index 81
+#[persistent] public fun get_native_orderbook_feature(): u64
+    ld_u64 120
+    ret
+
+// Function definition at index 82
+#[persistent] public fun get_native_position_feature(): u64
+    ld_u64 119
+    ret
+
+// Function definition at index 83
+#[persistent] public fun get_new_accounts_default_to_fa_apt_store_feature(): u64
+    ld_u64 65537
+    abort
+
+// Function definition at index 84
+#[persistent] public fun get_new_accounts_default_to_fa_store_feature(): u64
+    ld_u64 65537
+    abort
+
+// Function definition at index 85
+#[persistent] public fun get_object_native_derived_address_feature(): u64
+    ld_u64 65537
+    abort
+
+// Function definition at index 86
+#[persistent] public fun get_operations_default_to_fa_apt_store_feature(): u64
+    ld_u64 65537
+    abort
+
+// Function definition at index 87
+#[persistent] public fun get_operator_beneficiary_change_feature(): u64
+    ld_u64 39
+    ret
+
+// Function definition at index 88
+#[persistent] public fun get_orderless_transactions_feature(): u64
+    ld_u64 94
+    ret
+
+// Function definition at index 89
+#[persistent] public fun get_partial_governance_voting(): u64
+    ld_u64 17
+    ret
+
+// Function definition at index 90
+#[persistent] public fun get_periodical_reward_rate_decrease_feature(): u64
+    ld_u64 16
+    ret
+
+// Function definition at index 91
+#[persistent] public fun get_permissioned_signer_feature(): u64
+    ld_u64 65537
+    abort
+
+// Function definition at index 92
+#[persistent] public fun get_primary_apt_fungible_store_at_user_address_feature(): u64
+    ld_u64 65537
+    abort
+
+// Function definition at index 93
+#[persistent] public fun get_reconfigure_with_dkg_feature(): u64
+    ld_u64 45
+    ret
+
+// Function definition at index 94
+#[persistent] public fun get_resource_groups_feature(): u64
+    ld_u64 9
+    ret
+
+// Function definition at index 95
+#[persistent] public fun get_sha_512_and_ripemd_160_feature(): u64
+    ld_u64 3
+    ret
+
+// Function definition at index 96
+#[persistent] public fun get_signer_native_format_fix_feature(): u64
+    ld_u64 25
+    ret
+
+// Function definition at index 97
+#[persistent] public fun get_slh_dsa_sha2_128s_signature_feature(): u64
+    ld_u64 107
+    ret
+
+// Function definition at index 98
+#[persistent] public fun get_sponsored_automatic_account_creation(): u64
+    ld_u64 34
+    ret
+
+// Function definition at index 99
+#[persistent] public fun get_trading_native_feature(): u64
+    ld_u64 118
+    ret
+
+// Function definition at index 100
+#[persistent] public fun get_transaction_context_extension_feature(): u64
+    ld_u64 59
+    ret
+
+// Function definition at index 101
+#[persistent] public fun get_transaction_limits_feature(): u64
+    ld_u64 111
+    ret
+
+// Function definition at index 102
+#[persistent] public fun get_transaction_simulation_enhancement_feature(): u64
+    ld_u64 78
+    ret
+
+// Function definition at index 103
+#[persistent] public fun get_vm_binary_format_v6(): u64
+    ld_u64 5
+    ret
+
+// Function definition at index 104
+#[persistent] public fun is_account_abstraction_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 10
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 10
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 32
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 105
+#[persistent] public fun is_calculate_transaction_fee_for_distribution_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 12
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 12
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 1
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 106
+#[persistent] public fun is_collection_owner_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 9
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 9
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 128
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 107
+#[persistent] public fun is_default_account_resource_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 11
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 11
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 8
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 108
+#[persistent] public fun is_derivable_account_abstraction_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 11
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 11
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 1
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 109
+#[persistent] public fun is_distribute_transaction_fee_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 12
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 12
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 110
+#[persistent] public fun is_domain_account_abstraction_enabled(): bool
+    ld_false
+    ret
+
+// Function definition at index 111
+#[persistent] public fun is_enabled(l0: u64): bool acquires Features
+    local l1: &vector<u8>
+    local l2: u64
+    local l3: u64
+    local l4: u8
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l1
+    move_loc l0
+    st_loc l2
+    copy_loc l2
+    // @10
+    ld_u64 8
+    div
+    st_loc l3
+    ld_u8 1
+    move_loc l2
+    // @15
+    ld_u64 8
+    mod
+    cast_u8
+    shl
+    st_loc l4
+    // @20
+    copy_loc l3
+    copy_loc l1
+    vec_len <u8>
+    lt
+    br_false l1
+    // @25
+    move_loc l1
+    move_loc l3
+    vec_borrow <u8>
+    read_ref
+    move_loc l4
+    // @30
+    bit_and
+    ld_u8 0
+    neq
+    ret
+l1: move_loc l1
+    // @35
+    pop
+    ld_false
+    ret
+l0: ld_false
+    ret
+
+// Function definition at index 112
+#[persistent] public fun is_encrypted_transactions_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 13
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 13
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 16
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 113
+#[persistent] public fun is_function_reflection_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 13
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 13
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 114
+#[persistent] public fun is_function_value_dispatch_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    local l1: &vector<u8>
+    local l2: u64
+    local l3: bool
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 15
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    st_loc l1
+    move_loc l1
+    // @15
+    ld_u64 15
+    vec_borrow <u8>
+    read_ref
+    ld_u8 32
+    bit_and
+    // @20
+    ld_u8 0
+    neq
+    st_loc l3
+l5: move_loc l3
+    br_false l2
+    // @25
+    ld_const<address> 1
+    exists Features
+    br_false l3
+    ld_const<address> 1
+    borrow_global Features
+    // @30
+    borrow_field Features, features
+    st_loc l1
+    ld_u64 13
+    copy_loc l1
+    vec_len <u8>
+    // @35
+    lt
+    br_false l4
+    move_loc l1
+    ld_u64 13
+    vec_borrow <u8>
+    // @40
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @45
+    ret
+l4: move_loc l1
+    pop
+    ld_false
+    ret
+    // @50
+l3: ld_false
+    ret
+l2: ld_false
+    ret
+l1: move_loc l0
+    // @55
+    pop
+    ld_false
+    st_loc l3
+    branch l5
+l0: ld_false
+    // @60
+    st_loc l3
+    branch l5
+
+// Function definition at index 115
+#[persistent] public fun is_jwk_consensus_per_key_mode_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 11
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 11
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 16
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 116
+#[persistent] public fun is_lazy_module_initialization_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 15
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 15
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 128
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 117
+#[persistent] public fun is_monotonically_increasing_counter_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 118
+#[persistent] public fun is_multisig_script_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 13
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 13
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 64
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 119
+#[persistent] public fun is_multisig_timelock_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 14
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 14
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 8
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 120
+#[persistent] public fun is_native_collateral_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 15
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 15
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 121
+#[persistent] public fun is_native_memory_operations_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 122
+#[persistent] public fun is_native_orderbook_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 15
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 15
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 1
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 123
+#[persistent] public fun is_native_position_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 14
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 14
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 128
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 124
+#[persistent] public fun is_object_code_deployment_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 125
+#[persistent] public fun is_permissioned_signer_enabled(): bool
+    ld_false
+    ret
+
+// Function definition at index 126
+#[persistent] public fun is_storage_slot_natives_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 14
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 14
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 127
+#[persistent] public fun is_trading_native_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 14
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 14
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 64
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 128
+#[persistent] public fun is_transaction_limits_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 13
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 13
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 128
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 129
+#[persistent] public fun jwk_consensus_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 6
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 6
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 130
+#[persistent] public fun keyless_accounts_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 5
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 5
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 64
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 131
+#[persistent] public fun keyless_accounts_with_passkeys_feature_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 6
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 6
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 64
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 132
+#[persistent] public fun keyless_but_zkless_accounts_feature_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 5
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 5
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 128
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 133
+#[persistent] public fun max_object_nesting_check_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 6
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 6
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 32
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 134
+#[persistent] public fun module_event_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 3
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 3
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 4
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 135
+#[persistent] public fun module_event_migration_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 7
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 7
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 136
+#[persistent] public fun multi_ed25519_pk_validate_v2_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 0
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 0
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 128
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 137
+#[persistent] public fun multi_ed25519_pk_validate_v2_feature(): u64
+    ld_u64 7
+    ret
+
+// Function definition at index 138
+#[persistent] public fun multisig_accounts_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 1
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 1
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 4
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 139
+#[persistent] public fun multisig_v2_enhancement_feature_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 6
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 6
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 128
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 140
+#[persistent] public fun new_accounts_default_to_fa_apt_store_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 141
+#[persistent] public fun new_accounts_default_to_fa_store_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 142
+#[persistent] public fun object_native_derived_address_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 143
+#[persistent] public fun on_new_epoch(l0: &signer) acquires Features, PendingFeatures
+    local l1: vector<u8>
+    local l2: &mut vector<u8>
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    ld_const<address> 1
+    eq
+    // @5
+    br_false l0
+    ld_const<address> 1
+    exists PendingFeatures
+    br_false l1
+    ld_const<address> 1
+    // @10
+    move_from PendingFeatures
+    unpack PendingFeatures
+    st_loc l1
+    ld_const<address> 1
+    exists Features
+    // @15
+    br_false l2
+    move_loc l0
+    pop
+    ld_const<address> 1
+    mut_borrow_global Features
+    // @20
+    mut_borrow_field Features, features
+    st_loc l2
+    move_loc l1
+    move_loc l2
+    write_ref
+    // @25
+    ret
+l2: move_loc l0
+    move_loc l1
+    pack Features
+    move_to Features
+    // @30
+    ret
+l1: move_loc l0
+    pop
+    ret
+l0: move_loc l0
+    // @35
+    pop
+    ld_u64 327681
+    abort
+
+// Function definition at index 144
+#[persistent] public fun operations_default_to_fa_apt_store_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 145
+#[persistent] public fun operator_beneficiary_change_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 4
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 4
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 128
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 146
+#[persistent] public fun orderless_transactions_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 11
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 11
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 64
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 147
+#[persistent] public fun partial_governance_voting_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 2
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 2
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 148
+#[persistent] public fun periodical_reward_rate_decrease_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 2
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 2
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 1
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 149
+#[persistent] public fun primary_apt_fungible_store_at_user_address_enabled(): bool
+    ld_true
+    ret
+
+// Function definition at index 150
+#[persistent] public fun reconfigure_with_dkg_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 5
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 5
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 32
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 151
+#[persistent] public fun resource_groups_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 1
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 1
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 152
+#[persistent] public fun sha_512_and_ripemd_160_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 0
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 0
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 8
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 153
+#[persistent] public fun signer_native_format_fix_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 3
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 3
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 2
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 154
+#[persistent] public fun slh_dsa_sha2_128s_signature_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 13
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 13
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 8
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 155
+#[persistent] public fun sponsored_automatic_account_creation_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 4
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 4
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 4
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 156
+#[persistent] public fun transaction_context_extension_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 7
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 7
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 8
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 157
+#[persistent] public fun transaction_simulation_enhancement_enabled(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 9
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 9
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 64
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+
+// Function definition at index 158
+#[persistent] public fun treat_friend_as_private(): bool acquires Features
+    local l0: &vector<u8>
+    ld_const<address> 1
+    exists Features
+    br_false l0
+    ld_const<address> 1
+    borrow_global Features
+    // @5
+    borrow_field Features, features
+    st_loc l0
+    ld_u64 0
+    copy_loc l0
+    vec_len <u8>
+    // @10
+    lt
+    br_false l1
+    move_loc l0
+    ld_u64 0
+    vec_borrow <u8>
+    // @15
+    read_ref
+    ld_u8 4
+    bit_and
+    ld_u8 0
+    neq
+    // @20
+    ret
+l1: move_loc l0
+    pop
+    ld_false
+    ret
+    // @25
+l0: ld_false
+    ret
+

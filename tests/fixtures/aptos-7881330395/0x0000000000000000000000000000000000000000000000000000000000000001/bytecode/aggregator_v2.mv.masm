@@ -1,0 +1,124 @@
+// Bytecode version v10
+module 0x1::aggregator_v2
+use 0x1::string
+struct Aggregator<T0> has drop + store
+  value: T0
+  max_value: T0
+
+struct AggregatorSnapshot<T0> has drop + store
+  value: T0
+
+struct DerivedStringSnapshot has drop + store
+  value: string::String
+  padding: vector<u8>
+
+// Function definition at index 0
+#[persistent] public fun add<T0>(l0: &mut Aggregator<T0>, l1: T0)
+    move_loc l0
+    move_loc l1
+    call try_add<T0>
+    br_false l0
+    ret
+    // @5
+l0: ld_u64 131073
+    abort
+
+// Function definition at index 1
+#[persistent] public native fun read<T0>(l0: &Aggregator<T0>): T0
+
+// Function definition at index 2
+#[persistent] public fun sub<T0>(l0: &mut Aggregator<T0>, l1: T0)
+    move_loc l0
+    move_loc l1
+    call try_sub<T0>
+    br_false l0
+    ret
+    // @5
+l0: ld_u64 131074
+    abort
+
+// Function definition at index 3
+#[persistent] public native fun create_aggregator<T0: copy + drop>(l0: T0): Aggregator<T0>
+
+// Function definition at index 4
+#[persistent] public native fun copy_snapshot<T0: copy + drop>(l0: &AggregatorSnapshot<T0>): AggregatorSnapshot<T0>
+
+// Function definition at index 5
+#[persistent] public native fun snapshot<T0>(l0: &Aggregator<T0>): AggregatorSnapshot<T0>
+
+// Function definition at index 6
+#[persistent] public fun max_value<T0: copy + drop>(l0: &Aggregator<T0>): T0
+    move_loc l0
+    borrow_field Aggregator<T0>, max_value
+    read_ref
+    ret
+
+// Function definition at index 7
+#[persistent] public fun create_aggregator_with_value<T0: copy + drop>(l0: T0, l1: T0): Aggregator<T0>
+    local l2: Aggregator<T0>
+    move_loc l1
+    call create_aggregator<T0>
+    st_loc l2
+    mut_borrow_loc l2
+    move_loc l0
+    // @5
+    call try_add<T0>
+    br_false l0
+    move_loc l2
+    ret
+l0: ld_u64 131073
+    // @10
+    abort
+
+// Function definition at index 8
+#[persistent] public native fun create_derived_string(l0: string::String): DerivedStringSnapshot
+
+// Function definition at index 9
+#[persistent] public native fun create_snapshot<T0: copy + drop>(l0: T0): AggregatorSnapshot<T0>
+
+// Function definition at index 10
+#[persistent] public native fun create_unbounded_aggregator<T0: copy + drop>(): Aggregator<T0>
+
+// Function definition at index 11
+#[persistent] public fun create_unbounded_aggregator_with_value<T0: copy + drop>(l0: T0): Aggregator<T0>
+    local l1: Aggregator<T0>
+    call create_unbounded_aggregator<T0>
+    st_loc l1
+    mut_borrow_loc l1
+    move_loc l0
+    call try_add<T0>
+    // @5
+    br_false l0
+    move_loc l1
+    ret
+l0: ld_u64 131073
+    abort
+
+// Function definition at index 12
+#[persistent] public native fun derive_string_concat<T0>(l0: string::String, l1: &AggregatorSnapshot<T0>, l2: string::String): DerivedStringSnapshot
+
+// Function definition at index 13
+#[persistent] public fun is_at_least<T0>(l0: &Aggregator<T0>, l1: T0): bool
+    move_loc l0
+    move_loc l1
+    call is_at_least_impl<T0>
+    ret
+
+// Function definition at index 14
+native fun is_at_least_impl<T0>(l0: &Aggregator<T0>, l1: T0): bool
+
+// Function definition at index 15
+#[persistent] public native fun read_derived_string(l0: &DerivedStringSnapshot): string::String
+
+// Function definition at index 16
+#[persistent] public native fun read_snapshot<T0>(l0: &AggregatorSnapshot<T0>): T0
+
+// Function definition at index 17
+#[persistent] public native fun string_concat<T0>(l0: string::String, l1: &AggregatorSnapshot<T0>, l2: string::String): AggregatorSnapshot<string::String>
+
+// Function definition at index 18
+#[persistent] public native fun try_add<T0>(l0: &mut Aggregator<T0>, l1: T0): bool
+
+// Function definition at index 19
+#[persistent] public native fun try_sub<T0>(l0: &mut Aggregator<T0>, l1: T0): bool
+

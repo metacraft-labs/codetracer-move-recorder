@@ -10,14 +10,23 @@ build:
 build-release:
   cargo build --release --locked
 
-test:
+test: build-ct-print
   cargo test --locked
   bash tests/verify-cli-convention-no-silent-skip.sh
 
 t: test
 
-test-rust:
+test-rust: build-ct-print
   cargo test --locked
+
+# Build `ct-print` in the sibling codetracer-trace-format-nim checkout. The
+# tests decode every recorded trace with it, at the fixed path
+# `../codetracer-trace-format-nim/ct-print`, and fail when it is missing.
+# The sibling's own `buildCtPrint` nimble task owns the compile flags and
+# resolves that package's Nim dependencies; the build is incremental, so
+# repeating it before every test run costs a few seconds.
+build-ct-print:
+  cd ../codetracer-trace-format-nim && nimble buildCtPrint
 
 verify-cli-convention:
   bash tests/verify-cli-convention-no-silent-skip.sh
@@ -32,7 +41,7 @@ format:
 
 fmt: format
 # --- M13: Packaging UX Standardization ---
-# These recipes implement Repo-Requirements.md §2.8. The OS-packaged
+# These recipes implement Repo-Requirements.md §2.5. The OS-packaged
 # recorders share a uniform packaging surface: `bump-version` rewrites
 # Cargo.toml + packaging/recorder-metadata.yml; `build-package` shells
 # out to packaging/build-all.sh with the requested channel selector;

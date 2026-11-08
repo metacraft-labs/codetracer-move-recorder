@@ -11,10 +11,14 @@
 //! live RPC node, which a test cannot depend on. The scripts reproduce only
 //! the part of the CLI contract the recorder relies on — `--version` succeeds,
 //! the replay writes a trace into its working directory (sui) or to the path
-//! in `MOVE_VM_TRACE` (aptos), and a failed replay exits non-zero — and the
-//! trace they write is a real one: a committed `sui` trace fixture, and the
-//! MOVE_VM_TRACE CSV shape exercised in `test_aptos.rs`. Everything the
-//! recorder does with that output runs unmocked.
+//! given to `--trace` (aptos), `aptos move disassemble` writes
+//! `<module>.mv.masm` to `--output-dir`, and a failed replay exits non-zero —
+//! and what they write is real: committed `sui` and Aptos trace fixtures and
+//! the committed disassemblies of the modules the Aptos trace enters. For
+//! Aptos, `curl` (which fetches each module's bytecode from a fullnode) is
+//! replaced as well, by a script that answers with a bytecode header; the
+//! fake disassembler ignores the bytecode and copies the fixture's real
+//! disassembly. Everything the recorder does with that output runs unmocked.
 
 #![cfg(unix)]
 
@@ -29,9 +33,12 @@ fn manifest_dir() -> PathBuf {
     PathBuf::from(env!("CARGO_MANIFEST_DIR"))
 }
 
+/// Writes an executable `/bin/sh` script. `set -e` makes a command the
+/// script cannot run (a `cp` missing from `PATH`, say) fail the script, so a
+/// fake replay can never report success without having written its trace.
 fn write_script(dir: &Path, name: &str, body: &str) {
     let path = dir.join(name);
-    fs::write(&path, format!("#!/bin/sh\n{body}")).unwrap();
+    fs::write(&path, format!("#!/bin/sh\nset -e\n{body}")).unwrap();
     fs::set_permissions(&path, fs::Permissions::from_mode(0o755)).unwrap();
 }
 
@@ -86,6 +93,9 @@ fn sui_fixture() -> PathBuf {
         .join("test-programs/move/flow_test/traces/flow_test__flow_test__test_arithmetic.json.zst")
 }
 
+/// A `sui` that answers `--version`, and for `replay` writes the fixture
+/// trace where the real `sui replay -o <OUT> --digest <D>` does:
+/// `<OUT>/<D>/trace.json.zst`.
 fn fake_sui(sandbox: &Sandbox, replay_exit: i32) {
     write_script(
         &sandbox.bin,
@@ -93,25 +103,57 @@ fn fake_sui(sandbox: &Sandbox, replay_exit: i32) {
         &format!(
             "case \"$1\" in\n\
              --version) echo 'sui 0.0.0-test'; exit 0 ;;\n\
-             replay) cp '{}' ./trace.json.zst; exit {replay_exit} ;;\n\
+             replay)\n\
+               out=.; digest=\n\
+               while [ $# -gt 0 ]; do\n\
+                 case \"$1\" in -o) out=\"$2\"; shift ;; --digest) digest=\"$2\"; shift ;; esac\n\
+                 shift\n\
+               done\n\
+               mkdir -p \"$out/$digest\"\n\
+               cp '{}' \"$out/$digest/trace.json.zst\"\n\
+               exit {replay_exit} ;;\n\
              esac\nexit 2\n",
             sui_fixture().display()
         ),
     );
 }
 
+fn aptos_fixture() -> PathBuf {
+    manifest_dir().join("tests/fixtures/aptos-7881330395")
+}
+
+/// An `aptos` whose `move replay ... --trace <PATH>` writes the fixture
+/// trace to `<PATH>` and whose `move disassemble --bytecode-path <D>/<m>.mv
+/// --output-dir <O>` writes the fixture's `<m>.mv.masm` to `<O>`; and a
+/// `curl` that answers every module request with a bytecode header.
 fn fake_aptos(sandbox: &Sandbox, replay_exit: i32) {
+    let trace = sandbox.bin.join("aptos-trace.json");
+    let compressed = fs::File::open(aptos_fixture().join("trace.json.zst")).unwrap();
+    fs::write(&trace, zstd::decode_all(compressed).unwrap()).unwrap();
+    let masm_dir = aptos_fixture()
+        .join("0x0000000000000000000000000000000000000000000000000000000000000001/bytecode");
     write_script(
         &sandbox.bin,
         "aptos",
         &format!(
             "if [ \"$1\" = --version ]; then echo 'aptos 0.0.0-test'; exit 0; fi\n\
-             if [ -n \"$MOVE_VM_TRACE\" ]; then\n\
-             printf '0x1::module::init,0\\n0x1::module::init,1\\n0x1::module::process,0\\n' > \"$MOVE_VM_TRACE\"\n\
-             exit {replay_exit}\n\
-             fi\n\
-             echo 'gas profiling unavailable' >&2; exit 1\n"
+             cmd=\"$1 $2\"; trace=; mv=; outdir=\n\
+             while [ $# -gt 0 ]; do\n\
+               case \"$1\" in --trace) trace=\"$2\"; shift ;; --bytecode-path) mv=\"$2\"; shift ;; --output-dir) outdir=\"$2\"; shift ;; esac\n\
+               shift\n\
+             done\n\
+             case \"$cmd\" in\n\
+             'move replay') cp '{}' \"$trace\"; exit {replay_exit} ;;\n\
+             'move disassemble') m=$(basename \"$mv\" .mv); cp '{}'/\"$m.mv.masm\" \"$outdir/\"; exit 0 ;;\n\
+             esac\nexit 2\n",
+            trace.display(),
+            masm_dir.display()
         ),
+    );
+    write_script(
+        &sandbox.bin,
+        "curl",
+        "printf '{\"bytecode\":\"0xa11ceb0b\"}'\n",
     );
 }
 

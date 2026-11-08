@@ -1,0 +1,4641 @@
+// Bytecode version v10
+module 0x1::fungible_asset
+use 0x1::object
+use 0x1::aggregator_v2
+use 0x1::string
+use 0x1::option
+use 0x1::function_info
+use 0x1::event
+use 0x1::signer
+use 0x1::features
+use 0x1::create_signer
+friend 0x1::dispatchable_fungible_asset
+friend 0x1::primary_fungible_store
+friend 0x1::coin
+friend 0x1::aptos_account
+struct TransferRef has drop + store
+  metadata: object::Object<Metadata>
+
+struct Untransferable has key
+  dummy_field: bool
+
+struct BurnRef has drop + store
+  metadata: object::Object<Metadata>
+
+struct ConcurrentFungibleBalance has key
+  balance: aggregator_v2::Aggregator<u64>
+
+struct ConcurrentSupply has key
+  current: aggregator_v2::Aggregator<u128>
+
+struct Creation has drop + store
+  metadata: address
+  name: string::String
+  symbol: string::String
+  decimals: u8
+  icon_uri: string::String
+  project_uri: string::String
+  maximum_supply: option::Option<u128>
+
+struct Deposit has drop + store
+  store: address
+  amount: u64
+
+struct DepositEvent has drop + store
+  amount: u64
+
+struct DeriveSupply has key
+  dispatch_function: option::Option<function_info::FunctionInfo>
+
+struct DispatchFunctionStore has key
+  withdraw_function: option::Option<function_info::FunctionInfo>
+  deposit_function: option::Option<function_info::FunctionInfo>
+  derived_balance_function: option::Option<function_info::FunctionInfo>
+
+struct Frozen has drop + store
+  store: address
+  frozen: bool
+
+struct FrozenEvent has drop + store
+  frozen: bool
+
+struct FungibleAsset
+  metadata: object::Object<Metadata>
+  amount: u64
+
+struct FungibleAssetEvents has key
+  deposit_events: event::EventHandle<DepositEvent>
+  withdraw_events: event::EventHandle<WithdrawEvent>
+  frozen_events: event::EventHandle<FrozenEvent>
+
+struct FungibleStore has key
+  metadata: object::Object<Metadata>
+  balance: u64
+  frozen: bool
+
+struct FungibleStoreDeletion has drop + store
+  store: address
+  owner: address
+  metadata: address
+
+struct Metadata has copy + drop + key
+  name: string::String
+  symbol: string::String
+  decimals: u8
+  icon_uri: string::String
+  project_uri: string::String
+
+struct MintRef has drop + store
+  metadata: object::Object<Metadata>
+
+struct MutateMetadataRef has drop + store
+  metadata: object::Object<Metadata>
+
+struct RawBalanceRef has drop + store
+  metadata: object::Object<Metadata>
+
+struct RawSupplyRef has drop + store
+  metadata: object::Object<Metadata>
+
+struct Supply has key
+  current: u128
+  maximum: option::Option<u128>
+
+struct Withdraw has drop + store
+  store: address
+  amount: u64
+
+struct WithdrawEvent has drop + store
+  amount: u64
+
+enum WithdrawPermission has copy + drop + store
+  ByStore
+    store_address: address
+
+// Function definition at index 0
+#[persistent] public fun extract(l0: &mut FungibleAsset, l1: u64): FungibleAsset
+    local l2: u64
+    local l3: &mut u64
+    copy_loc l0
+    borrow_field FungibleAsset, amount
+    read_ref
+    copy_loc l1
+    ge
+    // @5
+    br_false l0
+    copy_loc l1
+    st_loc l2
+    copy_loc l0
+    mut_borrow_field FungibleAsset, amount
+    // @10
+    st_loc l3
+    copy_loc l3
+    read_ref
+    move_loc l2
+    sub
+    // @15
+    move_loc l3
+    write_ref
+    move_loc l0
+    borrow_field FungibleAsset, metadata
+    read_ref
+    // @20
+    move_loc l1
+    pack FungibleAsset
+    ret
+l0: move_loc l0
+    pop
+    // @25
+    ld_u64 65540
+    abort
+
+// Function definition at index 1
+#[persistent] public fun burn(l0: &BurnRef, l1: FungibleAsset) acquires ConcurrentSupply, Supply
+    local l2: u64
+    local l3: object::Object<Metadata>
+    move_loc l0
+    borrow_field BurnRef, metadata
+    read_ref
+    borrow_loc l1
+    borrow_field FungibleAsset, metadata
+    // @5
+    read_ref
+    eq
+    br_false l0
+    move_loc l1
+    unpack FungibleAsset
+    // @10
+    st_loc l2
+    st_loc l3
+    borrow_loc l3
+    move_loc l2
+    call decrease_supply<Metadata>
+    // @15
+    ret
+l0: ld_u64 65549
+    abort
+
+// Function definition at index 2
+#[persistent] public fun name<T0: key>(l0: object::Object<T0>): string::String acquires Metadata
+    borrow_loc l0
+    call object::object_address<T0>
+    borrow_global Metadata
+    borrow_field Metadata, name
+    read_ref
+    // @5
+    ret
+
+// Function definition at index 3
+#[persistent] public fun generate_transfer_ref(l0: &object::ConstructorRef): TransferRef
+    move_loc l0
+    call object::object_from_constructor_ref<Metadata>
+    pack TransferRef
+    ret
+
+// Function definition at index 4
+#[persistent] public fun is_untransferable<T0: key>(l0: object::Object<T0>): bool
+    borrow_loc l0
+    call object::object_address<T0>
+    exists Untransferable
+    ret
+
+// Function definition at index 5
+#[persistent] public fun set_untransferable(l0: &object::ConstructorRef)
+    local l1: signer
+    copy_loc l0
+    call object::address_from_constructor_ref
+    exists Metadata
+    br_false l0
+    move_loc l0
+    // @5
+    call object::generate_signer
+    st_loc l1
+    borrow_loc l1
+    ld_false
+    pack Untransferable
+    // @10
+    move_to Untransferable
+    ret
+l0: move_loc l0
+    pop
+    ld_u64 393246
+    // @15
+    abort
+
+// Function definition at index 6
+#[persistent] entry public fun transfer<T0: key>(l0: &signer, l1: object::Object<T0>, l2: object::Object<T0>, l3: u64) acquires ConcurrentFungibleBalance, DispatchFunctionStore, FungibleStore
+    local l4: object::Object<T0>
+    local l5: address
+    local l6: address
+    local l7: u64
+    local l8: &mut FungibleStore
+    local l9: object::Object<Metadata>
+    local l10: bool
+    local l11: FungibleAsset
+    local l12: object::Object<T0>
+    local l13: object::Object<T0>
+    local l14: address
+    local l15: &FungibleStore
+    local l16: bool
+    local l17: address
+    local l18: address
+    local l19: u64
+    local l20: object::Object<Metadata>
+    local l21: &mut FungibleStore
+    local l22: bool
+    local l23: u64
+    local l24: &mut u64
+    local l25: object::Object<Metadata>
+    local l26: bool
+    move_loc l1
+    st_loc l4
+    move_loc l0
+    copy_loc l4
+    ld_true
+    // @5
+    call withdraw_sanity_check<T0>
+    borrow_loc l4
+    call object::object_address<T0>
+    st_loc l5
+    copy_loc l5
+    // @10
+    st_loc l6
+    copy_loc l3
+    st_loc l7
+    copy_loc l6
+    exists FungibleStore
+    // @15
+    br_false l0
+    copy_loc l6
+    mut_borrow_global FungibleStore
+    st_loc l8
+    copy_loc l8
+    // @20
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l9
+    copy_loc l7
+    ld_u64 0
+    // @25
+    neq
+    br_false l1
+    copy_loc l8
+    borrow_field FungibleStore, balance
+    read_ref
+    // @30
+    ld_u64 0
+    eq
+    br_false l2
+    copy_loc l6
+    exists ConcurrentFungibleBalance
+    // @35
+    st_loc l10
+l26: move_loc l10
+    br_false l3
+    move_loc l8
+    pop
+    // @40
+    move_loc l6
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l7
+    call aggregator_v2::try_sub<u64>
+    // @45
+    br_false l4
+    branch l5
+l5: move_loc l9
+    move_loc l7
+    pack FungibleAsset
+    // @50
+    st_loc l11
+    copy_loc l3
+    ld_u64 0
+    neq
+    br_true l6
+    // @55
+    branch l7
+l6: move_loc l5
+    move_loc l3
+    pack Withdraw
+    call event::emit<Withdraw>
+    // @60
+l7: move_loc l2
+    st_loc l12
+    copy_loc l12
+    st_loc l13
+    borrow_loc l13
+    // @65
+    call object::object_address<T0>
+    st_loc l14
+    copy_loc l14
+    exists FungibleStore
+    br_false l8
+    // @70
+    move_loc l14
+    borrow_global FungibleStore
+    st_loc l15
+    branch l9
+    ld_true
+    // @75
+    st_loc l16
+l22: move_loc l16
+    br_false l10
+    move_loc l15
+    borrow_field FungibleStore, frozen
+    // @80
+    read_ref
+    br_true l11
+    borrow_loc l12
+    call object::object_address<T0>
+    st_loc l17
+    // @85
+    move_loc l11
+    copy_loc l17
+    st_loc l18
+    unpack FungibleAsset
+    st_loc l19
+    // @90
+    st_loc l20
+    copy_loc l18
+    exists FungibleStore
+    br_false l12
+    copy_loc l18
+    // @95
+    mut_borrow_global FungibleStore
+    st_loc l21
+    move_loc l20
+    copy_loc l21
+    borrow_field FungibleStore, metadata
+    // @100
+    read_ref
+    eq
+    br_false l13
+    copy_loc l19
+    ld_u64 0
+    // @105
+    neq
+    br_false l14
+    copy_loc l21
+    borrow_field FungibleStore, balance
+    read_ref
+    // @110
+    ld_u64 0
+    eq
+    br_false l15
+    copy_loc l18
+    exists ConcurrentFungibleBalance
+    // @115
+    st_loc l22
+l19: move_loc l22
+    br_false l16
+    move_loc l21
+    pop
+    // @120
+    move_loc l18
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l19
+    call aggregator_v2::add<u64>
+    // @125
+l18: move_loc l19
+    st_loc l23
+    copy_loc l23
+    ld_u64 0
+    neq
+    // @130
+    br_false l17
+    move_loc l17
+    move_loc l23
+    pack Deposit
+    call event::emit<Deposit>
+    // @135
+    ret
+l17: ret
+l16: copy_loc l19
+    st_loc l23
+    move_loc l21
+    // @140
+    mut_borrow_field FungibleStore, balance
+    st_loc l24
+    copy_loc l24
+    read_ref
+    move_loc l23
+    // @145
+    add
+    move_loc l24
+    write_ref
+    branch l18
+l15: ld_false
+    // @150
+    st_loc l22
+    branch l19
+l14: move_loc l21
+    pop
+    branch l18
+    // @155
+l13: move_loc l21
+    pop
+    ld_u64 65547
+    abort
+l12: ld_u64 393239
+    // @160
+    abort
+l11: ld_u64 327683
+    abort
+l10: move_loc l15
+    pop
+    // @165
+    ld_u64 65564
+    abort
+l9: copy_loc l15
+    borrow_field FungibleStore, metadata
+    read_ref
+    // @170
+    st_loc l25
+    borrow_loc l25
+    call object::object_address<Metadata>
+    st_loc l17
+    copy_loc l17
+    // @175
+    ld_const<address> 10
+    neq
+    br_false l20
+    copy_loc l17
+    exists DispatchFunctionStore
+    // @180
+    st_loc l22
+l24: move_loc l22
+    br_false l21
+    move_loc l17
+    borrow_global DispatchFunctionStore
+    // @185
+    borrow_field DispatchFunctionStore, deposit_function
+    call option::is_some<function_info::FunctionInfo>
+    st_loc l26
+l23: move_loc l26
+    not
+    // @190
+    st_loc l16
+    branch l22
+l21: ld_false
+    st_loc l26
+    branch l23
+    // @195
+l20: ld_false
+    st_loc l22
+    branch l24
+l8: ld_u64 393239
+    abort
+    // @200
+l4: ld_u64 65540
+    abort
+l3: copy_loc l8
+    borrow_field FungibleStore, balance
+    read_ref
+    // @205
+    copy_loc l7
+    ge
+    br_false l25
+    copy_loc l7
+    st_loc l19
+    // @210
+    move_loc l8
+    mut_borrow_field FungibleStore, balance
+    st_loc l24
+    copy_loc l24
+    read_ref
+    // @215
+    move_loc l19
+    sub
+    move_loc l24
+    write_ref
+    branch l5
+    // @220
+l25: move_loc l8
+    pop
+    ld_u64 65540
+    abort
+l2: ld_false
+    // @225
+    st_loc l10
+    branch l26
+l1: move_loc l8
+    pop
+    branch l5
+    // @230
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 7
+#[persistent] public fun transfer_with_ref<T0: key>(l0: &TransferRef, l1: object::Object<T0>, l2: object::Object<T0>, l3: u64) acquires ConcurrentFungibleBalance, FungibleStore
+    local l4: object::Object<T0>
+    local l5: object::Object<Metadata>
+    local l6: object::Object<T0>
+    local l7: address
+    local l8: object::Object<Metadata>
+    local l9: address
+    local l10: u64
+    local l11: address
+    local l12: u64
+    local l13: &mut FungibleStore
+    local l14: bool
+    local l15: FungibleAsset
+    local l16: object::Object<T0>
+    local l17: FungibleAsset
+    local l18: address
+    local l19: address
+    local l20: u64
+    local l21: object::Object<Metadata>
+    local l22: &mut FungibleStore
+    local l23: bool
+    local l24: u64
+    local l25: &mut u64
+    copy_loc l0
+    move_loc l1
+    st_loc l4
+    borrow_field TransferRef, metadata
+    read_ref
+    // @5
+    st_loc l5
+    copy_loc l4
+    st_loc l6
+    borrow_loc l6
+    call object::object_address<T0>
+    // @10
+    st_loc l7
+    copy_loc l7
+    exists FungibleStore
+    br_false l0
+    move_loc l7
+    // @15
+    borrow_global FungibleStore
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l8
+    move_loc l5
+    // @20
+    move_loc l8
+    eq
+    br_false l1
+    borrow_loc l4
+    call object::object_address<T0>
+    // @25
+    st_loc l9
+    move_loc l3
+    st_loc l10
+    copy_loc l9
+    st_loc l11
+    // @30
+    copy_loc l10
+    st_loc l12
+    copy_loc l11
+    exists FungibleStore
+    br_false l2
+    // @35
+    copy_loc l11
+    mut_borrow_global FungibleStore
+    st_loc l13
+    copy_loc l13
+    borrow_field FungibleStore, metadata
+    // @40
+    read_ref
+    st_loc l8
+    copy_loc l12
+    ld_u64 0
+    neq
+    // @45
+    br_false l3
+    copy_loc l13
+    borrow_field FungibleStore, balance
+    read_ref
+    ld_u64 0
+    // @50
+    eq
+    br_false l4
+    copy_loc l11
+    exists ConcurrentFungibleBalance
+    st_loc l14
+    // @55
+l20: move_loc l14
+    br_false l5
+    move_loc l13
+    pop
+    move_loc l11
+    // @60
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l12
+    call aggregator_v2::try_sub<u64>
+    br_false l6
+    // @65
+    branch l7
+l7: move_loc l8
+    move_loc l12
+    pack FungibleAsset
+    st_loc l15
+    // @70
+    copy_loc l10
+    ld_u64 0
+    neq
+    br_true l8
+    branch l9
+    // @75
+l8: move_loc l9
+    move_loc l10
+    pack Withdraw
+    call event::emit<Withdraw>
+l9: move_loc l0
+    // @80
+    move_loc l2
+    st_loc l16
+    move_loc l15
+    st_loc l17
+    borrow_field TransferRef, metadata
+    // @85
+    read_ref
+    borrow_loc l17
+    borrow_field FungibleAsset, metadata
+    read_ref
+    eq
+    // @90
+    br_false l10
+    borrow_loc l16
+    call object::object_address<T0>
+    st_loc l18
+    move_loc l17
+    // @95
+    copy_loc l18
+    st_loc l19
+    unpack FungibleAsset
+    st_loc l20
+    st_loc l21
+    // @100
+    copy_loc l19
+    exists FungibleStore
+    br_false l11
+    copy_loc l19
+    mut_borrow_global FungibleStore
+    // @105
+    st_loc l22
+    move_loc l21
+    copy_loc l22
+    borrow_field FungibleStore, metadata
+    read_ref
+    // @110
+    eq
+    br_false l12
+    copy_loc l20
+    ld_u64 0
+    neq
+    // @115
+    br_false l13
+    copy_loc l22
+    borrow_field FungibleStore, balance
+    read_ref
+    ld_u64 0
+    // @120
+    eq
+    br_false l14
+    copy_loc l19
+    exists ConcurrentFungibleBalance
+    st_loc l23
+    // @125
+l18: move_loc l23
+    br_false l15
+    move_loc l22
+    pop
+    move_loc l19
+    // @130
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l20
+    call aggregator_v2::add<u64>
+l17: move_loc l20
+    // @135
+    st_loc l24
+    copy_loc l24
+    ld_u64 0
+    neq
+    br_false l16
+    // @140
+    move_loc l18
+    move_loc l24
+    pack Deposit
+    call event::emit<Deposit>
+    ret
+    // @145
+l16: ret
+l15: copy_loc l20
+    st_loc l24
+    move_loc l22
+    mut_borrow_field FungibleStore, balance
+    // @150
+    st_loc l25
+    copy_loc l25
+    read_ref
+    move_loc l24
+    add
+    // @155
+    move_loc l25
+    write_ref
+    branch l17
+l14: ld_false
+    st_loc l23
+    // @160
+    branch l18
+l13: move_loc l22
+    pop
+    branch l17
+l12: move_loc l22
+    // @165
+    pop
+    ld_u64 65547
+    abort
+l11: ld_u64 393239
+    abort
+    // @170
+l10: ld_u64 65538
+    abort
+l6: move_loc l0
+    pop
+    ld_u64 65540
+    // @175
+    abort
+l5: copy_loc l13
+    borrow_field FungibleStore, balance
+    read_ref
+    copy_loc l12
+    // @180
+    ge
+    br_false l19
+    copy_loc l12
+    st_loc l20
+    move_loc l13
+    // @185
+    mut_borrow_field FungibleStore, balance
+    st_loc l25
+    copy_loc l25
+    read_ref
+    move_loc l20
+    // @190
+    sub
+    move_loc l25
+    write_ref
+    branch l7
+l19: move_loc l0
+    // @195
+    pop
+    move_loc l13
+    pop
+    ld_u64 65540
+    abort
+    // @200
+l4: ld_false
+    st_loc l14
+    branch l20
+l3: move_loc l13
+    pop
+    // @205
+    branch l7
+l2: move_loc l0
+    pop
+    ld_u64 393239
+    abort
+    // @210
+l1: move_loc l0
+    pop
+    ld_u64 65545
+    abort
+l0: move_loc l0
+    // @215
+    pop
+    ld_u64 393239
+    abort
+
+// Function definition at index 8
+#[persistent] public fun add_fungibility(l0: &object::ConstructorRef, l1: option::Option<u128>, l2: string::String, l3: string::String, l4: u8, l5: string::String, l6: string::String): object::Object<Metadata>
+    local l7: signer
+    local l8: &signer
+    local l9: &signer
+    local l10: aggregator_v2::Aggregator<u128>
+    local l11: ConcurrentSupply
+    copy_loc l0
+    call object::can_generate_delete_ref
+    br_true l0
+    copy_loc l0
+    call object::generate_signer
+    // @5
+    st_loc l7
+    borrow_loc l7
+    st_loc l8
+    borrow_loc l2
+    call string::length
+    // @10
+    ld_u64 32
+    le
+    br_false l1
+    borrow_loc l3
+    call string::length
+    // @15
+    ld_u64 32
+    le
+    br_false l2
+    copy_loc l4
+    ld_u8 32
+    // @20
+    le
+    br_false l3
+    borrow_loc l5
+    call string::length
+    ld_u64 512
+    // @25
+    le
+    br_false l4
+    borrow_loc l6
+    call string::length
+    ld_u64 512
+    // @30
+    le
+    br_false l5
+    copy_loc l8
+    copy_loc l2
+    copy_loc l3
+    // @35
+    copy_loc l4
+    copy_loc l5
+    copy_loc l6
+    pack Metadata
+    move_to Metadata
+    // @40
+    copy_loc l8
+    call signer::borrow_address
+    read_ref
+    move_loc l2
+    move_loc l3
+    // @45
+    move_loc l4
+    move_loc l5
+    move_loc l6
+    copy_loc l1
+    pack Creation
+    // @50
+    call event::emit<Creation>
+    ld_u64 50
+    call features::is_enabled
+    br_false l6
+    borrow_loc l1
+    // @55
+    call option::is_none<u128>
+    move_loc l8
+    st_loc l9
+    br_false l7
+    call aggregator_v2::create_unbounded_aggregator<u128>
+    // @60
+    st_loc l10
+l8: move_loc l10
+    pack ConcurrentSupply
+    st_loc l11
+    move_loc l9
+    // @65
+    move_loc l11
+    move_to ConcurrentSupply
+l9: move_loc l0
+    call object::object_from_constructor_ref<Metadata>
+    ret
+    // @70
+l7: mut_borrow_loc l1
+    call option::extract<u128>
+    call aggregator_v2::create_aggregator<u128>
+    st_loc l10
+    branch l8
+    // @75
+l6: move_loc l8
+    ld_u128 0
+    move_loc l1
+    pack Supply
+    move_to Supply
+    // @80
+    branch l9
+l5: move_loc l0
+    pop
+    move_loc l8
+    pop
+    // @85
+    ld_u64 131091
+    abort
+l4: move_loc l0
+    pop
+    move_loc l8
+    // @90
+    pop
+    ld_u64 131091
+    abort
+l3: move_loc l0
+    pop
+    // @95
+    move_loc l8
+    pop
+    ld_u64 131089
+    abort
+l2: move_loc l0
+    // @100
+    pop
+    move_loc l8
+    pop
+    ld_u64 131088
+    abort
+    // @105
+l1: move_loc l0
+    pop
+    move_loc l8
+    pop
+    ld_u64 131087
+    // @110
+    abort
+l0: move_loc l0
+    pop
+    ld_u64 65554
+    abort
+
+// Function definition at index 9
+#[persistent] public fun symbol<T0: key>(l0: object::Object<T0>): string::String acquires Metadata
+    borrow_loc l0
+    call object::object_address<T0>
+    borrow_global Metadata
+    borrow_field Metadata, symbol
+    read_ref
+    // @5
+    ret
+
+// Function definition at index 10
+#[persistent] public fun decimals<T0: key>(l0: object::Object<T0>): u8 acquires Metadata
+    borrow_loc l0
+    call object::object_address<T0>
+    borrow_global Metadata
+    borrow_field Metadata, decimals
+    read_ref
+    // @5
+    ret
+
+// Function definition at index 11
+#[persistent] public fun icon_uri<T0: key>(l0: object::Object<T0>): string::String acquires Metadata
+    borrow_loc l0
+    call object::object_address<T0>
+    borrow_global Metadata
+    borrow_field Metadata, icon_uri
+    read_ref
+    // @5
+    ret
+
+// Function definition at index 12
+#[persistent] public fun project_uri<T0: key>(l0: object::Object<T0>): string::String acquires Metadata
+    borrow_loc l0
+    call object::object_address<T0>
+    borrow_global Metadata
+    borrow_field Metadata, project_uri
+    read_ref
+    // @5
+    ret
+
+// Function definition at index 13
+friend fun address_burn_from_for_gas(l0: &BurnRef, l1: address, l2: u64) acquires ConcurrentFungibleBalance, ConcurrentSupply, FungibleStore, Supply
+    local l3: &mut FungibleStore
+    local l4: object::Object<Metadata>
+    local l5: bool
+    local l6: FungibleAsset
+    local l7: u64
+    local l8: object::Object<Metadata>
+    local l9: &mut u64
+    copy_loc l1
+    exists FungibleStore
+    br_false l0
+    copy_loc l1
+    mut_borrow_global FungibleStore
+    // @5
+    st_loc l3
+    copy_loc l3
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l4
+    // @10
+    copy_loc l2
+    ld_u64 0
+    neq
+    br_false l1
+    copy_loc l3
+    // @15
+    borrow_field FungibleStore, balance
+    read_ref
+    ld_u64 0
+    eq
+    br_false l2
+    // @20
+    copy_loc l1
+    exists ConcurrentFungibleBalance
+    st_loc l5
+l8: move_loc l5
+    br_false l3
+    // @25
+    move_loc l3
+    pop
+    move_loc l1
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    // @30
+    copy_loc l2
+    call aggregator_v2::try_sub<u64>
+    br_false l4
+    branch l5
+l5: move_loc l4
+    // @35
+    move_loc l2
+    pack FungibleAsset
+    st_loc l6
+    move_loc l0
+    borrow_field BurnRef, metadata
+    // @40
+    read_ref
+    borrow_loc l6
+    borrow_field FungibleAsset, metadata
+    read_ref
+    eq
+    // @45
+    br_false l6
+    move_loc l6
+    unpack FungibleAsset
+    st_loc l7
+    st_loc l8
+    // @50
+    borrow_loc l8
+    move_loc l7
+    call decrease_supply<Metadata>
+    ret
+l6: ld_u64 65549
+    // @55
+    abort
+l4: move_loc l0
+    pop
+    ld_u64 65540
+    abort
+    // @60
+l3: copy_loc l3
+    borrow_field FungibleStore, balance
+    read_ref
+    copy_loc l2
+    ge
+    // @65
+    br_false l7
+    copy_loc l2
+    st_loc l7
+    move_loc l3
+    mut_borrow_field FungibleStore, balance
+    // @70
+    st_loc l9
+    copy_loc l9
+    read_ref
+    move_loc l7
+    sub
+    // @75
+    move_loc l9
+    write_ref
+    branch l5
+l7: move_loc l0
+    pop
+    // @80
+    move_loc l3
+    pop
+    ld_u64 65540
+    abort
+l2: ld_false
+    // @85
+    st_loc l5
+    branch l8
+l1: move_loc l3
+    pop
+    branch l5
+    // @90
+l0: move_loc l0
+    pop
+    ld_u64 393239
+    abort
+
+// Function definition at index 14
+#[persistent] public fun amount(l0: &FungibleAsset): u64
+    move_loc l0
+    borrow_field FungibleAsset, amount
+    read_ref
+    ret
+
+// Function definition at index 15
+#[persistent] public fun asset_metadata(l0: &FungibleAsset): object::Object<Metadata>
+    move_loc l0
+    borrow_field FungibleAsset, metadata
+    read_ref
+    ret
+
+// Function definition at index 16
+#[persistent] public fun balance<T0: key>(l0: object::Object<T0>): u64 acquires ConcurrentFungibleBalance, DispatchFunctionStore, FungibleStore
+    local l1: object::Object<T0>
+    local l2: address
+    local l3: &FungibleStore
+    local l4: object::Object<Metadata>
+    local l5: address
+    local l6: bool
+    local l7: bool
+    local l8: u64
+    local l9: bool
+    move_loc l0
+    st_loc l1
+    borrow_loc l1
+    call object::object_address<T0>
+    st_loc l2
+    // @5
+    copy_loc l2
+    exists FungibleStore
+    br_false l0
+    copy_loc l2
+    borrow_global FungibleStore
+    // @10
+    st_loc l3
+    copy_loc l3
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l4
+    // @15
+    borrow_loc l4
+    call object::object_address<Metadata>
+    st_loc l5
+    copy_loc l5
+    ld_const<address> 10
+    // @20
+    neq
+    br_false l1
+    copy_loc l5
+    exists DispatchFunctionStore
+    st_loc l6
+    // @25
+l8: move_loc l6
+    br_false l2
+    move_loc l5
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, derived_balance_function
+    // @30
+    call option::is_some<function_info::FunctionInfo>
+    st_loc l7
+l7: move_loc l7
+    br_true l3
+    move_loc l3
+    // @35
+    borrow_field FungibleStore, balance
+    read_ref
+    st_loc l8
+    copy_loc l8
+    ld_u64 0
+    // @40
+    eq
+    br_false l4
+    copy_loc l2
+    exists ConcurrentFungibleBalance
+    st_loc l9
+    // @45
+l6: move_loc l9
+    br_false l5
+    move_loc l2
+    borrow_global ConcurrentFungibleBalance
+    borrow_field ConcurrentFungibleBalance, balance
+    // @50
+    call aggregator_v2::read<u64>
+    ret
+l5: move_loc l8
+    ret
+l4: ld_false
+    // @55
+    st_loc l9
+    branch l6
+l3: move_loc l3
+    pop
+    ld_u64 65564
+    // @60
+    abort
+l2: ld_false
+    st_loc l7
+    branch l7
+l1: ld_false
+    // @65
+    st_loc l6
+    branch l8
+l0: ld_u64 0
+    ret
+
+// Function definition at index 17
+#[persistent] public fun balance_snapshot<T0: key>(l0: object::Object<T0>): aggregator_v2::AggregatorSnapshot<u64> acquires ConcurrentFungibleBalance, DispatchFunctionStore, FungibleStore
+    local l1: address
+    local l2: &FungibleStore
+    local l3: object::Object<Metadata>
+    local l4: address
+    local l5: bool
+    local l6: bool
+    local l7: u64
+    local l8: bool
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    exists FungibleStore
+    // @5
+    br_false l0
+    copy_loc l1
+    borrow_global FungibleStore
+    st_loc l2
+    copy_loc l2
+    // @10
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l3
+    borrow_loc l3
+    call object::object_address<Metadata>
+    // @15
+    st_loc l4
+    copy_loc l4
+    ld_const<address> 10
+    neq
+    br_false l1
+    // @20
+    copy_loc l4
+    exists DispatchFunctionStore
+    st_loc l5
+l8: move_loc l5
+    br_false l2
+    // @25
+    move_loc l4
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, derived_balance_function
+    call option::is_some<function_info::FunctionInfo>
+    st_loc l6
+    // @30
+l7: move_loc l6
+    br_true l3
+    move_loc l2
+    borrow_field FungibleStore, balance
+    read_ref
+    // @35
+    st_loc l7
+    copy_loc l7
+    ld_u64 0
+    eq
+    br_false l4
+    // @40
+    copy_loc l1
+    exists ConcurrentFungibleBalance
+    st_loc l8
+l6: move_loc l8
+    br_false l5
+    // @45
+    move_loc l1
+    borrow_global ConcurrentFungibleBalance
+    borrow_field ConcurrentFungibleBalance, balance
+    call aggregator_v2::snapshot<u64>
+    ret
+    // @50
+l5: move_loc l7
+    call aggregator_v2::create_snapshot<u64>
+    ret
+l4: ld_false
+    st_loc l8
+    // @55
+    branch l6
+l3: move_loc l2
+    pop
+    ld_u64 65564
+    abort
+    // @60
+l2: ld_false
+    st_loc l6
+    branch l7
+l1: ld_false
+    st_loc l5
+    // @65
+    branch l8
+l0: ld_u64 0
+    call aggregator_v2::create_snapshot<u64>
+    ret
+
+// Function definition at index 18
+#[persistent] public fun balance_with_ref<T0: key>(l0: &RawBalanceRef, l1: object::Object<T0>): u64 acquires ConcurrentFungibleBalance, FungibleStore
+    local l2: object::Object<T0>
+    local l3: address
+    local l4: &FungibleStore
+    local l5: &FungibleStore
+    local l6: u64
+    local l7: bool
+    move_loc l1
+    st_loc l2
+    borrow_loc l2
+    call object::object_address<T0>
+    st_loc l3
+    // @5
+    copy_loc l3
+    exists FungibleStore
+    br_false l0
+    copy_loc l3
+    borrow_global FungibleStore
+    // @10
+    st_loc l4
+    copy_loc l4
+    st_loc l5
+    move_loc l0
+    borrow_field RawBalanceRef, metadata
+    // @15
+    read_ref
+    move_loc l5
+    borrow_field FungibleStore, metadata
+    read_ref
+    eq
+    // @20
+    br_false l1
+    move_loc l4
+    borrow_field FungibleStore, balance
+    read_ref
+    st_loc l6
+    // @25
+    copy_loc l6
+    ld_u64 0
+    eq
+    br_false l2
+    copy_loc l3
+    // @30
+    exists ConcurrentFungibleBalance
+    st_loc l7
+l4: move_loc l7
+    br_false l3
+    move_loc l3
+    // @35
+    borrow_global ConcurrentFungibleBalance
+    borrow_field ConcurrentFungibleBalance, balance
+    call aggregator_v2::read<u64>
+    ret
+l3: move_loc l6
+    // @40
+    ret
+l2: ld_false
+    st_loc l7
+    branch l4
+l1: move_loc l4
+    // @45
+    pop
+    ld_u64 65570
+    abort
+l0: move_loc l0
+    pop
+    // @50
+    ld_u64 0
+    ret
+
+// Function definition at index 19
+#[persistent] public fun metadata<T0: key>(l0: object::Object<T0>): Metadata acquires Metadata
+    borrow_loc l0
+    call object::object_address<T0>
+    borrow_global Metadata
+    read_ref
+    ret
+
+// Function definition at index 20
+#[persistent] public fun burn_from<T0: key>(l0: &BurnRef, l1: object::Object<T0>, l2: u64) acquires ConcurrentFungibleBalance, ConcurrentSupply, FungibleStore, Supply
+    local l3: address
+    local l4: address
+    local l5: u64
+    local l6: &mut FungibleStore
+    local l7: object::Object<Metadata>
+    local l8: bool
+    local l9: FungibleAsset
+    local l10: FungibleAsset
+    local l11: u64
+    local l12: object::Object<Metadata>
+    local l13: &mut u64
+    borrow_loc l1
+    call object::object_address<T0>
+    st_loc l3
+    copy_loc l3
+    st_loc l4
+    // @5
+    copy_loc l2
+    st_loc l5
+    copy_loc l4
+    exists FungibleStore
+    br_false l0
+    // @10
+    copy_loc l4
+    mut_borrow_global FungibleStore
+    st_loc l6
+    copy_loc l6
+    borrow_field FungibleStore, metadata
+    // @15
+    read_ref
+    st_loc l7
+    copy_loc l5
+    ld_u64 0
+    neq
+    // @20
+    br_false l1
+    copy_loc l6
+    borrow_field FungibleStore, balance
+    read_ref
+    ld_u64 0
+    // @25
+    eq
+    br_false l2
+    copy_loc l4
+    exists ConcurrentFungibleBalance
+    st_loc l8
+    // @30
+l10: move_loc l8
+    br_false l3
+    move_loc l6
+    pop
+    move_loc l4
+    // @35
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l5
+    call aggregator_v2::try_sub<u64>
+    br_false l4
+    // @40
+    branch l5
+l5: move_loc l7
+    move_loc l5
+    pack FungibleAsset
+    st_loc l9
+    // @45
+    copy_loc l2
+    ld_u64 0
+    neq
+    br_true l6
+    branch l7
+    // @50
+l6: move_loc l3
+    move_loc l2
+    pack Withdraw
+    call event::emit<Withdraw>
+l7: move_loc l9
+    // @55
+    st_loc l10
+    move_loc l0
+    borrow_field BurnRef, metadata
+    read_ref
+    borrow_loc l10
+    // @60
+    borrow_field FungibleAsset, metadata
+    read_ref
+    eq
+    br_false l8
+    move_loc l10
+    // @65
+    unpack FungibleAsset
+    st_loc l11
+    st_loc l12
+    borrow_loc l12
+    move_loc l11
+    // @70
+    call decrease_supply<Metadata>
+    ret
+l8: ld_u64 65549
+    abort
+l4: move_loc l0
+    // @75
+    pop
+    ld_u64 65540
+    abort
+l3: copy_loc l6
+    borrow_field FungibleStore, balance
+    // @80
+    read_ref
+    copy_loc l5
+    ge
+    br_false l9
+    copy_loc l5
+    // @85
+    st_loc l11
+    move_loc l6
+    mut_borrow_field FungibleStore, balance
+    st_loc l13
+    copy_loc l13
+    // @90
+    read_ref
+    move_loc l11
+    sub
+    move_loc l13
+    write_ref
+    // @95
+    branch l5
+l9: move_loc l0
+    pop
+    move_loc l6
+    pop
+    // @100
+    ld_u64 65540
+    abort
+l2: ld_false
+    st_loc l8
+    branch l10
+    // @105
+l1: move_loc l6
+    pop
+    branch l5
+l0: move_loc l0
+    pop
+    // @110
+    ld_u64 393239
+    abort
+
+// Function definition at index 21
+friend fun burn_internal(l0: FungibleAsset): u64 acquires ConcurrentSupply, Supply
+    local l1: u64
+    local l2: object::Object<Metadata>
+    move_loc l0
+    unpack FungibleAsset
+    st_loc l1
+    st_loc l2
+    borrow_loc l2
+    // @5
+    copy_loc l1
+    call decrease_supply<Metadata>
+    move_loc l1
+    ret
+
+// Function definition at index 22
+#[persistent] public fun burn_ref_metadata(l0: &BurnRef): object::Object<Metadata>
+    move_loc l0
+    borrow_field BurnRef, metadata
+    read_ref
+    ret
+
+// Function definition at index 23
+#[persistent] public fun create_store<T0: key>(l0: &object::ConstructorRef, l1: object::Object<T0>): object::Object<FungibleStore>
+    local l2: signer
+    local l3: &signer
+    local l4: object::Object<T0>
+    copy_loc l0
+    call object::generate_signer
+    st_loc l2
+    borrow_loc l2
+    st_loc l3
+    // @5
+    copy_loc l3
+    copy_loc l1
+    call object::convert<T0, Metadata>
+    ld_u64 0
+    ld_false
+    // @10
+    pack FungibleStore
+    move_to FungibleStore
+    move_loc l1
+    st_loc l4
+    borrow_loc l4
+    // @15
+    call object::object_address<T0>
+    exists Untransferable
+    br_true l0
+    branch l1
+l0: copy_loc l0
+    // @20
+    call object::set_untransferable
+l1: ld_u64 68
+    call features::is_enabled
+    br_false l2
+    move_loc l3
+    // @25
+    call aggregator_v2::create_unbounded_aggregator<u64>
+    pack ConcurrentFungibleBalance
+    move_to ConcurrentFungibleBalance
+l3: move_loc l0
+    call object::object_from_constructor_ref<FungibleStore>
+    // @30
+    ret
+l2: move_loc l3
+    pop
+    branch l3
+
+// Function definition at index 24
+fun decrease_supply<T0: key>(l0: &object::Object<T0>, l1: u64) acquires ConcurrentSupply, Supply
+    local l2: address
+    local l3: &mut Supply
+    local l4: u128
+    local l5: &mut u128
+    copy_loc l1
+    ld_u64 0
+    eq
+    br_false l0
+    move_loc l0
+    // @5
+    pop
+    ret
+l0: move_loc l0
+    call object::object_address<T0>
+    st_loc l2
+    // @10
+    copy_loc l2
+    exists ConcurrentSupply
+    br_false l1
+    move_loc l2
+    mut_borrow_global ConcurrentSupply
+    // @15
+    mut_borrow_field ConcurrentSupply, current
+    move_loc l1
+    cast_u128
+    call aggregator_v2::try_sub<u128>
+    br_false l2
+    // @20
+    ret
+l2: ld_u64 131092
+    abort
+l1: copy_loc l2
+    exists Supply
+    // @25
+    br_false l3
+    copy_loc l2
+    exists Supply
+    br_false l4
+    move_loc l2
+    // @30
+    mut_borrow_global Supply
+    st_loc l3
+    copy_loc l3
+    borrow_field Supply, current
+    read_ref
+    // @35
+    copy_loc l1
+    cast_u128
+    ge
+    br_false l5
+    move_loc l1
+    // @40
+    cast_u128
+    st_loc l4
+    move_loc l3
+    mut_borrow_field Supply, current
+    st_loc l5
+    // @45
+    copy_loc l5
+    read_ref
+    move_loc l4
+    sub
+    move_loc l5
+    // @50
+    write_ref
+    ret
+l5: move_loc l3
+    pop
+    ld_u64 196628
+    // @55
+    abort
+l4: ld_u64 393237
+    abort
+l3: ld_u64 393237
+    abort
+
+// Function definition at index 25
+#[persistent] public fun deposit<T0: key>(l0: object::Object<T0>, l1: FungibleAsset) acquires ConcurrentFungibleBalance, DispatchFunctionStore, FungibleStore
+    local l2: object::Object<T0>
+    local l3: address
+    local l4: &FungibleStore
+    local l5: bool
+    local l6: address
+    local l7: address
+    local l8: u64
+    local l9: object::Object<Metadata>
+    local l10: &mut FungibleStore
+    local l11: bool
+    local l12: u64
+    local l13: &mut u64
+    local l14: object::Object<Metadata>
+    local l15: bool
+    copy_loc l0
+    st_loc l2
+    borrow_loc l2
+    call object::object_address<T0>
+    st_loc l3
+    // @5
+    copy_loc l3
+    exists FungibleStore
+    br_false l0
+    move_loc l3
+    borrow_global FungibleStore
+    // @10
+    st_loc l4
+    branch l1
+    ld_true
+    st_loc l5
+l14: move_loc l5
+    // @15
+    br_false l2
+    move_loc l4
+    borrow_field FungibleStore, frozen
+    read_ref
+    br_true l3
+    // @20
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l6
+    move_loc l1
+    copy_loc l6
+    // @25
+    st_loc l7
+    unpack FungibleAsset
+    st_loc l8
+    st_loc l9
+    copy_loc l7
+    // @30
+    exists FungibleStore
+    br_false l4
+    copy_loc l7
+    mut_borrow_global FungibleStore
+    st_loc l10
+    // @35
+    move_loc l9
+    copy_loc l10
+    borrow_field FungibleStore, metadata
+    read_ref
+    eq
+    // @40
+    br_false l5
+    copy_loc l8
+    ld_u64 0
+    neq
+    br_false l6
+    // @45
+    copy_loc l10
+    borrow_field FungibleStore, balance
+    read_ref
+    ld_u64 0
+    eq
+    // @50
+    br_false l7
+    copy_loc l7
+    exists ConcurrentFungibleBalance
+    st_loc l11
+l11: move_loc l11
+    // @55
+    br_false l8
+    move_loc l10
+    pop
+    move_loc l7
+    mut_borrow_global ConcurrentFungibleBalance
+    // @60
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l8
+    call aggregator_v2::add<u64>
+l10: move_loc l8
+    st_loc l12
+    // @65
+    copy_loc l12
+    ld_u64 0
+    neq
+    br_false l9
+    move_loc l6
+    // @70
+    move_loc l12
+    pack Deposit
+    call event::emit<Deposit>
+    ret
+l9: ret
+    // @75
+l8: copy_loc l8
+    st_loc l12
+    move_loc l10
+    mut_borrow_field FungibleStore, balance
+    st_loc l13
+    // @80
+    copy_loc l13
+    read_ref
+    move_loc l12
+    add
+    move_loc l13
+    // @85
+    write_ref
+    branch l10
+l7: ld_false
+    st_loc l11
+    branch l11
+    // @90
+l6: move_loc l10
+    pop
+    branch l10
+l5: move_loc l10
+    pop
+    // @95
+    ld_u64 65547
+    abort
+l4: ld_u64 393239
+    abort
+l3: ld_u64 327683
+    // @100
+    abort
+l2: move_loc l4
+    pop
+    ld_u64 65564
+    abort
+    // @105
+l1: copy_loc l4
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l14
+    borrow_loc l14
+    // @110
+    call object::object_address<Metadata>
+    st_loc l6
+    copy_loc l6
+    ld_const<address> 10
+    neq
+    // @115
+    br_false l12
+    copy_loc l6
+    exists DispatchFunctionStore
+    st_loc l11
+l16: move_loc l11
+    // @120
+    br_false l13
+    move_loc l6
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, deposit_function
+    call option::is_some<function_info::FunctionInfo>
+    // @125
+    st_loc l15
+l15: move_loc l15
+    not
+    st_loc l5
+    branch l14
+    // @130
+l13: ld_false
+    st_loc l15
+    branch l15
+l12: ld_false
+    st_loc l11
+    // @135
+    branch l16
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 26
+#[persistent] public fun deposit_dispatch_function<T0: key>(l0: object::Object<T0>): option::Option<function_info::FunctionInfo> acquires DispatchFunctionStore, FungibleStore
+    local l1: address
+    local l2: address
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    exists FungibleStore
+    // @5
+    br_false l0
+    move_loc l1
+    borrow_global FungibleStore
+    borrow_field FungibleStore, metadata
+    call object::object_address<Metadata>
+    // @10
+    st_loc l2
+    copy_loc l2
+    exists DispatchFunctionStore
+    br_false l1
+    move_loc l2
+    // @15
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, deposit_function
+    read_ref
+    ret
+l1: call option::none<function_info::FunctionInfo>
+    // @20
+    ret
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 27
+#[persistent] public fun deposit_sanity_check<T0: key>(l0: object::Object<T0>, l1: bool) acquires DispatchFunctionStore, FungibleStore
+    local l2: address
+    local l3: &FungibleStore
+    local l4: bool
+    local l5: object::Object<Metadata>
+    local l6: address
+    local l7: bool
+    local l8: bool
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l2
+    copy_loc l2
+    exists FungibleStore
+    // @5
+    br_false l0
+    move_loc l2
+    borrow_global FungibleStore
+    st_loc l3
+    move_loc l1
+    // @10
+    br_true l1
+    ld_true
+    st_loc l4
+l6: move_loc l4
+    br_false l2
+    // @15
+    move_loc l3
+    borrow_field FungibleStore, frozen
+    read_ref
+    br_true l3
+    ret
+    // @20
+l3: ld_u64 327683
+    abort
+l2: move_loc l3
+    pop
+    ld_u64 65564
+    // @25
+    abort
+l1: copy_loc l3
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l5
+    // @30
+    borrow_loc l5
+    call object::object_address<Metadata>
+    st_loc l6
+    copy_loc l6
+    ld_const<address> 10
+    // @35
+    neq
+    br_false l4
+    copy_loc l6
+    exists DispatchFunctionStore
+    st_loc l7
+    // @40
+l8: move_loc l7
+    br_false l5
+    move_loc l6
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, deposit_function
+    // @45
+    call option::is_some<function_info::FunctionInfo>
+    st_loc l8
+l7: move_loc l8
+    not
+    st_loc l4
+    // @50
+    branch l6
+l5: ld_false
+    st_loc l8
+    branch l7
+l4: ld_false
+    // @55
+    st_loc l7
+    branch l8
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 28
+#[persistent] public fun deposit_with_ref<T0: key>(l0: &TransferRef, l1: object::Object<T0>, l2: FungibleAsset) acquires ConcurrentFungibleBalance, FungibleStore
+    local l3: address
+    local l4: address
+    local l5: u64
+    local l6: object::Object<Metadata>
+    local l7: &mut FungibleStore
+    local l8: bool
+    local l9: u64
+    local l10: &mut u64
+    move_loc l0
+    borrow_field TransferRef, metadata
+    read_ref
+    borrow_loc l2
+    borrow_field FungibleAsset, metadata
+    // @5
+    read_ref
+    eq
+    br_false l0
+    borrow_loc l1
+    call object::object_address<T0>
+    // @10
+    st_loc l3
+    move_loc l2
+    copy_loc l3
+    st_loc l4
+    unpack FungibleAsset
+    // @15
+    st_loc l5
+    st_loc l6
+    copy_loc l4
+    exists FungibleStore
+    br_false l1
+    // @20
+    copy_loc l4
+    mut_borrow_global FungibleStore
+    st_loc l7
+    move_loc l6
+    copy_loc l7
+    // @25
+    borrow_field FungibleStore, metadata
+    read_ref
+    eq
+    br_false l2
+    copy_loc l5
+    // @30
+    ld_u64 0
+    neq
+    br_false l3
+    copy_loc l7
+    borrow_field FungibleStore, balance
+    // @35
+    read_ref
+    ld_u64 0
+    eq
+    br_false l4
+    copy_loc l4
+    // @40
+    exists ConcurrentFungibleBalance
+    st_loc l8
+l8: move_loc l8
+    br_false l5
+    move_loc l7
+    // @45
+    pop
+    move_loc l4
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l5
+    // @50
+    call aggregator_v2::add<u64>
+l7: move_loc l5
+    st_loc l9
+    copy_loc l9
+    ld_u64 0
+    // @55
+    neq
+    br_false l6
+    move_loc l3
+    move_loc l9
+    pack Deposit
+    // @60
+    call event::emit<Deposit>
+    ret
+l6: ret
+l5: copy_loc l5
+    st_loc l9
+    // @65
+    move_loc l7
+    mut_borrow_field FungibleStore, balance
+    st_loc l10
+    copy_loc l10
+    read_ref
+    // @70
+    move_loc l9
+    add
+    move_loc l10
+    write_ref
+    branch l7
+    // @75
+l4: ld_false
+    st_loc l8
+    branch l8
+l3: move_loc l7
+    pop
+    // @80
+    branch l7
+l2: move_loc l7
+    pop
+    ld_u64 65547
+    abort
+    // @85
+l1: ld_u64 393239
+    abort
+l0: ld_u64 65538
+    abort
+
+// Function definition at index 29
+friend fun derived_balance_dispatch_function<T0: key>(l0: object::Object<T0>): option::Option<function_info::FunctionInfo> acquires DispatchFunctionStore, FungibleStore
+    local l1: address
+    local l2: address
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    exists FungibleStore
+    // @5
+    br_false l0
+    move_loc l1
+    borrow_global FungibleStore
+    borrow_field FungibleStore, metadata
+    call object::object_address<Metadata>
+    // @10
+    st_loc l2
+    copy_loc l2
+    exists DispatchFunctionStore
+    br_false l1
+    move_loc l2
+    // @15
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, derived_balance_function
+    read_ref
+    ret
+l1: call option::none<function_info::FunctionInfo>
+    // @20
+    ret
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 30
+friend fun derived_supply_dispatch_function<T0: key>(l0: object::Object<T0>): option::Option<function_info::FunctionInfo> acquires DeriveSupply
+    local l1: address
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    exists DeriveSupply
+    // @5
+    br_false l0
+    move_loc l1
+    borrow_global DeriveSupply
+    borrow_field DeriveSupply, dispatch_function
+    read_ref
+    // @10
+    ret
+l0: call option::none<function_info::FunctionInfo>
+    ret
+
+// Function definition at index 31
+#[persistent] public fun destroy_zero(l0: FungibleAsset)
+    local l1: bool
+    move_loc l0
+    unpack FungibleAsset
+    ld_u64 0
+    eq
+    st_loc l1
+    // @5
+    pop
+    move_loc l1
+    br_false l0
+    ret
+l0: ld_u64 65548
+    // @10
+    abort
+
+// Function definition at index 32
+fun ensure_store_upgraded_to_concurrent_internal(l0: address) acquires FungibleStore
+    local l1: &mut FungibleStore
+    local l2: u64
+    local l3: aggregator_v2::Aggregator<u64>
+    local l4: aggregator_v2::Aggregator<u64>
+    local l5: signer
+    copy_loc l0
+    exists ConcurrentFungibleBalance
+    br_false l0
+    ret
+l0: copy_loc l0
+    // @5
+    mut_borrow_global FungibleStore
+    st_loc l1
+    copy_loc l1
+    borrow_field FungibleStore, balance
+    read_ref
+    // @10
+    st_loc l2
+    call aggregator_v2::create_unbounded_aggregator<u64>
+    st_loc l3
+    mut_borrow_loc l3
+    move_loc l2
+    // @15
+    call aggregator_v2::add<u64>
+    move_loc l3
+    st_loc l4
+    ld_u64 0
+    move_loc l1
+    // @20
+    mut_borrow_field FungibleStore, balance
+    write_ref
+    move_loc l0
+    call create_signer::create_signer
+    st_loc l5
+    // @25
+    borrow_loc l5
+    move_loc l4
+    pack ConcurrentFungibleBalance
+    move_to ConcurrentFungibleBalance
+    ret
+
+// Function definition at index 33
+friend fun generate_burn_copy_ref(l0: &BurnRef): BurnRef
+    move_loc l0
+    borrow_field BurnRef, metadata
+    read_ref
+    pack BurnRef
+    ret
+
+// Function definition at index 34
+#[persistent] public fun generate_burn_ref(l0: &object::ConstructorRef): BurnRef
+    move_loc l0
+    call object::object_from_constructor_ref<Metadata>
+    pack BurnRef
+    ret
+
+// Function definition at index 35
+friend fun generate_mint_copy_ref(l0: &MintRef): MintRef
+    move_loc l0
+    borrow_field MintRef, metadata
+    read_ref
+    pack MintRef
+    ret
+
+// Function definition at index 36
+#[persistent] public fun generate_mint_ref(l0: &object::ConstructorRef): MintRef
+    move_loc l0
+    call object::object_from_constructor_ref<Metadata>
+    pack MintRef
+    ret
+
+// Function definition at index 37
+#[persistent] public fun generate_mutate_metadata_ref(l0: &object::ConstructorRef): MutateMetadataRef
+    move_loc l0
+    call object::object_from_constructor_ref<Metadata>
+    pack MutateMetadataRef
+    ret
+
+// Function definition at index 38
+#[persistent] public fun generate_raw_balance_ref(l0: &object::ConstructorRef): RawBalanceRef
+    move_loc l0
+    call object::object_from_constructor_ref<Metadata>
+    pack RawBalanceRef
+    ret
+
+// Function definition at index 39
+#[persistent] public fun generate_raw_supply_ref(l0: &object::ConstructorRef): RawSupplyRef
+    move_loc l0
+    call object::object_from_constructor_ref<Metadata>
+    pack RawSupplyRef
+    ret
+
+// Function definition at index 40
+#[persistent] public fun grant_permission_by_store<T0: key>(l0: &signer, l1: &signer, l2: object::Object<T0>, l3: u64)
+    ld_u64 852005
+    move_loc l0
+    pop
+    move_loc l1
+    pop
+    // @5
+    abort
+
+// Function definition at index 41
+fun has_balance_dispatch_function(l0: object::Object<Metadata>): bool acquires DispatchFunctionStore
+    local l1: address
+    local l2: bool
+    borrow_loc l0
+    call object::object_address<Metadata>
+    st_loc l1
+    copy_loc l1
+    ld_const<address> 10
+    // @5
+    neq
+    br_false l0
+    copy_loc l1
+    exists DispatchFunctionStore
+    st_loc l2
+    // @10
+l2: move_loc l2
+    br_false l1
+    move_loc l1
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, derived_balance_function
+    // @15
+    call option::is_some<function_info::FunctionInfo>
+    ret
+l1: ld_false
+    ret
+l0: ld_false
+    // @20
+    st_loc l2
+    branch l2
+
+// Function definition at index 42
+fun has_deposit_dispatch_function(l0: object::Object<Metadata>): bool acquires DispatchFunctionStore
+    local l1: address
+    local l2: bool
+    borrow_loc l0
+    call object::object_address<Metadata>
+    st_loc l1
+    copy_loc l1
+    ld_const<address> 10
+    // @5
+    neq
+    br_false l0
+    copy_loc l1
+    exists DispatchFunctionStore
+    st_loc l2
+    // @10
+l2: move_loc l2
+    br_false l1
+    move_loc l1
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, deposit_function
+    // @15
+    call option::is_some<function_info::FunctionInfo>
+    ret
+l1: ld_false
+    ret
+l0: ld_false
+    // @20
+    st_loc l2
+    branch l2
+
+// Function definition at index 43
+fun has_supply_dispatch_function(l0: address): bool
+    copy_loc l0
+    ld_const<address> 10
+    neq
+    br_false l0
+    move_loc l0
+    // @5
+    exists DeriveSupply
+    ret
+l0: ld_false
+    ret
+
+// Function definition at index 44
+fun has_withdraw_dispatch_function(l0: object::Object<Metadata>): bool acquires DispatchFunctionStore
+    local l1: address
+    local l2: bool
+    borrow_loc l0
+    call object::object_address<Metadata>
+    st_loc l1
+    copy_loc l1
+    ld_const<address> 10
+    // @5
+    neq
+    br_false l0
+    copy_loc l1
+    exists DispatchFunctionStore
+    st_loc l2
+    // @10
+l2: move_loc l2
+    br_false l1
+    move_loc l1
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, withdraw_function
+    // @15
+    call option::is_some<function_info::FunctionInfo>
+    ret
+l1: ld_false
+    ret
+l0: ld_false
+    // @20
+    st_loc l2
+    branch l2
+
+// Function definition at index 45
+fun increase_supply<T0: key>(l0: &object::Object<T0>, l1: u64) acquires ConcurrentSupply, Supply
+    local l2: address
+    local l3: &mut Supply
+    local l4: u128
+    local l5: &mut u128
+    copy_loc l1
+    ld_u64 0
+    eq
+    br_false l0
+    move_loc l0
+    // @5
+    pop
+    ret
+l0: move_loc l0
+    call object::object_address<T0>
+    st_loc l2
+    // @10
+    copy_loc l2
+    exists ConcurrentSupply
+    br_false l1
+    move_loc l2
+    mut_borrow_global ConcurrentSupply
+    // @15
+    mut_borrow_field ConcurrentSupply, current
+    move_loc l1
+    cast_u128
+    call aggregator_v2::try_add<u128>
+    br_false l2
+    // @20
+    ret
+l2: ld_u64 131077
+    abort
+l1: copy_loc l2
+    exists Supply
+    // @25
+    br_false l3
+    move_loc l2
+    mut_borrow_global Supply
+    st_loc l3
+    copy_loc l3
+    // @30
+    borrow_field Supply, maximum
+    call option::is_some<u128>
+    br_true l4
+    branch l5
+l4: copy_loc l3
+    // @35
+    mut_borrow_field Supply, maximum
+    call option::borrow_mut<u128>
+    read_ref
+    copy_loc l3
+    borrow_field Supply, current
+    // @40
+    read_ref
+    sub
+    copy_loc l1
+    cast_u128
+    ge
+    // @45
+    br_false l6
+    branch l5
+l5: move_loc l1
+    cast_u128
+    st_loc l4
+    // @50
+    move_loc l3
+    mut_borrow_field Supply, current
+    st_loc l5
+    copy_loc l5
+    read_ref
+    // @55
+    move_loc l4
+    add
+    move_loc l5
+    write_ref
+    ret
+    // @60
+l6: move_loc l3
+    pop
+    ld_u64 131077
+    abort
+l3: ld_u64 393237
+    // @65
+    abort
+
+// Function definition at index 46
+friend fun is_address_balance_at_least(l0: address, l1: u64): bool acquires ConcurrentFungibleBalance, FungibleStore
+    local l2: u64
+    local l3: bool
+    copy_loc l0
+    exists FungibleStore
+    br_false l0
+    copy_loc l0
+    borrow_global FungibleStore
+    // @5
+    borrow_field FungibleStore, balance
+    read_ref
+    st_loc l2
+    copy_loc l2
+    ld_u64 0
+    // @10
+    eq
+    br_false l1
+    copy_loc l0
+    exists ConcurrentFungibleBalance
+    st_loc l3
+    // @15
+l3: move_loc l3
+    br_false l2
+    move_loc l0
+    borrow_global ConcurrentFungibleBalance
+    borrow_field ConcurrentFungibleBalance, balance
+    // @20
+    move_loc l1
+    call aggregator_v2::is_at_least<u64>
+    ret
+l2: move_loc l2
+    move_loc l1
+    // @25
+    ge
+    ret
+l1: ld_false
+    st_loc l3
+    branch l3
+    // @30
+l0: move_loc l1
+    ld_u64 0
+    eq
+    ret
+
+// Function definition at index 47
+#[persistent] public fun is_asset_type_dispatchable(l0: object::Object<Metadata>): bool
+    local l1: address
+    borrow_loc l0
+    call object::object_address<Metadata>
+    st_loc l1
+    copy_loc l1
+    exists DispatchFunctionStore
+    // @5
+    br_false l0
+    ld_true
+    ret
+l0: move_loc l1
+    exists DeriveSupply
+    // @10
+    ret
+
+// Function definition at index 48
+#[persistent] public fun is_balance_at_least<T0: key>(l0: object::Object<T0>, l1: u64): bool acquires ConcurrentFungibleBalance, FungibleStore
+    local l2: address
+    local l3: u64
+    local l4: bool
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l2
+    copy_loc l2
+    exists FungibleStore
+    // @5
+    br_false l0
+    copy_loc l2
+    borrow_global FungibleStore
+    borrow_field FungibleStore, balance
+    read_ref
+    // @10
+    st_loc l3
+    copy_loc l3
+    ld_u64 0
+    eq
+    br_false l1
+    // @15
+    copy_loc l2
+    exists ConcurrentFungibleBalance
+    st_loc l4
+l3: move_loc l4
+    br_false l2
+    // @20
+    move_loc l2
+    borrow_global ConcurrentFungibleBalance
+    borrow_field ConcurrentFungibleBalance, balance
+    move_loc l1
+    call aggregator_v2::is_at_least<u64>
+    // @25
+    ret
+l2: move_loc l3
+    move_loc l1
+    ge
+    ret
+    // @30
+l1: ld_false
+    st_loc l4
+    branch l3
+l0: move_loc l1
+    ld_u64 0
+    // @35
+    eq
+    ret
+
+// Function definition at index 49
+#[persistent] public fun is_concurrent<T0: key>(l0: object::Object<T0>): bool
+    borrow_loc l0
+    call object::object_address<T0>
+    exists ConcurrentFungibleBalance
+    ret
+
+// Function definition at index 50
+#[persistent] public fun is_frozen<T0: key>(l0: object::Object<T0>): bool acquires FungibleStore
+    local l1: address
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    exists FungibleStore
+    // @5
+    br_false l0
+    move_loc l1
+    borrow_global FungibleStore
+    borrow_field FungibleStore, frozen
+    read_ref
+    // @10
+    ret
+l0: ld_false
+    ret
+
+// Function definition at index 51
+#[persistent] public fun is_store_dispatchable<T0: key>(l0: object::Object<T0>): bool acquires FungibleStore
+    local l1: address
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    exists FungibleStore
+    // @5
+    br_false l0
+    move_loc l1
+    borrow_global FungibleStore
+    borrow_field FungibleStore, metadata
+    call object::object_address<Metadata>
+    // @10
+    exists DispatchFunctionStore
+    ret
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 52
+#[persistent] public fun maximum<T0: key>(l0: object::Object<T0>): option::Option<u128> acquires ConcurrentSupply, Supply
+    local l1: address
+    local l2: u128
+    local l3: option::Option<u128>
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    exists ConcurrentSupply
+    // @5
+    br_false l0
+    move_loc l1
+    borrow_global ConcurrentSupply
+    borrow_field ConcurrentSupply, current
+    call aggregator_v2::max_value<u128>
+    // @10
+    st_loc l2
+    copy_loc l2
+    ld_u128 340282366920938463463374607431768211455
+    eq
+    br_false l1
+    // @15
+    call option::none<u128>
+    st_loc l3
+l2: move_loc l3
+    ret
+l4: move_loc l3
+    // @20
+    ret
+l1: move_loc l2
+    call option::some<u128>
+    st_loc l3
+    branch l2
+    // @25
+l0: copy_loc l1
+    exists Supply
+    br_false l3
+    move_loc l1
+    borrow_global Supply
+    // @30
+    borrow_field Supply, maximum
+    read_ref
+    st_loc l3
+    branch l4
+l3: call option::none<u128>
+    // @35
+    st_loc l3
+    branch l4
+
+// Function definition at index 53
+#[persistent] public fun merge(l0: &mut FungibleAsset, l1: FungibleAsset)
+    local l2: u64
+    local l3: u64
+    local l4: &mut u64
+    move_loc l1
+    unpack FungibleAsset
+    st_loc l2
+    copy_loc l0
+    borrow_field FungibleAsset, metadata
+    // @5
+    read_ref
+    eq
+    br_false l0
+    move_loc l2
+    st_loc l3
+    // @10
+    move_loc l0
+    mut_borrow_field FungibleAsset, amount
+    st_loc l4
+    copy_loc l4
+    read_ref
+    // @15
+    move_loc l3
+    add
+    move_loc l4
+    write_ref
+    ret
+    // @20
+l0: move_loc l0
+    pop
+    ld_u64 65542
+    abort
+
+// Function definition at index 54
+#[persistent] public fun metadata_from_asset(l0: &FungibleAsset): object::Object<Metadata>
+    move_loc l0
+    borrow_field FungibleAsset, metadata
+    read_ref
+    ret
+
+// Function definition at index 55
+#[persistent] public fun mint(l0: &MintRef, l1: u64): FungibleAsset acquires ConcurrentSupply, Supply
+    local l2: object::Object<Metadata>
+    move_loc l0
+    borrow_field MintRef, metadata
+    read_ref
+    st_loc l2
+    borrow_loc l2
+    // @5
+    copy_loc l1
+    call increase_supply<Metadata>
+    move_loc l2
+    move_loc l1
+    pack FungibleAsset
+    // @10
+    ret
+
+// Function definition at index 56
+friend fun mint_internal(l0: object::Object<Metadata>, l1: u64): FungibleAsset acquires ConcurrentSupply, Supply
+    borrow_loc l0
+    copy_loc l1
+    call increase_supply<Metadata>
+    move_loc l0
+    move_loc l1
+    // @5
+    pack FungibleAsset
+    ret
+
+// Function definition at index 57
+#[persistent] public fun mint_ref_metadata(l0: &MintRef): object::Object<Metadata>
+    move_loc l0
+    borrow_field MintRef, metadata
+    read_ref
+    ret
+
+// Function definition at index 58
+#[persistent] public fun mint_to<T0: key>(l0: &MintRef, l1: object::Object<T0>, l2: u64) acquires ConcurrentFungibleBalance, ConcurrentSupply, DispatchFunctionStore, FungibleStore, Supply
+    local l3: object::Object<T0>
+    local l4: address
+    local l5: &FungibleStore
+    local l6: bool
+    local l7: address
+    local l8: u64
+    local l9: object::Object<Metadata>
+    local l10: address
+    local l11: object::Object<Metadata>
+    local l12: &mut FungibleStore
+    local l13: bool
+    local l14: u64
+    local l15: &mut u64
+    local l16: object::Object<Metadata>
+    local l17: bool
+    copy_loc l1
+    st_loc l3
+    borrow_loc l3
+    call object::object_address<T0>
+    st_loc l4
+    // @5
+    copy_loc l4
+    exists FungibleStore
+    br_false l0
+    move_loc l4
+    borrow_global FungibleStore
+    // @10
+    st_loc l5
+    ld_true
+    st_loc l6
+l13: move_loc l6
+    br_false l1
+    // @15
+    move_loc l5
+    borrow_field FungibleStore, frozen
+    read_ref
+    br_true l2
+    borrow_loc l1
+    // @20
+    call object::object_address<T0>
+    st_loc l7
+    move_loc l0
+    move_loc l2
+    st_loc l8
+    // @25
+    borrow_field MintRef, metadata
+    read_ref
+    st_loc l9
+    borrow_loc l9
+    copy_loc l8
+    // @30
+    call increase_supply<Metadata>
+    move_loc l9
+    move_loc l8
+    pack FungibleAsset
+    copy_loc l7
+    // @35
+    st_loc l10
+    unpack FungibleAsset
+    st_loc l8
+    st_loc l11
+    copy_loc l10
+    // @40
+    exists FungibleStore
+    br_false l3
+    copy_loc l10
+    mut_borrow_global FungibleStore
+    st_loc l12
+    // @45
+    move_loc l11
+    copy_loc l12
+    borrow_field FungibleStore, metadata
+    read_ref
+    eq
+    // @50
+    br_false l4
+    copy_loc l8
+    ld_u64 0
+    neq
+    br_false l5
+    // @55
+    copy_loc l12
+    borrow_field FungibleStore, balance
+    read_ref
+    ld_u64 0
+    eq
+    // @60
+    br_false l6
+    copy_loc l10
+    exists ConcurrentFungibleBalance
+    st_loc l13
+l10: move_loc l13
+    // @65
+    br_false l7
+    move_loc l12
+    pop
+    move_loc l10
+    mut_borrow_global ConcurrentFungibleBalance
+    // @70
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l8
+    call aggregator_v2::add<u64>
+l9: move_loc l8
+    st_loc l14
+    // @75
+    copy_loc l14
+    ld_u64 0
+    neq
+    br_false l8
+    move_loc l7
+    // @80
+    move_loc l14
+    pack Deposit
+    call event::emit<Deposit>
+    ret
+l8: ret
+    // @85
+l7: copy_loc l8
+    st_loc l14
+    move_loc l12
+    mut_borrow_field FungibleStore, balance
+    st_loc l15
+    // @90
+    copy_loc l15
+    read_ref
+    move_loc l14
+    add
+    move_loc l15
+    // @95
+    write_ref
+    branch l9
+l6: ld_false
+    st_loc l13
+    branch l10
+    // @100
+l5: move_loc l12
+    pop
+    branch l9
+l4: move_loc l12
+    pop
+    // @105
+    ld_u64 65547
+    abort
+l3: ld_u64 393239
+    abort
+l2: move_loc l0
+    // @110
+    pop
+    ld_u64 327683
+    abort
+l1: move_loc l0
+    pop
+    // @115
+    move_loc l5
+    pop
+    ld_u64 65564
+    abort
+    copy_loc l5
+    // @120
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l16
+    borrow_loc l16
+    call object::object_address<Metadata>
+    // @125
+    st_loc l7
+    copy_loc l7
+    ld_const<address> 10
+    neq
+    br_false l11
+    // @130
+    copy_loc l7
+    exists DispatchFunctionStore
+    st_loc l13
+l15: move_loc l13
+    br_false l12
+    // @135
+    move_loc l7
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, deposit_function
+    call option::is_some<function_info::FunctionInfo>
+    st_loc l17
+    // @140
+l14: move_loc l17
+    not
+    st_loc l6
+    branch l13
+l12: ld_false
+    // @145
+    st_loc l17
+    branch l14
+l11: ld_false
+    st_loc l13
+    branch l15
+    // @150
+l0: move_loc l0
+    pop
+    ld_u64 393239
+    abort
+
+// Function definition at index 59
+#[persistent] public fun mutate_metadata(l0: &MutateMetadataRef, l1: option::Option<string::String>, l2: option::Option<string::String>, l3: option::Option<u8>, l4: option::Option<string::String>, l5: option::Option<string::String>) acquires Metadata
+    local l6: &mut Metadata
+    local l7: string::String
+    local l8: &mut string::String
+    local l9: string::String
+    local l10: u8
+    local l11: &mut u8
+    local l12: string::String
+    local l13: string::String
+    move_loc l0
+    borrow_field MutateMetadataRef, metadata
+    call object::object_address<Metadata>
+    mut_borrow_global Metadata
+    st_loc l6
+    // @5
+    borrow_loc l1
+    call option::is_some<string::String>
+    br_true l0
+    branch l1
+l0: mut_borrow_loc l1
+    // @10
+    call option::extract<string::String>
+    st_loc l7
+    borrow_loc l7
+    call string::length
+    ld_u64 32
+    // @15
+    le
+    br_false l2
+    copy_loc l6
+    mut_borrow_field Metadata, name
+    st_loc l8
+    // @20
+    move_loc l7
+    move_loc l8
+    write_ref
+l1: borrow_loc l2
+    call option::is_some<string::String>
+    // @25
+    br_true l3
+    branch l4
+l3: mut_borrow_loc l2
+    call option::extract<string::String>
+    st_loc l9
+    // @30
+    borrow_loc l9
+    call string::length
+    ld_u64 32
+    le
+    br_false l5
+    // @35
+    copy_loc l6
+    mut_borrow_field Metadata, symbol
+    st_loc l8
+    move_loc l9
+    move_loc l8
+    // @40
+    write_ref
+l4: borrow_loc l3
+    call option::is_some<u8>
+    br_true l6
+    branch l7
+    // @45
+l6: mut_borrow_loc l3
+    call option::extract<u8>
+    st_loc l10
+    copy_loc l10
+    ld_u8 32
+    // @50
+    le
+    br_false l8
+    copy_loc l6
+    mut_borrow_field Metadata, decimals
+    st_loc l11
+    // @55
+    move_loc l10
+    move_loc l11
+    write_ref
+l7: borrow_loc l4
+    call option::is_some<string::String>
+    // @60
+    br_true l9
+    branch l10
+l9: mut_borrow_loc l4
+    call option::extract<string::String>
+    st_loc l12
+    // @65
+    borrow_loc l12
+    call string::length
+    ld_u64 512
+    le
+    br_false l11
+    // @70
+    copy_loc l6
+    mut_borrow_field Metadata, icon_uri
+    st_loc l8
+    move_loc l12
+    move_loc l8
+    // @75
+    write_ref
+l10: borrow_loc l5
+    call option::is_some<string::String>
+    br_false l12
+    mut_borrow_loc l5
+    // @80
+    call option::extract<string::String>
+    st_loc l13
+    borrow_loc l13
+    call string::length
+    ld_u64 512
+    // @85
+    le
+    br_false l13
+    move_loc l6
+    mut_borrow_field Metadata, project_uri
+    st_loc l8
+    // @90
+    move_loc l13
+    move_loc l8
+    write_ref
+    ret
+l13: move_loc l6
+    // @95
+    pop
+    ld_u64 131091
+    abort
+l12: move_loc l6
+    pop
+    // @100
+    ret
+l11: move_loc l6
+    pop
+    ld_u64 131091
+    abort
+    // @105
+l8: move_loc l6
+    pop
+    ld_u64 131089
+    abort
+l5: move_loc l6
+    // @110
+    pop
+    ld_u64 131088
+    abort
+l2: move_loc l6
+    pop
+    // @115
+    ld_u64 131087
+    abort
+
+// Function definition at index 60
+#[persistent] public fun object_from_metadata_ref(l0: &MutateMetadataRef): object::Object<Metadata>
+    move_loc l0
+    borrow_field MutateMetadataRef, metadata
+    read_ref
+    ret
+
+// Function definition at index 61
+friend fun register_derive_supply_dispatch_function(l0: &object::ConstructorRef, l1: option::Option<function_info::FunctionInfo>)
+    local l2: &option::Option<function_info::FunctionInfo>
+    local l3: &function_info::FunctionInfo
+    local l4: function_info::FunctionInfo
+    local l5: &object::ConstructorRef
+    local l6: signer
+    borrow_loc l1
+    st_loc l2
+    copy_loc l2
+    call option::is_some<function_info::FunctionInfo>
+    br_false l0
+    // @5
+    move_loc l2
+    call option::borrow<function_info::FunctionInfo>
+    st_loc l3
+    ld_const<address> 1
+    ld_const<vector<u8>> [100, 105, 115, 112, 97, 116, 99, 104, 97, 98, 108, 101, 95, 102, 117, 110, 103, 105, 98, 108, 101, 95, 97, 115, 115, 101, 116]
+    // @10
+    call string::utf8
+    ld_const<vector<u8>> [100, 105, 115, 112, 97, 116, 99, 104, 97, 98, 108, 101, 95, 100, 101, 114, 105, 118, 101, 100, 95, 115, 117, 112, 112, 108, 121]
+    call string::utf8
+    call function_info::new_function_info_from_address
+    st_loc l4
+    // @15
+    borrow_loc l4
+    move_loc l3
+    call function_info::check_dispatch_type_compatibility
+    br_false l1
+    branch l2
+    // @20
+l2: copy_loc l0
+    st_loc l5
+    copy_loc l5
+    call object::address_from_constructor_ref
+    ld_const<address> 10
+    // @25
+    neq
+    br_false l3
+    copy_loc l5
+    call object::can_generate_delete_ref
+    br_true l4
+    // @30
+    move_loc l5
+    call object::address_from_constructor_ref
+    exists Metadata
+    br_false l5
+    copy_loc l0
+    // @35
+    call object::address_from_constructor_ref
+    exists DeriveSupply
+    br_true l6
+    move_loc l0
+    call object::generate_signer
+    // @40
+    st_loc l6
+    borrow_loc l6
+    move_loc l1
+    pack DeriveSupply
+    move_to DeriveSupply
+    // @45
+    ret
+l6: move_loc l0
+    pop
+    ld_u64 524317
+    abort
+    // @50
+l5: move_loc l0
+    pop
+    ld_u64 393246
+    abort
+l4: move_loc l0
+    // @55
+    pop
+    move_loc l5
+    pop
+    ld_u64 65554
+    abort
+    // @60
+l3: move_loc l0
+    pop
+    move_loc l5
+    pop
+    ld_u64 327711
+    // @65
+    abort
+l1: move_loc l0
+    pop
+    ld_u64 65569
+    abort
+    // @70
+l0: move_loc l2
+    pop
+    branch l2
+
+// Function definition at index 62
+friend fun register_dispatch_functions(l0: &object::ConstructorRef, l1: option::Option<function_info::FunctionInfo>, l2: option::Option<function_info::FunctionInfo>, l3: option::Option<function_info::FunctionInfo>)
+    local l4: &option::Option<function_info::FunctionInfo>
+    local l5: &function_info::FunctionInfo
+    local l6: function_info::FunctionInfo
+    local l7: &option::Option<function_info::FunctionInfo>
+    local l8: function_info::FunctionInfo
+    local l9: &option::Option<function_info::FunctionInfo>
+    local l10: function_info::FunctionInfo
+    local l11: &object::ConstructorRef
+    local l12: signer
+    borrow_loc l1
+    st_loc l4
+    copy_loc l4
+    call option::is_some<function_info::FunctionInfo>
+    br_false l0
+    // @5
+    move_loc l4
+    call option::borrow<function_info::FunctionInfo>
+    st_loc l5
+    ld_const<address> 1
+    ld_const<vector<u8>> [100, 105, 115, 112, 97, 116, 99, 104, 97, 98, 108, 101, 95, 102, 117, 110, 103, 105, 98, 108, 101, 95, 97, 115, 115, 101, 116]
+    // @10
+    call string::utf8
+    ld_const<vector<u8>> [100, 105, 115, 112, 97, 116, 99, 104, 97, 98, 108, 101, 95, 119, 105, 116, 104, 100, 114, 97, 119]
+    call string::utf8
+    call function_info::new_function_info_from_address
+    st_loc l6
+    // @15
+    borrow_loc l6
+    move_loc l5
+    call function_info::check_dispatch_type_compatibility
+    br_false l1
+    branch l2
+    // @20
+l2: borrow_loc l2
+    st_loc l7
+    copy_loc l7
+    call option::is_some<function_info::FunctionInfo>
+    br_false l3
+    // @25
+    move_loc l7
+    call option::borrow<function_info::FunctionInfo>
+    st_loc l5
+    ld_const<address> 1
+    ld_const<vector<u8>> [100, 105, 115, 112, 97, 116, 99, 104, 97, 98, 108, 101, 95, 102, 117, 110, 103, 105, 98, 108, 101, 95, 97, 115, 115, 101, 116]
+    // @30
+    call string::utf8
+    ld_const<vector<u8>> [100, 105, 115, 112, 97, 116, 99, 104, 97, 98, 108, 101, 95, 100, 101, 112, 111, 115, 105, 116]
+    call string::utf8
+    call function_info::new_function_info_from_address
+    st_loc l8
+    // @35
+    borrow_loc l8
+    move_loc l5
+    call function_info::check_dispatch_type_compatibility
+    br_false l4
+    branch l5
+    // @40
+l5: borrow_loc l3
+    st_loc l9
+    copy_loc l9
+    call option::is_some<function_info::FunctionInfo>
+    br_false l6
+    // @45
+    move_loc l9
+    call option::borrow<function_info::FunctionInfo>
+    st_loc l5
+    ld_const<address> 1
+    ld_const<vector<u8>> [100, 105, 115, 112, 97, 116, 99, 104, 97, 98, 108, 101, 95, 102, 117, 110, 103, 105, 98, 108, 101, 95, 97, 115, 115, 101, 116]
+    // @50
+    call string::utf8
+    ld_const<vector<u8>> [100, 105, 115, 112, 97, 116, 99, 104, 97, 98, 108, 101, 95, 100, 101, 114, 105, 118, 101, 100, 95, 98, 97, 108, 97, 110, 99, 101]
+    call string::utf8
+    call function_info::new_function_info_from_address
+    st_loc l10
+    // @55
+    borrow_loc l10
+    move_loc l5
+    call function_info::check_dispatch_type_compatibility
+    br_false l7
+    branch l8
+    // @60
+l8: copy_loc l0
+    st_loc l11
+    copy_loc l11
+    call object::address_from_constructor_ref
+    ld_const<address> 10
+    // @65
+    neq
+    br_false l9
+    copy_loc l11
+    call object::can_generate_delete_ref
+    br_true l10
+    // @70
+    move_loc l11
+    call object::address_from_constructor_ref
+    exists Metadata
+    br_false l11
+    copy_loc l0
+    // @75
+    call object::address_from_constructor_ref
+    exists DispatchFunctionStore
+    br_true l12
+    move_loc l0
+    call object::generate_signer
+    // @80
+    st_loc l12
+    borrow_loc l12
+    move_loc l1
+    move_loc l2
+    move_loc l3
+    // @85
+    pack DispatchFunctionStore
+    move_to DispatchFunctionStore
+    ret
+l12: move_loc l0
+    pop
+    // @90
+    ld_u64 524317
+    abort
+l11: move_loc l0
+    pop
+    ld_u64 393246
+    // @95
+    abort
+l10: move_loc l0
+    pop
+    move_loc l11
+    pop
+    // @100
+    ld_u64 65554
+    abort
+l9: move_loc l0
+    pop
+    move_loc l11
+    // @105
+    pop
+    ld_u64 327711
+    abort
+l7: move_loc l0
+    pop
+    // @110
+    ld_u64 65563
+    abort
+l6: move_loc l9
+    pop
+    branch l8
+    // @115
+l4: move_loc l0
+    pop
+    ld_u64 65562
+    abort
+l3: move_loc l7
+    // @120
+    pop
+    branch l5
+l1: move_loc l0
+    pop
+    ld_u64 65561
+    // @125
+    abort
+l0: move_loc l4
+    pop
+    branch l2
+
+// Function definition at index 63
+#[persistent] public fun remove_store(l0: &object::DeleteRef) acquires ConcurrentFungibleBalance, FungibleAssetEvents, FungibleStore
+    local l1: object::Object<FungibleStore>
+    local l2: address
+    local l3: u64
+    local l4: object::Object<Metadata>
+    local l5: aggregator_v2::Aggregator<u64>
+    local l6: event::EventHandle<FrozenEvent>
+    local l7: event::EventHandle<WithdrawEvent>
+    move_loc l0
+    call object::object_from_delete_ref<FungibleStore>
+    st_loc l1
+    borrow_loc l1
+    call object::object_address<FungibleStore>
+    // @5
+    st_loc l2
+    copy_loc l2
+    move_from FungibleStore
+    unpack FungibleStore
+    pop
+    // @10
+    st_loc l3
+    st_loc l4
+    move_loc l3
+    ld_u64 0
+    eq
+    // @15
+    br_false l0
+    copy_loc l2
+    exists ConcurrentFungibleBalance
+    br_true l1
+    branch l2
+    // @20
+l1: copy_loc l2
+    move_from ConcurrentFungibleBalance
+    unpack ConcurrentFungibleBalance
+    st_loc l5
+    borrow_loc l5
+    // @25
+    call aggregator_v2::read<u64>
+    ld_u64 0
+    eq
+    br_false l3
+    branch l2
+    // @30
+l2: copy_loc l2
+    exists FungibleAssetEvents
+    br_true l4
+    branch l5
+l4: copy_loc l2
+    // @35
+    move_from FungibleAssetEvents
+    unpack FungibleAssetEvents
+    st_loc l6
+    st_loc l7
+    call event::destroy_handle<DepositEvent>
+    // @40
+    move_loc l7
+    call event::destroy_handle<WithdrawEvent>
+    move_loc l6
+    call event::destroy_handle<FrozenEvent>
+l5: move_loc l2
+    // @45
+    move_loc l1
+    call object::owner<FungibleStore>
+    borrow_loc l4
+    call object::object_address<Metadata>
+    pack FungibleStoreDeletion
+    // @50
+    call event::emit<FungibleStoreDeletion>
+    ret
+l3: ld_u64 327694
+    abort
+l0: ld_u64 327694
+    // @55
+    abort
+
+// Function definition at index 64
+#[persistent] public fun revoke_permission(l0: &signer, l1: object::Object<Metadata>)
+    ld_u64 0
+    move_loc l0
+    pop
+    abort
+
+// Function definition at index 65
+#[persistent] public fun set_frozen_flag<T0: key>(l0: &TransferRef, l1: object::Object<T0>, l2: bool) acquires FungibleStore
+    local l3: object::Object<Metadata>
+    local l4: object::Object<T0>
+    local l5: address
+    local l6: object::Object<Metadata>
+    local l7: object::Object<T0>
+    local l8: bool
+    local l9: address
+    local l10: &mut bool
+    move_loc l0
+    borrow_field TransferRef, metadata
+    read_ref
+    st_loc l3
+    copy_loc l1
+    // @5
+    st_loc l4
+    borrow_loc l4
+    call object::object_address<T0>
+    st_loc l5
+    copy_loc l5
+    // @10
+    exists FungibleStore
+    br_false l0
+    move_loc l5
+    borrow_global FungibleStore
+    borrow_field FungibleStore, metadata
+    // @15
+    read_ref
+    st_loc l6
+    move_loc l3
+    move_loc l6
+    eq
+    // @20
+    br_false l1
+    move_loc l1
+    st_loc l7
+    move_loc l2
+    st_loc l8
+    // @25
+    borrow_loc l7
+    call object::object_address<T0>
+    st_loc l9
+    copy_loc l9
+    mut_borrow_global FungibleStore
+    // @30
+    mut_borrow_field FungibleStore, frozen
+    st_loc l10
+    copy_loc l8
+    move_loc l10
+    write_ref
+    // @35
+    move_loc l9
+    move_loc l8
+    pack Frozen
+    call event::emit<Frozen>
+    ret
+    // @40
+l1: ld_u64 65545
+    abort
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 66
+friend fun set_frozen_flag_internal<T0: key>(l0: object::Object<T0>, l1: bool) acquires FungibleStore
+    local l2: address
+    local l3: &mut bool
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l2
+    copy_loc l2
+    mut_borrow_global FungibleStore
+    // @5
+    mut_borrow_field FungibleStore, frozen
+    st_loc l3
+    copy_loc l1
+    move_loc l3
+    write_ref
+    // @10
+    move_loc l2
+    move_loc l1
+    pack Frozen
+    call event::emit<Frozen>
+    ret
+
+// Function definition at index 67
+#[persistent] public fun store_exists(l0: address): bool
+    move_loc l0
+    exists FungibleStore
+    ret
+
+// Function definition at index 68
+#[persistent] public fun store_metadata<T0: key>(l0: object::Object<T0>): object::Object<Metadata> acquires FungibleStore
+    local l1: address
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    exists FungibleStore
+    // @5
+    br_false l0
+    move_loc l1
+    borrow_global FungibleStore
+    borrow_field FungibleStore, metadata
+    read_ref
+    // @10
+    ret
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 69
+#[persistent] public fun supply<T0: key>(l0: object::Object<T0>): option::Option<u128> acquires ConcurrentSupply, Supply
+    local l1: address
+    local l2: bool
+    local l3: object::Object<T0>
+    local l4: address
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    ld_const<address> 10
+    // @5
+    neq
+    br_false l0
+    move_loc l1
+    exists DeriveSupply
+    st_loc l2
+    // @10
+l4: move_loc l2
+    br_true l1
+    move_loc l0
+    st_loc l3
+    borrow_loc l3
+    // @15
+    call object::object_address<T0>
+    st_loc l4
+    copy_loc l4
+    exists ConcurrentSupply
+    br_false l2
+    // @20
+    move_loc l4
+    borrow_global ConcurrentSupply
+    borrow_field ConcurrentSupply, current
+    call aggregator_v2::read<u128>
+    call option::some<u128>
+    // @25
+    ret
+l2: copy_loc l4
+    exists Supply
+    br_false l3
+    move_loc l4
+    // @30
+    borrow_global Supply
+    borrow_field Supply, current
+    read_ref
+    call option::some<u128>
+    ret
+    // @35
+l3: call option::none<u128>
+    ret
+l1: ld_u64 65564
+    abort
+l0: ld_false
+    // @40
+    st_loc l2
+    branch l4
+
+// Function definition at index 70
+fun supply_impl<T0: key>(l0: object::Object<T0>): option::Option<u128> acquires ConcurrentSupply, Supply
+    local l1: address
+    local l2: option::Option<u128>
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    exists ConcurrentSupply
+    // @5
+    br_false l0
+    move_loc l1
+    borrow_global ConcurrentSupply
+    borrow_field ConcurrentSupply, current
+    call aggregator_v2::read<u128>
+    // @10
+    call option::some<u128>
+    ret
+l2: move_loc l2
+    ret
+l0: copy_loc l1
+    // @15
+    exists Supply
+    br_false l1
+    move_loc l1
+    borrow_global Supply
+    borrow_field Supply, current
+    // @20
+    read_ref
+    call option::some<u128>
+    st_loc l2
+    branch l2
+l1: call option::none<u128>
+    // @25
+    st_loc l2
+    branch l2
+
+// Function definition at index 71
+#[persistent] public fun supply_with_ref<T0: key>(l0: &RawSupplyRef, l1: object::Object<T0>): option::Option<u128> acquires ConcurrentSupply, Supply
+    local l2: object::Object<T0>
+    local l3: address
+    move_loc l0
+    borrow_field RawSupplyRef, metadata
+    call object::object_address<Metadata>
+    borrow_loc l1
+    call object::object_address<T0>
+    // @5
+    eq
+    br_false l0
+    move_loc l1
+    st_loc l2
+    borrow_loc l2
+    // @10
+    call object::object_address<T0>
+    st_loc l3
+    copy_loc l3
+    exists ConcurrentSupply
+    br_false l1
+    // @15
+    move_loc l3
+    borrow_global ConcurrentSupply
+    borrow_field ConcurrentSupply, current
+    call aggregator_v2::read<u128>
+    call option::some<u128>
+    // @20
+    ret
+l1: copy_loc l3
+    exists Supply
+    br_false l2
+    move_loc l3
+    // @25
+    borrow_global Supply
+    borrow_field Supply, current
+    read_ref
+    call option::some<u128>
+    ret
+    // @30
+l2: call option::none<u128>
+    ret
+l0: ld_u64 65570
+    abort
+
+// Function definition at index 72
+#[persistent] public fun transfer_ref_metadata(l0: &TransferRef): object::Object<Metadata>
+    move_loc l0
+    borrow_field TransferRef, metadata
+    read_ref
+    ret
+
+// Function definition at index 73
+friend fun unchecked_deposit(l0: address, l1: FungibleAsset) acquires ConcurrentFungibleBalance, FungibleStore
+    local l2: address
+    local l3: u64
+    local l4: object::Object<Metadata>
+    local l5: &mut FungibleStore
+    local l6: bool
+    local l7: u64
+    local l8: &mut u64
+    copy_loc l0
+    st_loc l2
+    move_loc l1
+    unpack FungibleAsset
+    st_loc l3
+    // @5
+    st_loc l4
+    copy_loc l2
+    exists FungibleStore
+    br_false l0
+    copy_loc l2
+    // @10
+    mut_borrow_global FungibleStore
+    st_loc l5
+    move_loc l4
+    copy_loc l5
+    borrow_field FungibleStore, metadata
+    // @15
+    read_ref
+    eq
+    br_false l1
+    copy_loc l3
+    ld_u64 0
+    // @20
+    neq
+    br_false l2
+    copy_loc l5
+    borrow_field FungibleStore, balance
+    read_ref
+    // @25
+    ld_u64 0
+    eq
+    br_false l3
+    copy_loc l2
+    exists ConcurrentFungibleBalance
+    // @30
+    st_loc l6
+l7: move_loc l6
+    br_false l4
+    move_loc l5
+    pop
+    // @35
+    move_loc l2
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l3
+    call aggregator_v2::add<u64>
+    // @40
+l6: move_loc l3
+    st_loc l7
+    copy_loc l7
+    ld_u64 0
+    neq
+    // @45
+    br_false l5
+    move_loc l0
+    move_loc l7
+    pack Deposit
+    call event::emit<Deposit>
+    // @50
+    ret
+l5: ret
+l4: copy_loc l3
+    st_loc l7
+    move_loc l5
+    // @55
+    mut_borrow_field FungibleStore, balance
+    st_loc l8
+    copy_loc l8
+    read_ref
+    move_loc l7
+    // @60
+    add
+    move_loc l8
+    write_ref
+    branch l6
+l3: ld_false
+    // @65
+    st_loc l6
+    branch l7
+l2: move_loc l5
+    pop
+    branch l6
+    // @70
+l1: move_loc l5
+    pop
+    ld_u64 65547
+    abort
+l0: ld_u64 393239
+    // @75
+    abort
+
+// Function definition at index 74
+friend fun unchecked_deposit_with_no_events(l0: address, l1: FungibleAsset) acquires ConcurrentFungibleBalance, FungibleStore
+    local l2: u64
+    local l3: object::Object<Metadata>
+    local l4: &mut FungibleStore
+    local l5: bool
+    local l6: u64
+    local l7: &mut u64
+    move_loc l1
+    unpack FungibleAsset
+    st_loc l2
+    st_loc l3
+    copy_loc l0
+    // @5
+    exists FungibleStore
+    br_false l0
+    copy_loc l0
+    mut_borrow_global FungibleStore
+    st_loc l4
+    // @10
+    move_loc l3
+    copy_loc l4
+    borrow_field FungibleStore, metadata
+    read_ref
+    eq
+    // @15
+    br_false l1
+    copy_loc l2
+    ld_u64 0
+    neq
+    br_false l2
+    // @20
+    copy_loc l4
+    borrow_field FungibleStore, balance
+    read_ref
+    ld_u64 0
+    eq
+    // @25
+    br_false l3
+    copy_loc l0
+    exists ConcurrentFungibleBalance
+    st_loc l5
+l6: move_loc l5
+    // @30
+    br_false l4
+    move_loc l4
+    pop
+    move_loc l0
+    mut_borrow_global ConcurrentFungibleBalance
+    // @35
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    move_loc l2
+    call aggregator_v2::add<u64>
+l5: ret
+l4: copy_loc l2
+    // @40
+    st_loc l6
+    move_loc l4
+    mut_borrow_field FungibleStore, balance
+    st_loc l7
+    copy_loc l7
+    // @45
+    read_ref
+    move_loc l6
+    add
+    move_loc l7
+    write_ref
+    // @50
+    branch l5
+l3: ld_false
+    st_loc l5
+    branch l6
+l2: move_loc l4
+    // @55
+    pop
+    branch l5
+l1: move_loc l4
+    pop
+    ld_u64 65547
+    // @60
+    abort
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 75
+friend fun unchecked_withdraw(l0: address, l1: u64): FungibleAsset acquires ConcurrentFungibleBalance, FungibleStore
+    local l2: address
+    local l3: u64
+    local l4: &mut FungibleStore
+    local l5: object::Object<Metadata>
+    local l6: bool
+    local l7: FungibleAsset
+    local l8: u64
+    local l9: &mut u64
+    copy_loc l0
+    st_loc l2
+    copy_loc l1
+    st_loc l3
+    copy_loc l2
+    // @5
+    exists FungibleStore
+    br_false l0
+    copy_loc l2
+    mut_borrow_global FungibleStore
+    st_loc l4
+    // @10
+    copy_loc l4
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l5
+    copy_loc l3
+    // @15
+    ld_u64 0
+    neq
+    br_false l1
+    copy_loc l4
+    borrow_field FungibleStore, balance
+    // @20
+    read_ref
+    ld_u64 0
+    eq
+    br_false l2
+    copy_loc l2
+    // @25
+    exists ConcurrentFungibleBalance
+    st_loc l6
+l9: move_loc l6
+    br_false l3
+    move_loc l4
+    // @30
+    pop
+    move_loc l2
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l3
+    // @35
+    call aggregator_v2::try_sub<u64>
+    br_false l4
+    branch l5
+l5: move_loc l5
+    move_loc l3
+    // @40
+    pack FungibleAsset
+    st_loc l7
+    copy_loc l1
+    ld_u64 0
+    neq
+    // @45
+    br_true l6
+    branch l7
+l6: move_loc l0
+    move_loc l1
+    pack Withdraw
+    // @50
+    call event::emit<Withdraw>
+l7: move_loc l7
+    ret
+l4: ld_u64 65540
+    abort
+    // @55
+l3: copy_loc l4
+    borrow_field FungibleStore, balance
+    read_ref
+    copy_loc l3
+    ge
+    // @60
+    br_false l8
+    copy_loc l3
+    st_loc l8
+    move_loc l4
+    mut_borrow_field FungibleStore, balance
+    // @65
+    st_loc l9
+    copy_loc l9
+    read_ref
+    move_loc l8
+    sub
+    // @70
+    move_loc l9
+    write_ref
+    branch l5
+l8: move_loc l4
+    pop
+    // @75
+    ld_u64 65540
+    abort
+l2: ld_false
+    st_loc l6
+    branch l9
+    // @80
+l1: move_loc l4
+    pop
+    branch l5
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 76
+#[persistent] entry public fun upgrade_store_to_concurrent<T0: key>(l0: &signer, l1: object::Object<T0>) acquires FungibleStore
+    local l2: address
+    local l3: object::Object<T0>
+    local l4: address
+    local l5: bool
+    borrow_loc l1
+    call object::object_address<T0>
+    st_loc l2
+    copy_loc l2
+    exists ConcurrentFungibleBalance
+    // @5
+    br_false l0
+    move_loc l0
+    pop
+    ret
+l0: copy_loc l1
+    // @10
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    call object::owns<T0>
+    br_false l1
+    // @15
+    move_loc l1
+    st_loc l3
+    borrow_loc l3
+    call object::object_address<T0>
+    st_loc l4
+    // @20
+    copy_loc l4
+    exists FungibleStore
+    br_false l2
+    move_loc l4
+    borrow_global FungibleStore
+    // @25
+    borrow_field FungibleStore, frozen
+    read_ref
+    st_loc l5
+l5: move_loc l5
+    br_true l3
+    // @30
+    ld_u64 67
+    call features::is_enabled
+    br_false l4
+    move_loc l2
+    call ensure_store_upgraded_to_concurrent_internal
+    // @35
+    ret
+l4: ld_u64 65568
+    abort
+l3: ld_u64 65539
+    abort
+    // @40
+l2: ld_false
+    st_loc l5
+    branch l5
+l1: ld_u64 327688
+    abort
+
+// Function definition at index 77
+#[persistent] public fun upgrade_to_concurrent(l0: &object::ExtendRef) acquires Supply
+    local l1: address
+    local l2: signer
+    local l3: option::Option<u128>
+    local l4: u128
+    local l5: u128
+    local l6: aggregator_v2::Aggregator<u128>
+    local l7: aggregator_v2::Aggregator<u128>
+    local l8: ConcurrentSupply
+    local l9: aggregator_v2::Aggregator<u128>
+    copy_loc l0
+    call object::address_from_extend_ref
+    st_loc l1
+    move_loc l0
+    call object::generate_signer_for_extending
+    // @5
+    st_loc l2
+    ld_u64 50
+    call features::is_enabled
+    br_false l0
+    copy_loc l1
+    // @10
+    exists Supply
+    br_false l1
+    move_loc l1
+    move_from Supply
+    unpack Supply
+    // @15
+    st_loc l3
+    st_loc l4
+    borrow_loc l3
+    call option::is_none<u128>
+    br_false l2
+    // @20
+    move_loc l4
+    st_loc l5
+    call aggregator_v2::create_unbounded_aggregator<u128>
+    st_loc l6
+    mut_borrow_loc l6
+    // @25
+    move_loc l5
+    call aggregator_v2::add<u128>
+    move_loc l6
+    st_loc l7
+l3: move_loc l7
+    // @30
+    pack ConcurrentSupply
+    st_loc l8
+    borrow_loc l2
+    move_loc l8
+    move_to ConcurrentSupply
+    // @35
+    ret
+l2: mut_borrow_loc l3
+    call option::extract<u128>
+    call aggregator_v2::create_aggregator<u128>
+    st_loc l9
+    // @40
+    mut_borrow_loc l9
+    move_loc l4
+    call aggregator_v2::add<u128>
+    move_loc l9
+    st_loc l7
+    // @45
+    branch l3
+l1: ld_u64 393237
+    abort
+l0: ld_u64 65558
+    abort
+
+// Function definition at index 78
+#[persistent] public fun withdraw<T0: key>(l0: &signer, l1: object::Object<T0>, l2: u64): FungibleAsset acquires ConcurrentFungibleBalance, DispatchFunctionStore, FungibleStore
+    local l3: address
+    local l4: object::Object<T0>
+    local l5: &FungibleStore
+    local l6: bool
+    local l7: address
+    local l8: u64
+    local l9: address
+    local l10: u64
+    local l11: &mut FungibleStore
+    local l12: object::Object<Metadata>
+    local l13: bool
+    local l14: FungibleAsset
+    local l15: u64
+    local l16: &mut u64
+    local l17: object::Object<Metadata>
+    local l18: bool
+    copy_loc l1
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l3
+    // @5
+    st_loc l4
+    copy_loc l4
+    move_loc l3
+    call object::owns<T0>
+    br_false l0
+    // @10
+    borrow_loc l4
+    call object::object_address<T0>
+    st_loc l3
+    copy_loc l3
+    exists FungibleStore
+    // @15
+    br_false l1
+    move_loc l3
+    borrow_global FungibleStore
+    st_loc l5
+    branch l2
+    // @20
+    ld_true
+    st_loc l6
+l17: move_loc l6
+    br_false l3
+    move_loc l5
+    // @25
+    borrow_field FungibleStore, frozen
+    read_ref
+    br_true l4
+    borrow_loc l1
+    call object::object_address<T0>
+    // @30
+    st_loc l7
+    move_loc l2
+    st_loc l8
+    copy_loc l7
+    st_loc l9
+    // @35
+    copy_loc l8
+    st_loc l10
+    copy_loc l9
+    exists FungibleStore
+    br_false l5
+    // @40
+    copy_loc l9
+    mut_borrow_global FungibleStore
+    st_loc l11
+    copy_loc l11
+    borrow_field FungibleStore, metadata
+    // @45
+    read_ref
+    st_loc l12
+    copy_loc l10
+    ld_u64 0
+    neq
+    // @50
+    br_false l6
+    copy_loc l11
+    borrow_field FungibleStore, balance
+    read_ref
+    ld_u64 0
+    // @55
+    eq
+    br_false l7
+    copy_loc l9
+    exists ConcurrentFungibleBalance
+    st_loc l13
+    // @60
+l14: move_loc l13
+    br_false l8
+    move_loc l11
+    pop
+    move_loc l9
+    // @65
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    copy_loc l10
+    call aggregator_v2::try_sub<u64>
+    br_false l9
+    // @70
+    branch l10
+l10: move_loc l12
+    move_loc l10
+    pack FungibleAsset
+    st_loc l14
+    // @75
+    copy_loc l8
+    ld_u64 0
+    neq
+    br_true l11
+    branch l12
+    // @80
+l11: move_loc l7
+    move_loc l8
+    pack Withdraw
+    call event::emit<Withdraw>
+l12: move_loc l14
+    // @85
+    ret
+l9: ld_u64 65540
+    abort
+l8: copy_loc l11
+    borrow_field FungibleStore, balance
+    // @90
+    read_ref
+    copy_loc l10
+    ge
+    br_false l13
+    copy_loc l10
+    // @95
+    st_loc l15
+    move_loc l11
+    mut_borrow_field FungibleStore, balance
+    st_loc l16
+    copy_loc l16
+    // @100
+    read_ref
+    move_loc l15
+    sub
+    move_loc l16
+    write_ref
+    // @105
+    branch l10
+l13: move_loc l11
+    pop
+    ld_u64 65540
+    abort
+    // @110
+l7: ld_false
+    st_loc l13
+    branch l14
+l6: move_loc l11
+    pop
+    // @115
+    branch l10
+l5: ld_u64 393239
+    abort
+l4: ld_u64 327683
+    abort
+    // @120
+l3: move_loc l5
+    pop
+    ld_u64 65564
+    abort
+l2: copy_loc l5
+    // @125
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l17
+    borrow_loc l17
+    call object::object_address<Metadata>
+    // @130
+    st_loc l7
+    copy_loc l7
+    ld_const<address> 10
+    neq
+    br_false l15
+    // @135
+    copy_loc l7
+    exists DispatchFunctionStore
+    st_loc l13
+l19: move_loc l13
+    br_false l16
+    // @140
+    move_loc l7
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, withdraw_function
+    call option::is_some<function_info::FunctionInfo>
+    st_loc l18
+    // @145
+l18: move_loc l18
+    not
+    st_loc l6
+    branch l17
+l16: ld_false
+    // @150
+    st_loc l18
+    branch l18
+l15: ld_false
+    st_loc l13
+    branch l19
+    // @155
+l1: ld_u64 393239
+    abort
+l0: ld_u64 327688
+    abort
+
+// Function definition at index 79
+#[persistent] public fun withdraw_dispatch_function<T0: key>(l0: object::Object<T0>): option::Option<function_info::FunctionInfo> acquires DispatchFunctionStore, FungibleStore
+    local l1: address
+    local l2: address
+    borrow_loc l0
+    call object::object_address<T0>
+    st_loc l1
+    copy_loc l1
+    exists FungibleStore
+    // @5
+    br_false l0
+    move_loc l1
+    borrow_global FungibleStore
+    borrow_field FungibleStore, metadata
+    call object::object_address<Metadata>
+    // @10
+    st_loc l2
+    copy_loc l2
+    exists DispatchFunctionStore
+    br_false l1
+    move_loc l2
+    // @15
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, withdraw_function
+    read_ref
+    ret
+l1: call option::none<function_info::FunctionInfo>
+    // @20
+    ret
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 80
+friend fun withdraw_sanity_check<T0: key>(l0: &signer, l1: object::Object<T0>, l2: bool) acquires DispatchFunctionStore, FungibleStore
+    local l3: address
+    local l4: object::Object<T0>
+    local l5: &FungibleStore
+    local l6: bool
+    local l7: object::Object<Metadata>
+    local l8: address
+    local l9: bool
+    local l10: bool
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l3
+    move_loc l1
+    // @5
+    st_loc l4
+    copy_loc l4
+    move_loc l3
+    call object::owns<T0>
+    br_false l0
+    // @10
+    borrow_loc l4
+    call object::object_address<T0>
+    st_loc l3
+    copy_loc l3
+    exists FungibleStore
+    // @15
+    br_false l1
+    move_loc l3
+    borrow_global FungibleStore
+    st_loc l5
+    move_loc l2
+    // @20
+    br_true l2
+    ld_true
+    st_loc l6
+l7: move_loc l6
+    br_false l3
+    // @25
+    move_loc l5
+    borrow_field FungibleStore, frozen
+    read_ref
+    br_true l4
+    ret
+    // @30
+l4: ld_u64 327683
+    abort
+l3: move_loc l5
+    pop
+    ld_u64 65564
+    // @35
+    abort
+l2: copy_loc l5
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l7
+    // @40
+    borrow_loc l7
+    call object::object_address<Metadata>
+    st_loc l8
+    copy_loc l8
+    ld_const<address> 10
+    // @45
+    neq
+    br_false l5
+    copy_loc l8
+    exists DispatchFunctionStore
+    st_loc l9
+    // @50
+l9: move_loc l9
+    br_false l6
+    move_loc l8
+    borrow_global DispatchFunctionStore
+    borrow_field DispatchFunctionStore, withdraw_function
+    // @55
+    call option::is_some<function_info::FunctionInfo>
+    st_loc l10
+l8: move_loc l10
+    not
+    st_loc l6
+    // @60
+    branch l7
+l6: ld_false
+    st_loc l10
+    branch l8
+l5: ld_false
+    // @65
+    st_loc l9
+    branch l9
+l1: ld_u64 393239
+    abort
+l0: ld_u64 327688
+    // @70
+    abort
+
+// Function definition at index 81
+#[persistent] public fun withdraw_with_ref<T0: key>(l0: &TransferRef, l1: object::Object<T0>, l2: u64): FungibleAsset acquires ConcurrentFungibleBalance, FungibleStore
+    local l3: object::Object<Metadata>
+    local l4: object::Object<T0>
+    local l5: address
+    local l6: object::Object<Metadata>
+    local l7: address
+    local l8: u64
+    local l9: address
+    local l10: u64
+    local l11: &mut FungibleStore
+    local l12: bool
+    local l13: FungibleAsset
+    local l14: u64
+    local l15: &mut u64
+    move_loc l0
+    borrow_field TransferRef, metadata
+    read_ref
+    st_loc l3
+    copy_loc l1
+    // @5
+    st_loc l4
+    borrow_loc l4
+    call object::object_address<T0>
+    st_loc l5
+    copy_loc l5
+    // @10
+    exists FungibleStore
+    br_false l0
+    move_loc l5
+    borrow_global FungibleStore
+    borrow_field FungibleStore, metadata
+    // @15
+    read_ref
+    st_loc l6
+    move_loc l3
+    move_loc l6
+    eq
+    // @20
+    br_false l1
+    borrow_loc l1
+    call object::object_address<T0>
+    st_loc l7
+    move_loc l2
+    // @25
+    st_loc l8
+    copy_loc l7
+    st_loc l9
+    copy_loc l8
+    st_loc l10
+    // @30
+    copy_loc l9
+    exists FungibleStore
+    br_false l2
+    copy_loc l9
+    mut_borrow_global FungibleStore
+    // @35
+    st_loc l11
+    copy_loc l11
+    borrow_field FungibleStore, metadata
+    read_ref
+    st_loc l6
+    // @40
+    copy_loc l10
+    ld_u64 0
+    neq
+    br_false l3
+    copy_loc l11
+    // @45
+    borrow_field FungibleStore, balance
+    read_ref
+    ld_u64 0
+    eq
+    br_false l4
+    // @50
+    copy_loc l9
+    exists ConcurrentFungibleBalance
+    st_loc l12
+l11: move_loc l12
+    br_false l5
+    // @55
+    move_loc l11
+    pop
+    move_loc l9
+    mut_borrow_global ConcurrentFungibleBalance
+    mut_borrow_field ConcurrentFungibleBalance, balance
+    // @60
+    copy_loc l10
+    call aggregator_v2::try_sub<u64>
+    br_false l6
+    branch l7
+l7: move_loc l6
+    // @65
+    move_loc l10
+    pack FungibleAsset
+    st_loc l13
+    copy_loc l8
+    ld_u64 0
+    // @70
+    neq
+    br_true l8
+    branch l9
+l8: move_loc l7
+    move_loc l8
+    // @75
+    pack Withdraw
+    call event::emit<Withdraw>
+l9: move_loc l13
+    ret
+l6: ld_u64 65540
+    // @80
+    abort
+l5: copy_loc l11
+    borrow_field FungibleStore, balance
+    read_ref
+    copy_loc l10
+    // @85
+    ge
+    br_false l10
+    copy_loc l10
+    st_loc l14
+    move_loc l11
+    // @90
+    mut_borrow_field FungibleStore, balance
+    st_loc l15
+    copy_loc l15
+    read_ref
+    move_loc l14
+    // @95
+    sub
+    move_loc l15
+    write_ref
+    branch l7
+l10: move_loc l11
+    // @100
+    pop
+    ld_u64 65540
+    abort
+l4: ld_false
+    st_loc l12
+    // @105
+    branch l11
+l3: move_loc l11
+    pop
+    branch l7
+l2: ld_u64 393239
+    // @110
+    abort
+l1: ld_u64 65545
+    abort
+l0: ld_u64 393239
+    abort
+
+// Function definition at index 82
+#[persistent] public fun zero<T0: key>(l0: object::Object<T0>): FungibleAsset
+    move_loc l0
+    call object::convert<T0, Metadata>
+    ld_u64 0
+    pack FungibleAsset
+    ret
+

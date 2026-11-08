@@ -35,6 +35,14 @@ jobs:
         # "No space left on device" partway through.  Strip the
         # preinstalled .NET / Android / GHC / Haskell toolchains
         # we don't need before the Nix build starts.
+        #
+        # Linux only: the action is a bash script written for the Ubuntu
+        # runner image (it runs `sudo`, `free`, `apt-get`), so on the macOS
+        # runner it exits 127 on `sudo: command not found` and fails the
+        # job. On the self-hosted Linux runners it passes and frees nothing
+        # (every category reports "Saved 0B": the Ubuntu image's toolchains
+        # it deletes are not installed there), so it is kept for Linux only.
+        if: runner.os == 'Linux'
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: true
@@ -80,6 +88,10 @@ jobs:
             nimble install -y stew results
             nim c --app:staticlib --mm:arc --noMain -d:release -p:src \
               -o:libcodetracer_trace_writer.a src/codetracer_trace_writer_ffi.nim
+            # ct-print: the tests decode every recorded trace with it, and
+            # fail when it is missing.
+            nim c -d:release --mm:arc -p:src \
+              -o:ct-print src/codetracer_ct_print.nim
           '
           echo "CODETRACER_NIM_LIB_DIR=${GITHUB_WORKSPACE}/../codetracer-trace-format-nim" >> "$GITHUB_ENV"
 

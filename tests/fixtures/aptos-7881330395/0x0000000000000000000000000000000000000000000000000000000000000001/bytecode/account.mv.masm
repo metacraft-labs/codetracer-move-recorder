@@ -1,0 +1,4511 @@
+// Bytecode version v10
+module 0x1::account
+use 0x1::event
+use 0x1::option
+use 0x1::type_info
+use 0x1::table
+use 0x1::signer
+use 0x1::features
+use 0x1::create_signer
+use 0x1::bcs
+use 0x1::guid
+use 0x1::system_addresses
+use 0x1::ed25519
+use 0x1::multi_ed25519
+use 0x1::vector
+use 0x1::hash
+use 0x1::from_bcs
+use 0x1::transaction_context
+use 0x1::chain_id
+use 0x1::error
+use 0x1::single_key
+use 0x1::multi_key
+friend 0x1::coin
+friend 0x1::aptos_account
+friend 0x1::keyless_account
+friend 0x1::transaction_validation
+friend 0x1::genesis
+friend 0x1::multisig_account
+friend 0x1::resource_account
+struct Account has store + key
+  authentication_key: vector<u8>
+  sequence_number: u64
+  guid_creation_num: u64
+  coin_register_events: event::EventHandle<CoinRegisterEvent>
+  key_rotation_events: event::EventHandle<KeyRotationEvent>
+  rotation_capability_offer: CapabilityOffer<RotationCapability>
+  signer_capability_offer: CapabilityOffer<SignerCapability>
+
+enum AccountPermission has copy + drop + store
+  KeyRotation
+  Offering
+
+struct CapabilityOffer<phantom T0> has store
+  for: option::Option<address>
+
+struct CoinRegister has drop + store
+  account: address
+  type_info: type_info::TypeInfo
+
+struct CoinRegisterEvent has drop + store
+  type_info: type_info::TypeInfo
+
+enum EncryptedDK has copy + drop + store + key
+  V1
+    ciphertext: vector<u8>
+
+struct KeyRotation has drop + store
+  account: address
+  old_authentication_key: vector<u8>
+  new_authentication_key: vector<u8>
+
+struct KeyRotationEvent has drop + store
+  old_authentication_key: vector<u8>
+  new_authentication_key: vector<u8>
+
+struct KeyRotationToPublicKey has drop + store
+  account: address
+  verified_public_key_bit_map: vector<u8>
+  public_key_scheme: u8
+  public_key: vector<u8>
+  old_auth_key: vector<u8>
+  new_auth_key: vector<u8>
+
+struct OriginatingAddress has key
+  address_map: table::Table<address, address>
+
+struct RotationCapability has drop + store
+  account: address
+
+struct RotationCapabilityOfferProofChallenge has drop
+  sequence_number: u64
+  recipient_address: address
+
+struct RotationCapabilityOfferProofChallengeV2 has drop
+  chain_id: u8
+  sequence_number: u64
+  source_address: address
+  recipient_address: address
+
+struct RotationProofChallenge has copy + drop
+  sequence_number: u64
+  originator: address
+  current_auth_key: address
+  new_public_key: vector<u8>
+
+struct SignerCapability has drop + store
+  account: address
+
+struct SignerCapabilityOfferProofChallenge has drop
+  sequence_number: u64
+  recipient_address: address
+
+struct SignerCapabilityOfferProofChallengeV2 has copy + drop
+  sequence_number: u64
+  source_address: address
+  recipient_address: address
+
+// Function definition at index 0
+#[persistent] public fun new_event_handle<T0: drop + store>(l0: &signer): event::EventHandle<T0> acquires Account
+    local l1: address
+    local l2: address
+    local l3: address
+    local l4: bool
+    local l5: bool
+    local l6: address
+    local l7: signer
+    local l8: vector<u8>
+    local l9: u64
+    local l10: event::EventHandle<CoinRegisterEvent>
+    local l11: event::EventHandle<KeyRotationEvent>
+    local l12: &mut Account
+    local l13: guid::GUID
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l1
+    copy_loc l1
+    // @5
+    st_loc l2
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    move_loc l2
+    // @10
+    st_loc l3
+    copy_loc l3
+    exists Account
+    br_false l1
+    branch l2
+    // @15
+l1: copy_loc l3
+    ld_const<address> 0
+    neq
+    br_false l3
+    copy_loc l3
+    // @20
+    ld_const<address> 1
+    neq
+    st_loc l4
+l9: move_loc l4
+    br_false l4
+    // @25
+    copy_loc l3
+    ld_const<address> 3
+    neq
+    st_loc l5
+l8: move_loc l5
+    // @30
+    br_false l5
+    move_loc l3
+    st_loc l6
+    copy_loc l6
+    call create_signer::create_signer
+    // @35
+    st_loc l7
+    borrow_loc l6
+    call bcs::to_bytes<address>
+    st_loc l8
+    borrow_loc l8
+    // @40
+    vec_len <u8>
+    ld_u64 32
+    eq
+    br_false l6
+    ld_u64 0
+    // @45
+    st_loc l9
+    copy_loc l6
+    mut_borrow_loc l9
+    call guid::create
+    call event::new_event_handle<CoinRegisterEvent>
+    // @50
+    st_loc l10
+    move_loc l6
+    mut_borrow_loc l9
+    call guid::create
+    call event::new_event_handle<KeyRotationEvent>
+    // @55
+    st_loc l11
+    borrow_loc l7
+    move_loc l8
+    ld_u64 0
+    move_loc l9
+    // @60
+    move_loc l10
+    move_loc l11
+    call option::none<address>
+    pack CapabilityOffer<RotationCapability>
+    call option::none<address>
+    // @65
+    pack CapabilityOffer<SignerCapability>
+    pack Account
+    move_to Account
+l2: copy_loc l1
+    mut_borrow_global Account
+    // @70
+    st_loc l12
+    move_loc l1
+    copy_loc l12
+    mut_borrow_field Account, guid_creation_num
+    call guid::create
+    // @75
+    st_loc l13
+    move_loc l12
+    borrow_field Account, guid_creation_num
+    read_ref
+    ld_u64 1125899906842624
+    // @80
+    lt
+    br_false l7
+    move_loc l13
+    call event::new_event_handle<T0>
+    ret
+    // @85
+l7: ld_u64 131092
+    abort
+l6: ld_u64 65540
+    abort
+l5: ld_u64 65541
+    // @90
+    abort
+l4: ld_false
+    st_loc l5
+    branch l8
+l3: ld_false
+    // @95
+    st_loc l4
+    branch l9
+l0: ld_u64 91
+    call features::is_enabled
+    br_false l10
+    // @100
+    ld_true
+    st_loc l4
+l12: move_loc l4
+    br_false l11
+    branch l2
+    // @105
+l11: ld_u64 393218
+    abort
+l10: move_loc l2
+    exists Account
+    st_loc l4
+    // @110
+    branch l12
+
+// Function definition at index 1
+friend fun initialize(l0: &signer)
+    copy_loc l0
+    call system_addresses::assert_aptos_framework
+    move_loc l0
+    call table::new<address, address>
+    pack OriginatingAddress
+    // @5
+    move_to OriginatingAddress
+    ret
+
+// Function definition at index 2
+fun assert_valid_rotation_proof_signature_and_get_auth_key(l0: u8, l1: vector<u8>, l2: vector<u8>, l3: &RotationProofChallenge): vector<u8>
+    local l4: ed25519::UnvalidatedPublicKey
+    local l5: ed25519::Signature
+    local l6: multi_ed25519::UnvalidatedPublicKey
+    local l7: multi_ed25519::Signature
+    copy_loc l0
+    ld_u8 0
+    eq
+    br_false l0
+    move_loc l1
+    // @5
+    call ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l4
+    move_loc l2
+    call ed25519::new_signature_from_bytes
+    st_loc l5
+    // @10
+    borrow_loc l5
+    borrow_loc l4
+    move_loc l3
+    read_ref
+    call ed25519::signature_verify_strict_t<RotationProofChallenge>
+    // @15
+    br_false l1
+    borrow_loc l4
+    call ed25519::unvalidated_public_key_to_authentication_key
+    ret
+l1: ld_u64 65544
+    // @20
+    abort
+l0: move_loc l0
+    ld_u8 1
+    eq
+    br_false l2
+    // @25
+    move_loc l1
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l6
+    move_loc l2
+    call multi_ed25519::new_signature_from_bytes
+    // @30
+    st_loc l7
+    borrow_loc l7
+    borrow_loc l6
+    move_loc l3
+    read_ref
+    // @35
+    call multi_ed25519::signature_verify_strict_t<RotationProofChallenge>
+    br_false l3
+    borrow_loc l6
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    ret
+    // @40
+l3: ld_u64 65544
+    abort
+l2: move_loc l3
+    pop
+    ld_u64 65548
+    // @45
+    abort
+
+// Function definition at index 3
+friend fun create_account(l0: address): signer
+    local l1: bool
+    local l2: bool
+    local l3: address
+    local l4: signer
+    local l5: vector<u8>
+    local l6: u64
+    local l7: event::EventHandle<CoinRegisterEvent>
+    local l8: event::EventHandle<KeyRotationEvent>
+    copy_loc l0
+    exists Account
+    br_true l0
+    copy_loc l0
+    ld_const<address> 0
+    // @5
+    neq
+    br_false l1
+    copy_loc l0
+    ld_const<address> 1
+    neq
+    // @10
+    st_loc l1
+l7: move_loc l1
+    br_false l2
+    copy_loc l0
+    ld_const<address> 3
+    // @15
+    neq
+    st_loc l2
+l6: move_loc l2
+    br_false l3
+    ld_u64 91
+    // @20
+    call features::is_enabled
+    br_false l4
+    move_loc l0
+    call create_signer::create_signer
+    ret
+    // @25
+l4: move_loc l0
+    st_loc l3
+    copy_loc l3
+    call create_signer::create_signer
+    st_loc l4
+    // @30
+    borrow_loc l3
+    call bcs::to_bytes<address>
+    st_loc l5
+    borrow_loc l5
+    vec_len <u8>
+    // @35
+    ld_u64 32
+    eq
+    br_false l5
+    ld_u64 0
+    st_loc l6
+    // @40
+    copy_loc l3
+    mut_borrow_loc l6
+    call guid::create
+    call event::new_event_handle<CoinRegisterEvent>
+    st_loc l7
+    // @45
+    move_loc l3
+    mut_borrow_loc l6
+    call guid::create
+    call event::new_event_handle<KeyRotationEvent>
+    st_loc l8
+    // @50
+    borrow_loc l4
+    move_loc l5
+    ld_u64 0
+    move_loc l6
+    move_loc l7
+    // @55
+    move_loc l8
+    call option::none<address>
+    pack CapabilityOffer<RotationCapability>
+    call option::none<address>
+    pack CapabilityOffer<SignerCapability>
+    // @60
+    pack Account
+    move_to Account
+    move_loc l4
+    ret
+l5: ld_u64 65540
+    // @65
+    abort
+l3: ld_u64 65541
+    abort
+l2: ld_false
+    st_loc l2
+    // @70
+    branch l6
+l1: ld_false
+    st_loc l1
+    branch l7
+l0: ld_u64 524289
+    // @75
+    abort
+
+// Function definition at index 4
+#[persistent] public fun create_account_if_does_not_exist(l0: address)
+    local l1: bool
+    local l2: bool
+    local l3: address
+    local l4: signer
+    local l5: vector<u8>
+    local l6: u64
+    local l7: event::EventHandle<CoinRegisterEvent>
+    local l8: event::EventHandle<KeyRotationEvent>
+    copy_loc l0
+    exists Account
+    br_true l0
+    copy_loc l0
+    ld_const<address> 0
+    // @5
+    neq
+    br_false l1
+    copy_loc l0
+    ld_const<address> 1
+    neq
+    // @10
+    st_loc l1
+l6: move_loc l1
+    br_false l2
+    copy_loc l0
+    ld_const<address> 3
+    // @15
+    neq
+    st_loc l2
+l5: move_loc l2
+    br_false l3
+    move_loc l0
+    // @20
+    st_loc l3
+    copy_loc l3
+    call create_signer::create_signer
+    st_loc l4
+    borrow_loc l3
+    // @25
+    call bcs::to_bytes<address>
+    st_loc l5
+    borrow_loc l5
+    vec_len <u8>
+    ld_u64 32
+    // @30
+    eq
+    br_false l4
+    ld_u64 0
+    st_loc l6
+    copy_loc l3
+    // @35
+    mut_borrow_loc l6
+    call guid::create
+    call event::new_event_handle<CoinRegisterEvent>
+    st_loc l7
+    move_loc l3
+    // @40
+    mut_borrow_loc l6
+    call guid::create
+    call event::new_event_handle<KeyRotationEvent>
+    st_loc l8
+    borrow_loc l4
+    // @45
+    move_loc l5
+    ld_u64 0
+    move_loc l6
+    move_loc l7
+    move_loc l8
+    // @50
+    call option::none<address>
+    pack CapabilityOffer<RotationCapability>
+    call option::none<address>
+    pack CapabilityOffer<SignerCapability>
+    pack Account
+    // @55
+    move_to Account
+    ret
+l4: ld_u64 65540
+    abort
+l3: ld_u64 65541
+    // @60
+    abort
+l2: ld_false
+    st_loc l2
+    branch l5
+l1: ld_false
+    // @65
+    st_loc l1
+    branch l6
+l0: ret
+
+// Function definition at index 5
+fun create_account_unchecked(l0: address): signer
+    local l1: signer
+    local l2: vector<u8>
+    local l3: u64
+    local l4: event::EventHandle<CoinRegisterEvent>
+    local l5: event::EventHandle<KeyRotationEvent>
+    copy_loc l0
+    call create_signer::create_signer
+    st_loc l1
+    borrow_loc l0
+    call bcs::to_bytes<address>
+    // @5
+    st_loc l2
+    borrow_loc l2
+    vec_len <u8>
+    ld_u64 32
+    eq
+    // @10
+    br_false l0
+    ld_u64 0
+    st_loc l3
+    copy_loc l0
+    mut_borrow_loc l3
+    // @15
+    call guid::create
+    call event::new_event_handle<CoinRegisterEvent>
+    st_loc l4
+    move_loc l0
+    mut_borrow_loc l3
+    // @20
+    call guid::create
+    call event::new_event_handle<KeyRotationEvent>
+    st_loc l5
+    borrow_loc l1
+    move_loc l2
+    // @25
+    ld_u64 0
+    move_loc l3
+    move_loc l4
+    move_loc l5
+    call option::none<address>
+    // @30
+    pack CapabilityOffer<RotationCapability>
+    call option::none<address>
+    pack CapabilityOffer<SignerCapability>
+    pack Account
+    move_to Account
+    // @35
+    move_loc l1
+    ret
+l0: ld_u64 65540
+    abort
+
+// Function definition at index 6
+#[persistent] public fun create_authorized_signer(l0: &signer, l1: address): signer acquires Account
+    local l2: address
+    local l3: address
+    local l4: bool
+    copy_loc l1
+    st_loc l2
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    // @5
+    move_loc l2
+    exists Account
+    br_false l1
+    branch l2
+l2: copy_loc l1
+    // @10
+    borrow_global Account
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l3
+    // @15
+    borrow_field Account, signer_capability_offer
+    borrow_field CapabilityOffer<SignerCapability>, for
+    borrow_loc l3
+    call option::contains<address>
+    br_false l3
+    // @20
+    move_loc l1
+    call create_signer::create_signer
+    ret
+l3: ld_u64 393230
+    abort
+    // @25
+l1: move_loc l0
+    pop
+    ld_u64 393230
+    abort
+l0: ld_u64 91
+    // @30
+    call features::is_enabled
+    br_false l4
+    ld_true
+    st_loc l4
+l6: move_loc l4
+    // @35
+    br_false l5
+    branch l2
+l5: move_loc l0
+    pop
+    ld_u64 393218
+    // @40
+    abort
+l4: move_loc l2
+    exists Account
+    st_loc l4
+    branch l6
+
+// Function definition at index 7
+friend fun create_framework_reserved_account(l0: address): (signer, SignerCapability)
+    local l1: bool
+    local l2: bool
+    local l3: bool
+    local l4: bool
+    local l5: bool
+    local l6: bool
+    local l7: bool
+    local l8: bool
+    local l9: bool
+    local l10: address
+    local l11: signer
+    local l12: vector<u8>
+    local l13: u64
+    local l14: event::EventHandle<CoinRegisterEvent>
+    local l15: event::EventHandle<KeyRotationEvent>
+    local l16: SignerCapability
+    local l17: signer
+    copy_loc l0
+    ld_const<address> 1
+    eq
+    br_false l0
+    ld_true
+    // @5
+    st_loc l1
+l19: move_loc l1
+    br_false l1
+    ld_true
+    st_loc l2
+    // @10
+l18: move_loc l2
+    br_false l2
+    ld_true
+    st_loc l3
+l17: move_loc l3
+    // @15
+    br_false l3
+    ld_true
+    st_loc l4
+l16: move_loc l4
+    br_false l4
+    // @20
+    ld_true
+    st_loc l5
+l15: move_loc l5
+    br_false l5
+    ld_true
+    // @25
+    st_loc l6
+l14: move_loc l6
+    br_false l6
+    ld_true
+    st_loc l7
+    // @30
+l13: move_loc l7
+    br_false l7
+    ld_true
+    st_loc l8
+l12: move_loc l8
+    // @35
+    br_false l8
+    ld_true
+    st_loc l9
+l11: move_loc l9
+    br_false l9
+    // @40
+    copy_loc l0
+    st_loc l10
+    copy_loc l10
+    call create_signer::create_signer
+    st_loc l11
+    // @45
+    borrow_loc l10
+    call bcs::to_bytes<address>
+    st_loc l12
+    borrow_loc l12
+    vec_len <u8>
+    // @50
+    ld_u64 32
+    eq
+    br_false l10
+    ld_u64 0
+    st_loc l13
+    // @55
+    copy_loc l10
+    mut_borrow_loc l13
+    call guid::create
+    call event::new_event_handle<CoinRegisterEvent>
+    st_loc l14
+    // @60
+    move_loc l10
+    mut_borrow_loc l13
+    call guid::create
+    call event::new_event_handle<KeyRotationEvent>
+    st_loc l15
+    // @65
+    borrow_loc l11
+    move_loc l12
+    ld_u64 0
+    move_loc l13
+    move_loc l14
+    // @70
+    move_loc l15
+    call option::none<address>
+    pack CapabilityOffer<RotationCapability>
+    call option::none<address>
+    pack CapabilityOffer<SignerCapability>
+    // @75
+    pack Account
+    move_to Account
+    move_loc l11
+    move_loc l0
+    pack SignerCapability
+    // @80
+    ret
+l10: ld_u64 65540
+    abort
+l9: ld_u64 327691
+    abort
+    // @85
+l8: copy_loc l0
+    ld_const<address> 10
+    eq
+    st_loc l9
+    branch l11
+    // @90
+l7: copy_loc l0
+    ld_const<address> 9
+    eq
+    st_loc l8
+    branch l12
+    // @95
+l6: copy_loc l0
+    ld_const<address> 8
+    eq
+    st_loc l7
+    branch l13
+    // @100
+l5: copy_loc l0
+    ld_const<address> 7
+    eq
+    st_loc l6
+    branch l14
+    // @105
+l4: copy_loc l0
+    ld_const<address> 6
+    eq
+    st_loc l5
+    branch l15
+    // @110
+l3: copy_loc l0
+    ld_const<address> 5
+    eq
+    st_loc l4
+    branch l16
+    // @115
+l2: copy_loc l0
+    ld_const<address> 4
+    eq
+    st_loc l3
+    branch l17
+    // @120
+l1: copy_loc l0
+    ld_const<address> 3
+    eq
+    st_loc l2
+    branch l18
+    // @125
+l0: copy_loc l0
+    ld_const<address> 2
+    eq
+    st_loc l1
+    branch l19
+
+// Function definition at index 8
+#[persistent] public fun create_guid(l0: &signer): guid::GUID acquires Account
+    local l1: address
+    local l2: address
+    local l3: address
+    local l4: bool
+    local l5: bool
+    local l6: address
+    local l7: signer
+    local l8: vector<u8>
+    local l9: u64
+    local l10: event::EventHandle<CoinRegisterEvent>
+    local l11: event::EventHandle<KeyRotationEvent>
+    local l12: &mut Account
+    local l13: guid::GUID
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l1
+    copy_loc l1
+    // @5
+    st_loc l2
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    move_loc l2
+    // @10
+    st_loc l3
+    copy_loc l3
+    exists Account
+    br_false l1
+    branch l2
+    // @15
+l1: copy_loc l3
+    ld_const<address> 0
+    neq
+    br_false l3
+    copy_loc l3
+    // @20
+    ld_const<address> 1
+    neq
+    st_loc l4
+l9: move_loc l4
+    br_false l4
+    // @25
+    copy_loc l3
+    ld_const<address> 3
+    neq
+    st_loc l5
+l8: move_loc l5
+    // @30
+    br_false l5
+    move_loc l3
+    st_loc l6
+    copy_loc l6
+    call create_signer::create_signer
+    // @35
+    st_loc l7
+    borrow_loc l6
+    call bcs::to_bytes<address>
+    st_loc l8
+    borrow_loc l8
+    // @40
+    vec_len <u8>
+    ld_u64 32
+    eq
+    br_false l6
+    ld_u64 0
+    // @45
+    st_loc l9
+    copy_loc l6
+    mut_borrow_loc l9
+    call guid::create
+    call event::new_event_handle<CoinRegisterEvent>
+    // @50
+    st_loc l10
+    move_loc l6
+    mut_borrow_loc l9
+    call guid::create
+    call event::new_event_handle<KeyRotationEvent>
+    // @55
+    st_loc l11
+    borrow_loc l7
+    move_loc l8
+    ld_u64 0
+    move_loc l9
+    // @60
+    move_loc l10
+    move_loc l11
+    call option::none<address>
+    pack CapabilityOffer<RotationCapability>
+    call option::none<address>
+    // @65
+    pack CapabilityOffer<SignerCapability>
+    pack Account
+    move_to Account
+l2: copy_loc l1
+    mut_borrow_global Account
+    // @70
+    st_loc l12
+    move_loc l1
+    copy_loc l12
+    mut_borrow_field Account, guid_creation_num
+    call guid::create
+    // @75
+    st_loc l13
+    move_loc l12
+    borrow_field Account, guid_creation_num
+    read_ref
+    ld_u64 1125899906842624
+    // @80
+    lt
+    br_false l7
+    move_loc l13
+    ret
+l7: ld_u64 131092
+    // @85
+    abort
+l6: ld_u64 65540
+    abort
+l5: ld_u64 65541
+    abort
+    // @90
+l4: ld_false
+    st_loc l5
+    branch l8
+l3: ld_false
+    st_loc l4
+    // @95
+    branch l9
+l0: ld_u64 91
+    call features::is_enabled
+    br_false l10
+    ld_true
+    // @100
+    st_loc l4
+l12: move_loc l4
+    br_false l11
+    branch l2
+l11: ld_u64 393218
+    // @105
+    abort
+l10: move_loc l2
+    exists Account
+    st_loc l4
+    branch l12
+
+// Function definition at index 9
+#[persistent] public fun create_resource_account(l0: &signer, l1: vector<u8>): (signer, SignerCapability) acquires Account
+    local l2: address
+    local l3: vector<u8>
+    local l4: &mut vector<u8>
+    local l5: vector<u8>
+    local l6: u64
+    local l7: u64
+    local l8: address
+    local l9: address
+    local l10: bool
+    local l11: address
+    local l12: signer
+    local l13: address
+    local l14: address
+    local l15: vector<u8>
+    local l16: &mut Account
+    local l17: SignerCapability
+    local l18: signer
+    local l19: bool
+    local l20: address
+    local l21: signer
+    local l22: vector<u8>
+    local l23: u64
+    local l24: event::EventHandle<CoinRegisterEvent>
+    local l25: event::EventHandle<KeyRotationEvent>
+    local l26: &mut vector<u8>
+    local l27: vector<u8>
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l2
+    borrow_loc l2
+    // @5
+    call bcs::to_bytes<address>
+    st_loc l3
+    mut_borrow_loc l3
+    st_loc l4
+    move_loc l1
+    // @10
+    st_loc l5
+    copy_loc l4
+    freeze_ref
+    vec_len <u8>
+    st_loc l6
+    // @15
+    borrow_loc l5
+    vec_len <u8>
+    st_loc l7
+    mut_borrow_loc l5
+    ld_u64 0
+    // @20
+    move_loc l7
+    move_loc l4
+    move_loc l6
+    call vector::move_range<u8>
+    move_loc l5
+    // @25
+    vec_unpack <u8>, 0
+l20: mut_borrow_loc l3
+    ld_u8 255
+    vec_push_back <u8>
+    move_loc l3
+    // @30
+    call hash::sha3_256
+    call from_bcs::to_address
+    st_loc l8
+    copy_loc l8
+    st_loc l9
+    // @35
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    ld_true
+    st_loc l10
+    // @40
+l17: move_loc l10
+    br_false l1
+    copy_loc l8
+    exists Account
+    br_true l2
+    // @45
+    branch l3
+l2: copy_loc l8
+    borrow_global Account
+    borrow_field Account, signer_capability_offer
+    borrow_field CapabilityOffer<SignerCapability>, for
+    // @50
+    call option::is_none<address>
+    br_false l4
+    branch l3
+l3: copy_loc l8
+    st_loc l11
+    // @55
+    copy_loc l11
+    exists Account
+    br_false l5
+    move_loc l11
+    borrow_global Account
+    // @60
+    borrow_field Account, sequence_number
+    read_ref
+    st_loc l6
+l14: move_loc l6
+    ld_u64 0
+    // @65
+    eq
+    br_false l6
+    copy_loc l8
+    call create_signer::create_signer
+    st_loc l12
+    // @70
+l16: borrow_loc l12
+    call signer::borrow_address
+    read_ref
+    st_loc l13
+    copy_loc l13
+    // @75
+    st_loc l14
+    ld_u64 91
+    call features::is_enabled
+    br_false l7
+    move_loc l14
+    // @80
+    call create_account_if_does_not_exist
+l11: ld_const<vector<u8>> [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    st_loc l15
+    borrow_loc l15
+    vec_len <u8>
+    // @85
+    ld_u64 32
+    eq
+    br_false l8
+    move_loc l13
+    mut_borrow_global Account
+    // @90
+    st_loc l16
+    ld_const<vector<u8>> [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    move_loc l16
+    mut_borrow_field Account, authentication_key
+    write_ref
+    // @95
+    copy_loc l8
+    mut_borrow_global Account
+    st_loc l16
+    copy_loc l8
+    call option::some<address>
+    // @100
+    move_loc l16
+    mut_borrow_field Account, signer_capability_offer
+    mut_borrow_field CapabilityOffer<SignerCapability>, for
+    write_ref
+    move_loc l8
+    // @105
+    pack SignerCapability
+    st_loc l17
+    move_loc l12
+    move_loc l17
+    ret
+    // @110
+l8: ld_u64 65540
+    abort
+l7: call features::is_default_account_resource_enabled
+    br_false l9
+    ld_true
+    // @115
+    st_loc l19
+l12: move_loc l19
+    br_false l10
+    branch l11
+l10: ld_u64 393218
+    // @120
+    abort
+l9: move_loc l14
+    exists Account
+    st_loc l19
+    branch l12
+    // @125
+l6: ld_u64 196624
+    abort
+l5: ld_u64 91
+    call features::is_enabled
+    br_false l13
+    // @130
+    ld_u64 0
+    st_loc l6
+    branch l14
+l13: ld_u64 393218
+    abort
+    // @135
+l4: ld_u64 524303
+    abort
+l1: copy_loc l8
+    st_loc l20
+    copy_loc l20
+    // @140
+    call create_signer::create_signer
+    st_loc l21
+    borrow_loc l20
+    call bcs::to_bytes<address>
+    st_loc l22
+    // @145
+    borrow_loc l22
+    vec_len <u8>
+    ld_u64 32
+    eq
+    br_false l15
+    // @150
+    ld_u64 0
+    st_loc l23
+    copy_loc l20
+    mut_borrow_loc l23
+    call guid::create
+    // @155
+    call event::new_event_handle<CoinRegisterEvent>
+    st_loc l24
+    move_loc l20
+    mut_borrow_loc l23
+    call guid::create
+    // @160
+    call event::new_event_handle<KeyRotationEvent>
+    st_loc l25
+    borrow_loc l21
+    move_loc l22
+    ld_u64 0
+    // @165
+    move_loc l23
+    move_loc l24
+    move_loc l25
+    call option::none<address>
+    pack CapabilityOffer<RotationCapability>
+    // @170
+    call option::none<address>
+    pack CapabilityOffer<SignerCapability>
+    pack Account
+    move_to Account
+    move_loc l21
+    // @175
+    st_loc l12
+    branch l16
+l15: ld_u64 65540
+    abort
+l0: move_loc l9
+    // @180
+    exists Account
+    st_loc l10
+    branch l17
+    mut_borrow_loc l5
+    st_loc l26
+    // @185
+    copy_loc l26
+    freeze_ref
+    vec_len <u8>
+    st_loc l6
+    move_loc l26
+    // @190
+    ld_u64 0
+    move_loc l6
+    call vector::reverse_slice<u8>
+    move_loc l5
+    st_loc l27
+    // @195
+    borrow_loc l27
+    vec_len <u8>
+    st_loc l6
+l19: copy_loc l6
+    ld_u64 0
+    // @200
+    gt
+    br_false l18
+    copy_loc l4
+    mut_borrow_loc l27
+    vec_pop_back <u8>
+    // @205
+    vec_push_back <u8>
+    move_loc l6
+    ld_u64 1
+    sub
+    st_loc l6
+    // @210
+    branch l19
+l18: move_loc l4
+    pop
+    move_loc l27
+    vec_unpack <u8>, 0
+    // @215
+    branch l20
+
+// Function definition at index 10
+#[persistent] public fun create_resource_address(l0: &address, l1: vector<u8>): address
+    local l2: vector<u8>
+    local l3: &mut vector<u8>
+    local l4: vector<u8>
+    local l5: u64
+    local l6: u64
+    local l7: &mut vector<u8>
+    local l8: vector<u8>
+    move_loc l0
+    call bcs::to_bytes<address>
+    st_loc l2
+    mut_borrow_loc l2
+    st_loc l3
+    // @5
+    move_loc l1
+    st_loc l4
+    copy_loc l3
+    freeze_ref
+    vec_len <u8>
+    // @10
+    st_loc l5
+    borrow_loc l4
+    vec_len <u8>
+    st_loc l6
+    mut_borrow_loc l4
+    // @15
+    ld_u64 0
+    move_loc l6
+    move_loc l3
+    move_loc l5
+    call vector::move_range<u8>
+    // @20
+    move_loc l4
+    vec_unpack <u8>, 0
+l2: mut_borrow_loc l2
+    ld_u8 255
+    vec_push_back <u8>
+    // @25
+    move_loc l2
+    call hash::sha3_256
+    call from_bcs::to_address
+    ret
+    mut_borrow_loc l4
+    // @30
+    st_loc l7
+    copy_loc l7
+    freeze_ref
+    vec_len <u8>
+    st_loc l5
+    // @35
+    move_loc l7
+    ld_u64 0
+    move_loc l5
+    call vector::reverse_slice<u8>
+    move_loc l4
+    // @40
+    st_loc l8
+    borrow_loc l8
+    vec_len <u8>
+    st_loc l5
+l1: copy_loc l5
+    // @45
+    ld_u64 0
+    gt
+    br_false l0
+    copy_loc l3
+    mut_borrow_loc l8
+    // @50
+    vec_pop_back <u8>
+    vec_push_back <u8>
+    move_loc l5
+    ld_u64 1
+    sub
+    // @55
+    st_loc l5
+    branch l1
+l0: move_loc l3
+    pop
+    move_loc l8
+    // @60
+    vec_unpack <u8>, 0
+    branch l2
+
+// Function definition at index 11
+#[persistent] public fun create_signer_with_capability(l0: &SignerCapability): signer
+    move_loc l0
+    borrow_field SignerCapability, account
+    read_ref
+    call create_signer::create_signer
+    ret
+
+// Function definition at index 12
+#[persistent] public fun encrypted_dk_exists(l0: address): bool
+    move_loc l0
+    exists EncryptedDK
+    ret
+
+// Function definition at index 13
+#[persistent] public fun exists_at(l0: address): bool
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    ld_true
+    ret
+    // @5
+l0: move_loc l0
+    exists Account
+    ret
+
+// Function definition at index 14
+#[persistent] public fun get_authentication_key(l0: address): vector<u8> acquires Account
+    copy_loc l0
+    exists Account
+    br_false l0
+    move_loc l0
+    borrow_global Account
+    // @5
+    borrow_field Account, authentication_key
+    read_ref
+    ret
+l0: ld_u64 91
+    call features::is_enabled
+    // @10
+    br_false l1
+    borrow_loc l0
+    call bcs::to_bytes<address>
+    ret
+l1: ld_u64 393218
+    // @15
+    abort
+
+// Function definition at index 15
+#[persistent] public fun get_encrypted_dk(l0: address): EncryptedDK acquires EncryptedDK
+    copy_loc l0
+    exists EncryptedDK
+    br_false l0
+    move_loc l0
+    borrow_global EncryptedDK
+    // @5
+    read_ref
+    ret
+l0: ld_u64 393245
+    abort
+
+// Function definition at index 16
+#[persistent] public fun get_guid_next_creation_num(l0: address): u64 acquires Account
+    copy_loc l0
+    exists Account
+    br_false l0
+    move_loc l0
+    borrow_global Account
+    // @5
+    borrow_field Account, guid_creation_num
+    read_ref
+    ret
+l0: ld_u64 91
+    call features::is_enabled
+    // @10
+    br_false l1
+    ld_u64 0
+    ret
+l1: ld_u64 393218
+    abort
+
+// Function definition at index 17
+#[persistent] public fun get_rotation_capability_offer_for(l0: address): address acquires Account
+    local l1: address
+    local l2: &Account
+    local l3: bool
+    copy_loc l0
+    st_loc l1
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    // @5
+    move_loc l1
+    exists Account
+    br_false l1
+    branch l2
+l2: move_loc l0
+    // @10
+    borrow_global Account
+    st_loc l2
+    copy_loc l2
+    borrow_field Account, rotation_capability_offer
+    borrow_field CapabilityOffer<RotationCapability>, for
+    // @15
+    call option::is_some<address>
+    br_false l3
+    move_loc l2
+    borrow_field Account, rotation_capability_offer
+    borrow_field CapabilityOffer<RotationCapability>, for
+    // @20
+    call option::borrow<address>
+    read_ref
+    ret
+l3: move_loc l2
+    pop
+    // @25
+    ld_u64 393235
+    abort
+l1: ld_u64 393234
+    abort
+l0: ld_u64 91
+    // @30
+    call features::is_enabled
+    br_false l4
+    ld_true
+    st_loc l3
+l6: move_loc l3
+    // @35
+    br_false l5
+    branch l2
+l5: ld_u64 393218
+    abort
+l4: move_loc l1
+    // @40
+    exists Account
+    st_loc l3
+    branch l6
+
+// Function definition at index 18
+#[persistent] public fun get_sequence_number(l0: address): u64 acquires Account
+    copy_loc l0
+    exists Account
+    br_false l0
+    move_loc l0
+    borrow_global Account
+    // @5
+    borrow_field Account, sequence_number
+    read_ref
+    ret
+l0: ld_u64 91
+    call features::is_enabled
+    // @10
+    br_false l1
+    ld_u64 0
+    ret
+l1: ld_u64 393218
+    abort
+
+// Function definition at index 19
+#[persistent] public fun get_signer_capability_address(l0: &SignerCapability): address
+    move_loc l0
+    borrow_field SignerCapability, account
+    read_ref
+    ret
+
+// Function definition at index 20
+#[persistent] public fun get_signer_capability_offer_for(l0: address): address acquires Account
+    local l1: address
+    local l2: &Account
+    local l3: bool
+    copy_loc l0
+    st_loc l1
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    // @5
+    move_loc l1
+    exists Account
+    br_false l1
+    branch l2
+l2: move_loc l0
+    // @10
+    borrow_global Account
+    st_loc l2
+    copy_loc l2
+    borrow_field Account, signer_capability_offer
+    borrow_field CapabilityOffer<SignerCapability>, for
+    // @15
+    call option::is_some<address>
+    br_false l3
+    move_loc l2
+    borrow_field Account, signer_capability_offer
+    borrow_field CapabilityOffer<SignerCapability>, for
+    // @20
+    call option::borrow<address>
+    read_ref
+    ret
+l3: move_loc l2
+    pop
+    // @25
+    ld_u64 393235
+    abort
+l1: ld_u64 393235
+    abort
+l0: ld_u64 91
+    // @30
+    call features::is_enabled
+    br_false l4
+    ld_true
+    st_loc l3
+l6: move_loc l3
+    // @35
+    br_false l5
+    branch l2
+l5: ld_u64 393218
+    abort
+l4: move_loc l1
+    // @40
+    exists Account
+    st_loc l3
+    branch l6
+
+// Function definition at index 21
+#[persistent] public fun grant_key_offering_permission(l0: &signer, l1: &signer)
+    ld_u64 851998
+    move_loc l0
+    pop
+    move_loc l1
+    pop
+    // @5
+    abort
+
+// Function definition at index 22
+#[persistent] public fun grant_key_rotation_permission(l0: &signer, l1: &signer)
+    ld_u64 851998
+    move_loc l0
+    pop
+    move_loc l1
+    pop
+    // @5
+    abort
+
+// Function definition at index 23
+friend fun increment_sequence_number(l0: address) acquires Account
+    local l1: address
+    local l2: address
+    local l3: bool
+    local l4: bool
+    local l5: address
+    local l6: signer
+    local l7: vector<u8>
+    local l8: u64
+    local l9: &mut u64
+    local l10: event::EventHandle<CoinRegisterEvent>
+    local l11: event::EventHandle<KeyRotationEvent>
+    local l12: &mut u64
+    copy_loc l0
+    st_loc l1
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    // @5
+    move_loc l1
+    st_loc l2
+    copy_loc l2
+    exists Account
+    br_false l1
+    // @10
+    branch l2
+l1: copy_loc l2
+    ld_const<address> 0
+    neq
+    br_false l3
+    // @15
+    copy_loc l2
+    ld_const<address> 1
+    neq
+    st_loc l3
+l9: move_loc l3
+    // @20
+    br_false l4
+    copy_loc l2
+    ld_const<address> 3
+    neq
+    st_loc l4
+    // @25
+l8: move_loc l4
+    br_false l5
+    move_loc l2
+    st_loc l5
+    copy_loc l5
+    // @30
+    call create_signer::create_signer
+    st_loc l6
+    borrow_loc l5
+    call bcs::to_bytes<address>
+    st_loc l7
+    // @35
+    borrow_loc l7
+    vec_len <u8>
+    ld_u64 32
+    eq
+    br_false l6
+    // @40
+    ld_u64 0
+    st_loc l8
+    copy_loc l5
+    mut_borrow_loc l8
+    call guid::create
+    // @45
+    call event::new_event_handle<CoinRegisterEvent>
+    st_loc l10
+    move_loc l5
+    mut_borrow_loc l8
+    call guid::create
+    // @50
+    call event::new_event_handle<KeyRotationEvent>
+    st_loc l11
+    borrow_loc l6
+    move_loc l7
+    ld_u64 0
+    // @55
+    move_loc l8
+    move_loc l10
+    move_loc l11
+    call option::none<address>
+    pack CapabilityOffer<RotationCapability>
+    // @60
+    call option::none<address>
+    pack CapabilityOffer<SignerCapability>
+    pack Account
+    move_to Account
+l2: move_loc l0
+    // @65
+    mut_borrow_global Account
+    mut_borrow_field Account, sequence_number
+    st_loc l9
+    copy_loc l9
+    read_ref
+    // @70
+    cast_u128
+    ld_u128 18446744073709551615
+    lt
+    br_false l7
+    move_loc l9
+    // @75
+    st_loc l12
+    copy_loc l12
+    read_ref
+    ld_u64 1
+    add
+    // @80
+    move_loc l12
+    write_ref
+    ret
+l7: move_loc l9
+    pop
+    // @85
+    ld_u64 131075
+    abort
+l6: ld_u64 65540
+    abort
+l5: ld_u64 65541
+    // @90
+    abort
+l4: ld_false
+    st_loc l4
+    branch l8
+l3: ld_false
+    // @95
+    st_loc l3
+    branch l9
+l0: ld_u64 91
+    call features::is_enabled
+    br_false l10
+    // @100
+    ld_true
+    st_loc l3
+l12: move_loc l3
+    br_false l11
+    branch l2
+    // @105
+l11: ld_u64 393218
+    abort
+l10: move_loc l1
+    exists Account
+    st_loc l3
+    // @110
+    branch l12
+
+// Function definition at index 24
+#[persistent] public fun is_rotation_capability_offered(l0: address): bool acquires Account
+    local l1: address
+    local l2: bool
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    copy_loc l0
+    exists Account
+    // @5
+    br_false l1
+    branch l2
+l1: ld_false
+    ret
+l2: move_loc l0
+    // @10
+    borrow_global Account
+    borrow_field Account, rotation_capability_offer
+    borrow_field CapabilityOffer<RotationCapability>, for
+    call option::is_some<address>
+    ret
+    // @15
+l0: copy_loc l0
+    st_loc l1
+    ld_u64 91
+    call features::is_enabled
+    br_false l3
+    // @20
+    ld_true
+    st_loc l2
+l5: move_loc l2
+    br_false l4
+    branch l2
+    // @25
+l4: ld_u64 393218
+    abort
+l3: move_loc l1
+    exists Account
+    st_loc l2
+    // @30
+    branch l5
+
+// Function definition at index 25
+#[persistent] public fun is_signer_capability_offered(l0: address): bool acquires Account
+    local l1: address
+    local l2: bool
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    copy_loc l0
+    exists Account
+    // @5
+    br_false l1
+    branch l2
+l1: ld_false
+    ret
+l2: move_loc l0
+    // @10
+    borrow_global Account
+    borrow_field Account, signer_capability_offer
+    borrow_field CapabilityOffer<SignerCapability>, for
+    call option::is_some<address>
+    ret
+    // @15
+l0: copy_loc l0
+    st_loc l1
+    ld_u64 91
+    call features::is_enabled
+    br_false l3
+    // @20
+    ld_true
+    st_loc l2
+l5: move_loc l2
+    br_false l4
+    branch l2
+    // @25
+l4: ld_u64 393218
+    abort
+l3: move_loc l1
+    exists Account
+    st_loc l2
+    // @30
+    branch l5
+
+// Function definition at index 26
+#[persistent] entry public fun offer_rotation_capability(l0: &signer, l1: vector<u8>, l2: u8, l3: vector<u8>, l4: address) acquires Account
+    local l5: bool
+    local l6: address
+    local l7: address
+    local l8: address
+    local l9: bool
+    local l10: bool
+    local l11: address
+    local l12: bool
+    local l13: &mut Account
+    local l14: RotationCapabilityOfferProofChallengeV2
+    local l15: ed25519::UnvalidatedPublicKey
+    local l16: vector<u8>
+    local l17: ed25519::Signature
+    local l18: multi_ed25519::UnvalidatedPublicKey
+    local l19: multi_ed25519::Signature
+    call transaction_context::is_orderless_txn
+    br_true l0
+    call transaction_context::is_multisig_payload_txn
+    not
+    st_loc l5
+    // @5
+l23: move_loc l5
+    br_false l1
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    // @10
+    st_loc l6
+    copy_loc l6
+    st_loc l7
+    ld_u64 91
+    call features::is_enabled
+    // @15
+    br_false l2
+    move_loc l7
+    st_loc l8
+    copy_loc l8
+    exists Account
+    // @20
+    br_false l3
+    branch l4
+l3: copy_loc l8
+    ld_const<address> 0
+    neq
+    // @25
+    br_false l5
+    copy_loc l8
+    ld_const<address> 1
+    neq
+    st_loc l9
+    // @30
+l19: move_loc l9
+    br_false l6
+    copy_loc l8
+    ld_const<address> 3
+    neq
+    // @35
+    st_loc l10
+l18: move_loc l10
+    br_false l7
+    move_loc l8
+    call create_account_unchecked
+    // @40
+    pop
+l4: copy_loc l4
+    st_loc l11
+    ld_u64 91
+    call features::is_enabled
+    // @45
+    br_false l8
+    ld_true
+    st_loc l12
+l17: move_loc l12
+    br_false l9
+    // @50
+    copy_loc l6
+    mut_borrow_global Account
+    st_loc l13
+    call chain_id::get
+    copy_loc l13
+    // @55
+    borrow_field Account, sequence_number
+    read_ref
+    move_loc l6
+    copy_loc l4
+    pack RotationCapabilityOfferProofChallengeV2
+    // @60
+    st_loc l14
+    copy_loc l2
+    ld_u8 0
+    eq
+    br_false l10
+    // @65
+    move_loc l3
+    call ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l15
+    borrow_loc l15
+    call ed25519::unvalidated_public_key_to_authentication_key
+    // @70
+    st_loc l16
+    copy_loc l13
+    borrow_field Account, authentication_key
+    read_ref
+    move_loc l16
+    // @75
+    eq
+    br_false l11
+    move_loc l1
+    call ed25519::new_signature_from_bytes
+    st_loc l17
+    // @80
+    borrow_loc l17
+    borrow_loc l15
+    move_loc l14
+    call ed25519::signature_verify_strict_t<RotationCapabilityOfferProofChallengeV2>
+    br_false l12
+    // @85
+    branch l13
+l13: move_loc l13
+    mut_borrow_field Account, rotation_capability_offer
+    mut_borrow_field CapabilityOffer<RotationCapability>, for
+    move_loc l4
+    // @90
+    call option::swap_or_fill<address>
+    pop
+    ret
+l12: move_loc l13
+    pop
+    // @95
+    ld_u64 65544
+    abort
+l11: move_loc l13
+    pop
+    ld_u64 65543
+    // @100
+    abort
+l10: move_loc l2
+    ld_u8 1
+    eq
+    br_false l14
+    // @105
+    move_loc l3
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l18
+    borrow_loc l18
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    // @110
+    st_loc l16
+    copy_loc l13
+    borrow_field Account, authentication_key
+    read_ref
+    move_loc l16
+    // @115
+    eq
+    br_false l15
+    move_loc l1
+    call multi_ed25519::new_signature_from_bytes
+    st_loc l19
+    // @120
+    borrow_loc l19
+    borrow_loc l18
+    move_loc l14
+    call multi_ed25519::signature_verify_strict_t<RotationCapabilityOfferProofChallengeV2>
+    br_false l16
+    // @125
+    branch l13
+l16: move_loc l13
+    pop
+    ld_u64 65544
+    abort
+    // @130
+l15: move_loc l13
+    pop
+    ld_u64 65543
+    abort
+l14: move_loc l13
+    // @135
+    pop
+    ld_u64 65548
+    abort
+l9: ld_u64 393218
+    abort
+    // @140
+l8: move_loc l11
+    exists Account
+    st_loc l12
+    branch l17
+l7: ld_u64 65541
+    // @145
+    abort
+l6: ld_false
+    st_loc l10
+    branch l18
+l5: ld_false
+    // @150
+    st_loc l9
+    branch l19
+l2: ld_u64 91
+    call features::is_enabled
+    br_false l20
+    // @155
+    ld_true
+    st_loc l9
+l22: move_loc l9
+    br_false l21
+    branch l4
+    // @160
+l21: ld_u64 393218
+    abort
+l20: move_loc l7
+    exists Account
+    st_loc l9
+    // @165
+    branch l22
+l1: move_loc l0
+    pop
+    ld_u64 196639
+    abort
+    // @170
+l0: ld_false
+    st_loc l5
+    branch l23
+
+// Function definition at index 27
+#[persistent] entry public fun offer_signer_capability(l0: &signer, l1: vector<u8>, l2: u8, l3: vector<u8>, l4: address) acquires Account
+    local l5: bool
+    local l6: address
+    local l7: address
+    local l8: address
+    local l9: bool
+    local l10: bool
+    local l11: address
+    local l12: bool
+    local l13: address
+    local l14: u64
+    local l15: address
+    local l16: SignerCapabilityOfferProofChallengeV2
+    local l17: u8
+    local l18: vector<u8>
+    local l19: vector<u8>
+    local l20: vector<u8>
+    local l21: ed25519::UnvalidatedPublicKey
+    local l22: vector<u8>
+    local l23: ed25519::Signature
+    local l24: multi_ed25519::UnvalidatedPublicKey
+    local l25: multi_ed25519::Signature
+    call transaction_context::is_orderless_txn
+    br_true l0
+    call transaction_context::is_multisig_payload_txn
+    not
+    st_loc l5
+    // @5
+l26: move_loc l5
+    br_false l1
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    // @10
+    st_loc l6
+    copy_loc l6
+    st_loc l7
+    ld_u64 91
+    call features::is_enabled
+    // @15
+    br_false l2
+    move_loc l7
+    st_loc l8
+    copy_loc l8
+    exists Account
+    // @20
+    br_false l3
+    branch l4
+l3: copy_loc l8
+    ld_const<address> 0
+    neq
+    // @25
+    br_false l5
+    copy_loc l8
+    ld_const<address> 1
+    neq
+    st_loc l9
+    // @30
+l22: move_loc l9
+    br_false l6
+    copy_loc l8
+    ld_const<address> 3
+    neq
+    // @35
+    st_loc l10
+l21: move_loc l10
+    br_false l7
+    move_loc l8
+    call create_account_unchecked
+    // @40
+    pop
+l4: copy_loc l4
+    st_loc l11
+    ld_u64 91
+    call features::is_enabled
+    // @45
+    br_false l8
+    ld_true
+    st_loc l12
+l20: move_loc l12
+    br_false l9
+    // @50
+    copy_loc l6
+    st_loc l13
+    copy_loc l13
+    exists Account
+    br_false l10
+    // @55
+    move_loc l13
+    borrow_global Account
+    borrow_field Account, sequence_number
+    read_ref
+    st_loc l14
+    // @60
+l19: copy_loc l6
+    st_loc l15
+    move_loc l14
+    move_loc l15
+    copy_loc l4
+    // @65
+    pack SignerCapabilityOfferProofChallengeV2
+    st_loc l16
+    copy_loc l6
+    move_loc l2
+    st_loc l17
+    // @70
+    move_loc l3
+    st_loc l18
+    move_loc l1
+    st_loc l19
+    call get_authentication_key
+    // @75
+    st_loc l20
+    copy_loc l17
+    ld_u8 0
+    eq
+    br_false l11
+    // @80
+    move_loc l18
+    call ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l21
+    borrow_loc l21
+    call ed25519::unvalidated_public_key_to_authentication_key
+    // @85
+    st_loc l22
+    move_loc l20
+    move_loc l22
+    eq
+    br_false l12
+    // @90
+    move_loc l19
+    call ed25519::new_signature_from_bytes
+    st_loc l23
+    borrow_loc l23
+    borrow_loc l21
+    // @95
+    move_loc l16
+    call ed25519::signature_verify_strict_t<SignerCapabilityOfferProofChallengeV2>
+    br_false l13
+    branch l14
+l14: move_loc l6
+    // @100
+    mut_borrow_global Account
+    mut_borrow_field Account, signer_capability_offer
+    mut_borrow_field CapabilityOffer<SignerCapability>, for
+    move_loc l4
+    call option::swap_or_fill<address>
+    // @105
+    pop
+    ret
+l13: ld_u64 65544
+    abort
+l12: ld_u64 65543
+    // @110
+    abort
+l11: move_loc l17
+    ld_u8 1
+    eq
+    br_false l15
+    // @115
+    move_loc l18
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l24
+    borrow_loc l24
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    // @120
+    st_loc l22
+    move_loc l20
+    move_loc l22
+    eq
+    br_false l16
+    // @125
+    move_loc l19
+    call multi_ed25519::new_signature_from_bytes
+    st_loc l25
+    borrow_loc l25
+    borrow_loc l24
+    // @130
+    move_loc l16
+    call multi_ed25519::signature_verify_strict_t<SignerCapabilityOfferProofChallengeV2>
+    br_false l17
+    branch l14
+l17: ld_u64 65544
+    // @135
+    abort
+l16: ld_u64 65543
+    abort
+l15: ld_u64 65548
+    abort
+    // @140
+l10: ld_u64 91
+    call features::is_enabled
+    br_false l18
+    ld_u64 0
+    st_loc l14
+    // @145
+    branch l19
+l18: ld_u64 393218
+    abort
+l9: ld_u64 393218
+    abort
+    // @150
+l8: move_loc l11
+    exists Account
+    st_loc l12
+    branch l20
+l7: ld_u64 65541
+    // @155
+    abort
+l6: ld_false
+    st_loc l10
+    branch l21
+l5: ld_false
+    // @160
+    st_loc l9
+    branch l22
+l2: ld_u64 91
+    call features::is_enabled
+    br_false l23
+    // @165
+    ld_true
+    st_loc l9
+l25: move_loc l9
+    br_false l24
+    branch l4
+    // @170
+l24: ld_u64 393218
+    abort
+l23: move_loc l7
+    exists Account
+    st_loc l9
+    // @175
+    branch l25
+l1: move_loc l0
+    pop
+    ld_u64 196639
+    abort
+    // @180
+l0: ld_false
+    st_loc l5
+    branch l26
+
+// Function definition at index 28
+#[persistent] public fun originating_address(l0: address): option::Option<address> acquires OriginatingAddress
+    local l1: &table::Table<address, address>
+    ld_const<address> 1
+    borrow_global OriginatingAddress
+    borrow_field OriginatingAddress, address_map
+    st_loc l1
+    copy_loc l1
+    // @5
+    copy_loc l0
+    call table::contains<address, address>
+    br_false l0
+    move_loc l1
+    move_loc l0
+    // @10
+    call table::borrow<address, address>
+    read_ref
+    call option::some<address>
+    ret
+l0: move_loc l1
+    // @15
+    pop
+    call option::none<address>
+    ret
+
+// Function definition at index 29
+friend fun register_coin<T0>(l0: address)
+    move_loc l0
+    call type_info::type_of<T0>
+    pack CoinRegister
+    call event::emit<CoinRegister>
+    ret
+
+// Function definition at index 30
+#[persistent] entry public fun revoke_any_rotation_capability(l0: &signer) acquires Account
+    local l1: address
+    local l2: bool
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l1
+    ld_u64 91
+    // @5
+    call features::is_enabled
+    br_false l0
+    move_loc l1
+    exists Account
+    br_false l1
+    // @10
+    branch l2
+l2: move_loc l0
+    call signer::borrow_address
+    read_ref
+    mut_borrow_global Account
+    // @15
+    mut_borrow_field Account, rotation_capability_offer
+    mut_borrow_field CapabilityOffer<RotationCapability>, for
+    call option::extract<address>
+    pop
+    ret
+    // @20
+l1: move_loc l0
+    pop
+    ld_u64 393234
+    abort
+l0: ld_u64 91
+    // @25
+    call features::is_enabled
+    br_false l3
+    ld_true
+    st_loc l2
+l5: move_loc l2
+    // @30
+    br_false l4
+    branch l2
+l4: move_loc l0
+    pop
+    ld_u64 393218
+    // @35
+    abort
+l3: move_loc l1
+    exists Account
+    st_loc l2
+    branch l5
+
+// Function definition at index 31
+#[persistent] entry public fun revoke_any_signer_capability(l0: &signer) acquires Account
+    local l1: address
+    local l2: bool
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l1
+    ld_u64 91
+    // @5
+    call features::is_enabled
+    br_false l0
+    move_loc l1
+    exists Account
+    br_false l1
+    // @10
+    branch l2
+l2: move_loc l0
+    call signer::borrow_address
+    read_ref
+    mut_borrow_global Account
+    // @15
+    mut_borrow_field Account, signer_capability_offer
+    mut_borrow_field CapabilityOffer<SignerCapability>, for
+    call option::extract<address>
+    pop
+    ret
+    // @20
+l1: move_loc l0
+    pop
+    ld_u64 393230
+    abort
+l0: ld_u64 91
+    // @25
+    call features::is_enabled
+    br_false l3
+    ld_true
+    st_loc l2
+l5: move_loc l2
+    // @30
+    br_false l4
+    branch l2
+l4: move_loc l0
+    pop
+    ld_u64 393218
+    // @35
+    abort
+l3: move_loc l1
+    exists Account
+    st_loc l2
+    branch l5
+
+// Function definition at index 32
+#[persistent] entry public fun revoke_rotation_capability(l0: &signer, l1: address) acquires Account
+    local l2: address
+    local l3: bool
+    local l4: &signer
+    local l5: address
+    local l6: address
+    local l7: address
+    local l8: bool
+    copy_loc l1
+    st_loc l2
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    // @5
+    ld_true
+    st_loc l3
+l15: move_loc l3
+    br_false l1
+    copy_loc l0
+    // @10
+    call signer::borrow_address
+    read_ref
+    st_loc l5
+    copy_loc l5
+    st_loc l6
+    // @15
+    ld_u64 91
+    call features::is_enabled
+    br_false l2
+    move_loc l6
+    exists Account
+    // @20
+    br_false l3
+    branch l4
+l4: move_loc l5
+    borrow_global Account
+    borrow_field Account, rotation_capability_offer
+    // @25
+    borrow_field CapabilityOffer<RotationCapability>, for
+    borrow_loc l1
+    call option::contains<address>
+    br_false l5
+    move_loc l0
+    // @30
+    st_loc l4
+    copy_loc l4
+    call signer::borrow_address
+    read_ref
+    st_loc l7
+    // @35
+    ld_u64 91
+    call features::is_enabled
+    br_false l6
+    move_loc l7
+    exists Account
+    // @40
+    br_false l7
+    branch l8
+l8: move_loc l4
+    call signer::borrow_address
+    read_ref
+    // @45
+    mut_borrow_global Account
+    mut_borrow_field Account, rotation_capability_offer
+    mut_borrow_field CapabilityOffer<RotationCapability>, for
+    call option::extract<address>
+    pop
+    // @50
+    ret
+l7: move_loc l4
+    pop
+    ld_u64 393234
+    abort
+    // @55
+l6: ld_u64 91
+    call features::is_enabled
+    br_false l9
+    ld_true
+    st_loc l8
+    // @60
+l11: move_loc l8
+    br_false l10
+    branch l8
+l10: move_loc l4
+    pop
+    // @65
+    ld_u64 393218
+    abort
+l9: move_loc l7
+    exists Account
+    st_loc l8
+    // @70
+    branch l11
+l5: move_loc l0
+    pop
+    ld_u64 393234
+    abort
+    // @75
+l3: move_loc l0
+    pop
+    ld_u64 393234
+    abort
+l2: ld_u64 91
+    // @80
+    call features::is_enabled
+    br_false l12
+    ld_true
+    st_loc l8
+l14: move_loc l8
+    // @85
+    br_false l13
+    branch l4
+l13: move_loc l0
+    pop
+    ld_u64 393218
+    // @90
+    abort
+l12: move_loc l6
+    exists Account
+    st_loc l8
+    branch l14
+    // @95
+l1: move_loc l0
+    pop
+    ld_u64 393218
+    abort
+l0: move_loc l2
+    // @100
+    exists Account
+    st_loc l3
+    branch l15
+
+// Function definition at index 33
+#[persistent] entry public fun revoke_signer_capability(l0: &signer, l1: address) acquires Account
+    local l2: address
+    local l3: bool
+    local l4: &signer
+    local l5: address
+    local l6: address
+    local l7: address
+    local l8: bool
+    copy_loc l1
+    st_loc l2
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    // @5
+    ld_true
+    st_loc l3
+l15: move_loc l3
+    br_false l1
+    copy_loc l0
+    // @10
+    call signer::borrow_address
+    read_ref
+    st_loc l5
+    copy_loc l5
+    st_loc l6
+    // @15
+    ld_u64 91
+    call features::is_enabled
+    br_false l2
+    move_loc l6
+    exists Account
+    // @20
+    br_false l3
+    branch l4
+l4: move_loc l5
+    borrow_global Account
+    borrow_field Account, signer_capability_offer
+    // @25
+    borrow_field CapabilityOffer<SignerCapability>, for
+    borrow_loc l1
+    call option::contains<address>
+    br_false l5
+    move_loc l0
+    // @30
+    st_loc l4
+    copy_loc l4
+    call signer::borrow_address
+    read_ref
+    st_loc l7
+    // @35
+    ld_u64 91
+    call features::is_enabled
+    br_false l6
+    move_loc l7
+    exists Account
+    // @40
+    br_false l7
+    branch l8
+l8: move_loc l4
+    call signer::borrow_address
+    read_ref
+    // @45
+    mut_borrow_global Account
+    mut_borrow_field Account, signer_capability_offer
+    mut_borrow_field CapabilityOffer<SignerCapability>, for
+    call option::extract<address>
+    pop
+    // @50
+    ret
+l7: move_loc l4
+    pop
+    ld_u64 393230
+    abort
+    // @55
+l6: ld_u64 91
+    call features::is_enabled
+    br_false l9
+    ld_true
+    st_loc l8
+    // @60
+l11: move_loc l8
+    br_false l10
+    branch l8
+l10: move_loc l4
+    pop
+    // @65
+    ld_u64 393218
+    abort
+l9: move_loc l7
+    exists Account
+    st_loc l8
+    // @70
+    branch l11
+l5: move_loc l0
+    pop
+    ld_u64 393230
+    abort
+    // @75
+l3: move_loc l0
+    pop
+    ld_u64 393230
+    abort
+l2: ld_u64 91
+    // @80
+    call features::is_enabled
+    br_false l12
+    ld_true
+    st_loc l8
+l14: move_loc l8
+    // @85
+    br_false l13
+    branch l4
+l13: move_loc l0
+    pop
+    ld_u64 393218
+    // @90
+    abort
+l12: move_loc l6
+    exists Account
+    st_loc l8
+    branch l14
+    // @95
+l1: move_loc l0
+    pop
+    ld_u64 393218
+    abort
+l0: move_loc l2
+    // @100
+    exists Account
+    st_loc l3
+    branch l15
+
+// Function definition at index 34
+#[persistent] entry public fun rotate_authentication_key(l0: &signer, l1: u8, l2: vector<u8>, l3: u8, l4: vector<u8>, l5: vector<u8>, l6: vector<u8>) acquires Account, OriginatingAddress
+    local l7: bool
+    local l8: address
+    local l9: address
+    local l10: &mut Account
+    local l11: vector<u8>
+    local l12: ed25519::UnvalidatedPublicKey
+    local l13: vector<u8>
+    local l14: address
+    local l15: RotationProofChallenge
+    local l16: u8
+    local l17: vector<u8>
+    local l18: &RotationProofChallenge
+    local l19: ed25519::UnvalidatedPublicKey
+    local l20: ed25519::Signature
+    local l21: u8
+    local l22: vector<u8>
+    local l23: vector<u8>
+    local l24: &RotationProofChallenge
+    local l25: ed25519::UnvalidatedPublicKey
+    local l26: ed25519::Signature
+    local l27: vector<u8>
+    local l28: &mut Account
+    local l29: vector<u8>
+    local l30: &mut table::Table<address, address>
+    local l31: address
+    local l32: address
+    local l33: &mut vector<u8>
+    local l34: vector<u8>
+    local l35: u64
+    local l36: multi_ed25519::UnvalidatedPublicKey
+    local l37: multi_ed25519::Signature
+    local l38: multi_ed25519::UnvalidatedPublicKey
+    local l39: multi_ed25519::Signature
+    local l40: multi_ed25519::UnvalidatedPublicKey
+    local l41: bool
+    call transaction_context::is_orderless_txn
+    br_true l0
+    call transaction_context::is_multisig_payload_txn
+    not
+    st_loc l7
+    // @5
+l29: move_loc l7
+    br_false l1
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    // @10
+    st_loc l8
+    copy_loc l8
+    st_loc l9
+    ld_u64 91
+    call features::is_enabled
+    // @15
+    br_false l2
+    move_loc l9
+    call create_account_if_does_not_exist
+l27: copy_loc l8
+    mut_borrow_global Account
+    // @20
+    st_loc l10
+    copy_loc l10
+    borrow_field Account, authentication_key
+    read_ref
+    st_loc l11
+    // @25
+    copy_loc l1
+    ld_u8 0
+    eq
+    br_false l3
+    copy_loc l2
+    // @30
+    call ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l12
+    borrow_loc l12
+    call ed25519::unvalidated_public_key_to_authentication_key
+    st_loc l13
+    // @35
+    copy_loc l10
+    borrow_field Account, authentication_key
+    read_ref
+    move_loc l13
+    eq
+    // @40
+    br_false l4
+    branch l5
+l5: copy_loc l10
+    borrow_field Account, authentication_key
+    read_ref
+    // @45
+    call from_bcs::to_address
+    st_loc l14
+    copy_loc l10
+    borrow_field Account, sequence_number
+    read_ref
+    // @50
+    copy_loc l8
+    move_loc l14
+    copy_loc l4
+    pack RotationProofChallenge
+    st_loc l15
+    // @55
+    move_loc l1
+    st_loc l16
+    move_loc l2
+    st_loc l13
+    move_loc l5
+    // @60
+    st_loc l17
+    borrow_loc l15
+    st_loc l18
+    copy_loc l16
+    ld_u8 0
+    // @65
+    eq
+    br_false l6
+    move_loc l13
+    call ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l19
+    // @70
+    move_loc l17
+    call ed25519::new_signature_from_bytes
+    st_loc l20
+    borrow_loc l20
+    borrow_loc l19
+    // @75
+    move_loc l18
+    read_ref
+    call ed25519::signature_verify_strict_t<RotationProofChallenge>
+    br_false l7
+    borrow_loc l19
+    // @80
+    call ed25519::unvalidated_public_key_to_authentication_key
+    pop
+l22: copy_loc l3
+    st_loc l21
+    copy_loc l4
+    // @85
+    st_loc l22
+    copy_loc l6
+    st_loc l23
+    borrow_loc l15
+    st_loc l24
+    // @90
+    copy_loc l21
+    ld_u8 0
+    eq
+    br_false l8
+    move_loc l22
+    // @95
+    call ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l25
+    move_loc l23
+    call ed25519::new_signature_from_bytes
+    st_loc l26
+    // @100
+    borrow_loc l26
+    borrow_loc l25
+    move_loc l24
+    read_ref
+    call ed25519::signature_verify_strict_t<RotationProofChallenge>
+    // @105
+    br_false l9
+    borrow_loc l25
+    call ed25519::unvalidated_public_key_to_authentication_key
+    st_loc l27
+l19: copy_loc l8
+    // @110
+    st_loc l14
+    move_loc l10
+    st_loc l28
+    copy_loc l27
+    st_loc l29
+    // @115
+    ld_const<address> 1
+    mut_borrow_global OriginatingAddress
+    mut_borrow_field OriginatingAddress, address_map
+    st_loc l30
+    copy_loc l28
+    // @120
+    borrow_field Account, authentication_key
+    read_ref
+    call from_bcs::to_address
+    st_loc l31
+    copy_loc l29
+    // @125
+    call from_bcs::to_address
+    st_loc l32
+    copy_loc l32
+    copy_loc l31
+    neq
+    // @130
+    br_false l10
+    copy_loc l30
+    freeze_ref
+    copy_loc l31
+    call table::contains<address, address>
+    // @135
+    br_true l11
+    branch l12
+l11: copy_loc l14
+    copy_loc l30
+    move_loc l31
+    // @140
+    call table::remove<address, address>
+    eq
+    br_false l13
+    branch l12
+l12: copy_loc l30
+    // @145
+    freeze_ref
+    copy_loc l32
+    call table::contains<address, address>
+    br_true l14
+    move_loc l30
+    // @150
+    move_loc l32
+    copy_loc l14
+    call table::add<address, address>
+    move_loc l14
+    copy_loc l28
+    // @155
+    borrow_field Account, authentication_key
+    read_ref
+    copy_loc l29
+    pack KeyRotation
+    call event::emit<KeyRotation>
+    // @160
+    move_loc l28
+    mut_borrow_field Account, authentication_key
+    st_loc l33
+    move_loc l29
+    move_loc l33
+    // @165
+    write_ref
+    copy_loc l3
+    ld_u8 0
+    eq
+    br_false l15
+    // @170
+    ld_const<vector<u8>> [128, 0, 0, 0]
+    st_loc l34
+l16: move_loc l8
+    move_loc l34
+    move_loc l3
+    // @175
+    move_loc l4
+    move_loc l11
+    move_loc l27
+    pack KeyRotationToPublicKey
+    call event::emit<KeyRotationToPublicKey>
+    // @180
+    ret
+l15: borrow_loc l6
+    vec_len <u8>
+    st_loc l35
+    borrow_loc l6
+    // @185
+    copy_loc l35
+    ld_u64 4
+    sub
+    move_loc l35
+    call vector::slice<u8>
+    // @190
+    st_loc l34
+    branch l16
+l14: move_loc l28
+    pop
+    move_loc l30
+    // @195
+    pop
+    ld_u64 65557
+    abort
+l13: move_loc l28
+    pop
+    // @200
+    move_loc l30
+    pop
+    ld_u64 393229
+    abort
+l10: move_loc l28
+    // @205
+    pop
+    move_loc l30
+    pop
+    ld_u64 65558
+    abort
+    // @210
+l9: move_loc l10
+    pop
+    ld_u64 65544
+    abort
+l8: move_loc l21
+    // @215
+    ld_u8 1
+    eq
+    br_false l17
+    move_loc l22
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    // @220
+    st_loc l36
+    move_loc l23
+    call multi_ed25519::new_signature_from_bytes
+    st_loc l37
+    borrow_loc l37
+    // @225
+    borrow_loc l36
+    move_loc l24
+    read_ref
+    call multi_ed25519::signature_verify_strict_t<RotationProofChallenge>
+    br_false l18
+    // @230
+    borrow_loc l36
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    st_loc l27
+    branch l19
+l18: move_loc l10
+    // @235
+    pop
+    ld_u64 65544
+    abort
+l17: move_loc l10
+    pop
+    // @240
+    move_loc l24
+    pop
+    ld_u64 65548
+    abort
+l7: move_loc l10
+    // @245
+    pop
+    ld_u64 65544
+    abort
+l6: move_loc l16
+    ld_u8 1
+    // @250
+    eq
+    br_false l20
+    move_loc l13
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l38
+    // @255
+    move_loc l17
+    call multi_ed25519::new_signature_from_bytes
+    st_loc l39
+    borrow_loc l39
+    borrow_loc l38
+    // @260
+    move_loc l18
+    read_ref
+    call multi_ed25519::signature_verify_strict_t<RotationProofChallenge>
+    br_false l21
+    borrow_loc l38
+    // @265
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    pop
+    branch l22
+l21: move_loc l10
+    pop
+    // @270
+    ld_u64 65544
+    abort
+l20: move_loc l10
+    pop
+    move_loc l18
+    // @275
+    pop
+    ld_u64 65548
+    abort
+l4: move_loc l10
+    pop
+    // @280
+    ld_u64 262151
+    abort
+l3: copy_loc l1
+    ld_u8 1
+    eq
+    // @285
+    br_false l23
+    copy_loc l2
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l40
+    borrow_loc l40
+    // @290
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    st_loc l13
+    copy_loc l10
+    borrow_field Account, authentication_key
+    read_ref
+    // @295
+    move_loc l13
+    eq
+    br_false l24
+    branch l5
+l24: move_loc l10
+    // @300
+    pop
+    ld_u64 262151
+    abort
+l23: move_loc l10
+    pop
+    // @305
+    ld_u64 65548
+    abort
+l2: call features::is_default_account_resource_enabled
+    br_false l25
+    ld_true
+    // @310
+    st_loc l41
+l28: move_loc l41
+    br_false l26
+    branch l27
+l26: ld_u64 393218
+    // @315
+    abort
+l25: move_loc l9
+    exists Account
+    st_loc l41
+    branch l28
+    // @320
+l1: move_loc l0
+    pop
+    ld_u64 196639
+    abort
+l0: ld_false
+    // @325
+    st_loc l7
+    branch l29
+
+// Function definition at index 35
+entry fun rotate_authentication_key_call(l0: &signer, l1: vector<u8>) acquires Account
+    local l2: vector<u8>
+    local l3: address
+    local l4: address
+    local l5: address
+    local l6: bool
+    local l7: bool
+    local l8: address
+    local l9: signer
+    local l10: vector<u8>
+    local l11: u64
+    local l12: event::EventHandle<CoinRegisterEvent>
+    local l13: event::EventHandle<KeyRotationEvent>
+    local l14: &mut vector<u8>
+    move_loc l1
+    st_loc l2
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    // @5
+    st_loc l3
+    copy_loc l3
+    st_loc l4
+    ld_u64 91
+    call features::is_enabled
+    // @10
+    br_false l0
+    move_loc l4
+    st_loc l5
+    copy_loc l5
+    exists Account
+    // @15
+    br_false l1
+    branch l2
+l1: copy_loc l5
+    ld_const<address> 0
+    neq
+    // @20
+    br_false l3
+    copy_loc l5
+    ld_const<address> 1
+    neq
+    st_loc l6
+    // @25
+l9: move_loc l6
+    br_false l4
+    copy_loc l5
+    ld_const<address> 3
+    neq
+    // @30
+    st_loc l7
+l8: move_loc l7
+    br_false l5
+    move_loc l5
+    st_loc l8
+    // @35
+    copy_loc l8
+    call create_signer::create_signer
+    st_loc l9
+    borrow_loc l8
+    call bcs::to_bytes<address>
+    // @40
+    st_loc l10
+    borrow_loc l10
+    vec_len <u8>
+    ld_u64 32
+    eq
+    // @45
+    br_false l6
+    ld_u64 0
+    st_loc l11
+    copy_loc l8
+    mut_borrow_loc l11
+    // @50
+    call guid::create
+    call event::new_event_handle<CoinRegisterEvent>
+    st_loc l12
+    move_loc l8
+    mut_borrow_loc l11
+    // @55
+    call guid::create
+    call event::new_event_handle<KeyRotationEvent>
+    st_loc l13
+    borrow_loc l9
+    move_loc l10
+    // @60
+    ld_u64 0
+    move_loc l11
+    move_loc l12
+    move_loc l13
+    call option::none<address>
+    // @65
+    pack CapabilityOffer<RotationCapability>
+    call option::none<address>
+    pack CapabilityOffer<SignerCapability>
+    pack Account
+    move_to Account
+    // @70
+l2: borrow_loc l2
+    vec_len <u8>
+    ld_u64 32
+    eq
+    br_false l7
+    // @75
+    move_loc l3
+    mut_borrow_global Account
+    mut_borrow_field Account, authentication_key
+    st_loc l14
+    move_loc l2
+    // @80
+    move_loc l14
+    write_ref
+    ret
+l7: ld_u64 65540
+    abort
+    // @85
+l6: ld_u64 4
+    call error::invalid_argument
+    abort
+l5: ld_u64 65541
+    abort
+    // @90
+l4: ld_false
+    st_loc l7
+    branch l8
+l3: ld_false
+    st_loc l6
+    // @95
+    branch l9
+l0: ld_u64 91
+    call features::is_enabled
+    br_false l10
+    ld_true
+    // @100
+    st_loc l6
+l12: move_loc l6
+    br_false l11
+    branch l2
+l11: ld_u64 393218
+    // @105
+    abort
+l10: move_loc l4
+    exists Account
+    st_loc l6
+    branch l12
+
+// Function definition at index 36
+entry fun rotate_authentication_key_from_public_key(l0: &signer, l1: u8, l2: vector<u8>) acquires Account
+    local l3: address
+    local l4: vector<u8>
+    local l5: ed25519::UnvalidatedPublicKey
+    local l6: vector<u8>
+    local l7: vector<u8>
+    local l8: &signer
+    local l9: multi_ed25519::UnvalidatedPublicKey
+    local l10: single_key::AnyPublicKey
+    local l11: vector<u8>
+    local l12: multi_key::MultiKey
+    local l13: vector<u8>
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l3
+    copy_loc l3
+    // @5
+    borrow_global Account
+    borrow_field Account, authentication_key
+    read_ref
+    st_loc l4
+    copy_loc l1
+    // @10
+    ld_u8 0
+    eq
+    br_false l0
+    copy_loc l2
+    call ed25519::new_unvalidated_public_key_from_bytes
+    // @15
+    st_loc l5
+    borrow_loc l5
+    call ed25519::unvalidated_public_key_to_authentication_key
+    st_loc l6
+l2: move_loc l0
+    // @20
+    copy_loc l6
+    call rotate_authentication_key_internal
+    move_loc l3
+    ld_const<vector<u8>> [0, 0, 0, 0]
+    move_loc l1
+    // @25
+    move_loc l2
+    move_loc l4
+    move_loc l6
+    pack KeyRotationToPublicKey
+    call event::emit<KeyRotationToPublicKey>
+    // @30
+    ret
+l0: copy_loc l1
+    ld_u8 1
+    eq
+    br_false l1
+    // @35
+    copy_loc l2
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l9
+    borrow_loc l9
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    // @40
+    st_loc l6
+    branch l2
+l1: copy_loc l1
+    ld_u8 2
+    eq
+    // @45
+    br_false l3
+    copy_loc l2
+    call single_key::new_public_key_from_bytes
+    st_loc l10
+    borrow_loc l10
+    // @50
+    call bcs::to_bytes<single_key::AnyPublicKey>
+    st_loc l11
+    mut_borrow_loc l11
+    ld_u8 2
+    vec_push_back <u8>
+    // @55
+    move_loc l11
+    call hash::sha3_256
+    st_loc l6
+    branch l2
+l3: copy_loc l1
+    // @60
+    ld_u8 3
+    eq
+    br_false l4
+    copy_loc l2
+    call multi_key::new_public_key_from_bytes
+    // @65
+    st_loc l12
+    borrow_loc l12
+    call bcs::to_bytes<multi_key::MultiKey>
+    st_loc l13
+    mut_borrow_loc l13
+    // @70
+    ld_u8 3
+    vec_push_back <u8>
+    move_loc l13
+    call hash::sha3_256
+    st_loc l6
+    // @75
+    branch l2
+l4: move_loc l0
+    pop
+    ld_u64 65560
+    abort
+
+// Function definition at index 37
+friend fun rotate_authentication_key_internal(l0: &signer, l1: vector<u8>) acquires Account
+    local l2: address
+    local l3: address
+    local l4: address
+    local l5: bool
+    local l6: bool
+    local l7: address
+    local l8: signer
+    local l9: vector<u8>
+    local l10: u64
+    local l11: event::EventHandle<CoinRegisterEvent>
+    local l12: event::EventHandle<KeyRotationEvent>
+    local l13: &mut vector<u8>
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l2
+    copy_loc l2
+    // @5
+    st_loc l3
+    ld_u64 91
+    call features::is_enabled
+    br_false l0
+    move_loc l3
+    // @10
+    st_loc l4
+    copy_loc l4
+    exists Account
+    br_false l1
+    branch l2
+    // @15
+l1: copy_loc l4
+    ld_const<address> 0
+    neq
+    br_false l3
+    copy_loc l4
+    // @20
+    ld_const<address> 1
+    neq
+    st_loc l5
+l9: move_loc l5
+    br_false l4
+    // @25
+    copy_loc l4
+    ld_const<address> 3
+    neq
+    st_loc l6
+l8: move_loc l6
+    // @30
+    br_false l5
+    move_loc l4
+    st_loc l7
+    copy_loc l7
+    call create_signer::create_signer
+    // @35
+    st_loc l8
+    borrow_loc l7
+    call bcs::to_bytes<address>
+    st_loc l9
+    borrow_loc l9
+    // @40
+    vec_len <u8>
+    ld_u64 32
+    eq
+    br_false l6
+    ld_u64 0
+    // @45
+    st_loc l10
+    copy_loc l7
+    mut_borrow_loc l10
+    call guid::create
+    call event::new_event_handle<CoinRegisterEvent>
+    // @50
+    st_loc l11
+    move_loc l7
+    mut_borrow_loc l10
+    call guid::create
+    call event::new_event_handle<KeyRotationEvent>
+    // @55
+    st_loc l12
+    borrow_loc l8
+    move_loc l9
+    ld_u64 0
+    move_loc l10
+    // @60
+    move_loc l11
+    move_loc l12
+    call option::none<address>
+    pack CapabilityOffer<RotationCapability>
+    call option::none<address>
+    // @65
+    pack CapabilityOffer<SignerCapability>
+    pack Account
+    move_to Account
+l2: borrow_loc l1
+    vec_len <u8>
+    // @70
+    ld_u64 32
+    eq
+    br_false l7
+    move_loc l2
+    mut_borrow_global Account
+    // @75
+    mut_borrow_field Account, authentication_key
+    st_loc l13
+    move_loc l1
+    move_loc l13
+    write_ref
+    // @80
+    ret
+l7: ld_u64 65540
+    abort
+l6: ld_u64 65540
+    abort
+    // @85
+l5: ld_u64 65541
+    abort
+l4: ld_false
+    st_loc l6
+    branch l8
+    // @90
+l3: ld_false
+    st_loc l5
+    branch l9
+l0: ld_u64 91
+    call features::is_enabled
+    // @95
+    br_false l10
+    ld_true
+    st_loc l5
+l12: move_loc l5
+    br_false l11
+    // @100
+    branch l2
+l11: ld_u64 393218
+    abort
+l10: move_loc l3
+    exists Account
+    // @105
+    st_loc l5
+    branch l12
+
+// Function definition at index 38
+#[persistent] entry public fun rotate_authentication_key_with_rotation_capability(l0: &signer, l1: address, l2: u8, l3: vector<u8>, l4: vector<u8>) acquires Account, OriginatingAddress
+    local l5: bool
+    local l6: address
+    local l7: &Account
+    local l8: vector<u8>
+    local l9: address
+    local l10: address
+    local l11: u64
+    local l12: address
+    local l13: address
+    local l14: RotationProofChallenge
+    local l15: u8
+    local l16: vector<u8>
+    local l17: vector<u8>
+    local l18: &RotationProofChallenge
+    local l19: ed25519::UnvalidatedPublicKey
+    local l20: ed25519::Signature
+    local l21: vector<u8>
+    local l22: &mut Account
+    local l23: vector<u8>
+    local l24: &mut table::Table<address, address>
+    local l25: address
+    local l26: &mut vector<u8>
+    local l27: vector<u8>
+    local l28: u64
+    local l29: multi_ed25519::UnvalidatedPublicKey
+    local l30: multi_ed25519::Signature
+    call transaction_context::is_orderless_txn
+    br_true l0
+    call transaction_context::is_multisig_payload_txn
+    not
+    st_loc l5
+    // @5
+l19: move_loc l5
+    br_false l1
+    copy_loc l1
+    exists Account
+    br_false l2
+    // @10
+    move_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l6
+    copy_loc l1
+    // @15
+    borrow_global Account
+    st_loc l7
+    copy_loc l7
+    borrow_field Account, authentication_key
+    read_ref
+    // @20
+    st_loc l8
+    copy_loc l7
+    borrow_field Account, rotation_capability_offer
+    borrow_field CapabilityOffer<RotationCapability>, for
+    borrow_loc l6
+    // @25
+    call option::contains<address>
+    br_false l3
+    move_loc l7
+    borrow_field Account, authentication_key
+    read_ref
+    // @30
+    call from_bcs::to_address
+    st_loc l9
+    move_loc l6
+    st_loc l10
+    copy_loc l10
+    // @35
+    exists Account
+    br_false l4
+    move_loc l10
+    borrow_global Account
+    borrow_field Account, sequence_number
+    // @40
+    read_ref
+    st_loc l11
+l18: copy_loc l1
+    move_loc l9
+    st_loc l12
+    // @45
+    st_loc l13
+    move_loc l11
+    move_loc l13
+    move_loc l12
+    copy_loc l3
+    // @50
+    pack RotationProofChallenge
+    st_loc l14
+    copy_loc l2
+    st_loc l15
+    copy_loc l3
+    // @55
+    st_loc l16
+    copy_loc l4
+    st_loc l17
+    borrow_loc l14
+    st_loc l18
+    // @60
+    copy_loc l15
+    ld_u8 0
+    eq
+    br_false l5
+    move_loc l16
+    // @65
+    call ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l19
+    move_loc l17
+    call ed25519::new_signature_from_bytes
+    st_loc l20
+    // @70
+    borrow_loc l20
+    borrow_loc l19
+    move_loc l18
+    read_ref
+    call ed25519::signature_verify_strict_t<RotationProofChallenge>
+    // @75
+    br_false l6
+    borrow_loc l19
+    call ed25519::unvalidated_public_key_to_authentication_key
+    st_loc l21
+l16: copy_loc l1
+    // @80
+    mut_borrow_global Account
+    st_loc l22
+    copy_loc l1
+    st_loc l13
+    copy_loc l21
+    // @85
+    st_loc l23
+    ld_const<address> 1
+    mut_borrow_global OriginatingAddress
+    mut_borrow_field OriginatingAddress, address_map
+    st_loc l24
+    // @90
+    copy_loc l22
+    borrow_field Account, authentication_key
+    read_ref
+    call from_bcs::to_address
+    st_loc l12
+    // @95
+    copy_loc l23
+    call from_bcs::to_address
+    st_loc l25
+    copy_loc l25
+    copy_loc l12
+    // @100
+    neq
+    br_false l7
+    copy_loc l24
+    freeze_ref
+    copy_loc l12
+    // @105
+    call table::contains<address, address>
+    br_true l8
+    branch l9
+l8: copy_loc l13
+    copy_loc l24
+    // @110
+    move_loc l12
+    call table::remove<address, address>
+    eq
+    br_false l10
+    branch l9
+    // @115
+l9: copy_loc l24
+    freeze_ref
+    copy_loc l25
+    call table::contains<address, address>
+    br_true l11
+    // @120
+    move_loc l24
+    move_loc l25
+    copy_loc l13
+    call table::add<address, address>
+    move_loc l13
+    // @125
+    copy_loc l22
+    borrow_field Account, authentication_key
+    read_ref
+    copy_loc l23
+    pack KeyRotation
+    // @130
+    call event::emit<KeyRotation>
+    move_loc l22
+    mut_borrow_field Account, authentication_key
+    st_loc l26
+    move_loc l23
+    // @135
+    move_loc l26
+    write_ref
+    copy_loc l2
+    ld_u8 0
+    eq
+    // @140
+    br_false l12
+    ld_const<vector<u8>> [128, 0, 0, 0]
+    st_loc l27
+l13: move_loc l1
+    move_loc l27
+    // @145
+    move_loc l2
+    move_loc l3
+    move_loc l8
+    move_loc l21
+    pack KeyRotationToPublicKey
+    // @150
+    call event::emit<KeyRotationToPublicKey>
+    ret
+l12: borrow_loc l4
+    vec_len <u8>
+    st_loc l28
+    // @155
+    borrow_loc l4
+    copy_loc l28
+    ld_u64 4
+    sub
+    move_loc l28
+    // @160
+    call vector::slice<u8>
+    st_loc l27
+    branch l13
+l11: move_loc l22
+    pop
+    // @165
+    move_loc l24
+    pop
+    ld_u64 65557
+    abort
+l10: move_loc l22
+    // @170
+    pop
+    move_loc l24
+    pop
+    ld_u64 393229
+    abort
+    // @175
+l7: move_loc l22
+    pop
+    move_loc l24
+    pop
+    ld_u64 65558
+    // @180
+    abort
+l6: ld_u64 65544
+    abort
+l5: move_loc l15
+    ld_u8 1
+    // @185
+    eq
+    br_false l14
+    move_loc l16
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l29
+    // @190
+    move_loc l17
+    call multi_ed25519::new_signature_from_bytes
+    st_loc l30
+    borrow_loc l30
+    borrow_loc l29
+    // @195
+    move_loc l18
+    read_ref
+    call multi_ed25519::signature_verify_strict_t<RotationProofChallenge>
+    br_false l15
+    borrow_loc l29
+    // @200
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    st_loc l21
+    branch l16
+l15: ld_u64 65544
+    abort
+    // @205
+l14: move_loc l18
+    pop
+    ld_u64 65548
+    abort
+l4: ld_u64 91
+    // @210
+    call features::is_enabled
+    br_false l17
+    ld_u64 0
+    st_loc l11
+    branch l18
+    // @215
+l17: ld_u64 393218
+    abort
+l3: move_loc l7
+    pop
+    ld_u64 393234
+    // @220
+    abort
+l2: move_loc l0
+    pop
+    ld_u64 393233
+    abort
+    // @225
+l1: move_loc l0
+    pop
+    ld_u64 196639
+    abort
+l0: ld_false
+    // @230
+    st_loc l5
+    branch l19
+
+// Function definition at index 39
+entry fun set_originating_address(l0: &signer)
+    ld_u64 196635
+    move_loc l0
+    pop
+    abort
+
+// Function definition at index 40
+fun update_auth_key_and_originating_address_table(l0: address, l1: &mut Account, l2: vector<u8>) acquires OriginatingAddress
+    local l3: &mut table::Table<address, address>
+    local l4: address
+    local l5: address
+    local l6: &mut vector<u8>
+    ld_const<address> 1
+    mut_borrow_global OriginatingAddress
+    mut_borrow_field OriginatingAddress, address_map
+    st_loc l3
+    copy_loc l1
+    // @5
+    borrow_field Account, authentication_key
+    read_ref
+    call from_bcs::to_address
+    st_loc l4
+    copy_loc l2
+    // @10
+    call from_bcs::to_address
+    st_loc l5
+    copy_loc l5
+    copy_loc l4
+    neq
+    // @15
+    br_false l0
+    copy_loc l3
+    freeze_ref
+    copy_loc l4
+    call table::contains<address, address>
+    // @20
+    br_true l1
+    branch l2
+l1: copy_loc l0
+    copy_loc l3
+    move_loc l4
+    // @25
+    call table::remove<address, address>
+    eq
+    br_false l3
+    branch l2
+l2: copy_loc l3
+    // @30
+    freeze_ref
+    copy_loc l5
+    call table::contains<address, address>
+    br_true l4
+    move_loc l3
+    // @35
+    move_loc l5
+    copy_loc l0
+    call table::add<address, address>
+    move_loc l0
+    copy_loc l1
+    // @40
+    borrow_field Account, authentication_key
+    read_ref
+    copy_loc l2
+    pack KeyRotation
+    call event::emit<KeyRotation>
+    // @45
+    move_loc l1
+    mut_borrow_field Account, authentication_key
+    st_loc l6
+    move_loc l2
+    move_loc l6
+    // @50
+    write_ref
+    ret
+l4: move_loc l1
+    pop
+    move_loc l3
+    // @55
+    pop
+    ld_u64 65557
+    abort
+l3: move_loc l1
+    pop
+    // @60
+    move_loc l3
+    pop
+    ld_u64 393229
+    abort
+l0: move_loc l1
+    // @65
+    pop
+    move_loc l3
+    pop
+    ld_u64 65558
+    abort
+
+// Function definition at index 41
+entry fun upsert_ed25519_backup_key_and_encrypt_dk(l0: &signer, l1: vector<u8>, l2: vector<u8>, l3: vector<u8>, l4: vector<u8>) acquires Account, EncryptedDK
+    local l5: &signer
+    local l6: bool
+    local l7: single_key::AnyPublicKey
+    local l8: &signer
+    local l9: address
+    local l10: &mut Account
+    local l11: vector<u8>
+    local l12: vector<u8>
+    local l13: address
+    local l14: RotationProofChallenge
+    local l15: vector<u8>
+    local l16: vector<u8>
+    local l17: &RotationProofChallenge
+    local l18: ed25519::UnvalidatedPublicKey
+    local l19: ed25519::Signature
+    local l20: single_key::AnyPublicKey
+    local l21: multi_key::MultiKey
+    local l22: vector<u8>
+    local l23: vector<u8>
+    local l24: vector<u8>
+    local l25: &mut vector<u8>
+    local l26: multi_ed25519::UnvalidatedPublicKey
+    local l27: multi_ed25519::Signature
+    copy_loc l0
+    st_loc l5
+    call transaction_context::is_orderless_txn
+    br_true l0
+    call transaction_context::is_multisig_payload_txn
+    // @5
+    not
+    st_loc l6
+l10: move_loc l6
+    br_false l1
+    move_loc l1
+    // @10
+    call single_key::new_public_key_from_bytes
+    st_loc l7
+    borrow_loc l7
+    call single_key::is_keyless_or_federated_keyless_public_key
+    br_false l2
+    // @15
+    copy_loc l5
+    call signer::borrow_address
+    read_ref
+    st_loc l9
+    copy_loc l9
+    // @20
+    mut_borrow_global Account
+    st_loc l10
+    copy_loc l10
+    borrow_field Account, authentication_key
+    read_ref
+    // @25
+    st_loc l11
+    borrow_loc l9
+    call bcs::to_bytes<address>
+    borrow_loc l7
+    call bcs::to_bytes<single_key::AnyPublicKey>
+    // @30
+    st_loc l12
+    mut_borrow_loc l12
+    ld_u8 2
+    vec_push_back <u8>
+    move_loc l12
+    // @35
+    call hash::sha3_256
+    eq
+    br_false l3
+    copy_loc l11
+    call from_bcs::to_address
+    // @40
+    st_loc l13
+    move_loc l10
+    borrow_field Account, sequence_number
+    read_ref
+    copy_loc l9
+    // @45
+    move_loc l13
+    copy_loc l2
+    pack RotationProofChallenge
+    st_loc l14
+    copy_loc l2
+    // @50
+    st_loc l15
+    move_loc l3
+    st_loc l16
+    borrow_loc l14
+    st_loc l17
+    // @55
+    move_loc l15
+    call ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l18
+    move_loc l16
+    call ed25519::new_signature_from_bytes
+    // @60
+    st_loc l19
+    borrow_loc l19
+    borrow_loc l18
+    move_loc l17
+    read_ref
+    // @65
+    call ed25519::signature_verify_strict_t<RotationProofChallenge>
+    br_false l4
+    borrow_loc l18
+    call ed25519::unvalidated_public_key_to_authentication_key
+    pop
+    // @70
+l9: move_loc l2
+    call ed25519::new_unvalidated_public_key_from_bytes
+    call single_key::from_ed25519_public_key_unvalidated
+    st_loc l20
+    move_loc l7
+    // @75
+    move_loc l20
+    vec_pack <single_key::AnyPublicKey>, 2
+    ld_u8 1
+    call multi_key::new_multi_key_from_single_keys
+    st_loc l21
+    // @80
+    borrow_loc l21
+    call bcs::to_bytes<multi_key::MultiKey>
+    st_loc l22
+    mut_borrow_loc l22
+    ld_u8 3
+    // @85
+    vec_push_back <u8>
+    move_loc l22
+    call hash::sha3_256
+    st_loc l23
+    move_loc l5
+    // @90
+    copy_loc l23
+    call rotate_authentication_key_call
+    move_loc l9
+    ld_const<vector<u8>> [192, 0, 0, 0]
+    ld_u8 3
+    // @95
+    borrow_loc l21
+    call bcs::to_bytes<multi_key::MultiKey>
+    move_loc l11
+    move_loc l23
+    pack KeyRotationToPublicKey
+    // @100
+    call event::emit<KeyRotationToPublicKey>
+    move_loc l0
+    st_loc l8
+    move_loc l4
+    st_loc l24
+    // @105
+    borrow_loc l24
+    vec_len <u8>
+    ld_u64 128
+    le
+    br_false l5
+    // @110
+    copy_loc l8
+    call signer::borrow_address
+    read_ref
+    st_loc l13
+    copy_loc l13
+    // @115
+    exists EncryptedDK
+    br_true l6
+    move_loc l8
+    move_loc l24
+    pack_variant EncryptedDK, V1
+    // @120
+    move_to EncryptedDK
+    ret
+l6: move_loc l8
+    pop
+    move_loc l13
+    // @125
+    mut_borrow_global EncryptedDK
+    mut_borrow_variant_field EncryptedDK, V1::ciphertext
+    st_loc l25
+    move_loc l24
+    move_loc l25
+    // @130
+    write_ref
+    ret
+l5: move_loc l8
+    pop
+    ld_u64 65564
+    // @135
+    abort
+l4: move_loc l0
+    pop
+    move_loc l5
+    pop
+    // @140
+    ld_u64 65544
+    abort
+    branch l7
+    move_loc l15
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    // @145
+    st_loc l26
+    move_loc l16
+    call multi_ed25519::new_signature_from_bytes
+    st_loc l27
+    borrow_loc l27
+    // @150
+    borrow_loc l26
+    move_loc l17
+    read_ref
+    call multi_ed25519::signature_verify_strict_t<RotationProofChallenge>
+    br_false l8
+    // @155
+    borrow_loc l26
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    pop
+    branch l9
+l8: move_loc l0
+    // @160
+    pop
+    move_loc l5
+    pop
+    ld_u64 65544
+    abort
+    // @165
+l7: move_loc l0
+    pop
+    move_loc l5
+    pop
+    move_loc l17
+    // @170
+    pop
+    ld_u64 65548
+    abort
+l3: move_loc l0
+    pop
+    // @175
+    move_loc l5
+    pop
+    move_loc l10
+    pop
+    ld_u64 65562
+    // @180
+    abort
+l2: move_loc l0
+    pop
+    move_loc l5
+    pop
+    // @185
+    ld_u64 65561
+    abort
+l1: move_loc l0
+    pop
+    move_loc l5
+    // @190
+    pop
+    ld_u64 196639
+    abort
+l0: ld_false
+    st_loc l6
+    // @195
+    branch l10
+
+// Function definition at index 42
+entry fun upsert_ed25519_backup_key_on_keyless_account(l0: &signer, l1: vector<u8>, l2: vector<u8>, l3: vector<u8>) acquires Account
+    local l4: bool
+    local l5: single_key::AnyPublicKey
+    local l6: address
+    local l7: &mut Account
+    local l8: vector<u8>
+    local l9: vector<u8>
+    local l10: address
+    local l11: RotationProofChallenge
+    local l12: vector<u8>
+    local l13: vector<u8>
+    local l14: &RotationProofChallenge
+    local l15: ed25519::UnvalidatedPublicKey
+    local l16: ed25519::Signature
+    local l17: single_key::AnyPublicKey
+    local l18: multi_key::MultiKey
+    local l19: vector<u8>
+    local l20: vector<u8>
+    local l21: vector<u8>
+    local l22: &signer
+    local l23: multi_ed25519::UnvalidatedPublicKey
+    local l24: multi_ed25519::Signature
+    call transaction_context::is_orderless_txn
+    br_true l0
+    call transaction_context::is_multisig_payload_txn
+    not
+    st_loc l4
+    // @5
+l8: move_loc l4
+    br_false l1
+    move_loc l1
+    call single_key::new_public_key_from_bytes
+    st_loc l5
+    // @10
+    borrow_loc l5
+    call single_key::is_keyless_or_federated_keyless_public_key
+    br_false l2
+    copy_loc l0
+    call signer::borrow_address
+    // @15
+    read_ref
+    st_loc l6
+    copy_loc l6
+    mut_borrow_global Account
+    st_loc l7
+    // @20
+    copy_loc l7
+    borrow_field Account, authentication_key
+    read_ref
+    st_loc l8
+    borrow_loc l6
+    // @25
+    call bcs::to_bytes<address>
+    borrow_loc l5
+    call bcs::to_bytes<single_key::AnyPublicKey>
+    st_loc l9
+    mut_borrow_loc l9
+    // @30
+    ld_u8 2
+    vec_push_back <u8>
+    move_loc l9
+    call hash::sha3_256
+    eq
+    // @35
+    br_false l3
+    copy_loc l8
+    call from_bcs::to_address
+    st_loc l10
+    move_loc l7
+    // @40
+    borrow_field Account, sequence_number
+    read_ref
+    copy_loc l6
+    move_loc l10
+    copy_loc l2
+    // @45
+    pack RotationProofChallenge
+    st_loc l11
+    copy_loc l2
+    st_loc l12
+    move_loc l3
+    // @50
+    st_loc l13
+    borrow_loc l11
+    st_loc l14
+    move_loc l12
+    call ed25519::new_unvalidated_public_key_from_bytes
+    // @55
+    st_loc l15
+    move_loc l13
+    call ed25519::new_signature_from_bytes
+    st_loc l16
+    borrow_loc l16
+    // @60
+    borrow_loc l15
+    move_loc l14
+    read_ref
+    call ed25519::signature_verify_strict_t<RotationProofChallenge>
+    br_false l4
+    // @65
+    borrow_loc l15
+    call ed25519::unvalidated_public_key_to_authentication_key
+    pop
+l7: move_loc l2
+    call ed25519::new_unvalidated_public_key_from_bytes
+    // @70
+    call single_key::from_ed25519_public_key_unvalidated
+    st_loc l17
+    move_loc l5
+    move_loc l17
+    vec_pack <single_key::AnyPublicKey>, 2
+    // @75
+    ld_u8 1
+    call multi_key::new_multi_key_from_single_keys
+    st_loc l18
+    borrow_loc l18
+    call bcs::to_bytes<multi_key::MultiKey>
+    // @80
+    st_loc l19
+    mut_borrow_loc l19
+    ld_u8 3
+    vec_push_back <u8>
+    move_loc l19
+    // @85
+    call hash::sha3_256
+    st_loc l20
+    move_loc l0
+    copy_loc l20
+    call rotate_authentication_key_internal
+    // @90
+    move_loc l6
+    ld_const<vector<u8>> [192, 0, 0, 0]
+    ld_u8 3
+    borrow_loc l18
+    call bcs::to_bytes<multi_key::MultiKey>
+    // @95
+    move_loc l8
+    move_loc l20
+    pack KeyRotationToPublicKey
+    call event::emit<KeyRotationToPublicKey>
+    ret
+    // @100
+l4: move_loc l0
+    pop
+    ld_u64 65544
+    abort
+    branch l5
+    // @105
+    move_loc l12
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l23
+    move_loc l13
+    call multi_ed25519::new_signature_from_bytes
+    // @110
+    st_loc l24
+    borrow_loc l24
+    borrow_loc l23
+    move_loc l14
+    read_ref
+    // @115
+    call multi_ed25519::signature_verify_strict_t<RotationProofChallenge>
+    br_false l6
+    borrow_loc l23
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    pop
+    // @120
+    branch l7
+l6: move_loc l0
+    pop
+    ld_u64 65544
+    abort
+    // @125
+l5: move_loc l0
+    pop
+    move_loc l14
+    pop
+    ld_u64 65548
+    // @130
+    abort
+l3: move_loc l0
+    pop
+    move_loc l7
+    pop
+    // @135
+    ld_u64 65562
+    abort
+l2: move_loc l0
+    pop
+    ld_u64 65561
+    // @140
+    abort
+l1: move_loc l0
+    pop
+    ld_u64 196639
+    abort
+    // @145
+l0: ld_false
+    st_loc l4
+    branch l8
+
+// Function definition at index 43
+friend fun upsert_encrypted_dk(l0: &signer, l1: vector<u8>) acquires EncryptedDK
+    local l2: address
+    local l3: &mut vector<u8>
+    borrow_loc l1
+    vec_len <u8>
+    ld_u64 128
+    le
+    br_false l0
+    // @5
+    copy_loc l0
+    call signer::borrow_address
+    read_ref
+    st_loc l2
+    copy_loc l2
+    // @10
+    exists EncryptedDK
+    br_true l1
+    move_loc l0
+    move_loc l1
+    pack_variant EncryptedDK, V1
+    // @15
+    move_to EncryptedDK
+    ret
+l1: move_loc l0
+    pop
+    move_loc l2
+    // @20
+    mut_borrow_global EncryptedDK
+    mut_borrow_variant_field EncryptedDK, V1::ciphertext
+    st_loc l3
+    move_loc l1
+    move_loc l3
+    // @25
+    write_ref
+    ret
+l0: move_loc l0
+    pop
+    ld_u64 65564
+    // @30
+    abort
+
+// Function definition at index 44
+#[persistent] public fun verify_signed_message<T0: drop>(l0: address, l1: u8, l2: vector<u8>, l3: vector<u8>, l4: T0) acquires Account
+    local l5: address
+    local l6: vector<u8>
+    local l7: ed25519::UnvalidatedPublicKey
+    local l8: vector<u8>
+    local l9: ed25519::Signature
+    local l10: multi_ed25519::UnvalidatedPublicKey
+    local l11: multi_ed25519::Signature
+    move_loc l0
+    st_loc l5
+    copy_loc l5
+    exists Account
+    br_false l0
+    // @5
+    move_loc l5
+    borrow_global Account
+    borrow_field Account, authentication_key
+    read_ref
+    st_loc l6
+    // @10
+l8: copy_loc l1
+    ld_u8 0
+    eq
+    br_false l1
+    move_loc l2
+    // @15
+    call ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l7
+    borrow_loc l7
+    call ed25519::unvalidated_public_key_to_authentication_key
+    st_loc l8
+    // @20
+    move_loc l6
+    move_loc l8
+    eq
+    br_false l2
+    move_loc l3
+    // @25
+    call ed25519::new_signature_from_bytes
+    st_loc l9
+    borrow_loc l9
+    borrow_loc l7
+    move_loc l4
+    // @30
+    call ed25519::signature_verify_strict_t<T0>
+    br_false l3
+    ret
+l3: ld_u64 65544
+    abort
+    // @35
+l2: ld_u64 65543
+    abort
+l1: move_loc l1
+    ld_u8 1
+    eq
+    // @40
+    br_false l4
+    move_loc l2
+    call multi_ed25519::new_unvalidated_public_key_from_bytes
+    st_loc l10
+    borrow_loc l10
+    // @45
+    call multi_ed25519::unvalidated_public_key_to_authentication_key
+    st_loc l8
+    move_loc l6
+    move_loc l8
+    eq
+    // @50
+    br_false l5
+    move_loc l3
+    call multi_ed25519::new_signature_from_bytes
+    st_loc l11
+    borrow_loc l11
+    // @55
+    borrow_loc l10
+    move_loc l4
+    call multi_ed25519::signature_verify_strict_t<T0>
+    br_false l6
+    ret
+    // @60
+l6: ld_u64 65544
+    abort
+l5: ld_u64 65543
+    abort
+l4: ld_u64 65548
+    // @65
+    abort
+l0: ld_u64 91
+    call features::is_enabled
+    br_false l7
+    borrow_loc l5
+    // @70
+    call bcs::to_bytes<address>
+    st_loc l6
+    branch l8
+l7: ld_u64 393218
+    abort
+

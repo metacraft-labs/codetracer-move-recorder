@@ -1,0 +1,184 @@
+// Bytecode version v10
+module 0x1::transaction_fee
+use 0x1::coin
+use 0x1::aptos_coin
+use 0x1::fungible_asset
+use 0x1::option
+use 0x1::system_addresses
+use 0x1::aptos_account
+use 0x1::event
+use 0x1::features
+friend 0x1::reconfiguration
+friend 0x1::block
+friend 0x1::transaction_validation
+friend 0x1::genesis
+struct AptosCoinCapabilities has key
+  burn_cap: coin::BurnCapability<aptos_coin::AptosCoin>
+
+struct AptosCoinMintCapability has key
+  mint_cap: coin::MintCapability<aptos_coin::AptosCoin>
+
+struct AptosFABurnCapabilities has key
+  burn_ref: fungible_asset::BurnRef
+
+struct AptosFAMintCapabilities has key
+  mint_ref: fungible_asset::MintRef
+
+struct CollectedFeesPerBlock has key
+  amount: coin::AggregatableCoin<aptos_coin::AptosCoin>
+  proposer: option::Option<address>
+  burn_percentage: u8
+
+struct FeeStatement has drop + store
+  total_charge_gas_units: u64
+  execution_gas_units: u64
+  io_gas_units: u64
+  storage_fee_octas: u64
+  storage_fee_refund_octas: u64
+
+// Function definition at index 0
+friend fun store_aptos_coin_mint_cap(l0: &signer, l1: coin::MintCapability<aptos_coin::AptosCoin>)
+    local l2: fungible_asset::MintRef
+    copy_loc l0
+    call system_addresses::assert_aptos_framework
+    borrow_loc l1
+    call coin::get_paired_mint_copy_ref<aptos_coin::AptosCoin>
+    st_loc l2
+    // @5
+    copy_loc l0
+    move_loc l2
+    pack AptosFAMintCapabilities
+    move_to AptosFAMintCapabilities
+    move_loc l0
+    // @10
+    move_loc l1
+    pack AptosCoinMintCapability
+    move_to AptosCoinMintCapability
+    ret
+
+// Function definition at index 1
+friend fun burn_fee(l0: address, l1: u64) acquires AptosFABurnCapabilities
+    ld_const<address> 1
+    borrow_global AptosFABurnCapabilities
+    borrow_field AptosFABurnCapabilities, burn_ref
+    move_loc l0
+    move_loc l1
+    // @5
+    call aptos_account::burn_from_fungible_store_for_gas
+    ret
+
+// Function definition at index 2
+#[persistent] entry public fun convert_to_aptos_fa_burn_ref(l0: &signer)
+    ld_u64 786436
+    move_loc l0
+    pop
+    abort
+
+// Function definition at index 3
+#[persistent] entry public fun convert_to_aptos_fa_mint_ref(l0: &signer) acquires AptosCoinMintCapability
+    local l1: fungible_asset::MintRef
+    copy_loc l0
+    call system_addresses::assert_aptos_framework
+    ld_const<address> 1
+    borrow_global AptosCoinMintCapability
+    borrow_field AptosCoinMintCapability, mint_cap
+    // @5
+    call coin::get_paired_mint_copy_ref<aptos_coin::AptosCoin>
+    st_loc l1
+    move_loc l0
+    move_loc l1
+    pack AptosFAMintCapabilities
+    // @10
+    move_to AptosFAMintCapabilities
+    ret
+
+// Function definition at index 4
+friend fun emit_fee_statement(l0: FeeStatement)
+    move_loc l0
+    call event::emit<FeeStatement>
+    ret
+
+// Function definition at index 5
+#[persistent] public fun initialize_fee_collection_and_distribution(l0: &signer, l1: u8)
+    ld_u64 786436
+    move_loc l0
+    pop
+    abort
+
+// Function definition at index 6
+#[persistent] public fun initialize_storage_refund(l0: &signer)
+    ld_u64 786436
+    move_loc l0
+    pop
+    abort
+
+// Function definition at index 7
+friend fun mint_and_refund(l0: address, l1: u64) acquires AptosCoinMintCapability, AptosFAMintCapabilities
+    local l2: bool
+    local l3: &coin::MintCapability<aptos_coin::AptosCoin>
+    local l4: coin::Coin<aptos_coin::AptosCoin>
+    ld_u64 124
+    call features::is_enabled
+    br_false l0
+    ld_const<address> 1
+    exists AptosFAMintCapabilities
+    // @5
+    st_loc l2
+l2: move_loc l2
+    br_false l1
+    ld_const<address> 1
+    borrow_global AptosFAMintCapabilities
+    // @10
+    borrow_field AptosFAMintCapabilities, mint_ref
+    move_loc l0
+    move_loc l1
+    call aptos_account::mint_to_fungible_store_for_gas
+    ret
+    // @15
+l1: ld_const<address> 1
+    borrow_global AptosCoinMintCapability
+    borrow_field AptosCoinMintCapability, mint_cap
+    st_loc l3
+    move_loc l1
+    // @20
+    move_loc l3
+    call coin::mint<aptos_coin::AptosCoin>
+    st_loc l4
+    move_loc l0
+    move_loc l4
+    // @25
+    call coin::deposit_for_gas_fee<aptos_coin::AptosCoin>
+    ret
+l0: ld_false
+    st_loc l2
+    branch l2
+
+// Function definition at index 8
+friend fun storage_fee_refund_octas(l0: &FeeStatement): u64
+    move_loc l0
+    borrow_field FeeStatement, storage_fee_refund_octas
+    read_ref
+    ret
+
+// Function definition at index 9
+friend fun store_aptos_coin_burn_cap(l0: &signer, l1: coin::BurnCapability<aptos_coin::AptosCoin>)
+    local l2: fungible_asset::BurnRef
+    copy_loc l0
+    call system_addresses::assert_aptos_framework
+    move_loc l1
+    call coin::convert_and_take_paired_burn_ref<aptos_coin::AptosCoin>
+    st_loc l2
+    // @5
+    move_loc l0
+    move_loc l2
+    pack AptosFABurnCapabilities
+    move_to AptosFABurnCapabilities
+    ret
+
+// Function definition at index 10
+#[persistent] public fun upgrade_burn_percentage(l0: &signer, l1: u8)
+    ld_u64 786436
+    move_loc l0
+    pop
+    abort
+

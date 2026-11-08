@@ -171,11 +171,22 @@ jobs:
         run: |
           cd "$GITHUB_WORKSPACE/../codetracer-vscode-extension"
           MCL_PATH="$GITHUB_WORKSPACE/../nix-blockchain-development"
-          # Replace recorder_exec to bypass direnv (which can't propagate
-          # GitHub auth to the NixOS Nix daemon) and use --override-input
-          # to resolve mcl-blockchain from the local clone.
-          cat > scripts/recorder-shell-exec.sh << HEREDOC
-          #!/usr/bin/env bash
+          # Override only recorder_exec; keep the rest of the extension's
+          # helper. The fixture scripts source this helper and also call its
+          # other functions (prepare-move-fixture.sh uses recorder_target_dir),
+          # so the helper must not be replaced wholesale. Appending puts the
+          # override after the helper's own definition, and in bash the
+          # later definition wins.
+          #
+          # Why recorder_exec is still overridden: the helper's own version
+          # enters a recorder's environment with `repro exec` whenever the
+          # recorder declares repro.nim, and refuses when `repro` is not on
+          # PATH. This job sets up a Nix environment and does not install
+          # repro, so the override enters the recorder's flake dev shell with
+          # `nix develop` instead, resolving mcl-blockchain from the local
+          # clone through --override-input.
+          cat >> scripts/recorder-shell-exec.sh << HEREDOC
+
           recorder_exec() {
             local repo_dir="\$1"
             shift
