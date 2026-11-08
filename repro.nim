@@ -25,6 +25,8 @@
 
 import repro_project_dsl
 import repro_dsl_stdlib/foreign_env
+# The ``sui`` CLI the tests drive; reprobuild's stdlib has no package for it.
+import sui_tools
 
 # The owning constructor of ``ct-print``, which the tests decode every
 # recorded trace with. It lives in the sibling checkout this repository's
@@ -46,16 +48,30 @@ package codetracer_move_recorder:
     "cargo >=1.85"
     # C compiler driver — rustc links through `cc`, and build scripts
     # (cc-rs, the Nim FFI) compile C. Declaring it puts its directory on
-    # every cargo edge's PATH. Windows links with MSVC instead.
-    when defined(linux):
-      "gcc"
-    elif defined(macosx):
+    # every cargo edge's PATH. Windows links with MSVC instead, so its
+    # cargo edges are not given a C compiler (see the tool refs at the end
+    # of ``build:``).
+    #
+    # Windows still declares ``gcc``: the ct-print edge that
+    # ``build_writer_artifacts.buildCtPrint`` constructs compiles with
+    # ``nim c``'s gcc back-end on every host but macOS
+    # (``CtPrintBackendSelectors``) and names ``gcc`` on its edge itself.
+    # That ref provisions nothing unless the package declares the tool in
+    # ``uses:`` (the module's "Native tool contract"; it is checked on POSIX
+    # only), and without it the Windows ct-print compile fails with
+    # ``Requested command not found: 'gcc.exe'``. The sibling's own recipe
+    # declares the same ``gcc`` for its Windows build.
+    when defined(macosx):
       "clang"
+    else:
+      "gcc"
 
     # Nim toolchain — codetracer_trace_writer_nim's build.rs compiles
     # a static library at cargo build time.
     "nim >=2.2 <3.0"
     "nimble"
+    # nimble fetches the Nim writer's ``requires`` with git.
+    "git"
 
     # Cap'n Proto schema compiler used by the recorder's build.rs.
     "capnp"
@@ -76,7 +92,28 @@ package codetracer_move_recorder:
     # POSIX shell — drives the CLI-convention verification edge below,
     # the same ``bash tests/verify-cli-convention-no-silent-skip.sh``
     # step ``just test`` runs after ``cargo test`` (see ``Justfile``).
+    # The script itself runs under bash and calls dirname and grep.
+    # reprobuild's stdlib provisions dirname and grep from nixpkgs only; on
+    # Windows they come with the PortableGit bash, in bash's own directory.
     "sh"
+    "bash"
+    when not defined(windows):
+      "dirname"
+      "grep"
+
+    # The test run's replay tests (``tests/test_replay_temp_dirs.rs``, unix
+    # only) stand in for the ``sui`` and ``aptos`` CLIs with ``/bin/sh``
+    # scripts that run ``mkdir``, ``cp`` and ``basename``. Without them on
+    # the edge's PATH the scripts cannot write their traces.
+    when not defined(windows):
+      "cp"
+      "mkdir"
+      "basename"
+
+    # The Sui CLI: the Move tests compile their packages and capture their
+    # traces with ``sui move test --trace`` and fail without it
+    # (``tests/common/prerequisites.rs``). Declared in ``sui_tools.nim``.
+    "sui"
 
     # pkg-config + OpenSSL — openssl-sys consults pkg-config to find
     # OpenSSL on Linux/macOS. The Windows build uses the rustls-tls
@@ -199,5 +236,34 @@ package codetracer_move_recorder:
         "Cargo.toml", "Cargo.lock", "src"
       ],
       cacheable = false)
+
+    # Attach the tools each edge runs. An edge receives only the tools named
+    # on it (plus the sub-tools of the typed constructor that built it): the
+    # cargo edges run rustc, the C compiler, and the build scripts' nim,
+    # nimble, git, capnp and zstd; the CLI-convention script runs ``cargo
+    # build`` itself; the test run also drives ``sui``, and on POSIX the
+    # fake ``sui`` / ``aptos`` scripts of its replay tests run ``sh``,
+    # ``mkdir``, ``cp`` and ``basename``. Path provisioning also passes the
+    # caller's PATH through, so a ``repro test`` run from a shell that has
+    # coreutils (the dev shell, a workstation) hides an omission here; the CI
+    # runner and Windows tarball provisioning do not. (CI
+    # once reported "sui replay exited successfully but wrote no trace"
+    # because ``cp`` was missing from this edge.)
+    for action in [recorderBuild, testsBuild.action, testsRun.action, cliVerify]:
+      appendRegisteredActionToolIdentityRefs(action.id,
+        ["cargo", "rustc", "nim", "nimble", "git", "capnp", "zstd"])
+      when defined(linux):
+        appendRegisteredActionToolIdentityRefs(action.id,
+          ["gcc", "pkg-config", "openssl"])
+      elif defined(macosx):
+        appendRegisteredActionToolIdentityRefs(action.id,
+          ["clang", "pkg-config", "openssl"])
+    appendRegisteredActionToolIdentityRefs(testsRun.action.id, ["sui"])
+    when not defined(windows):
+      appendRegisteredActionToolIdentityRefs(testsRun.action.id,
+        ["sh", "mkdir", "cp", "basename"])
+    appendRegisteredActionToolIdentityRefs(cliVerify.id, ["sh", "bash"])
+    when not defined(windows):
+      appendRegisteredActionToolIdentityRefs(cliVerify.id, ["dirname", "grep"])
 
     discard collect("test", @[testsRun.action, cliVerify])

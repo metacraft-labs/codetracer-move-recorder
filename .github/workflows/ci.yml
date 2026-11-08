@@ -35,6 +35,14 @@ jobs:
         # "No space left on device" partway through.  Strip the
         # preinstalled .NET / Android / GHC / Haskell toolchains
         # we don't need before the Nix build starts.
+        #
+        # Linux only: the action is a bash script written for the Ubuntu
+        # runner image (it runs `sudo`, `free`, `apt-get`), so on the macOS
+        # runner it exits 127 on `sudo: command not found` and fails the
+        # job. On the self-hosted Linux runners it passes and frees nothing
+        # (every category reports "Saved 0B": the Ubuntu image's toolchains
+        # it deletes are not installed there), so it is kept for Linux only.
+        if: runner.os == 'Linux'
         uses: jlumbroso/free-disk-space@main
         with:
           tool-cache: true
