@@ -57,10 +57,10 @@ package codetracer_move_recorder:
     # ``nim c``'s gcc back-end on every host but macOS
     # (``CtPrintBackendSelectors``) and names ``gcc`` on its edge itself.
     # That ref provisions nothing unless the package declares the tool in
-    # ``uses:`` (the module's "Native tool contract"; it is checked on POSIX
-    # only), and without it the Windows ct-print compile fails with
-    # ``Requested command not found: 'gcc.exe'``. The sibling's own recipe
-    # declares the same ``gcc`` for its Windows build.
+    # ``uses:`` (the module's "Native tool contract"; ``buildCtPrint``
+    # checks it on every host), and without it the Windows ct-print compile
+    # fails with ``Requested command not found: 'gcc.exe'``. The sibling's
+    # own recipe declares the same ``gcc`` for its Windows build.
     when defined(macosx):
       "clang"
     else:
@@ -83,9 +83,10 @@ package codetracer_move_recorder:
     # zstd.h + libzstd for the sibling ct-print edge
     # (``build_writer_artifacts.buildCtPrint`` compiles and links against
     # them; ``zstd`` is the CLI only). The constructor cannot provision a
-    # tool from inside ``build:`` and refuses a recipe that omits it.
-    when not defined(windows):
-      "zstd-dev"
+    # tool from inside ``build:`` and refuses a recipe that omits it, on
+    # every host: on Windows ``zstd-dev`` is a MinGW static ``libzstd.a``
+    # for the ct-print edge's gcc back-end, beside the ``gcc`` above.
+    "zstd-dev"
 
     # Cap'n Proto is declared above; the writer's build.rs invokes capnp.
 

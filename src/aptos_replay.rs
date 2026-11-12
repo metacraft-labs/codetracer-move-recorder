@@ -22,9 +22,18 @@
 //! <replay-dir>/trace.json
 //! <replay-dir>/0x<address, 64 hex digits>/bytecode/<module>.mv
 //! <replay-dir>/0x<address, 64 hex digits>/bytecode/<module>.mv.masm
+//! <replay-dir>/0x<address, 64 hex digits>/source/<module>.move   (optional)
+//! <replay-dir>/0x<address, 64 hex digits>/source/<module>.json   (optional)
 //! ```
 //!
-//! and the bundle records each disassembly's path relative to it.  With
+//! and the bundle records each path relative to it.  The optional
+//! `source/` files are a module's published source and the compiler's
+//! source map for exactly its bytes, written by a source provider that
+//! proved the source against the chain (BlockTracer's
+//! `tools/chain/lib/aptos-source.mjs`); a module with them is positioned on
+//! its source and its locals are named — see
+//! [`DebugInfo::from_aptos_replay_dir`], which refuses a map that is not
+//! bound to the bytes and texts beside it.  With
 //! `--replay-dir` the directory is kept and reused: an existing trace is not
 //! replayed again and existing modules are not fetched again.
 
