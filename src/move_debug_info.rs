@@ -89,6 +89,13 @@ pub struct FunctionDebugInfo {
     /// the PC had no source mapping (synthesised op) and the converter
     /// emits `Option<column>=None` for that step.
     pub pc_to_column: HashMap<u64, u32>,
+    /// The file an instruction is positioned in, for the instructions
+    /// that are NOT positioned in the module's own source file: code the
+    /// compiler inlined from another module keeps the position of the
+    /// text it was written in.  `pc_to_line` / `pc_to_column` are lines
+    /// and columns of THIS file for these pcs.  Empty for every kind of
+    /// debug info except an Aptos published-source map.
+    pub pc_to_path: HashMap<u64, PathBuf>,
     /// 1-indexed source line of the function's name, i.e. where the
     /// function is defined.  Registered as the function's location so
     /// a call-trace entry opens at the definition rather than at line 1.
@@ -114,6 +121,10 @@ pub struct ModuleDebugInfo {
     /// `global_position_index`.  Empty when the source file could not
     /// be read.
     pub line_lengths: Vec<u32>,
+    /// Every OTHER file an instruction of this module is positioned in
+    /// (see [`FunctionDebugInfo::pc_to_path`]), with its per-line byte
+    /// lengths, so the converter registers it like the module's own.
+    pub other_sources: Vec<(PathBuf, Vec<u32>)>,
 }
 
 /// Workspace of debug-info modules.
@@ -152,7 +163,18 @@ pub enum ReplayModuleRejection {
     /// the module its location says it holds, or its pc markers disagree
     /// with the instructions counted, so its lines cannot be trusted.
     Disassembly { path: PathBuf, reason: String },
+    /// An Aptos published-source map (`source/<module>.json`) could not be
+    /// read, or is not bound to the module bytes and the source texts
+    /// beside it, so the module stays on its disassembly.
+    SourceMap { path: PathBuf, reason: String },
 }
+
+/// The format tag of an Aptos published-source map, the document a
+/// source provider writes beside a module whose published source it
+/// proved: `blocktracer`'s `tools/chain/lib/aptos-source.mjs` compiles the
+/// package source an account published on chain and keeps the compiler's
+/// source map only when the module bytes it compiled equal the chain's.
+pub const APTOS_SOURCE_MAP_FORMAT: &str = "codetracer/aptos-source-map@1";
 
 /// Normalise a Move address to 64 lowercase hex digits without `0x`, the
 /// form `sui replay` uses for directory names and trace frames alike.
@@ -304,6 +326,16 @@ impl DebugInfo {
     ///
     /// The bytecode carries no local or parameter names, so frames keep
     /// the converter's `arg<N>` / `local_<N>` names.
+    ///
+    /// A module whose published source was proved against these exact
+    /// bytes has, beside them, `source/<module>.move` (the published text)
+    /// and `source/<module>.json` (the compiler's source map for those
+    /// bytes, [`APTOS_SOURCE_MAP_FORMAT`]).  Such a module is positioned on
+    /// its source and its locals take their source names — but only when
+    /// the map names the SHA-256 of `bytecode/<module>.mv` and of every
+    /// text it positions an instruction in, so a map can never be applied
+    /// to bytes or text it was not made for.  A map that does not bind is
+    /// returned as a rejection and the module stays on its disassembly.
     pub fn from_aptos_replay_dir(
         replay_dir: &Path,
     ) -> std::io::Result<(Self, Vec<ReplayModuleRejection>)> {
@@ -326,6 +358,21 @@ impl DebugInfo {
                 let Some(module) = file_name.strip_suffix(".mv.masm") else {
                     continue;
                 };
+                let source_map = pkg.path().join("source").join(format!("{module}.json"));
+                if source_map.is_file() {
+                    match parse_aptos_source_module(replay_dir, &pkg_name, &package, module) {
+                        Ok(info) => {
+                            store
+                                .by_package
+                                .insert((package.clone(), module.to_string()), info);
+                            continue;
+                        }
+                        Err(reason) => rejected.push(ReplayModuleRejection::SourceMap {
+                            path: source_map,
+                            reason,
+                        }),
+                    }
+                }
                 let reject = |reason: String| ReplayModuleRejection::Disassembly {
                     path: path.clone(),
                     reason,
@@ -349,6 +396,7 @@ impl DebugInfo {
                                 functions: parsed.functions,
                                 source_path: Some(relative),
                                 line_lengths: compute_line_lengths(&text),
+                                other_sources: Vec::new(),
                             },
                         );
                     }
@@ -556,6 +604,7 @@ pub fn parse_aptos_disassembly(text: &str) -> Result<AptosDisassembly, String> {
                     parameters: Vec::new(),
                     pc_to_line: HashMap::new(),
                     pc_to_column: HashMap::new(),
+                    pc_to_path: HashMap::new(),
                     definition_line: line_no,
                 },
                 next_pc: 0,
@@ -751,6 +800,7 @@ fn build_module(
                 parameters,
                 pc_to_line,
                 pc_to_column,
+                pc_to_path: HashMap::new(),
                 definition_line,
             },
         );
@@ -769,6 +819,7 @@ fn build_module(
             functions,
             source_path,
             line_lengths,
+            other_sources: Vec::new(),
         },
     ))
 }
@@ -889,6 +940,13 @@ impl FunctionDebugInfo {
     pub fn pc_to_column(&self, pc: u64) -> Option<u32> {
         self.pc_to_column.get(&pc).copied()
     }
+
+    /// The file a pc is positioned in when it is not the module's own
+    /// source (code inlined from another module); `None` means the
+    /// module's own file.
+    pub fn pc_path(&self, pc: u64) -> Option<&Path> {
+        self.pc_to_path.get(&pc).map(PathBuf::as_path)
+    }
 }
 
 impl DebugInfo {
@@ -922,7 +980,17 @@ impl DebugInfo {
             .modules
             .values()
             .chain(self.by_package.values())
-            .filter_map(|m| Some((m.source_path.as_deref()?, m.line_lengths.as_slice())))
+            .flat_map(|m| {
+                m.source_path
+                    .as_deref()
+                    .map(|p| (p, m.line_lengths.as_slice()))
+                    .into_iter()
+                    .chain(
+                        m.other_sources
+                            .iter()
+                            .map(|(p, l)| (p.as_path(), l.as_slice())),
+                    )
+            })
             .collect();
         paths.sort_by(|a, b| a.0.cmp(b.0));
         paths.into_iter()
@@ -952,6 +1020,167 @@ fn strip_scope_suffix(raw: &str) -> String {
 /// Returns `""` if the range is out of bounds — the caller treats an
 /// empty name as "skip this entry" rather than panicking on a
 /// hand-edited debug-info file.
+/// Load an Aptos published-source map for `0x<package>::<module>` from
+/// `<replay_dir>/<pkg_name>/source/<module>.json`, refusing one that is
+/// not bound to the module bytes and to every text it positions an
+/// instruction in.  See [`DebugInfo::from_aptos_replay_dir`].
+fn parse_aptos_source_module(
+    replay_dir: &Path,
+    pkg_name: &str,
+    package: &str,
+    module: &str,
+) -> Result<ModuleDebugInfo, String> {
+    use sha2::{Digest, Sha256};
+    use std::path::Component;
+
+    let sha256 = |bytes: &[u8]| -> String {
+        Sha256::digest(bytes)
+            .iter()
+            .map(|b| format!("{b:02x}"))
+            .collect()
+    };
+    let json = replay_dir
+        .join(pkg_name)
+        .join("source")
+        .join(format!("{module}.json"));
+    let bytes = fs::read(&json).map_err(|e| e.to_string())?;
+    let doc: RawAptosSourceMap = serde_json::from_slice(&bytes).map_err(|e| e.to_string())?;
+    if doc.format != APTOS_SOURCE_MAP_FORMAT {
+        return Err(format!(
+            "format '{}', not '{APTOS_SOURCE_MAP_FORMAT}'",
+            doc.format
+        ));
+    }
+    match doc.module_name.as_slice() {
+        [address, name] if normalize_address(address) == package && name == module => {}
+        other => return Err(format!("maps module {other:?}, not 0x{package}::{module}")),
+    }
+    let mv = replay_dir
+        .join(pkg_name)
+        .join("bytecode")
+        .join(format!("{module}.mv"));
+    let code = fs::read(&mv).map_err(|e| format!("{}: {e}", mv.display()))?;
+    let actual = sha256(&code);
+    if !actual.eq_ignore_ascii_case(&doc.bytecode_sha256) {
+        return Err(format!(
+            "is the map of bytecode {}, and {} is {actual}",
+            doc.bytecode_sha256,
+            mv.display()
+        ));
+    }
+
+    struct Text {
+        path: PathBuf,
+        text: String,
+        line_starts: Vec<u32>,
+    }
+    let mut texts: HashMap<String, Text> = HashMap::new();
+    for (hash, relative) in &doc.source_files {
+        let path = Path::new(relative);
+        if !path.components().all(|c| matches!(c, Component::Normal(_))) {
+            return Err(format!(
+                "names {relative}, which is not inside the replay directory"
+            ));
+        }
+        let content = fs::read(replay_dir.join(path)).map_err(|e| format!("{relative}: {e}"))?;
+        let actual = sha256(&content);
+        if !actual.eq_ignore_ascii_case(hash) {
+            return Err(format!("names {relative} as {hash}, and it is {actual}"));
+        }
+        let text = String::from_utf8(content).map_err(|e| format!("{relative}: {e}"))?;
+        texts.insert(
+            hash.to_ascii_lowercase(),
+            Text {
+                path: path.to_path_buf(),
+                line_starts: build_line_starts(&text),
+                text,
+            },
+        );
+    }
+    let text_of = |loc: &Location| -> Result<&Text, String> {
+        loc.file_hash
+            .as_deref()
+            .and_then(|h| texts.get(&h.to_ascii_lowercase()))
+            .ok_or_else(|| {
+                format!(
+                    "positions code in {:?}, which it lists no text for",
+                    loc.file_hash
+                )
+            })
+    };
+    let own = text_of(&doc.definition_location)?;
+    let own_path = Path::new(pkg_name)
+        .join("source")
+        .join(format!("{module}.move"));
+    if own.path != own_path {
+        return Err(format!(
+            "defines the module in {}, not {}",
+            own.path.display(),
+            own_path.display()
+        ));
+    }
+
+    let mut functions = HashMap::new();
+    for (index, raw) in &doc.function_map {
+        let index: u64 = index
+            .parse()
+            .map_err(|e| format!("function index '{index}': {e}"))?;
+        let defined_in = text_of(&raw.definition_location)?;
+        let name = slice_or_empty(&defined_in.text, &raw.definition_location);
+        if name.is_empty() {
+            continue;
+        }
+        let mut pc_to_line = HashMap::new();
+        let mut pc_to_column = HashMap::new();
+        let mut pc_to_path = HashMap::new();
+        for (pc, loc) in &raw.code_map {
+            let pc: u64 = pc.parse().map_err(|e| format!("pc '{pc}': {e}"))?;
+            let t = text_of(loc)?;
+            let line = byte_offset_to_line(&t.line_starts, loc.start);
+            pc_to_line.insert(pc, line);
+            pc_to_column.insert(pc, byte_offset_to_column(&t.line_starts, loc.start, line));
+            if t.path != own.path {
+                pc_to_path.insert(pc, t.path.clone());
+            }
+        }
+        functions.insert(
+            index,
+            FunctionDebugInfo {
+                name,
+                locals: raw
+                    .locals
+                    .iter()
+                    .map(|(n, _)| strip_scope_suffix(n))
+                    .collect(),
+                parameters: raw
+                    .parameters
+                    .iter()
+                    .map(|(n, _)| strip_scope_suffix(n))
+                    .collect(),
+                pc_to_line,
+                pc_to_column,
+                pc_to_path,
+                definition_line: byte_offset_to_line(
+                    &defined_in.line_starts,
+                    raw.definition_location.start,
+                ),
+            },
+        );
+    }
+    let mut other_sources: Vec<(PathBuf, Vec<u32>)> = texts
+        .values()
+        .filter(|t| t.path != own.path)
+        .map(|t| (t.path.clone(), compute_line_lengths(&t.text)))
+        .collect();
+    other_sources.sort();
+    Ok(ModuleDebugInfo {
+        functions,
+        source_path: Some(own.path.clone()),
+        line_lengths: compute_line_lengths(&own.text),
+        other_sources,
+    })
+}
+
 fn slice_or_empty(text: &str, loc: &Location) -> String {
     let bytes = text.as_bytes();
     let start = loc.start as usize;
@@ -998,6 +1227,24 @@ struct RawFunction {
     /// and parse to u64 later.
     #[serde(default)]
     code_map: HashMap<String, Location>,
+}
+
+/// An Aptos published-source map ([`APTOS_SOURCE_MAP_FORMAT`]): the Move
+/// compiler's `SourceMap` for one module, as JSON in the shape of the
+/// debug info above, with every position's `file_hash` the SHA-256 of the
+/// text it indexes into, and two bindings — the module bytes it is the map
+/// of, and the relative path of every text it names.
+#[derive(Deserialize)]
+struct RawAptosSourceMap {
+    format: String,
+    /// `[address, short_name]`.
+    module_name: Vec<String>,
+    /// SHA-256 (hex) of the module bytes this map was compiled with.
+    bytecode_sha256: String,
+    definition_location: Location,
+    /// SHA-256 (hex) of a text -> its path relative to the replay directory.
+    source_files: std::collections::BTreeMap<String, String>,
+    function_map: std::collections::BTreeMap<String, RawFunction>,
 }
 
 #[derive(Deserialize)]

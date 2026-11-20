@@ -480,6 +480,14 @@ fn convert_events(
     // half-empty steps.
     let mut prev_line: Option<u32> = Some(first_step_line);
     let mut prev_pc: Option<u64> = None;
+    // The FILE of the last emitted step, where a step's file can differ
+    // from its frame's: an Aptos module positioned on its published source
+    // carries code the compiler inlined from other modules, positioned in
+    // their files ([`FunctionDebugInfo::pc_path`]).  Moving to another file
+    // at the same line number is a new position.  `None` — as seeded, and
+    // after every reset beside `prev_line` — compares equal to anything, so
+    // a recording with no such pcs steps exactly as it did without this.
+    let mut prev_step_file: Option<std::path::PathBuf> = None;
     let mut current_module: Option<String> = None;
 
     // Stack of currently open frames so that `Effect::Write` /
@@ -540,6 +548,7 @@ fn convert_events(
                 }
                 first_open_frame_seen = true;
                 prev_pc = None;
+                prev_step_file = None;
 
                 // Detect `sui::event::emit<T>(payload)` — the canonical
                 // Sui native used to publish a typed event from a Move
@@ -732,6 +741,7 @@ fn convert_events(
                 // stale value carried over from the callee.
                 prev_line = None;
                 prev_pc = None;
+                prev_step_file = None;
             }
 
             TraceEvent::Instruction {
@@ -805,7 +815,21 @@ fn convert_events(
                     None
                 };
                 if let Some(line) = line {
-                    let line_changed = prev_line != Some(line);
+                    // The step belongs to the file of the module whose code
+                    // is running, which in a multi-package transaction is
+                    // rarely the primary source — or, for an instruction
+                    // the compiler inlined from another module, to that
+                    // module's file.
+                    let step_path = frame_stack
+                        .last()
+                        .and_then(|k| {
+                            k.function(&debug_info)
+                                .and_then(|fi| fi.pc_path(*pc))
+                                .or_else(|| k.source_path(&debug_info))
+                        })
+                        .unwrap_or(source_path);
+                    let line_changed = prev_line != Some(line)
+                        || prev_step_file.as_deref().is_some_and(|f| f != step_path);
                     let backward_jump = prev_pc.is_some_and(|p| *pc < p);
                     if line_changed || backward_jump {
                         // M-move: column-aware step emission.  Forward
@@ -815,13 +839,6 @@ fn convert_events(
                         // a line-only step (DeltaLine, no DeltaColumn
                         // override).  Mirrors the EVM recorder's M14
                         // pattern.
-                        // The step belongs to the file of the module
-                        // whose code is running, which in a multi-package
-                        // transaction is rarely the primary source.
-                        let step_path = frame_stack
-                            .last()
-                            .and_then(|k| k.source_path(&debug_info))
-                            .unwrap_or(source_path);
                         TraceWriter::register_step_with_column(
                             writer,
                             step_path,
@@ -829,6 +846,7 @@ fn convert_events(
                             column.map(|c| Line(c as i64)),
                         );
                         prev_line = Some(line);
+                        prev_step_file = Some(step_path.to_path_buf());
                     }
                 }
                 prev_pc = Some(*pc);
