@@ -17,8 +17,8 @@ use crate::source_lookup::SourceLookup;
 
 /// Configuration for replaying a transaction.
 ///
-/// The output format is fixed to CTFS — see
-/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.  Use
+/// The output format is fixed to CTFS: the CodeTracer recorder CLI
+/// convention requires recorders to write CTFS only.  Use
 /// `ct print` (from `codetracer-trace-format-nim`) for human-readable
 /// conversion of the produced bundle.
 pub struct ReplayConfig {
@@ -336,8 +336,8 @@ pub(crate) fn read_trace_file(trace_file: &Path) -> Result<Vec<u8>> {
 /// This skips the `sui replay` step and directly processes a trace file.
 /// Useful for testing and for cases where the trace file already exists.
 ///
-/// The output format is fixed to CTFS — see
-/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.
+/// The output format is fixed to CTFS: the CodeTracer recorder CLI
+/// convention requires recorders to write CTFS only.
 pub fn replay_from_existing_trace(
     trace_file: &Path,
     search_dirs: &[PathBuf],

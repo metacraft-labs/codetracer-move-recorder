@@ -53,8 +53,8 @@ use crate::replay::{self, DEFAULT_MAX_TRACE_BYTES, ReplayConversion};
 
 /// Configuration for replaying an Aptos transaction.
 ///
-/// The output format is fixed to CTFS — see
-/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.  Use
+/// The output format is fixed to CTFS: the CodeTracer recorder CLI
+/// convention requires recorders to write CTFS only.  Use
 /// `ct print` (from `codetracer-trace-format-nim`) for human-readable
 /// conversion of the produced bundle.
 #[derive(Debug, Clone)]

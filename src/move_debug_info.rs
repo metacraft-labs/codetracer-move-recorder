@@ -809,8 +809,10 @@ fn build_module(
     // Compute the per-line UTF-8 byte-length table once per module so
     // the converter can hand it to
     // `TraceWriter::register_path_with_line_lengths` (paths.dat Layout A,
-    // see codetracer-trace-format-spec/trace-events.md §"paths.dat
-    // per-line offset table — Layout A").
+    // see `internal-files.md` §"`paths.dat` Layout A — per-line
+    // byte-length table" in the public codetracer-trace-format-spec
+    // repository:
+    // https://github.com/metacraft-labs/codetracer-trace-format-spec).
     let line_lengths = compute_line_lengths(source_text);
 
     Some((

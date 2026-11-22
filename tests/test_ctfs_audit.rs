@@ -13,8 +13,8 @@
 //!    `test_execution_error_emits_special_event` and
 //!    `test_external_effect_emits_special_event`.
 //!
-//! The 2026-05-08 convention compliance follow-up tightened §4 of
-//! `Recorder-CLI-Conventions.md`: recorders are now CTFS-only and
+//! The 2026-05-08 convention compliance follow-up tightened the
+//! CodeTracer recorder CLI convention: recorders are now CTFS-only and
 //! must not expose a `--format` flag.  The previous
 //! `test_ctfs_format_advertised_in_help` test (which asserted on the
 //! old `--format` value-enum + `[default: ctfs]` clap doc string)
@@ -23,10 +23,9 @@
 //! strong: the `tests/test_cli.rs` suite now contains
 //! `test_no_format_flag_in_help`, `test_help_mentions_ct_print`, and
 //! `test_format_flag_rejected_by_clap` which together pin the new
-//! contract.  See `AUDIT-CTFS-2026-05.md`'s "Convention compliance
-//! follow-up — 2026-05-08" entry for the full record (mirrors the
-//! Leo recorder's commit d567b52 and the Miden recorder's commit
-//! c7bafaa).
+//! contract.  The Leo and Miden recorders made the same change at the
+//! same time, so all three recorders enforce the CTFS-only contract
+//! the same way.
 
 use std::path::Path;
 

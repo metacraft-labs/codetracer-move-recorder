@@ -21,8 +21,8 @@ use crate::source_map::SourceMapResolver;
 /// The on-disk container produced by the recorder is always the canonical
 /// multi-stream CTFS bundle.  Pre-2026-05-08 the recorder accepted a
 /// `TraceEventsFileFormat` parameter and the CLI exposed a `--format` flag;
-/// the convention now mandates CTFS-only output (see
-/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`).
+/// the CodeTracer recorder CLI convention now requires every recorder to
+/// write CTFS and nothing else, and to expose no `--format` flag.
 const TRACE_FORMAT: TraceEventsFileFormat = TraceEventsFileFormat::Ctfs;
 
 /// Compile-time configuration for the trace converter.
@@ -129,8 +129,8 @@ impl ConverterOptions {
 /// `trace_data` must be decompressed NDJSON (one JSON object per line).
 /// The first line must be a `{"version":3}` header.
 ///
-/// The output format is fixed to CTFS — see
-/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.  Use
+/// The output format is fixed to CTFS: the CodeTracer recorder CLI
+/// convention requires recorders to write CTFS only.  Use
 /// `ct print` (from `codetracer-trace-format-nim`) for human-readable
 /// conversion of the produced bundle.
 pub fn convert_trace(
@@ -398,8 +398,9 @@ fn convert_events(
     // bytecode position to a single sub-statement source position
     // via the compiler's `debug_info` code map, so per-column
     // breakpoints AND per-column motions are both meaningful.
-    // Advertise both capabilities to the GUI.  See spec
-    // `internal-files.md` §"Column-Aware Capability Flags".
+    // Advertise both capabilities to the GUI.  See
+    // `internal-files.md` §"Column-Aware Capability Flags" in the public
+    // codetracer-trace-format-spec repository.
     writer.enable_column_breakpoints_support();
     writer.enable_column_motions_support();
 
@@ -463,9 +464,9 @@ fn convert_events(
     //     0..N { body }` loop produces N step events at the body line, not
     //     just one — see
     //     `tests/test_full_coverage.rs::test_loops_one_step_per_source_line`
-    //     and the spec at `metacraft-specs/policies/recorder-test-requirements.md`
-    //     ("a `for i in 0..10` loop must produce exactly 10 step events at
-    //     the loop body").
+    //     and the CodeTracer recorder test requirements, which state that
+    //     "a `for i in 0..10` loop must produce exactly 10 step events at
+    //     the loop body".
     //
     // Both pieces of state belong to the *current execution context*; they
     // are reset to `None` whenever a frame is opened or closed so that
@@ -759,10 +760,9 @@ fn convert_events(
                 // loop surface N step events at the body line rather than
                 // just one — without it the dedup in (a) would collapse
                 // every iteration into a single step and the recorder would
-                // not satisfy the spec at
-                // `metacraft-specs/policies/recorder-test-requirements.md`
-                // ("a `for i in 0..10` loop must produce exactly 10 step
-                // events at the loop body").
+                // not satisfy the CodeTracer recorder test requirements,
+                // which say that "a `for i in 0..10` loop must produce
+                // exactly 10 step events at the loop body".
                 //
                 // The explicit `SourceMapResolver` (legacy, hand-built)
                 // takes precedence so synthetic NDJSON tests pinned to

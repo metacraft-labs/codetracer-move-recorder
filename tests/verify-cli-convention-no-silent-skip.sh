@@ -1,15 +1,17 @@
 #!/usr/bin/env bash
 # Verify that the codetracer-move-recorder CLI complies with
-# `Recorder-CLI-Conventions.md` (no silent skip — every assertion
-# either passes or fails loudly):
+# the CodeTracer recorder CLI convention (no silent skip — every
+# assertion either passes or fails loudly):
 #
-#   * `--format` is absent from `--help` (CTFS-only — convention §4)
-#   * `CODETRACER_FORMAT` is absent from `--help` (convention §5)
-#   * `--out-dir` and `--version` are present in `--help` (§3)
-#   * `--help` mentions `ct print` (the canonical conversion tool, §4)
+#   * `--format` is absent from `--help` (recorders write CTFS only)
+#   * `CODETRACER_FORMAT` is absent from `--help` (no env-var way to
+#     pick a format either)
+#   * `--out-dir` and `--version` are present in `--help` (the flags
+#     every recorder must expose)
+#   * `--help` mentions `ct print` (the canonical conversion tool)
 #   * `CODETRACER_MOVE_RECORDER_OUT_DIR` /
 #     `CODETRACER_MOVE_RECORDER_DISABLED` are referenced in source so
-#     the env-var fallback (§5) cannot regress silently.
+#     the per-recorder env-var fallback cannot regress silently.
 #
 # Wire-up: see `Justfile` (`just lint` and `just test` both run this
 # script).
