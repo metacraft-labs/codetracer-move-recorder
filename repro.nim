@@ -5,13 +5,13 @@
 ## ``repro test`` reproduce the same artefacts and the same test set
 ## that ``just build`` / ``just test`` produce today.
 ##
-## Per ``codetracer-specs/Repo-Requirements.md`` §2.8 the recipe
+## Per CodeTracer's recorder repository requirements, the recipe
 ## expresses build and test execution NATIVELY through typed-tool
 ## edges (`cargo.build`, `cargo.test`). It does NOT delegate to
 ## `shell(command = "bash scripts/...")` wrappers — delegation
 ## defeats the engine's incremental-build, action-cache, per-test
-## invalidation, and the CI sharding the engine grows into per
-## ``reprobuild-specs/CI-Sharding.md``.
+## invalidation, and the CI sharding the engine grows into, which
+## splits a repository's test edges across CI jobs.
 ##
 ## On Windows the recipe drives real reprobuild tool provisioning via
 ## the tarball entries the ``uses:`` packages declare (cargo, rustc,
@@ -19,7 +19,7 @@
 ## continues to supply the same toolchain. Either path produces
 ## byte-equivalent build outputs and the same test pass/fail set —
 ## CI cross-checks this through the side-by-side `ci.yml` (nix) +
-## `ci-reprobuild.yml` (reprobuild) flow per Repo-Requirements §2.9.
+## `ci-reprobuild.yml` (reprobuild) flow.
 ##
 ## Move: test corpus is pre-compiled Move bytecode artefacts.
 
@@ -140,9 +140,8 @@ package codetracer_move_recorder:
     # ---- Primary build edge (the `default` collection) ----------------
     #
     # Native cargo build for the recorder binary. Enrolled into the
-    # conventional ``default`` collection per
-    # reprobuild-specs/Build-Graph-Collections.md §"`default`"; this
-    # makes ``repro build`` (no positional target) materialise this
+    # conventional ``default`` collection, the one reprobuild builds
+    # when it is given no target; this makes ``repro build`` (no positional target) materialise this
     # edge's closure.
     const binarySuffix = (when defined(windows): ".exe" else: "")
     const recorderBinary =
@@ -161,7 +160,7 @@ package codetracer_move_recorder:
 
     # ---- Test-binary build + run edges (the `test` collection) -------
     #
-    # Two-stage shape per Repo-Requirements.md §2.8: `cargo.test(noRun =
+    # Two-stage shape, as the requirements above ask: `cargo.test(noRun =
     # true)` builds every cargo test binary into
     # `target/debug/deps/<crate>-<hash>` (the engine tracks the deps
     # directory as the build edge's effect set because the hashed
@@ -171,9 +170,8 @@ package codetracer_move_recorder:
     # an input changed since the last successful execution.
     #
     # Per-test execute edges fall out automatically once the
-    # ct-test-runner cargo adapter lands per
-    # reprobuild-specs/Test-Edges-And-Parallel-Runner.milestones.org
-    # §M4 — the whole-binary edge becomes a fan-out point without
+    # ct-test-runner cargo adapter, which runs each test as its own
+    # edge, lands — the whole-binary edge becomes a fan-out point without
     # changing this recipe.
 
     let testsBuild = cargo.test(
