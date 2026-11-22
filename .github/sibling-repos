@@ -2,3 +2,9 @@
 # revision this repository's lock pins.
 codetracer-trace-format
 codetracer-trace-format-nim
+# The Nim packages the trace format requires (stew, results). The `repro
+# test` graph compiles ct-print from ../codetracer-trace-format-nim against
+# these two checkouts, because reprobuild gives a Nim compile no access to
+# ~/.nimble. nim-results is published under arnetheduck, not metacraft-labs.
+nim-stew
+arnetheduck/nim-results
