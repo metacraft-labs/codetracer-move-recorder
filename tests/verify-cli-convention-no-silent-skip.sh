@@ -31,11 +31,20 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 # script stays focused on verification results.
 ( cd "${REPO_ROOT}" && cargo build --locked --quiet )
 
-BIN="${REPO_ROOT}/target/debug/codetracer-move-recorder"
-if [[ ! -x "${BIN}" ]]; then
-  echo "ERROR: recorder binary not found at ${BIN}" >&2
-  exit 1
-fi
+# Run the recorder through Cargo rather than from a hard-coded
+# `target/debug/` path. Cargo writes to whatever target directory its
+# configuration selects — `CARGO_TARGET_DIR`, `build.target-dir` in a
+# `.cargo/config.toml`, or `--target-dir` — and some CI hosts point
+# `CARGO_TARGET_DIR` outside the checkout, so `target/debug/` is not
+# where the binary lands there. `cargo run` resolves the same directory
+# the build above used. A missing or failing build is still a hard
+# failure: `set -e` stops the script, and each command substitution
+# below aborts on a non-zero exit.
+# See https://doc.rust-lang.org/cargo/reference/build-cache.html
+recorder() {
+  ( cd "${REPO_ROOT}" &&
+    cargo run --locked --quiet --bin codetracer-move-recorder -- "$@" )
+}
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -75,7 +84,7 @@ assert_present() {
 # Top-level --help
 # ---------------------------------------------------------------------------
 
-TOP_HELP="$("${BIN}" --help)"
+TOP_HELP="$(recorder --help)"
 
 assert_absent "--format" "top-level --help" "${TOP_HELP}"
 assert_absent "CODETRACER_FORMAT" "top-level --help" "${TOP_HELP}"
@@ -87,7 +96,7 @@ assert_present "ct print" "top-level --help" "${TOP_HELP}"
 # `record` subcommand --help
 # ---------------------------------------------------------------------------
 
-RECORD_HELP="$("${BIN}" record --help)"
+RECORD_HELP="$(recorder record --help)"
 
 assert_absent "--format" "record --help" "${RECORD_HELP}"
 assert_absent "CODETRACER_FORMAT" "record --help" "${RECORD_HELP}"
@@ -97,7 +106,7 @@ assert_present "--out-dir" "record --help" "${RECORD_HELP}"
 # `replay` subcommand --help
 # ---------------------------------------------------------------------------
 
-REPLAY_HELP="$("${BIN}" replay --help)"
+REPLAY_HELP="$(recorder replay --help)"
 
 assert_absent "--format" "replay --help" "${REPLAY_HELP}"
 assert_absent "CODETRACER_FORMAT" "replay --help" "${REPLAY_HELP}"
@@ -107,7 +116,7 @@ assert_present "--out-dir" "replay --help" "${REPLAY_HELP}"
 # `aptos-replay` subcommand --help
 # ---------------------------------------------------------------------------
 
-APTOS_REPLAY_HELP="$("${BIN}" aptos-replay --help)"
+APTOS_REPLAY_HELP="$(recorder aptos-replay --help)"
 
 assert_absent "--format" "aptos-replay --help" "${APTOS_REPLAY_HELP}"
 assert_absent "CODETRACER_FORMAT" "aptos-replay --help" "${APTOS_REPLAY_HELP}"
@@ -117,7 +126,7 @@ assert_present "--out-dir" "aptos-replay --help" "${APTOS_REPLAY_HELP}"
 # --version output
 # ---------------------------------------------------------------------------
 
-VERSION_OUT="$("${BIN}" --version)"
+VERSION_OUT="$(recorder --version)"
 assert_present "codetracer-move-recorder" "--version output" "${VERSION_OUT}"
 
 # ---------------------------------------------------------------------------
