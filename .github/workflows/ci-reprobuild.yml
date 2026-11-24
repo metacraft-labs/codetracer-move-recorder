@@ -105,34 +105,10 @@ jobs:
           app-id: ${{ secrets.CI_TOKEN_PROVIDER_APP_ID }}
           app-private-key: ${{ secrets.CI_TOKEN_PROVIDER_PRIVATE_KEY }}
 
-      - name: Prepare Windows reprobuild runtime
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $PSNativeCommandUseErrorActionPreference = $true
-          $clingoRoot = Join-Path $env:RUNNER_TEMP "reprobuild-clingo-5.8.0"
-          $clingoDll = Get-ChildItem -LiteralPath $env:RUNNER_TEMP -Filter clingo.dll -Recurse -File -ErrorAction SilentlyContinue |
-            Select-Object -First 1
-          if ($null -eq $clingoDll) {
-            Remove-Item -LiteralPath $clingoRoot -Recurse -Force -ErrorAction SilentlyContinue
-            New-Item -ItemType Directory -Path $clingoRoot | Out-Null
-            $env:REPROBUILD_CLINGO_ROOT = $clingoRoot
-            python -m pip install --disable-pip-version-check --quiet zstandard==0.23.0
-            python (Join-Path $env:GITHUB_WORKSPACE ".github/scripts/stage_windows_clingo.py")
-            $clingoDll = Get-ChildItem -LiteralPath $clingoRoot -Filter clingo.dll -Recurse -File -ErrorAction SilentlyContinue |
-              Select-Object -First 1
-          }
-          if ($null -eq $clingoDll) {
-            throw "clingo.dll not found under $env:RUNNER_TEMP"
-          }
-
-          Add-Content -Path $env:GITHUB_PATH -Value $clingoDll.DirectoryName
-
-          $reproBin = Join-Path $env:GITHUB_WORKSPACE "reprobuild\build\bin"
-          if (Test-Path -LiteralPath $reproBin -PathType Container) {
-            Copy-Item -LiteralPath $clingoDll.FullName -Destination (Join-Path $reproBin "clingo.dll") -Force
-          }
+      # No Windows clingo step: setup-dev-env provisions the repro CLI with
+      # clingo.dll (and its MSVC runtime) beside repro.exe on both the release
+      # and the source-build route, and setup-dev-env runs a `repro exec`
+      # before this point, which fails if the engine cannot load clingo.
 
       - name: Prepare macOS reprobuild sandbox tools
         if: runner.os == 'macOS'
