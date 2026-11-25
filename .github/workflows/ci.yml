@@ -1,8 +1,8 @@
 name: CI
 
-# Re-plays the project's deterministic dev env on the runner.
-# See:
-#   https://github.com/metacraft-labs/metacraft-dev-guidelines/blob/latest/policies/ci-shared-dev-env.md
+# Re-plays the project's deterministic dev env on the runner, so CI
+# builds and tests with exactly the toolchain a developer gets locally
+# from the same flake, rather than with a separately provisioned one.
 
 on:
   push:

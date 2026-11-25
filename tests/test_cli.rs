@@ -12,15 +12,15 @@
 //! 3. **CLI env-var contract** — exercise the post-2026-05-08
 //!    `CODETRACER_MOVE_RECORDER_OUT_DIR` /
 //!    `CODETRACER_MOVE_RECORDER_DISABLED` env vars and the
-//!    no-`--format` invariant from `Recorder-CLI-Conventions.md` §4 / §5.
+//!    no-`--format` invariant of the CodeTracer recorder CLI convention
+//!    (recorders write CTFS only; env vars are fallbacks for CLI flags).
 //!
 //! History note: pre-2026-05-08 the recorder shipped a `--format
 //! ctfs|binary|json` flag and the `record_creates_output_files` test
 //! passed `--format ctfs` implicitly (it was the default).  When the
 //! convention switched to CTFS-only the `--format` argument was
-//! removed and the smoke test was rewritten to omit it.  See
-//! `AUDIT-CTFS-2026-05.md` ("Convention compliance follow-up — 2026-05-08")
-//! for the full record.
+//! removed and the smoke test was rewritten to omit it, so a passing
+//! smoke test now also shows that recording works with no format choice.
 
 mod common;
 
@@ -174,8 +174,8 @@ fn record_creates_output_files() {
 ///
 /// Pre-2026-05-08 the recorder shipped a `--format json` mode and a
 /// trace.json file was written directly.  The convention now mandates
-/// CTFS-only output; `ct print` is the canonical conversion tool.  See
-/// `Recorder-CLI-Conventions.md` §4.  `ct-print --full` (added 2026-05
+/// CTFS-only output; `ct print` is the canonical conversion tool.
+/// `ct-print --full` (added 2026-05
 /// in `codetracer-trace-format-nim`) is what enables the exact-value
 /// layer — its output is a deterministic JSON document with every CBOR
 /// `ValueRecord` decoded to a structured form like
@@ -456,7 +456,8 @@ fn test_recorded_trace_via_ct_print_json() {
 // ===========================================================================
 
 /// `CODETRACER_MOVE_RECORDER_OUT_DIR` must be honoured as a fallback
-/// for `--out-dir`.  Convention: `Recorder-CLI-Conventions.md` §5.
+/// for `--out-dir`, and an explicit `--out-dir` must still win (the
+/// CodeTracer recorder env-var convention).
 #[test]
 fn test_env_out_dir_used_when_flag_omitted() {
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -542,7 +543,7 @@ fn test_env_disabled_skips_recording() {
 }
 
 /// `--format` is no longer accepted at any level — clap must reject it.
-/// Convention: §4 (CTFS-only).
+/// The CodeTracer recorder CLI convention makes recorders CTFS-only.
 #[test]
 fn test_format_flag_rejected_by_clap() {
     let tmp = tempfile::tempdir().expect("tempdir");
@@ -579,8 +580,8 @@ fn test_format_flag_rejected_by_clap() {
 }
 
 /// The CLI binary must not expose a `--format` flag at any level.
-/// Convention: `Recorder-CLI-Conventions.md` §4 — recorders are
-/// CTFS-only.
+/// The CodeTracer recorder CLI convention makes recorders CTFS-only,
+/// so there is no output format to choose.
 #[test]
 fn test_no_format_flag_in_help() {
     for subcmd in [None, Some("record"), Some("replay"), Some("aptos-replay")] {

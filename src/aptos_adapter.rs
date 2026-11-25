@@ -30,8 +30,8 @@ use serde::Deserialize;
 /// The on-disk container produced by the recorder is always the canonical
 /// multi-stream CTFS bundle.  Pre-2026-05-08 the recorder accepted a
 /// `TraceEventsFileFormat` parameter and the CLI exposed a `--format` flag;
-/// the convention now mandates CTFS-only output (see
-/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`).
+/// the CodeTracer recorder CLI convention now requires every recorder to
+/// write CTFS and nothing else, and to expose no `--format` flag.
 const TRACE_FORMAT: TraceEventsFileFormat = TraceEventsFileFormat::Ctfs;
 
 // ---------------------------------------------------------------------------

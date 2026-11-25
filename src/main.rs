@@ -26,8 +26,8 @@
 //! ```
 //!
 //! The recorder always writes traces in the canonical CodeTracer multi-stream
-//! CTFS format (see `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`).
-//! No `--format` flag is exposed: human-readable conversion is handled
+//! CTFS format, as the CodeTracer recorder CLI convention requires of every
+//! recorder.  No `--format` flag is exposed: human-readable conversion is handled
 //! out-of-band by `ct print` (shipped with `codetracer-trace-format-nim`).
 //!
 //! # Environment variables
@@ -59,7 +59,9 @@ use codetracer_move_recorder::source_map::SourceMapResolver;
 // ---------------------------------------------------------------------------
 
 /// Environment variable used as a fallback for `--out-dir` when the CLI
-/// flag is omitted.  Convention: see `Recorder-CLI-Conventions.md` §5.
+/// flag is omitted.  This follows the CodeTracer recorder env-var
+/// convention: `CODETRACER_<RECORDER>_OUT_DIR` is a fallback only, and an
+/// explicit `--out-dir` always wins.
 const ENV_OUT_DIR: &str = "CODETRACER_MOVE_RECORDER_OUT_DIR";
 
 /// Environment variable that, when set to `1`/`true`, disables tracing

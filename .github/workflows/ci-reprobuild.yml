@@ -4,13 +4,14 @@ name: CI (reprobuild)
 # deterministic dev env through reprobuild instead of `nix develop` or
 # `env.ps1`. Runs alongside the existing `ci.yml` (`nix`) and any
 # `windows-build.yml` (`windows-diy`) entries so regressions in either
-# of the older paths still gate merges — see
-# `codetracer-specs/Repo-Requirements.md` §2.9 and
-# `metacraft-dev-guidelines/policies/ci-shared-dev-env.md` §4 for the
-# rollout shape.
+# of the older paths still gate merges.  The rollout is additive by
+# design: the reprobuild flavour runs beside the `nix` and
+# `windows-diy` flavours until it has proven itself on every supported
+# host, and only then replaces them.
 #
 # The `setup-dev-env` composite action accepts `env-flavor: reprobuild`
-# (target state per the policy). When the action's reprobuild branch
+# (the intended end state, where every flavour re-plays the same
+# deterministic dev env). When the action's reprobuild branch
 # lands, this workflow exercises it end-to-end on every supported
 # host without any other repo-side change.
 
@@ -84,35 +85,30 @@ jobs:
           attic-token: ${{ secrets.ATTIC_TOKEN }}
           attic-cache: ${{ vars.ATTIC_CACHE }}
           attic-endpoint: ${{ vars.ATTIC_ENDPOINT }}
+          # The job's Nix GitHub credential has to outlive the hour, because
+          # this job does. An App installation token expires one hour after
+          # it is minted, and on a cold Linux runner setup-dev-env alone takes
+          # about that long: it builds the pinned repro from source (~47 min)
+          # and then realises the dev env. Without these two inputs
+          # setup-dev-env skips its job credential broker, and Nix keeps
+          # presenting `gh-token` after it expires. A 401 from an expired
+          # token is fatal even for a public tarball. In
+          # codetracer-js-recorder PR #25's linux-x64 job the token was minted
+          # at 14:52:57 and, at 15:52:58, the dev-env evaluation's fetch of
+          # the public `nix-community/fenix` tarball got `HTTP error 401 "Bad
+          # credentials"`. With the App's id and key the broker re-mints a
+          # `contents: read` token before expiry and rewrites the job's
+          # credential files in place, so every later `nix` and `repro exec`
+          # reads a live token. See the `app-id` input of setup-dev-env. The
+          # broker does not run on Windows, so the Windows legs are
+          # unaffected.
+          app-id: ${{ secrets.CI_TOKEN_PROVIDER_APP_ID }}
+          app-private-key: ${{ secrets.CI_TOKEN_PROVIDER_PRIVATE_KEY }}
 
-      - name: Prepare Windows reprobuild runtime
-        if: runner.os == 'Windows'
-        shell: pwsh
-        run: |
-          $ErrorActionPreference = 'Stop'
-          $PSNativeCommandUseErrorActionPreference = $true
-          $clingoRoot = Join-Path $env:RUNNER_TEMP "reprobuild-clingo-5.8.0"
-          $clingoDll = Get-ChildItem -LiteralPath $env:RUNNER_TEMP -Filter clingo.dll -Recurse -File -ErrorAction SilentlyContinue |
-            Select-Object -First 1
-          if ($null -eq $clingoDll) {
-            Remove-Item -LiteralPath $clingoRoot -Recurse -Force -ErrorAction SilentlyContinue
-            New-Item -ItemType Directory -Path $clingoRoot | Out-Null
-            $env:REPROBUILD_CLINGO_ROOT = $clingoRoot
-            python -m pip install --disable-pip-version-check --quiet zstandard==0.23.0
-            python (Join-Path $env:GITHUB_WORKSPACE ".github/scripts/stage_windows_clingo.py")
-            $clingoDll = Get-ChildItem -LiteralPath $clingoRoot -Filter clingo.dll -Recurse -File -ErrorAction SilentlyContinue |
-              Select-Object -First 1
-          }
-          if ($null -eq $clingoDll) {
-            throw "clingo.dll not found under $env:RUNNER_TEMP"
-          }
-
-          Add-Content -Path $env:GITHUB_PATH -Value $clingoDll.DirectoryName
-
-          $reproBin = Join-Path $env:GITHUB_WORKSPACE "reprobuild\build\bin"
-          if (Test-Path -LiteralPath $reproBin -PathType Container) {
-            Copy-Item -LiteralPath $clingoDll.FullName -Destination (Join-Path $reproBin "clingo.dll") -Force
-          }
+      # No Windows clingo step: setup-dev-env provisions the repro CLI with
+      # clingo.dll (and its MSVC runtime) beside repro.exe on both the release
+      # and the source-build route, and setup-dev-env runs a `repro exec`
+      # before this point, which fails if the engine cannot load clingo.
 
       - name: Prepare macOS reprobuild sandbox tools
         if: runner.os == 'macOS'

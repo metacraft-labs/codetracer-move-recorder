@@ -127,8 +127,9 @@ trace merging without requiring the `aptos` CLI.
 
 ### Environment variables
 
-The recorder respects the standard CodeTracer recorder env-var contract
-defined in `Recorder-CLI-Conventions.md` §5:
+The recorder respects the standard CodeTracer recorder env-var contract:
+each recorder reads `CODETRACER_<RECORDER>_*` variables, and an explicit CLI
+flag always takes precedence over its environment fallback:
 
 | Variable                              | CLI equivalent | Description                                                                                  |
 |---------------------------------------|----------------|----------------------------------------------------------------------------------------------|

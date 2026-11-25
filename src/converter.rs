@@ -21,8 +21,8 @@ use crate::source_map::SourceMapResolver;
 /// The on-disk container produced by the recorder is always the canonical
 /// multi-stream CTFS bundle.  Pre-2026-05-08 the recorder accepted a
 /// `TraceEventsFileFormat` parameter and the CLI exposed a `--format` flag;
-/// the convention now mandates CTFS-only output (see
-/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`).
+/// the CodeTracer recorder CLI convention now requires every recorder to
+/// write CTFS and nothing else, and to expose no `--format` flag.
 const TRACE_FORMAT: TraceEventsFileFormat = TraceEventsFileFormat::Ctfs;
 
 /// Compile-time configuration for the trace converter.
@@ -129,8 +129,8 @@ impl ConverterOptions {
 /// `trace_data` must be decompressed NDJSON (one JSON object per line).
 /// The first line must be a `{"version":3}` header.
 ///
-/// The output format is fixed to CTFS — see
-/// `Recorder-CLI-Conventions.md` §4 in `codetracer-specs`.  Use
+/// The output format is fixed to CTFS: the CodeTracer recorder CLI
+/// convention requires recorders to write CTFS only.  Use
 /// `ct print` (from `codetracer-trace-format-nim`) for human-readable
 /// conversion of the produced bundle.
 pub fn convert_trace(
@@ -398,8 +398,9 @@ fn convert_events(
     // bytecode position to a single sub-statement source position
     // via the compiler's `debug_info` code map, so per-column
     // breakpoints AND per-column motions are both meaningful.
-    // Advertise both capabilities to the GUI.  See spec
-    // `internal-files.md` §"Column-Aware Capability Flags".
+    // Advertise both capabilities to the GUI.  See
+    // `internal-files.md` §"Column-Aware Capability Flags" in the public
+    // codetracer-trace-format-spec repository.
     writer.enable_column_breakpoints_support();
     writer.enable_column_motions_support();
 
@@ -463,9 +464,9 @@ fn convert_events(
     //     0..N { body }` loop produces N step events at the body line, not
     //     just one — see
     //     `tests/test_full_coverage.rs::test_loops_one_step_per_source_line`
-    //     and the spec at `metacraft-specs/policies/recorder-test-requirements.md`
-    //     ("a `for i in 0..10` loop must produce exactly 10 step events at
-    //     the loop body").
+    //     and the CodeTracer recorder test requirements, which state that
+    //     "a `for i in 0..10` loop must produce exactly 10 step events at
+    //     the loop body".
     //
     // Both pieces of state belong to the *current execution context*; they
     // are reset to `None` whenever a frame is opened or closed so that
@@ -480,6 +481,14 @@ fn convert_events(
     // half-empty steps.
     let mut prev_line: Option<u32> = Some(first_step_line);
     let mut prev_pc: Option<u64> = None;
+    // The FILE of the last emitted step, where a step's file can differ
+    // from its frame's: an Aptos module positioned on its published source
+    // carries code the compiler inlined from other modules, positioned in
+    // their files ([`FunctionDebugInfo::pc_path`]).  Moving to another file
+    // at the same line number is a new position.  `None` — as seeded, and
+    // after every reset beside `prev_line` — compares equal to anything, so
+    // a recording with no such pcs steps exactly as it did without this.
+    let mut prev_step_file: Option<std::path::PathBuf> = None;
     let mut current_module: Option<String> = None;
 
     // Stack of currently open frames so that `Effect::Write` /
@@ -540,6 +549,7 @@ fn convert_events(
                 }
                 first_open_frame_seen = true;
                 prev_pc = None;
+                prev_step_file = None;
 
                 // Detect `sui::event::emit<T>(payload)` — the canonical
                 // Sui native used to publish a typed event from a Move
@@ -732,6 +742,7 @@ fn convert_events(
                 // stale value carried over from the callee.
                 prev_line = None;
                 prev_pc = None;
+                prev_step_file = None;
             }
 
             TraceEvent::Instruction {
@@ -749,10 +760,9 @@ fn convert_events(
                 // loop surface N step events at the body line rather than
                 // just one — without it the dedup in (a) would collapse
                 // every iteration into a single step and the recorder would
-                // not satisfy the spec at
-                // `metacraft-specs/policies/recorder-test-requirements.md`
-                // ("a `for i in 0..10` loop must produce exactly 10 step
-                // events at the loop body").
+                // not satisfy the CodeTracer recorder test requirements,
+                // which say that "a `for i in 0..10` loop must produce
+                // exactly 10 step events at the loop body".
                 //
                 // The explicit `SourceMapResolver` (legacy, hand-built)
                 // takes precedence so synthetic NDJSON tests pinned to
@@ -805,7 +815,21 @@ fn convert_events(
                     None
                 };
                 if let Some(line) = line {
-                    let line_changed = prev_line != Some(line);
+                    // The step belongs to the file of the module whose code
+                    // is running, which in a multi-package transaction is
+                    // rarely the primary source — or, for an instruction
+                    // the compiler inlined from another module, to that
+                    // module's file.
+                    let step_path = frame_stack
+                        .last()
+                        .and_then(|k| {
+                            k.function(&debug_info)
+                                .and_then(|fi| fi.pc_path(*pc))
+                                .or_else(|| k.source_path(&debug_info))
+                        })
+                        .unwrap_or(source_path);
+                    let line_changed = prev_line != Some(line)
+                        || prev_step_file.as_deref().is_some_and(|f| f != step_path);
                     let backward_jump = prev_pc.is_some_and(|p| *pc < p);
                     if line_changed || backward_jump {
                         // M-move: column-aware step emission.  Forward
@@ -815,13 +839,6 @@ fn convert_events(
                         // a line-only step (DeltaLine, no DeltaColumn
                         // override).  Mirrors the EVM recorder's M14
                         // pattern.
-                        // The step belongs to the file of the module
-                        // whose code is running, which in a multi-package
-                        // transaction is rarely the primary source.
-                        let step_path = frame_stack
-                            .last()
-                            .and_then(|k| k.source_path(&debug_info))
-                            .unwrap_or(source_path);
                         TraceWriter::register_step_with_column(
                             writer,
                             step_path,
@@ -829,6 +846,7 @@ fn convert_events(
                             column.map(|c| Line(c as i64)),
                         );
                         prev_line = Some(line);
+                        prev_step_file = Some(step_path.to_path_buf());
                     }
                 }
                 prev_pc = Some(*pc);

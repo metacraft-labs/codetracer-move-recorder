@@ -5,13 +5,13 @@
 ## ``repro test`` reproduce the same artefacts and the same test set
 ## that ``just build`` / ``just test`` produce today.
 ##
-## Per ``codetracer-specs/Repo-Requirements.md`` §2.8 the recipe
+## Per CodeTracer's recorder repository requirements, the recipe
 ## expresses build and test execution NATIVELY through typed-tool
 ## edges (`cargo.build`, `cargo.test`). It does NOT delegate to
 ## `shell(command = "bash scripts/...")` wrappers — delegation
 ## defeats the engine's incremental-build, action-cache, per-test
-## invalidation, and the CI sharding the engine grows into per
-## ``reprobuild-specs/CI-Sharding.md``.
+## invalidation, and the CI sharding the engine grows into, which
+## splits a repository's test edges across CI jobs.
 ##
 ## On Windows the recipe drives real reprobuild tool provisioning via
 ## the tarball entries the ``uses:`` packages declare (cargo, rustc,
@@ -19,10 +19,11 @@
 ## continues to supply the same toolchain. Either path produces
 ## byte-equivalent build outputs and the same test pass/fail set —
 ## CI cross-checks this through the side-by-side `ci.yml` (nix) +
-## `ci-reprobuild.yml` (reprobuild) flow per Repo-Requirements §2.9.
+## `ci-reprobuild.yml` (reprobuild) flow.
 ##
 ## Move: test corpus is pre-compiled Move bytecode artefacts.
 
+import std/os
 import repro_project_dsl
 import repro_dsl_stdlib/foreign_env
 # The ``sui`` CLI the tests drive; reprobuild's stdlib has no package for it.
@@ -35,6 +36,14 @@ import sui_tools
 import "../codetracer-trace-format-nim/build_writer_artifacts"
 
 const traceFormatNimRoot = "../codetracer-trace-format-nim"
+
+# The sibling checkouts of the Nim packages the trace format's ``.nimble``
+# requires (``stew``, ``results``). ``ct-print`` is compiled against them and
+# against nothing else: reprobuild runs every Nim compile without access to
+# the host's ``~/.nimble``, so a compile that is not told where its packages
+# are fails with ``cannot open file: results``. Both are pinned in
+# ``repro.lock``, so the compile reads fixed revisions of them.
+const ctPrintNimDependencyRoots = ["../nim-stew", "../nim-results"]
 
 package codetracer_move_recorder:
   defaultToolProvisioning (when defined(windows): tarball else: path)
@@ -57,10 +66,10 @@ package codetracer_move_recorder:
     # ``nim c``'s gcc back-end on every host but macOS
     # (``CtPrintBackendSelectors``) and names ``gcc`` on its edge itself.
     # That ref provisions nothing unless the package declares the tool in
-    # ``uses:`` (the module's "Native tool contract"; it is checked on POSIX
-    # only), and without it the Windows ct-print compile fails with
-    # ``Requested command not found: 'gcc.exe'``. The sibling's own recipe
-    # declares the same ``gcc`` for its Windows build.
+    # ``uses:`` (the module's "Native tool contract"; ``buildCtPrint``
+    # checks it on every host), and without it the Windows ct-print compile
+    # fails with ``Requested command not found: 'gcc.exe'``. The sibling's
+    # own recipe declares the same ``gcc`` for its Windows build.
     when defined(macosx):
       "clang"
     else:
@@ -83,9 +92,10 @@ package codetracer_move_recorder:
     # zstd.h + libzstd for the sibling ct-print edge
     # (``build_writer_artifacts.buildCtPrint`` compiles and links against
     # them; ``zstd`` is the CLI only). The constructor cannot provision a
-    # tool from inside ``build:`` and refuses a recipe that omits it.
-    when not defined(windows):
-      "zstd-dev"
+    # tool from inside ``build:`` and refuses a recipe that omits it, on
+    # every host: on Windows ``zstd-dev`` is a MinGW static ``libzstd.a``
+    # for the ct-print edge's gcc back-end, beside the ``gcc`` above.
+    "zstd-dev"
 
     # Cap'n Proto is declared above; the writer's build.rs invokes capnp.
 
@@ -139,9 +149,8 @@ package codetracer_move_recorder:
     # ---- Primary build edge (the `default` collection) ----------------
     #
     # Native cargo build for the recorder binary. Enrolled into the
-    # conventional ``default`` collection per
-    # reprobuild-specs/Build-Graph-Collections.md §"`default`"; this
-    # makes ``repro build`` (no positional target) materialise this
+    # conventional ``default`` collection, the one reprobuild builds
+    # when it is given no target; this makes ``repro build`` (no positional target) materialise this
     # edge's closure.
     const binarySuffix = (when defined(windows): ".exe" else: "")
     const recorderBinary =
@@ -160,7 +169,7 @@ package codetracer_move_recorder:
 
     # ---- Test-binary build + run edges (the `test` collection) -------
     #
-    # Two-stage shape per Repo-Requirements.md §2.8: `cargo.test(noRun =
+    # Two-stage shape, as the requirements above ask: `cargo.test(noRun =
     # true)` builds every cargo test binary into
     # `target/debug/deps/<crate>-<hash>` (the engine tracks the deps
     # directory as the build edge's effect set because the hashed
@@ -170,9 +179,8 @@ package codetracer_move_recorder:
     # an input changed since the last successful execution.
     #
     # Per-test execute edges fall out automatically once the
-    # ct-test-runner cargo adapter lands per
-    # reprobuild-specs/Test-Edges-And-Parallel-Runner.milestones.org
-    # §M4 — the whole-binary edge becomes a fan-out point without
+    # ct-test-runner cargo adapter, which runs each test as its own
+    # edge, lands — the whole-binary edge becomes a fan-out point without
     # changing this recipe.
 
     let testsBuild = cargo.test(
@@ -194,13 +202,21 @@ package codetracer_move_recorder:
     # owns them. The test-run edge orders after it and names the binary as
     # an input, so a missing or rebuilt ``ct-print`` re-runs the tests.
     #
-    # It runs after the test build because that build's
-    # ``codetracer_trace_writer_nim`` ``build.rs`` is what installs the
-    # sibling's nimble ``requires`` (``results``, ``stew``) into the nimble
-    # path the ct-print compile resolves them from. ``just build-ct-print``
-    # gets the same packages from ``nimble buildCtPrint``.
+    # Its Nim packages come from the sibling checkouts named by
+    # ``ctPrintNimDependencyRoots``, not from a nimble directory, so it reads
+    # nothing the test build installs and needs no ordering after it.
+    # Absolute and normalized, as ``buildCtPrint`` requires; it passes each
+    # as a ``--path:`` and declares it an input of the compile. The provider
+    # also runs this body once while it starts up, with no project root to
+    # resolve them against; nothing that pass registers is kept, so it gets
+    # no directories instead of relative ones the constructor would refuse.
+    var ctPrintNimDependencyDirs: seq[string] = @[]
+    if not providerStartupBodyActive():
+      for dependencyRoot in ctPrintNimDependencyRoots:
+        ctPrintNimDependencyDirs.add(
+          normalizedPath(activeProviderProjectRoot() / dependencyRoot))
     let ctPrintBuild = buildCtPrint(traceFormatNimRoot,
-                                    after = @[testsBuild.action])
+      nimDependencyDirs = ctPrintNimDependencyDirs)
 
     let testsRun = cargo.test(
       locked = true,

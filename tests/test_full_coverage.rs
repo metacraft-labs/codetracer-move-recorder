@@ -1,6 +1,6 @@
 //! Per-program `ct print --full` coverage tests for the Move recorder.
 //!
-//! These tests follow `metacraft-specs/policies/recorder-test-requirements.md`:
+//! These tests follow the CodeTracer recorder test requirements:
 //!
 //! * Each test consumes one of the pre-recorded NDJSON traces shipped
 //!   under `test-programs/move/flow_test/traces/` (a real
@@ -761,8 +761,8 @@ fn test_loops_via_ct_print_full() {
 }
 
 /// Spec-correct expectation: each iteration of a loop body emits one
-/// step event at the corresponding source line.  See the spec at
-/// `metacraft-specs/policies/recorder-test-requirements.md`:
+/// step event at the corresponding source line.  The CodeTracer recorder
+/// test requirements state:
 ///
 /// > A `for i in 0..10` loop must produce exactly 10 step events at
 /// > the loop body.
