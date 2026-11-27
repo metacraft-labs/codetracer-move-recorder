@@ -48,6 +48,19 @@ const ctPrintNimDependencyRoots = ["../nim-stew", "../nim-results"]
 package codetracer_move_recorder:
   defaultToolProvisioning (when defined(windows): tarball else: path)
 
+  # CI clones these siblings beside the checkout (.github/sibling-repos and
+  # the `siblings:` list in cross-repo-tests.yml), and the clone actions
+  # resolve each one from the committed lock, so the lock must pin them.
+  # No build edge declares them with `uses:`: they are pinned, not used.
+  pinned:
+    "codetracer"
+    "codetracer-trace-format"
+    "codetracer-trace-format-nim"
+    "codetracer-vscode-extension"
+    "nix-blockchain-development"
+    "nim-stew"
+    "nim-results"
+
   uses:
     # Rust toolchain — declared by version so the tarball-direct
     # provisioning entries in repro_dsl_stdlib/packages/cargo.nim /
