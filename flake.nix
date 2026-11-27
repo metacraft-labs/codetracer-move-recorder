@@ -47,6 +47,11 @@
             pkgs.rustfmt
             pkgs.clippy
             pkgs.pkg-config
+            # `just verify-package` is a Python script, and checks the
+            # Homebrew formula with `ruby -c`. It fails rather than skips
+            # when a tool is missing, so the shell provides both.
+            pkgs.python3
+            pkgs.ruby
           ];
 
           # A prefix holding both zstd.h and libzstd, for reprobuild's path

@@ -98,6 +98,15 @@ jobs:
       - name: Lint
         run: dev-exec just lint
 
+      - name: Verify packaging sources
+        # The source-only packaging channels (homebrew, nix, aur, scoop,
+        # chocolatey) verify without a build, so they run on every push and
+        # pull request; deb and rpm are verified in publish-deb.yml /
+        # publish-rpm.yml on the package just built, before upload.
+        # `verify-package` is strict: a missing tool fails the step instead
+        # of passing it vacuously.
+        run: dev-exec just verify-packaging-sources
+
       - name: Test
         run: dev-exec just test
 
